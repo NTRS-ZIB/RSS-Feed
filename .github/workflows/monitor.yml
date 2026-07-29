@@ -27,10 +27,12 @@ jobs:
         run: pip install feedparser requests
 
       - name: Run monitor
+        timeout-minutes: 10
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
-        run: python press_monitor.py
+          PYTHONUNBUFFERED: "1"
+        run: python -u press_monitor.py
 
       - name: Persist state
         run: |
