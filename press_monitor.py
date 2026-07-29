@@ -14,6 +14,7 @@ import os
 import re
 import sys
 import time
+from calendar import timegm
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -187,6 +188,7 @@ def collect_edgar(resolved):
                     "source": f"{name} ({ticker}) · SEC {form}",
                     "title": entry.get("title", "Untitled filing"),
                     "link": entry.get("link", ""),
+                    "published": entry_time(entry),
                     "is_edgar": True,
                 })
     return items
@@ -248,9 +250,22 @@ def collect_ir():
                 "source": f"{label} · IR newsroom",
                 "title": entry.get("title", "Untitled"),
                 "link": entry.get("link", ""),
+                "published": entry_time(entry),
                 "is_edgar": False,
             })
     return items
+
+
+def entry_time(entry):
+    """Best-effort UTC timestamp for a feed entry. 0 if unavailable."""
+    for key in ("published_parsed", "updated_parsed", "created_parsed"):
+        value = entry.get(key)
+        if value:
+            try:
+                return timegm(value)
+            except (TypeError, ValueError):
+                continue
+    return 0
 
 
 def passes_keywords(item):
@@ -318,21 +333,28 @@ def main():
         print("First run complete — baseline recorded, nothing posted.")
         return
 
-    to_post = []
+    # Mark everything fresh as seen up front. Items we don't post this run are
+    # still recorded, so a big backlog can't re-flood on the next run.
     for item in fresh:
         seen.add(item["uid"])
         state["seen"].append(item["uid"])
-        if not passes_keywords(item):
-            continue
+
+    # Only the newest candidates get the expensive exhibit check. Without this
+    # cap, a state reset would trigger one SEC fetch per backlog item.
+    candidates = [i for i in fresh if passes_keywords(i)]
+    candidates.sort(key=lambda i: i.get("published") or 0, reverse=True)
+    candidates = candidates[: MAX_POSTS_PER_RUN * 2]
+
+    to_post = []
+    for item in candidates:
+        if len(to_post) >= MAX_POSTS_PER_RUN:
+            break
         if item["is_edgar"] and PRESS_RELEASE_EXHIBIT_ONLY:
             if not has_press_release_exhibit(item["link"]):
                 continue
         to_post.append(item)
 
-    if len(to_post) > MAX_POSTS_PER_RUN:
-        print(f"Capping {len(to_post)} posts at {MAX_POSTS_PER_RUN}.")
-        to_post = to_post[:MAX_POSTS_PER_RUN]
-
+    print(f"{len(candidates)} candidate(s) checked, {len(to_post)} to post.")
     sent = sum(1 for item in to_post if post(item))
     print(f"Posted {sent} item(s).")
     save_state(state)
