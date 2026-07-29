@@ -12,6 +12,7 @@ Dedupes against state.json so each item is posted exactly once.
 import json
 import os
 import re
+import socket
 import sys
 import time
 from calendar import timegm
@@ -86,6 +87,8 @@ KEYWORDS = []
 MAX_POSTS_PER_RUN = 25
 
 # ------------------------------------------------------------------ RUNTIME
+
+socket.setdefaulttimeout(25)
 
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "").strip()
 # SEC requires a descriptive User-Agent with a contact address.
@@ -178,6 +181,7 @@ def has_press_release_exhibit(index_url):
 def collect_edgar(resolved):
     items = []
     for ticker, (cik, name) in resolved.items():
+        print(f"  {ticker} (CIK {cik})...")
         for form in FORM_TYPES:
             xml = sec_get(EDGAR_ATOM.format(cik=cik, form=form))
             if not xml:
@@ -197,7 +201,8 @@ def collect_edgar(resolved):
 def discover_feed(page_url):
     """Find a feed URL from a page's <link rel="alternate"> tags."""
     try:
-        r = requests.get(page_url, headers={"User-Agent": IR_AGENT}, timeout=30)
+        r = requests.get(page_url, headers={"User-Agent": IR_AGENT},
+                         timeout=(10, 20))
         if r.status_code != 200:
             return None
         tags = re.findall(
@@ -216,17 +221,26 @@ def discover_feed(page_url):
 
 
 def parse_feed(url):
-    """Parse a URL as a feed. Returns entries, or empty list."""
+    """Fetch and parse a feed. Never blocks indefinitely."""
     try:
-        parsed = feedparser.parse(url, agent=IR_AGENT)
-        return parsed.entries or []
-    except Exception:
+        r = requests.get(url, headers={"User-Agent": IR_AGENT}, timeout=(10, 20))
+    except requests.RequestException as e:
+        print(f"    fetch failed: {type(e).__name__}")
+        return []
+    if r.status_code != 200:
+        print(f"    HTTP {r.status_code}")
+        return []
+    try:
+        return feedparser.parse(r.content).entries or []
+    except Exception as e:
+        print(f"    parse failed: {type(e).__name__}")
         return []
 
 
 def collect_ir():
     items = []
     for label, url in IR_FEEDS.items():
+        print(f"  {label}...")
         entries = parse_feed(url)
         source_url = url
 
