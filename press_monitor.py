@@ -25,50 +25,54 @@ import requests
 # ------------------------------------------------------------------ CONFIG
 
 # Just list tickers. CIKs are resolved automatically from SEC's lookup file.
-TICKERS = [
-    "BGDE",  # Big Digital Energy (formerly Mawson Infrastructure)
-    "ANY",   # Sphere 3D
-    "NUAI",  # New Era Energy & Digital
-    "SLNH",  # Soluna Holdings
-    "DGXX",  # Diginex
-    "BKKT",  # Bakkt Holdings
-    "MARA",  # MARA Holdings
-    "WYFI",  # WhiteFiber
-    "IREN",  # IREN Limited
-    "CLSK",  # CleanSpark
-]
+TICKERS = []  # Ticker lookup is fragile across renames; see EXTRA_CIKS below.
 
-# Companies pinned by CIK instead of ticker. Use this when a recent rename or
-# symbol change means SEC's ticker lookup file is stale or points elsewhere.
+# Every company pinned by CIK. CIKs never change, even when a company renames
+# or switches ticker — which this sector does constantly. BGDE renamed in Apr
+# 2026, VIP in Jul 2026, and ANY has a pending change to DarkHorse (DRK).
 # Format: "LABEL": ("zero-padded CIK", "Display name")
 EXTRA_CIKS = {
-    # Renamed from Greenidge Generation (GREE -> VIP on 2026-07-24). VEON held
-    # the VIP symbol previously, so ticker lookup is unsafe here.
-    "VIP": ("0001844971", "Vulcan Infrastructure and Power"),
+    "BGDE": ("0001218683", "Big Digital Energy"),
+    "ANY":  ("0001591956", "Sphere 3D"),
+    "NUAI": ("0002028336", "New Era Energy & Digital"),
+    "SLNH": ("0000064463", "Soluna Holdings"),
+    "DGXX": ("0001854368", "Digi Power X"),
+    "BKKT": ("0001820302", "Bakkt Holdings"),
+    "MARA": ("0001507605", "MARA Holdings"),
+    "WYFI": ("0002042022", "WhiteFiber"),
+    "IREN": ("0001878848", "IREN Limited"),
+    "CLSK": ("0000827876", "CleanSpark"),
+    "VIP":  ("0001844971", "Vulcan Infrastructure and Power"),
 }
 
 # Company IR feeds. Key is the label shown in the message.
 # Leave empty to run EDGAR-only until you've collected these.
 IR_FEEDS = {
-    # Direct feed URLs. Confirmed or derived from the IR platform's known pattern.
+    # Equisolve platform
     "MARA": "https://ir.mara.com/news-events/press-releases/rss",
+
+    # Q4 Inc platform  (/rss/pressrelease.aspx)
     "CleanSpark": "https://investors.cleanspark.com/rss/pressrelease.aspx",
     "Bakkt": "https://investors.bakkt.com/rss/pressrelease.aspx",
-    "IREN": "https://irisenergy.gcs-web.com/rss/news-releases.xml",
     "New Era Energy & Digital": "https://investors.newerainfra.ai/rss/pressrelease.aspx",
+
+    # Notified / gcs-web platform  (/rss/news-releases.xml)
+    "IREN": "https://irisenergy.gcs-web.com/rss/news-releases.xml",
     "Vulcan Infrastructure and Power": "https://ir.vulcanip.com/rss/news-releases.xml",
+    "Sphere 3D": "https://sphere3d.gcs-web.com/rss/news-releases.xml",
 
-    # News pages. If these aren't feeds, the script autodiscovers the real feed
-    # from the page's <link rel="alternate"> tag and uses that instead.
+    # WordPress — autodiscovered
     "Soluna": "https://www.solunacomputing.com/news/",
-    "Big Digital Energy": "https://www.bigdigital.energy/",
-    "Sphere 3D": "https://www.sphere3d.com/",
-    "Diginex": "https://www.diginex.com/",
-
-    # Webflow site, news list rendered client-side, no autodiscovery tag.
-    # Expect NO FEED. Left in so it picks up automatically if they add one.
-    "WhiteFiber": "https://www.whitefiber.com/investors-news",
 }
+
+# Confirmed to have NO usable feed. Their newsrooms render client-side, so the
+# headlines aren't in the HTML and neither autodiscovery nor a plain scraper
+# can see them. These companies are covered by EDGAR 8-K only.
+#   Big Digital Energy  https://www.bigdigital.energy/news-media/press-releases/
+#                       (QuoteMedia widget)
+#   WhiteFiber          https://www.whitefiber.com/investors-news  (Webflow)
+#   Digi Power X        https://www.digipowerx.com/press-releases  (Next.js)
+
 
 # EDGAR form types to watch. 8-K = US material events. 6-K = foreign issuers.
 # Add "10-Q", "10-K" if you want periodic reports too.
@@ -95,7 +99,19 @@ WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "").strip()
 SEC_USER_AGENT = os.environ.get("SEC_USER_AGENT", "").strip()
 STATE_FILE = Path(os.environ.get("STATE_FILE", "state.json"))
 
-IR_AGENT = "press-monitor/1.0 (personal RSS aggregation)"
+# Several IR platforms sit behind WAFs that stall non-browser User-Agents
+# instead of returning an error. A browser-like header set avoids that.
+IR_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+)
+IR_HEADERS = {
+    "User-Agent": IR_AGENT,
+    "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9,"
+              " text/html;q=0.8, */*;q=0.7",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Connection": "close",
+}
 TICKER_MAP_URL = "https://www.sec.gov/files/company_tickers.json"
 EDGAR_ATOM = (
     "https://www.sec.gov/cgi-bin/browse-edgar"
@@ -201,8 +217,7 @@ def collect_edgar(resolved):
 def discover_feed(page_url):
     """Find a feed URL from a page's <link rel="alternate"> tags."""
     try:
-        r = requests.get(page_url, headers={"User-Agent": IR_AGENT},
-                         timeout=(10, 20))
+        r = requests.get(page_url, headers=IR_HEADERS, timeout=(10, 30))
         if r.status_code != 200:
             return None
         tags = re.findall(
@@ -221,14 +236,21 @@ def discover_feed(page_url):
 
 
 def parse_feed(url):
-    """Fetch and parse a feed. Never blocks indefinitely."""
-    try:
-        r = requests.get(url, headers={"User-Agent": IR_AGENT}, timeout=(10, 20))
-    except requests.RequestException as e:
-        print(f"    fetch failed: {type(e).__name__}")
-        return []
-    if r.status_code != 200:
-        print(f"    HTTP {r.status_code}")
+    """Fetch and parse a feed. Never blocks indefinitely. Retries once."""
+    r = None
+    for attempt in range(2):
+        try:
+            r = requests.get(url, headers=IR_HEADERS, timeout=(10, 30))
+            break
+        except requests.RequestException as e:
+            if attempt == 0:
+                print(f"    {type(e).__name__}, retrying once")
+                time.sleep(2)
+            else:
+                print(f"    fetch failed: {type(e).__name__}")
+                return []
+    if r is None or r.status_code != 200:
+        print(f"    HTTP {r.status_code if r is not None else '?'}")
         return []
     try:
         return feedparser.parse(r.content).entries or []
@@ -326,8 +348,10 @@ def main():
     state = load_state()
     seen = set(state["seen"])
 
-    print(f"Resolving {len(TICKERS)} tickers...")
-    resolved = resolve_ciks(TICKERS)
+    resolved = {}
+    if TICKERS:
+        print(f"Resolving {len(TICKERS)} tickers...")
+        resolved = resolve_ciks(TICKERS)
     for label, (cik, name) in EXTRA_CIKS.items():
         resolved[label] = (cik.zfill(10), name)
         print(f"  {label}: pinned to CIK {cik.zfill(10)} ({name})")
