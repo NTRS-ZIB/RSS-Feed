@@ -1,0 +1,45 @@
+name: Press release monitor
+
+on:
+  schedule:
+    # Every 15 minutes. GitHub queues cron jobs, so expect some drift.
+    - cron: "*/15 * * * *"
+  workflow_dispatch: # lets you trigger a run by hand from the Actions tab
+
+permissions:
+  contents: write # needed to commit the updated state file
+
+concurrency:
+  group: press-monitor
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install feedparser requests
+
+      - name: Run monitor
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: python press_monitor.py
+
+      - name: Persist state
+        run: |
+          if [[ -n "$(git status --porcelain state.json)" ]]; then
+            git config user.name "press-monitor"
+            git config user.email "actions@github.com"
+            git add state.json
+            git commit -m "Update seen items [skip ci]"
+            git push
+          else
+            echo "No state change."
+          fi
