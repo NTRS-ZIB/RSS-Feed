@@ -15,6 +15,7 @@ import re
 import sys
 import time
 from pathlib import Path
+from urllib.parse import urljoin
 
 import feedparser
 import requests
@@ -23,14 +24,48 @@ import requests
 
 # Just list tickers. CIKs are resolved automatically from SEC's lookup file.
 TICKERS = [
-    "AAPL",
-    "MSFT",
+    "BGDE",  # Big Digital Energy (formerly Mawson Infrastructure)
+    "ANY",   # Sphere 3D
+    "NUAI",  # New Era Energy & Digital
+    "SLNH",  # Soluna Holdings
+    "DGXX",  # Diginex
+    "BKKT",  # Bakkt Holdings
+    "MARA",  # MARA Holdings
+    "WYFI",  # WhiteFiber
+    "IREN",  # IREN Limited
+    "CLSK",  # CleanSpark
 ]
+
+# Companies pinned by CIK instead of ticker. Use this when a recent rename or
+# symbol change means SEC's ticker lookup file is stale or points elsewhere.
+# Format: "LABEL": ("zero-padded CIK", "Display name")
+EXTRA_CIKS = {
+    # Renamed from Greenidge Generation (GREE -> VIP on 2026-07-24). VEON held
+    # the VIP symbol previously, so ticker lookup is unsafe here.
+    "VIP": ("0001844971", "Vulcan Infrastructure and Power"),
+}
 
 # Company IR feeds. Key is the label shown in the message.
 # Leave empty to run EDGAR-only until you've collected these.
 IR_FEEDS = {
-    # "Apple": "https://www.apple.com/newsroom/rss-feed.rss",
+    # Direct feed URLs. Confirmed or derived from the IR platform's known pattern.
+    "MARA": "https://ir.mara.com/news-events/press-releases/rss",
+    "CleanSpark": "https://investors.cleanspark.com/rss/pressrelease.aspx",
+    "Bakkt": "https://investors.bakkt.com/rss/pressrelease.aspx",
+    "IREN": "https://irisenergy.gcs-web.com/rss/news-releases.xml",
+    "New Era Energy & Digital": "https://investors.newerainfra.ai/rss/pressrelease.aspx",
+    "Vulcan Infrastructure and Power": "https://ir.vulcanip.com/rss/news-releases.xml",
+
+    # News pages. If these aren't feeds, the script autodiscovers the real feed
+    # from the page's <link rel="alternate"> tag and uses that instead.
+    "Soluna": "https://www.solunacomputing.com/news/",
+    "Big Digital Energy": "https://www.bigdigital.energy/",
+    "Sphere 3D": "https://www.sphere3d.com/",
+    "Diginex": "https://www.diginex.com/",
+
+    # Webflow site, news list rendered client-side, no autodiscovery tag.
+    # Expect NO FEED. Left in so it picks up automatically if they add one.
+    "WhiteFiber": "https://www.whitefiber.com/investors-news",
 }
 
 # EDGAR form types to watch. 8-K = US material events. 6-K = foreign issuers.
@@ -56,6 +91,7 @@ WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "").strip()
 SEC_USER_AGENT = os.environ.get("SEC_USER_AGENT", "").strip()
 STATE_FILE = Path(os.environ.get("STATE_FILE", "state.json"))
 
+IR_AGENT = "press-monitor/1.0 (personal RSS aggregation)"
 TICKER_MAP_URL = "https://www.sec.gov/files/company_tickers.json"
 EDGAR_ATOM = (
     "https://www.sec.gov/cgi-bin/browse-edgar"
@@ -156,20 +192,57 @@ def collect_edgar(resolved):
     return items
 
 
+def discover_feed(page_url):
+    """Find a feed URL from a page's <link rel="alternate"> tags."""
+    try:
+        r = requests.get(page_url, headers={"User-Agent": IR_AGENT}, timeout=30)
+        if r.status_code != 200:
+            return None
+        tags = re.findall(
+            r"<link[^>]+application/(?:rss|atom)\+xml[^>]*>", r.text, re.I
+        )
+        for tag in tags:
+            # Skip comment feeds — WordPress exposes those alongside the real one.
+            if "comment" in tag.lower():
+                continue
+            href = re.search(r"""href=["']([^"']+)["']""", tag)
+            if href:
+                return urljoin(page_url, href.group(1))
+    except requests.RequestException:
+        pass
+    return None
+
+
+def parse_feed(url):
+    """Parse a URL as a feed. Returns entries, or empty list."""
+    try:
+        parsed = feedparser.parse(url, agent=IR_AGENT)
+        return parsed.entries or []
+    except Exception:
+        return []
+
+
 def collect_ir():
     items = []
     for label, url in IR_FEEDS.items():
-        try:
-            parsed = feedparser.parse(
-                url, agent="press-monitor/1.0 (personal RSS aggregation)"
-            )
-        except Exception as e:
-            print(f"  {label}: feed error {e}", file=sys.stderr)
+        entries = parse_feed(url)
+        source_url = url
+
+        if not entries:
+            # Not a feed, or a dead URL. Try to find the real feed on the page.
+            found = discover_feed(url)
+            if found and found != url:
+                entries = parse_feed(found)
+                if entries:
+                    source_url = found
+                    print(f"  {label}: discovered feed at {found}")
+
+        if not entries:
+            print(f"  {label}: NO FEED — needs a scraper or manual URL")
             continue
-        if parsed.bozo and not parsed.entries:
-            print(f"  {label}: feed unparseable or empty", file=sys.stderr)
-            continue
-        for entry in parsed.entries:
+
+        print(f"  {label}: {len(entries)} items")
+        for entry in entries:
             items.append({
                 "uid": entry.get("id") or entry.get("link"),
                 "source": f"{label} · IR newsroom",
@@ -226,6 +299,9 @@ def main():
 
     print(f"Resolving {len(TICKERS)} tickers...")
     resolved = resolve_ciks(TICKERS)
+    for label, (cik, name) in EXTRA_CIKS.items():
+        resolved[label] = (cik.zfill(10), name)
+        print(f"  {label}: pinned to CIK {cik.zfill(10)} ({name})")
     print(f"Checking EDGAR for {len(resolved)} companies...")
     items = collect_edgar(resolved)
     print(f"Checking {len(IR_FEEDS)} IR feeds...")
