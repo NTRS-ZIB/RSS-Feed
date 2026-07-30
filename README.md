@@ -6,13 +6,21 @@ channel. Runs on a GitHub Actions cron — no server, no dependencies to maintai
 
 ## How it works
 
-Two sources per company:
+Two sources, two output channels.
 
-1. **SEC EDGAR** — 8-K (US issuers) and 6-K (foreign private issuers). Material
-   press releases are attached as EX-99 exhibits. Authoritative, but trails the
-   newswire by minutes to hours.
-2. **IR newsroom RSS** — the company's own feed. Faster, but not every company
-   publishes one.
+Sources:
+
+1. **SEC EDGAR** — ten form types (see `FORM_TYPES`). Press releases arrive as
+   EX-99 exhibits on 8-K/6-K; offerings, financials and stake disclosures come
+   through the other forms. Authoritative, but trails the newswire by minutes
+   to hours.
+2. **IR newsroom RSS** — the company's own feed. Faster than EDGAR, but not
+   every company publishes one.
+
+Channels:
+
+- **Main** (`WEBHOOK_URL`) — press releases and filings.
+- **Insider** (`WEBHOOK_URL_INSIDER`, optional) — Form 4 and 4/A only.
 
 New items are deduped against `state.json` and posted once each.
 
@@ -33,6 +41,11 @@ Settings → Secrets and variables → Actions:
 | `WEBHOOK_URL` | Discord webhook URL. Slack incoming webhooks also work — payload shape is detected from the host. |
 | `SEC_USER_AGENT` | Real name and email, e.g. `Jane Doe jane@example.com`. SEC throttles anonymous traffic. |
 | `WEBHOOK_URL_INSIDER` | *Optional.* Webhook for a separate Form 4 channel. If unset, the insider check is skipped entirely. |
+
+**Secrets must also be mapped in the workflow.** Adding one under repository
+settings is not enough — it has to be listed in the `env:` block of the
+`Run monitor` step in `.github/workflows/monitor.yml` or the script never sees
+it.
 
 ## Schedule
 
@@ -61,11 +74,30 @@ add a company by symbol.
 page; if the URL isn't a feed, the script reads the page's
 `<link rel="alternate">` tag and uses whatever feed it finds.
 
-**`FORM_TYPES`** — `["8-K", "6-K"]`. Add `10-Q`/`10-K` for periodic reports.
+**`FORM_TYPES`** — ten forms, exploiting EDGAR's prefix matching so that
+`8-K` also catches `8-K/A`, `424` catches `424B1`–`424B8`, and `SC 13D` catches
+its amendments:
 
-**`PRESS_RELEASE_EXHIBIT_ONLY`** — when true, an EDGAR filing is only posted if
-it attaches an EX-99 exhibit, filtering out administrative 8-Ks. Costs one
-extra request per candidate filing.
+| Form | Why |
+|---|---|
+| `8-K` / `6-K` | Material events; press releases as EX-99 |
+| `424` | Prospectus supplements — offerings being priced. Dilution. |
+| `10-Q` / `10-K` | Quarterly and annual financials |
+| `20-F` / `40-F` | Annual reports, foreign and Canadian MJDS filers |
+| `SC 13D` | Activist / >5% stake disclosures |
+| `NT 10-K` / `NT 10-Q` | Late filing notices — rare, high signal |
+
+Form 4 is deliberately absent; it has its own channel. Note that earnings news
+arrives as an 8-K Item 2.02 press release, typically before the 10-Q, so the
+10-Q gets you the statements rather than the announcement.
+
+**`PRESS_RELEASE_EXHIBIT_ONLY`** — when true, a filing is only posted if it
+attaches an EX-99 exhibit, filtering out administrative 8-Ks. Costs one extra
+request per candidate filing.
+
+Applies **only** to the forms in `EXHIBIT_CHECK_FORMS` (`8-K`, `6-K`). A 10-Q or
+424 carries no EX-99, so applying the check to them would silently discard every
+one. If you add a press-release-bearing form, add it to that set too.
 
 **`KEYWORDS`** — optional title filter. Empty means post everything.
 
@@ -148,14 +180,30 @@ baseline so a backlog can't flood the channel.
 ## Reading the log
 
 ```
-VIP: pinned to CIK 0001844971 (Vulcan Infrastructure and Power)
+  VIP: pinned to CIK 0001844971 (Vulcan Infrastructure and Power)
+Checking EDGAR for 11 companies...
+  MARA (CIK 0001507605)...
+Checking 8 IR feeds...
   MARA: 10 items
-  Soluna: discovered feed at https://www.solunacomputing.com/feed/
-  WhiteFiber: NO FEED — needs a scraper or manual URL
-532 items seen, 3 new.
-6 candidate(s) checked, 3 to post.
-Posted 3 item(s).
+Checking insider filings (Form 4)...
+  MARA: 4 insider filing(s)
+1316 items seen, 2 new, 1 new insider.
+2 candidate(s) checked, 2 to post.
+Posted 2 press item(s).
+Posted 1 insider item(s).
 ```
 
 Each ticker and feed name prints *before* it is attempted, so if a run stalls,
 the last line names the culprit.
+
+A normal run reports `0 new` and posts nothing. That is success.
+
+Lines worth reacting to:
+
+| Line | Meaning |
+|---|---|
+| `WEBHOOK_URL_INSIDER not set — skipping insider channel` | Either intentional, or the secret isn't mapped into the workflow's `env:` block. An unmapped secret reads as empty, which is indistinguishable from disabled. |
+| `HTTP 404` on one feed | Usually an IR site replatforming, not a removed feed. Check the platform before giving up. |
+| `ReadTimeout` | A WAF stalling the request. Check the browser headers are still being sent. |
+| `NO FEED` | Autodiscovery found nothing on that URL. |
+| `Not found on EDGAR` | Only possible for `TICKERS` entries; pin the company by CIK in `EXTRA_CIKS` instead. |
