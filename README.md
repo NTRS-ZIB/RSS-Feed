@@ -176,11 +176,11 @@ The three IR platforms use different feed conventions:
 
 - Equisolve: `/news-events/press-releases/rss`
 - Q4 Inc: `/rss/pressrelease.aspx`
+- Notified / gcs-web: `/rss/news-releases.xml`
 
 Note that IR platforms migrate. Bakkt moved from Q4 to gcs-web, which broke
 its feed URL with a 404. If a previously working feed starts failing, check
 whether the site changed platforms before assuming the feed was removed.
-- Notified / gcs-web: `/rss/news-releases.xml`
 
 Soluna is plain WordPress. Its press releases live in the `/news/` archive
 (feed at `/news/feed/`), while the site-root `/feed/` is a near-dormant blog
@@ -427,17 +427,17 @@ returns *plausible* numbers is more dangerous than one that fails outright.
 
 ## Known quirks
 
-- **Free-tier history is patchy for recent listings.** `outputsize=300` gives
-  ~300 calendar days, not 252 trading days, and recently-listed tickers may
-  have only a few months. The `52w` column is only as good as the history
-  behind it.
-- **Split adjustment varies by provider.** Several of these companies have done
-  reverse splits. An implausible cliff in a chart is usually an unadjusted
-  split, not a real move.
-- **Provider risk.** Unlike EDGAR and the IR feeds, this depends on a
-  commercial free tier that can change. If it disappears, the fetch layer is
-  isolated in `fetch_twelvedata()` and can be swapped without touching the
-  table or chart code.
+- **History is patchy for recent listings.** Bars are requested over a 430-day
+  window — calendar days, not trading sessions — and recently listed tickers
+  may only have a few months. The `52w` column is only as good as the history
+  behind it; WYFI, NUAI and BGDE are the thin ones.
+- **Split adjustment.** Requests use `adjustment=all`, so splits and dividends
+  are accounted for. If a chart still shows an implausible cliff, check which
+  source produced it — adjustment handling differs between providers.
+- **Provider risk.** Unlike EDGAR and the IR feeds, this depends on commercial
+  free tiers that can change. The fetch layer is isolated in
+  `fetch_alpaca_all()` and `fetch_twelvedata()`, so a provider can be swapped
+  without touching the table or chart code.
 
 ---
 
