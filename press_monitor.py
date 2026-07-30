@@ -109,7 +109,9 @@ PRESS_RELEASE_EXHIBIT_ONLY = True
 KEYWORDS = []
 
 # Safety valve: never post more than this in one run, per channel.
-MAX_POSTS_PER_RUN = 25
+# Sized for earnings season: ~10 companies x (8-K + 10-Q + IR item) landing in
+# one window. Overflow is discarded, not queued, so leave headroom.
+MAX_POSTS_PER_RUN = 40
 MAX_INSIDER_POSTS_PER_RUN = 25
 
 # Insider transactions, routed to their own webhook. Only runs when the
@@ -401,17 +403,38 @@ def post(item, webhook, color=0x1F6FEB):
         payload = {
             "text": f"*{item['source']}*\n<{item['link']}|{item['title']}>"
         }
-    try:
-        r = requests.post(webhook, json=payload, timeout=20)
+    for attempt in range(2):
+        try:
+            r = requests.post(webhook, json=payload, timeout=20)
+        except requests.RequestException as e:
+            print(f"  webhook failed: {e}", file=sys.stderr)
+            return False
+
+        if r.status_code == 429:
+            # Discord tells us how long to wait. Honour it rather than dropping
+            # the item — a burst during earnings season is exactly when this
+            # fires, and a dropped item would never be retried.
+            wait = 5.0
+            try:
+                wait = float(r.json().get("retry_after", 5))
+            except (ValueError, AttributeError, TypeError):
+                pass
+            wait = min(wait + 0.5, 30.0)
+            if attempt == 0:
+                print(f"  rate limited, waiting {wait:.1f}s", file=sys.stderr)
+                time.sleep(wait)
+                continue
+            print("  still rate limited; will retry next run", file=sys.stderr)
+            return False
+
         if r.status_code >= 300:
             print(f"  webhook returned {r.status_code}: {r.text[:200]}",
                   file=sys.stderr)
             return False
-    except requests.RequestException as e:
-        print(f"  webhook failed: {e}", file=sys.stderr)
-        return False
-    time.sleep(1.0)  # respect Discord/Slack rate limits
-    return True
+
+        time.sleep(1.0)  # stay inside Discord's per-webhook burst limit
+        return True
+    return False
 
 
 def main():
@@ -479,16 +502,33 @@ def main():
         to_post.append(item)
 
     print(f"{len(candidates)} candidate(s) checked, {len(to_post)} to post.")
-    sent = sum(1 for item in to_post if post(item, WEBHOOK_URL))
+    failed = []
+    sent = 0
+    for item in to_post:
+        if post(item, WEBHOOK_URL):
+            sent += 1
+        else:
+            failed.append(item["uid"])
     print(f"Posted {sent} press item(s).")
 
     # Insider channel: no exhibit check, separate cap, separate webhook.
     if insider_fresh:
         insider_fresh.sort(key=lambda i: i.get("published") or 0, reverse=True)
         batch = insider_fresh[:MAX_INSIDER_POSTS_PER_RUN]
-        sent_i = sum(1 for item in batch
-                     if post(item, INSIDER_WEBHOOK_URL, color=0xD29922))
+        sent_i = 0
+        for item in batch:
+            if post(item, INSIDER_WEBHOOK_URL, color=0xD29922):
+                sent_i += 1
+            else:
+                failed.append(item["uid"])
         print(f"Posted {sent_i} insider item(s).")
+
+    # Un-mark anything that failed to post so the next run tries again.
+    # Without this, a rate-limited item is lost permanently.
+    if failed:
+        lost = set(failed)
+        state["seen"] = [u for u in state["seen"] if u not in lost]
+        print(f"{len(lost)} item(s) failed to post; will retry next run.")
 
     save_state(state, len(all_items))
 
