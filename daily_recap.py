@@ -52,6 +52,15 @@ TICKERS = {
     "VIP":  "vip.us",   # renamed from GREE Jul 2026; try gree.us if this fails
 }
 
+# Volume flagging. Matches the first tier in volume_spike.py so the intraday
+# alert and this end-of-day confirmation agree on what "unusual" means.
+# Note this figure is CONSOLIDATED (sip), unlike the intraday alerter's IEX
+# proxy, so it is the authoritative version of the same signal.
+VOLUME_FLAG_TIER = 1.5
+
+# Below this, a consolidated session is too thin for the ratio to mean much.
+MIN_FLAG_VOLUME = 50_000
+
 CHART_DAYS = 60        # trading days shown per sparkline
 VOL_AVG_DAYS = 30      # baseline for the volume comparison
 GRID_COLS = 3
@@ -261,17 +270,33 @@ def human_vol(v):
     return f"{v:.0f}"
 
 
-def build_table(stats):
+def flagged(stats, partial):
+    """Tickers whose completed-session volume was unusual.
+
+    Returns [] for a partial session: today's incomplete volume against a
+    full-day average understates every ratio, so flagging would be wrong.
+    """
+    if partial:
+        return []
+    return sorted(
+        (s for s in stats
+         if s["vol_x"] >= VOLUME_FLAG_TIER and s["vol"] >= MIN_FLAG_VOLUME),
+        key=lambda s: s["vol_x"], reverse=True)
+
+
+def build_table(stats, partial=False):
     """Monospace table, sorted by move size."""
+    hot = {s["label"] for s in flagged(stats, partial)}
     stats = sorted(stats, key=lambda s: s["pct"], reverse=True)
-    lines = [f"{'':6}{'Close':>9}{'Chg':>9}{'Vol':>8}{'x30d':>7}{'52w':>7}"]
-    lines.append("-" * 46)
+    lines = [f"{'':6}{'Close':>9}{'Chg':>9}{'Vol':>8}{'x30d':>8}{'52w':>7}"]
+    lines.append("-" * 47)
     for s in stats:
         span = s["hi"] - s["lo"]
         pos = ((s["close"] - s["lo"]) / span * 100) if span else 0
+        mark = "*" if s["label"] in hot else " "
         lines.append(
             f"{s['label']:<6}{s['close']:>9.2f}{s['pct']:>8.1f}%"
-            f"{human_vol(s['vol']):>8}{s['vol_x']:>6.1f}x{pos:>6.0f}%"
+            f"{human_vol(s['vol']):>8}{s['vol_x']:>6.1f}x{mark}{pos:>6.0f}%"
         )
     return "\n".join(lines)
 
@@ -390,7 +415,14 @@ def main():
         header += f"   |  lagging: {', '.join(stale)}"
 
     header += f"   |  via {source}"
-    text = header + "\n\n" + build_table(stats)
+    text = header + "\n\n" + build_table(stats, partial)
+
+    hot = flagged(stats, partial)
+    if hot:
+        text += ("\n\n* unusual volume: "
+                 + ", ".join(f"{s['label']} {s['vol_x']:.1f}x" for s in hot))
+    elif not partial:
+        text += "\n\nNo unusual volume."
     print(f"\n{text}\n")
 
     png = build_chart(stats)
