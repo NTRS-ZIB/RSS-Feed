@@ -322,7 +322,7 @@ sparklines, green or red by period direction.
 | `Close` | Last close |
 | `Chg` | % change vs previous close |
 | `Vol` | Session volume |
-| `x30d` | Volume as a multiple of the trailing 30-day average |
+| `x30d` | Volume as a multiple of the trailing 30-day average. A trailing `*` marks unusual volume — see below. |
 | `52w` | Position in the 52-week range, 0% = low, 100% = high |
 
 The header states the **actual date of the last bar** rather than assuming it
@@ -331,8 +331,41 @@ than the rest are flagged as `lagging`.
 
 If the newest bar is today's and the US close hasn't happened, the header reads
 `INTRADAY` instead of `Close`. Providers return the current, incomplete session
-as a normal-looking bar; the tell is `x30d` collapsing to ~0.1x across every
-ticker at once, because partial volume is being compared to full-day averages.
+as a normal-looking bar; the tell is `x30d` collapsing across every ticker at
+once, because partial volume is being compared to full-day averages.
+
+The header also always names the data source (`via Alpaca sip`), so a silent
+fallback to a lagging provider is impossible.
+
+## End-of-day volume flagging
+
+Tickers closing above `VOLUME_FLAG_TIER` (1.5x) of their 30-day average get a
+`*` on the `x30d` column and a summary line beneath the table. A quiet day
+prints `No unusual volume.` rather than nothing, so you can tell the check ran.
+
+Two guards:
+
+- **Suppressed entirely on a partial session.** `flagged()` returns nothing
+  when the header says `INTRADAY`. Incomplete volume against a full-day average
+  understates every ratio, so flagging mid-session would be actively wrong.
+- **`MIN_FLAG_VOLUME` (50,000 consolidated shares).** BGDE can show 3.1x on
+  30,800 shares; that is noise, not a signal.
+
+### Relationship to `volume_spike.py`
+
+Both use a 1.5x first threshold, deliberately, but they are not redundant:
+
+| | Intraday alerter | This |
+|---|---|---|
+| Feed | IEX (free tier) | SIP (consolidated) |
+| Absolute volume | A few percent of real | Accurate |
+| Timing | During the session | After the close |
+| Role | Early proxy | Authoritative confirmation |
+
+That makes the pairing a useful cross-check. If a ticker fires intraday on IEX
+but is *not* flagged at the close on SIP, the IEX proxy overstated it for that
+name — its IEX market share is unstable. Repeated occurrences for the same
+ticker make it a candidate for exclusion from the intraday alerts.
 
 ## Testing
 
