@@ -59,10 +59,21 @@ BASELINE_DAYS = 30
 # Ignore tickers whose baseline is thinner than this — too noisy to trust.
 MIN_BASELINE_BARS = 10
 
+# Liquidity floors, in IEX shares. Some names trade only a few hundred shares a
+# day on IEX, where one ordinary block is a 3x "spike". Two separate guards:
+#   BASELINE — below this the average is statistically meaningless
+#   ALERT    — a spike must also represent real activity, not 3x of nothing
+MIN_BASELINE_VOLUME = 10_000
+MIN_ALERT_VOLUME = 25_000
+
 FEED = "iex"          # free tier. Must match on both sides; see module docstring.
 
 # Calendar days fetched to yield ~30 sessions of hourly bars.
 LOOKBACK_DAYS = 50
+
+# Pagination guard. Raised well above the observed requirement; hitting it
+# means the baseline is truncated, which the log now says explicitly.
+MAX_PAGES = 40
 
 # ------------------------------------------------------------------ RUNTIME
 
@@ -119,7 +130,7 @@ def hourly_bars():
     start = (date.today() - timedelta(days=LOOKBACK_DAYS)).isoformat()
     bars, token, pages = defaultdict(list), None, 0
 
-    while pages < 8:
+    while pages < MAX_PAGES:
         params = {
             "symbols": ",".join(TICKERS),
             "timeframe": "1Hour",
@@ -139,7 +150,12 @@ def hourly_bars():
         pages += 1
         if not token:
             break
-    print(f"  {pages} page(s), {sum(len(v) for v in bars.values())} bar(s)")
+    total = sum(len(v) for v in bars.values())
+    print(f"  {pages} page(s), {total} bar(s)")
+    if token:
+        print(f"  WARNING: stopped at the {MAX_PAGES}-page limit with more "
+              f"data available — baselines are truncated and ratios will be "
+              f"overstated. Raise MAX_PAGES.")
     return bars
 
 
@@ -182,6 +198,10 @@ def build_metrics(bars):
         base = sum(totals[d][0] for d in past) / len(past)
         if base <= 0:
             continue
+        if base < MIN_BASELINE_VOLUME:
+            print(f"  {symbol}: baseline {base:,.0f} shares/day on IEX — "
+                  f"too illiquid for a reliable ratio, skipping")
+            continue
         out[symbol] = {
             "volume": volume,
             "base": base,
@@ -211,6 +231,8 @@ def evaluate(metrics, state):
         tier = tier_for(ratio)
         if tier is None:
             continue
+        if m["volume"] < MIN_ALERT_VOLUME:
+            continue          # 3x of almost nothing is still almost nothing
         if state["alerted"].get(symbol, 0) >= tier:
             continue          # already alerted at this level or higher today
 
