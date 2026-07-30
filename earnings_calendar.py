@@ -54,6 +54,10 @@ HORIZON_DAYS = 45
 # A company is flagged overdue this many days past its estimate.
 OVERDUE_GRACE = 10
 
+# Above this spread in its historical lags, a company files too erratically for
+# the projection to mean much. Shown with ~ and called out separately.
+LOW_CONFIDENCE_SPREAD = 30
+
 # ------------------------------------------------------------------ RUNTIME
 
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL_MARKET", "").strip()
@@ -197,7 +201,8 @@ def build_message(rows):
         lines.append("-" * 52)
         for r in upcoming:
             days = (r["expected"] - today).days
-            flag = "?" if r["degraded"] else " "
+            flag = ("?" if r["degraded"]
+                    else "~" if r["spread"] > LOW_CONFIDENCE_SPREAD else " ")
             lines.append(
                 f"{r['label']:<6}{r['expected']:%a %d %b}  "
                 f"in {days:>3}d  {r['kind']:>6}{flag} "
@@ -220,7 +225,16 @@ def build_message(rows):
     if later:
         lines.append("")
         lines.append("Later: " + ", ".join(
-            f"{r['label']} {r['expected']:%d %b}" for r in later))
+            f"{r['label']} {r['expected']:%d %b}"
+            f"{'~' if r['spread'] > LOW_CONFIDENCE_SPREAD else ''}"
+            for r in later))
+
+    shaky = sorted(r["label"] for r in rows
+                   if r["spread"] > LOW_CONFIDENCE_SPREAD or r["degraded"])
+    if shaky:
+        lines.append("")
+        lines.append(f"~ files erratically; date is indicative only: "
+                     f"{', '.join(shaky)}")
 
     return "\n".join(lines)
 
