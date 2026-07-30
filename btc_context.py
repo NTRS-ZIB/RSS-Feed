@@ -73,9 +73,18 @@ def collect():
     mining = get("/v1/mining/hashrate/1m", {})
     d["hashrate"] = mining.get("currentHashrate")
     d["difficulty"] = mining.get("currentDifficulty")
-    hashrates = mining.get("hashrates") or []
-    d["hashrate_7d"] = (hashrates[-8]["avgHashrate"]
-                        if len(hashrates) >= 8 else None)
+    # Hashrate is inferred from block intervals, which are Poisson-distributed
+    # and very noisy day to day. Comparing a 7-day mean against the prior
+    # 7-day mean removes most of that; a point-to-point reading can swing 20%
+    # on variance alone and imply capacity changes that never happened.
+    series = [h.get("avgHashrate") for h in (mining.get("hashrates") or [])
+              if h.get("avgHashrate")]
+    if len(series) >= 14:
+        recent, prior = series[-7:], series[-14:-7]
+        d["hr_recent"] = sum(recent) / len(recent)
+        d["hr_prior"] = sum(prior) / len(prior)
+    else:
+        d["hr_recent"] = d["hr_prior"] = None
 
     d["adj"] = get("/v1/difficulty-adjustment", {})
     d["height"] = get("/blocks/tip/height")
@@ -116,11 +125,12 @@ def build_embed(d):
     else:
         colour = FLAT
 
-    hr, hr7 = d.get("hashrate"), d.get("hashrate_7d")
+    hr = d.get("hashrate")
+    recent, prior = d.get("hr_recent"), d.get("hr_prior")
     if hr:
         val = f"{hr/1e18:,.0f} EH/s"
-        if hr7:
-            val += f"  ({fmt_signed(pct(hr, hr7))} 7d)"
+        if recent and prior:
+            val += f"\n{fmt_signed(pct(recent, prior))} vs prior 7d avg"
         fields.append({"name": "Network hashrate", "value": val,
                        "inline": True})
 
