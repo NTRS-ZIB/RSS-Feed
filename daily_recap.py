@@ -63,6 +63,15 @@ WEBHOOK_URL = os.environ.get("WEBHOOK_URL_MARKET", "").strip()
 # Lets you validate ticker symbols before creating the webhook.
 DRY_RUN = os.environ.get("DRY_RUN", "").strip().lower() in ("1", "true", "yes")
 CHART_FILE = "recap.png"
+ALPACA_KEY_ID = os.environ.get("ALPACA_KEY_ID", "").strip()
+ALPACA_SECRET = os.environ.get("ALPACA_SECRET_KEY", "").strip()
+# 15-minute delayed consolidated (all-exchange) data. The recap runs ~90 min
+# after the close, so the delay is irrelevant — but the consolidation is not.
+# IEX alone would give a wrong close (it sits out the closing auction) and
+# volume a fraction of the real figure.
+ALPACA_FEED = "delayed_sip"
+ALPACA_BARS = "https://data.alpaca.markets/v2/stocks/bars"
+
 TWELVEDATA_KEY = os.environ.get("TWELVEDATA_KEY", "").strip()
 TWELVEDATA_URL = ("https://api.twelvedata.com/time_series"
                   "?symbol={symbol}&interval=1day&outputsize=300&apikey={key}")
@@ -77,6 +86,63 @@ HEADERS = {
 }
 
 UP, DOWN, FLAT = "#3FB950", "#F85149", "#8B949E"
+
+
+def fetch_alpaca_all(symbols):
+    """One call for every ticker. Returns {symbol: [(date, close, volume)]}.
+
+    Returns None (not {}) if the plan can't access the feed, so the caller
+    knows to fall back rather than treating it as "no data".
+    """
+    out, token, pages = {}, None, 0
+    start = (datetime.now(timezone.utc) - timedelta(days=430)).date().isoformat()
+    while pages < 6:
+        params = {
+            "symbols": ",".join(symbols),
+            "timeframe": "1Day",
+            "start": start,
+            "limit": 10000,
+            "feed": ALPACA_FEED,
+            "adjustment": "all",
+        }
+        if token:
+            params["page_token"] = token
+        try:
+            r = requests.get(ALPACA_BARS, params=params, timeout=(10, 30),
+                             headers={"APCA-API-KEY-ID": ALPACA_KEY_ID,
+                                      "APCA-API-SECRET-KEY": ALPACA_SECRET})
+        except requests.RequestException as e:
+            print(f"  Alpaca request failed: {type(e).__name__}")
+            return None
+        if r.status_code in (401, 403):
+            print(f"  Alpaca: {ALPACA_FEED} not available on this plan "
+                  f"(HTTP {r.status_code})")
+            return None
+        if r.status_code != 200:
+            print(f"  Alpaca: HTTP {r.status_code} {r.text[:120]}")
+            return None
+        data = r.json()
+        for symbol, rows in (data.get("bars") or {}).items():
+            out.setdefault(symbol, []).extend(rows)
+        token = data.get("next_page_token")
+        pages += 1
+        if not token:
+            break
+
+    series = {}
+    for symbol, rows in out.items():
+        parsed = []
+        for b in rows:
+            try:
+                parsed.append((
+                    datetime.fromisoformat(b["t"].replace("Z", "+00:00")).date(),
+                    float(b["c"]),
+                    float(b.get("v") or 0),
+                ))
+            except (KeyError, ValueError, TypeError):
+                continue
+        series[symbol] = sorted(parsed)
+    return series
 
 
 def fetch_twelvedata(symbol):
@@ -258,22 +324,36 @@ def main():
     elif not WEBHOOK_URL:
         sys.exit("WEBHOOK_URL_MARKET is not set.")
 
-    if TWELVEDATA_KEY:
-        print("Source: Twelve Data\n")
-    else:
-        print("Source: Stooq (no TWELVEDATA_KEY set — expect quota errors "
-              "on shared cloud IPs)\n")
-
     stats, missing = [], []
-    for i, (label, stooq_symbol) in enumerate(TICKERS.items()):
-        if TWELVEDATA_KEY and i:
-            time.sleep(TWELVEDATA_GAP)      # 8 req/min free-tier ceiling
-        print(f"  {label}...")
-        summary = summarise(label, fetch_series(label, stooq_symbol))
-        if summary:
-            stats.append(summary)
+    alpaca = None
+
+    if ALPACA_KEY_ID and ALPACA_SECRET:
+        print(f"Trying Alpaca ({ALPACA_FEED})...")
+        alpaca = fetch_alpaca_all(list(TICKERS))
+
+    if alpaca:
+        # One request for everything; no per-minute pacing needed.
+        print(f"Source: Alpaca {ALPACA_FEED} — {len(alpaca)} symbol(s)\n")
+        for label in TICKERS:
+            summary = summarise(label, alpaca.get(label, []))
+            (stats if summary else missing).append(summary or label)
+    else:
+        if ALPACA_KEY_ID:
+            print("Falling back to Twelve Data.\n")
+        elif TWELVEDATA_KEY:
+            print("Source: Twelve Data\n")
         else:
-            missing.append(label)
+            print("Source: Stooq (no keys set — expect quota errors on "
+                  "shared cloud IPs)\n")
+        for i, (label, stooq_symbol) in enumerate(TICKERS.items()):
+            if TWELVEDATA_KEY and i:
+                time.sleep(TWELVEDATA_GAP)   # 8 req/min free-tier ceiling
+            print(f"  {label}...")
+            summary = summarise(label, fetch_series(label, stooq_symbol))
+            if summary:
+                stats.append(summary)
+            else:
+                missing.append(label)
 
     if not stats:
         sys.exit("No data for any ticker; not posting.")
