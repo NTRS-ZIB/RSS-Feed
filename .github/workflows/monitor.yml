@@ -35,6 +35,7 @@ jobs:
         timeout-minutes: 10
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          WEBHOOK_URL_INSIDER: ${{ secrets.WEBHOOK_URL_INSIDER }}
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
           PYTHONUNBUFFERED: "1"
         run: python -u press_monitor.py
