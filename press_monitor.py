@@ -108,14 +108,25 @@ PRESS_RELEASE_EXHIBIT_ONLY = True
 # e.g. ["acquisition", "dividend", "guidance"]
 KEYWORDS = []
 
-# Safety valve: never post more than this in one run.
+# Safety valve: never post more than this in one run, per channel.
 MAX_POSTS_PER_RUN = 25
+MAX_INSIDER_POSTS_PER_RUN = 25
+
+# Insider transactions, routed to their own webhook. Only runs when the
+# WEBHOOK_URL_INSIDER secret is set, so it's opt-in.
+#
+# NOTE on the query: EDGAR's type filter is a prefix match, so type=4 also
+# returns 40-F and 424B*. Entries are therefore filtered against
+# INSIDER_ALLOWED_FORMS using the form type EDGAR reports on each entry.
+INSIDER_QUERY_FORM = "4"
+INSIDER_ALLOWED_FORMS = {"4", "4/A"}
 
 # ------------------------------------------------------------------ RUNTIME
 
 socket.setdefaulttimeout(25)
 
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "").strip()
+INSIDER_WEBHOOK_URL = os.environ.get("WEBHOOK_URL_INSIDER", "").strip()
 # SEC requires a descriptive User-Agent with a contact address.
 SEC_USER_AGENT = os.environ.get("SEC_USER_AGENT", "").strip()
 STATE_FILE = Path(os.environ.get("STATE_FILE", "state.json"))
@@ -314,6 +325,32 @@ def collect_ir():
     return items
 
 
+def collect_insider(resolved):
+    """Form 4 / 4-A filings only, for the insider channel."""
+    items = []
+    for ticker, (cik, name) in resolved.items():
+        xml = sec_get(EDGAR_ATOM.format(cik=cik, form=quote(INSIDER_QUERY_FORM)))
+        if not xml:
+            continue
+        kept = 0
+        for entry in feedparser.parse(xml).entries:
+            form = entry_form(entry)
+            if form not in INSIDER_ALLOWED_FORMS:
+                continue  # prefix match collision: 40-F, 424B*, etc.
+            kept += 1
+            items.append({
+                "uid": entry.get("id") or entry.get("link"),
+                "source": f"{name} ({ticker}) · Form {form}",
+                "title": entry.get("title", "Untitled filing"),
+                "link": entry.get("link", ""),
+                "published": entry_time(entry),
+                "form": form,
+                "is_edgar": True,
+            })
+        print(f"  {ticker}: {kept} insider filing(s)")
+    return items
+
+
 def entry_time(entry):
     """Best-effort UTC timestamp for a feed entry. 0 if unavailable."""
     for key in ("published_parsed", "updated_parsed", "created_parsed"):
@@ -326,6 +363,15 @@ def entry_time(entry):
     return 0
 
 
+def entry_form(entry, fallback=""):
+    """The form type EDGAR labels this entry with, e.g. '4' or '8-K'."""
+    for tag in entry.get("tags") or []:
+        term = tag.get("term")
+        if term:
+            return term.strip()
+    return fallback
+
+
 def passes_keywords(item):
     if not KEYWORDS:
         return True
@@ -333,15 +379,15 @@ def passes_keywords(item):
     return any(k.lower() in haystack for k in KEYWORDS)
 
 
-def post(item):
-    """Post one item. Payload shape is inferred from the webhook host."""
-    if "discord.com" in WEBHOOK_URL or "discordapp.com" in WEBHOOK_URL:
+def post(item, webhook, color=0x1F6FEB):
+    """Post one item to a webhook. Payload shape inferred from the host."""
+    if "discord.com" in webhook or "discordapp.com" in webhook:
         payload = {
             "embeds": [{
                 "title": item["title"][:250],
                 "url": item["link"],
                 "footer": {"text": item["source"]},
-                "color": 0x1F6FEB,
+                "color": color,
             }]
         }
     else:  # Slack incoming webhook
@@ -349,7 +395,7 @@ def post(item):
             "text": f"*{item['source']}*\n<{item['link']}|{item['title']}>"
         }
     try:
-        r = requests.post(WEBHOOK_URL, json=payload, timeout=20)
+        r = requests.post(webhook, json=payload, timeout=20)
         if r.status_code >= 300:
             print(f"  webhook returned {r.status_code}: {r.text[:200]}",
                   file=sys.stderr)
@@ -382,12 +428,23 @@ def main():
     print(f"Checking {len(IR_FEEDS)} IR feeds...")
     items += collect_ir()
 
+    insider_items = []
+    if INSIDER_WEBHOOK_URL:
+        print("Checking insider filings (Form 4)...")
+        insider_items = collect_insider(resolved)
+    else:
+        print("WEBHOOK_URL_INSIDER not set — skipping insider channel.")
+
+    all_items = items + insider_items
     fresh = [i for i in items if i["uid"] and i["uid"] not in seen]
-    print(f"{len(items)} items seen, {len(fresh)} new.")
+    insider_fresh = [i for i in insider_items
+                     if i["uid"] and i["uid"] not in seen]
+    print(f"{len(all_items)} items seen, {len(fresh)} new, "
+          f"{len(insider_fresh)} new insider.")
 
     # First run: record everything, post nothing. Avoids a wall of backlog.
     if not state.get("initialized"):
-        state["seen"] = [i["uid"] for i in items if i["uid"]]
+        state["seen"] = [i["uid"] for i in all_items if i["uid"]]
         state["initialized"] = True
         save_state(state)
         print("First run complete — baseline recorded, nothing posted.")
@@ -395,7 +452,7 @@ def main():
 
     # Mark everything fresh as seen up front. Items we don't post this run are
     # still recorded, so a big backlog can't re-flood on the next run.
-    for item in fresh:
+    for item in fresh + insider_fresh:
         seen.add(item["uid"])
         state["seen"].append(item["uid"])
 
@@ -415,8 +472,17 @@ def main():
         to_post.append(item)
 
     print(f"{len(candidates)} candidate(s) checked, {len(to_post)} to post.")
-    sent = sum(1 for item in to_post if post(item))
-    print(f"Posted {sent} item(s).")
+    sent = sum(1 for item in to_post if post(item, WEBHOOK_URL))
+    print(f"Posted {sent} press item(s).")
+
+    # Insider channel: no exhibit check, separate cap, separate webhook.
+    if insider_fresh:
+        insider_fresh.sort(key=lambda i: i.get("published") or 0, reverse=True)
+        batch = insider_fresh[:MAX_INSIDER_POSTS_PER_RUN]
+        sent_i = sum(1 for item in batch
+                     if post(item, INSIDER_WEBHOOK_URL, color=0xD29922))
+        print(f"Posted {sent_i} insider item(s).")
+
     save_state(state)
 
 

@@ -32,6 +32,7 @@ Settings → Secrets and variables → Actions:
 |---|---|
 | `WEBHOOK_URL` | Discord webhook URL. Slack incoming webhooks also work — payload shape is detected from the host. |
 | `SEC_USER_AGENT` | Real name and email, e.g. `Jane Doe jane@example.com`. SEC throttles anonymous traffic. |
+| `WEBHOOK_URL_INSIDER` | *Optional.* Webhook for a separate Form 4 channel. If unset, the insider check is skipped entirely. |
 
 ## Schedule
 
@@ -67,6 +68,16 @@ it attaches an EX-99 exhibit, filtering out administrative 8-Ks. Costs one
 extra request per candidate filing.
 
 **`KEYWORDS`** — optional title filter. Empty means post everything.
+
+**Insider channel** — Form 4 and 4/A filings go to `WEBHOOK_URL_INSIDER`
+instead of the main channel, with their own `MAX_INSIDER_POSTS_PER_RUN` cap and
+amber embeds. Form 4 volume across eleven companies would swamp a press release
+feed, which is why it's separate rather than another entry in `FORM_TYPES`.
+
+One subtlety: EDGAR's type filter is a prefix match, so querying `4` also
+returns `40-F` and `424B*`. Entries are filtered against
+`INSIDER_ALLOWED_FORMS` using the form type EDGAR reports per entry, so those
+collisions are discarded rather than mis-routed.
 
 **`MAX_POSTS_PER_RUN`** — flood guard, default 25. Items beyond the cap are
 marked as seen without being posted, so they don't queue up for the next run.
