@@ -62,8 +62,10 @@ IR_FEEDS = {
     # Migrated off Q4 to gcs-web; the old /rss/pressrelease.aspx path now 404s.
     "Bakkt": "https://investors.bakkt.com/rss/news-releases.xml",
 
-    # WordPress — autodiscovered
-    "Soluna": "https://www.solunacomputing.com/news/",
+    # WordPress. The site-wide /feed/ is a near-dormant blog feed (3 items);
+    # the press releases live in the /news/ archive, so target its feed directly.
+    # If this 404s, autodiscovery can't help and Soluna is EDGAR-only.
+    "Soluna": "https://www.solunacomputing.com/news/feed/",
 }
 
 # Confirmed to have NO usable feed. Their newsrooms render client-side, so the
