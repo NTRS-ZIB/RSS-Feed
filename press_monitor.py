@@ -53,13 +53,14 @@ IR_FEEDS = {
 
     # Q4 Inc platform  (/rss/pressrelease.aspx)
     "CleanSpark": "https://investors.cleanspark.com/rss/pressrelease.aspx",
-    "Bakkt": "https://investors.bakkt.com/rss/pressrelease.aspx",
     "New Era Energy & Digital": "https://investors.newerainfra.ai/rss/pressrelease.aspx",
 
     # Notified / gcs-web platform  (/rss/news-releases.xml)
     "IREN": "https://irisenergy.gcs-web.com/rss/news-releases.xml",
     "Vulcan Infrastructure and Power": "https://ir.vulcanip.com/rss/news-releases.xml",
     "Sphere 3D": "https://sphere3d.gcs-web.com/rss/news-releases.xml",
+    # Migrated off Q4 to gcs-web; the old /rss/pressrelease.aspx path now 404s.
+    "Bakkt": "https://investors.bakkt.com/rss/news-releases.xml",
 
     # WordPress — autodiscovered
     "Soluna": "https://www.solunacomputing.com/news/",
