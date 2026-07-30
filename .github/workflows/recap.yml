@@ -8,6 +8,11 @@ on:
     #   EST (winter, UTC-5): 4:30pm ET
     - cron: "30 21 * * 1-5"
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and log the recap without posting to Discord"
+        type: boolean
+        default: true
 
 concurrency:
   group: daily-recap
@@ -27,8 +32,20 @@ jobs:
         run: pip install requests matplotlib
 
       - name: Build and post recap
-        timeout-minutes: 10
+        timeout-minutes: 15
         env:
           WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
+          TWELVEDATA_KEY: ${{ secrets.TWELVEDATA_KEY }}
+          # Empty on scheduled runs, so those always post.
+          DRY_RUN: ${{ inputs.dry_run }}
           PYTHONUNBUFFERED: "1"
         run: python -u daily_recap.py
+
+      - name: Upload chart
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: recap-chart
+          path: recap.png
+          if-no-files-found: ignore
+          retention-days: 7
