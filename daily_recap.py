@@ -21,7 +21,12 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time as dtime, timedelta, timezone
+try:
+    from zoneinfo import ZoneInfo
+    EASTERN = ZoneInfo("America/New_York")
+except Exception:          # no tzdata: assume EDT
+    EASTERN = timezone(timedelta(hours=-4))
 
 import matplotlib
 matplotlib.use("Agg")  # headless: no display on the runner
@@ -161,6 +166,17 @@ def summarise(label, rows):
     }
 
 
+def session_in_progress(latest):
+    """True if the newest bar is today's and the US close hasn't happened yet.
+
+    Twelve Data's 1day interval includes the current, incomplete session. A
+    partial bar looks like a real one except the volume is a fraction of
+    normal — which silently corrupts both the % change and the volume ratio.
+    """
+    now = datetime.now(EASTERN)
+    return latest == now.date() and now.time() < dtime(16, 0)
+
+
 def human_vol(v):
     for div, suffix in ((1e9, "B"), (1e6, "M"), (1e3, "K")):
         if v >= div:
@@ -267,7 +283,12 @@ def main():
     latest = max(s["date"] for s in stats)
     stale = [s["label"] for s in stats if s["date"] != latest]
 
-    header = f"Close {latest:%a %d %b %Y}"
+    partial = session_in_progress(latest)
+    if partial:
+        header = (f"INTRADAY {latest:%a %d %b %Y} — session still open, "
+                  f"volumes and changes are incomplete")
+    else:
+        header = f"Close {latest:%a %d %b %Y}"
     if missing:
         header += f"   |  no data: {', '.join(missing)}"
     if stale:
