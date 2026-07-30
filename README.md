@@ -151,6 +151,41 @@ in the delivered HTML. Neither autodiscovery nor a plain HTML scraper can see
 them; a headless browser or Google Alerts RSS would be needed. They remain
 fully covered by EDGAR for anything material.
 
+## Scaling
+
+Calibrated against a real run: 11 companies, 10 forms, 8 IR feeds produced
+**129 requests and 1,316 item IDs** per run, in roughly 80 seconds.
+
+Per company that's ~11 requests (10 forms + insider) and ~112 EDGAR item IDs.
+
+| Limit | Binds at | Failure mode |
+|---|---|---|
+| `state.json` retention | ~60 companies | Items age out of state, reappear as new, get re-posted. Silent. |
+| 10-min step timeout | ~90 companies | Run killed mid-way; state never saved. |
+| `MAX_POSTS_PER_RUN` | any size | Overflow is marked seen and **discarded**, not queued. |
+| SEC rate limit | not binding | Requests are sequential with a 0.15s gap, well under 10/sec. |
+
+The retained ID list must stay longer than the number of items one run can see,
+or the dedupe breaks. `save_state` therefore scales its cap with observed run
+volume (`max(4000, items × 3)`) rather than using a fixed number. The cost is
+file size — roughly 240KB at 11 companies, 540KB at 25, over 1MB at 50 —
+committed up to 48 times a day.
+
+To go beyond ~60 companies, in order of effect:
+
+1. **Trim `FORM_TYPES`.** A straight multiplier on requests, runtime and state
+   size. Ten forms down to four (`8-K`, `6-K`, `424`, `10-Q`) nearly triples the
+   ceiling in one edit. `NT 10-K`/`NT 10-Q` cost a request per company per run
+   to catch a once-a-year event.
+2. **Lower `count=40` in `EDGAR_ATOM`.** Only the newest items ever post, so
+   pulling 40 historical filings per form is waste. Dropping to 15 cuts
+   items-seen by ~60%.
+3. **Raise `MAX_POSTS_PER_RUN`** so a busy morning can't silently overflow it.
+
+Past that, the right redesign is storing a per-company high-water timestamp
+instead of a list of every ID seen. That stays constant-size regardless of
+watchlist length. Not worth the complexity below ~60 companies.
+
 ## Testing
 
 To force a live run that posts:
@@ -174,6 +209,8 @@ baseline so a backlog can't flood the channel.
   the real contact string from `SEC_USER_AGENT`.
 - **Public repo.** Workflow logs are publicly readable. Secrets are encrypted
   and masked as `***`, but the watchlist and feed URLs are visible.
+- **`state.json` grows with the watchlist.** Retention scales with run volume
+  by design — see Scaling. Don't replace it with a fixed cap.
 - **Don't add a `pull_request` trigger.** Only `schedule` and
   `workflow_dispatch` are safe here.
 
@@ -191,6 +228,7 @@ Checking insider filings (Form 4)...
 2 candidate(s) checked, 2 to post.
 Posted 2 press item(s).
 Posted 1 insider item(s).
+State: 3948 ids retained (cap 4000).
 ```
 
 Each ticker and feed name prints *before* it is attempted, so if a run stalls,
