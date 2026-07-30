@@ -188,10 +188,17 @@ def load_state():
     return {"seen": [], "initialized": False}
 
 
-def save_state(state):
-    # Keep the most recent 4000 ids; plenty of headroom, bounded file size.
-    state["seen"] = state["seen"][-4000:]
+def save_state(state, items_this_run=0):
+    """Persist state, retaining enough history to cover a full run's visibility.
+
+    The retained list MUST be longer than the number of items one run can see,
+    or items age out of state, reappear as "new", and get re-posted. Since
+    visibility scales with the watchlist, the cap scales with it too.
+    """
+    floor = max(4000, items_this_run * 3)
+    state["seen"] = state["seen"][-floor:]
     STATE_FILE.write_text(json.dumps(state, indent=1))
+    print(f"State: {len(state['seen'])} ids retained (cap {floor}).")
 
 
 def resolve_ciks(tickers):
@@ -446,7 +453,7 @@ def main():
     if not state.get("initialized"):
         state["seen"] = [i["uid"] for i in all_items if i["uid"]]
         state["initialized"] = True
-        save_state(state)
+        save_state(state, len(all_items))
         print("First run complete — baseline recorded, nothing posted.")
         return
 
@@ -483,7 +490,7 @@ def main():
                      if post(item, INSIDER_WEBHOOK_URL, color=0xD29922))
         print(f"Posted {sent_i} insider item(s).")
 
-    save_state(state)
+    save_state(state, len(all_items))
 
 
 if __name__ == "__main__":
