@@ -336,7 +336,7 @@ def main():
         sys.exit("WEBHOOK_URL_MARKET is not set.")
 
     stats, missing = [], []
-    alpaca = None
+    alpaca, source = None, "unknown"
 
     if ALPACA_KEY_ID and ALPACA_SECRET:
         print(f"Trying Alpaca ({ALPACA_FEED})...")
@@ -344,18 +344,22 @@ def main():
 
     if alpaca:
         # One request for everything; no per-minute pacing needed.
-        print(f"Source: Alpaca {ALPACA_FEED} — {len(alpaca)} symbol(s)\n")
+        source = f"Alpaca {ALPACA_FEED}"
+        print(f"Source: {source} — {len(alpaca)} symbol(s)\n")
         for label in TICKERS:
             summary = summarise(label, alpaca.get(label, []))
             (stats if summary else missing).append(summary or label)
     else:
+        source = "Twelve Data" if TWELVEDATA_KEY else "Stooq"
         if ALPACA_KEY_ID:
-            print("Falling back to Twelve Data.\n")
-        elif TWELVEDATA_KEY:
-            print("Source: Twelve Data\n")
+            print(f"Falling back to {source}.\n")
         else:
-            print("Source: Stooq (no keys set — expect quota errors on "
-                  "shared cloud IPs)\n")
+            print(f"Source: {source}\n")
+        if source == "Twelve Data":
+            print("  NOTE: Twelve Data's free tier lags intraday. Observed "
+                  "2026-07-30: it reported IREN at 7.6M shares while "
+                  "consolidated volume was 46.0M. Treat same-day volume and "
+                  "x30d as unreliable from this source.\n")
         for i, (label, stooq_symbol) in enumerate(TICKERS.items()):
             if TWELVEDATA_KEY and i:
                 time.sleep(TWELVEDATA_GAP)   # 8 req/min free-tier ceiling
@@ -385,6 +389,7 @@ def main():
     if stale:
         header += f"   |  lagging: {', '.join(stale)}"
 
+    header += f"   |  via {source}"
     text = header + "\n\n" + build_table(stats)
     print(f"\n{text}\n")
 
