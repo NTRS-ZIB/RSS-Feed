@@ -179,9 +179,13 @@ def daily_totals(rows):
 
 
 def build_metrics(bars):
-    """Per ticker: today's volume, baseline, latest close, previous close."""
+    """Per ticker: today's volume, baseline, latest close, previous close.
+
+    Returns (metrics, excluded) so the caller can distinguish a ticker that is
+    missing data from one deliberately filtered out for illiquidity.
+    """
     today = datetime.now(EASTERN).date()
-    out = {}
+    out, excluded = {}, {}
     for symbol, rows in bars.items():
         totals = daily_totals(rows)
         if today not in totals:
@@ -201,6 +205,7 @@ def build_metrics(bars):
         if base < MIN_BASELINE_VOLUME:
             print(f"  {symbol}: baseline {base:,.0f} shares/day on IEX — "
                   f"too illiquid for a reliable ratio, skipping")
+            excluded[symbol] = base
             continue
         out[symbol] = {
             "volume": volume,
@@ -209,7 +214,7 @@ def build_metrics(bars):
             "prev_close": totals[history[-1]][1] if history else None,
             "sessions": len(past),
         }
-    return out
+    return out, excluded
 
 
 def tier_for(ratio):
@@ -304,7 +309,7 @@ def main():
     if not bars:
         sys.exit("No bar data returned.")
 
-    metrics = build_metrics(bars)
+    metrics, excluded = build_metrics(bars)
     print(f"  {len(metrics)} ticker(s) with today's volume and a baseline")
 
     state = load_state()
@@ -316,7 +321,12 @@ def main():
     for symbol in TICKERS:
         m = metrics.get(symbol)
         if not m:
-            print(f"  {symbol:<6}   no data")
+            if symbol in excluded:
+                print(f"  {symbol:<6}   excluded — {excluded[symbol]:,.0f} "
+                      f"shares/day baseline, below the {MIN_BASELINE_VOLUME:,} "
+                      f"floor")
+            else:
+                print(f"  {symbol:<6}   no data")
             continue
         mark = "*" if symbol in firing else " "
         print(f" {mark}{symbol:<6}{m['volume']/m['base']:>6.2f}x   "
