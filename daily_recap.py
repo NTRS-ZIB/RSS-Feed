@@ -65,11 +65,16 @@ DRY_RUN = os.environ.get("DRY_RUN", "").strip().lower() in ("1", "true", "yes")
 CHART_FILE = "recap.png"
 ALPACA_KEY_ID = os.environ.get("ALPACA_KEY_ID", "").strip()
 ALPACA_SECRET = os.environ.get("ALPACA_SECRET_KEY", "").strip()
-# 15-minute delayed consolidated (all-exchange) data. The recap runs ~90 min
-# after the close, so the delay is irrelevant — but the consolidation is not.
-# IEX alone would give a wrong close (it sits out the closing auction) and
-# volume a fraction of the real figure.
-ALPACA_FEED = "delayed_sip"
+# Consolidated (all-exchange) data. IEX alone would give a wrong close — it
+# sits out the closing auction — and volume a fraction of the real figure.
+#
+# NOTE: "delayed_sip" is a STREAMING/latest-quote feed name and is rejected by
+# the historical bars endpoint with HTTP 400. Historical bars use "sip". Free
+# plans are restricted on RECENCY rather than on the feed, so requests ending
+# outside the last 15 minutes are generally permitted. The recap runs ~90 min
+# after the close, so this costs nothing.
+ALPACA_FEED = "sip"
+ALPACA_DELAY_MINUTES = 20
 ALPACA_BARS = "https://data.alpaca.markets/v2/stocks/bars"
 
 TWELVEDATA_KEY = os.environ.get("TWELVEDATA_KEY", "").strip()
@@ -95,12 +100,17 @@ def fetch_alpaca_all(symbols):
     knows to fall back rather than treating it as "no data".
     """
     out, token, pages = {}, None, 0
-    start = (datetime.now(timezone.utc) - timedelta(days=430)).date().isoformat()
+    now = datetime.now(timezone.utc)
+    start = (now - timedelta(days=430)).date().isoformat()
+    # Stay clear of the real-time window that free plans can't access.
+    end = (now - timedelta(minutes=ALPACA_DELAY_MINUTES)).isoformat(
+        timespec="seconds").replace("+00:00", "Z")
     while pages < 6:
         params = {
             "symbols": ",".join(symbols),
             "timeframe": "1Day",
             "start": start,
+            "end": end,
             "limit": 10000,
             "feed": ALPACA_FEED,
             "adjustment": "all",
@@ -115,11 +125,12 @@ def fetch_alpaca_all(symbols):
             print(f"  Alpaca request failed: {type(e).__name__}")
             return None
         if r.status_code in (401, 403):
-            print(f"  Alpaca: {ALPACA_FEED} not available on this plan "
-                  f"(HTTP {r.status_code})")
+            print(f"  Alpaca: {ALPACA_FEED} not permitted on this plan "
+                  f"(HTTP {r.status_code}) — falling back")
             return None
         if r.status_code != 200:
-            print(f"  Alpaca: HTTP {r.status_code} {r.text[:120]}")
+            print(f"  Alpaca: HTTP {r.status_code} {r.text[:160]} — "
+                  f"falling back")
             return None
         data = r.json()
         for symbol, rows in (data.get("bars") or {}).items():
