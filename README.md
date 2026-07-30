@@ -77,12 +77,12 @@ marked as seen without being posted, so they don't queue up for the next run.
 |---|---|---|
 | MARA Holdings | 0001507605 | Equisolve |
 | CleanSpark | 0000827876 | Q4 Inc |
-| Bakkt Holdings | 0001820302 | gcs-web |
+| Bakkt, Inc. | 0001820302 | gcs-web |
 | New Era Energy & Digital | 0002028336 | Q4 Inc |
 | IREN Limited | 0001878848 | gcs-web |
 | Vulcan Infrastructure and Power | 0001844971 | gcs-web |
 | Sphere 3D | 0001591956 | gcs-web |
-| Soluna Holdings | 0000064463 | WordPress (autodiscovered) |
+| Soluna Holdings | 0000064463 | WordPress (`/news/feed/`) |
 | Big Digital Energy | 0001218683 | none — EDGAR only |
 | WhiteFiber | 0002042022 | none — EDGAR only |
 | Digi Power X | 0001854368 | none — EDGAR only |
@@ -96,6 +96,11 @@ Note that IR platforms migrate. Bakkt moved from Q4 to gcs-web, which broke
 its feed URL with a 404. If a previously working feed starts failing, check
 whether the site changed platforms before assuming the feed was removed.
 - Notified / gcs-web: `/rss/news-releases.xml`
+
+Soluna is plain WordPress. Its press releases live in the `/news/` archive
+(feed at `/news/feed/`), while the site-root `/feed/` is a near-dormant blog
+feed. Autodiscovery finds the latter, because the archive's own feed isn't
+declared in the page HTML — so the correct URL had to be set explicitly.
 
 The three companies without feeds render their newsrooms client-side
 (QuoteMedia widget, Webflow, and Next.js respectively), so the headlines aren't
