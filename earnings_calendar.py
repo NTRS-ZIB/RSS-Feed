@@ -39,8 +39,11 @@ COMPANIES = {
     "VIP":  ("0001844971", "Vulcan Infrastructure and Power"),
 }
 
-# Periodic report forms. 20-F/40-F are annual for foreign private issuers.
-PERIODIC_FORMS = {"10-Q", "10-K", "20-F", "40-F"}
+# Annual and quarterly lags differ by 20-50 days, so they must never be pooled.
+# Doing so yields a median fitting neither and a spread spanning the gap.
+ANNUAL_FORMS = {"10-K", "20-F", "40-F"}
+QUARTERLY_FORMS = {"10-Q"}
+PERIODIC_FORMS = ANNUAL_FORMS | QUARTERLY_FORMS
 
 # How many past filings to use when estimating the lag.
 LAG_SAMPLE = 8
@@ -117,25 +120,59 @@ def next_period_end(last_period):
     return date(year, month + 1, 1) - timedelta(days=1)
 
 
+def roll_to_business_day(d):
+    """Nobody files on a weekend; push Sat/Sun to the following Monday."""
+    while d.weekday() >= 5:
+        d += timedelta(days=1)
+    return d
+
+
+def fiscal_year_end_month(annual):
+    """Most common month among annual report periods, or None."""
+    months = [rd.month for rd, _, _ in annual[:6]]
+    if not months:
+        return None
+    return max(set(months), key=months.count)
+
+
 def project(label, name, filings):
     """Estimate the next report date, or None if history is too thin."""
     if len(filings) < 2:
         return None
 
-    lags = [(fd - rd).days for rd, fd, _ in filings[:LAG_SAMPLE]]
-    lag = int(statistics.median(lags))
+    annual = [f for f in filings if f[2] in ANNUAL_FORMS]
+    quarterly = [f for f in filings if f[2] in QUARTERLY_FORMS]
 
     last_period = max(rd for rd, _, _ in filings)
     last_filed = max(fd for _, fd, _ in filings)
     upcoming = next_period_end(last_period)
 
+    # Is the next period end this company's fiscal year end?
+    fy_month = fiscal_year_end_month(annual)
+    is_annual = fy_month is not None and upcoming.month == fy_month
+
+    pool = annual if is_annual else quarterly
+    degraded = False
+    if len(pool) < 2:
+        # e.g. a foreign issuer with no 10-Q history at all.
+        pool = annual if len(annual) >= 2 else quarterly
+        degraded = True
+    if len(pool) < 2:
+        return None
+
+    lags = [(fd - rd).days for rd, fd, _ in pool[:LAG_SAMPLE]]
+    lag = int(statistics.median(lags))
+    kind = "annual" if (is_annual or (degraded and pool is annual)) else "10-Q"
+
     return {
         "label": label,
         "name": name,
         "period": upcoming,
-        "expected": upcoming + timedelta(days=lag),
+        "expected": roll_to_business_day(upcoming + timedelta(days=lag)),
         "lag": lag,
         "spread": max(lags) - min(lags),
+        "kind": kind,
+        "degraded": degraded,
         "last_period": last_period,
         "last_filed": last_filed,
         "samples": len(lags),
@@ -160,9 +197,11 @@ def build_message(rows):
         lines.append("-" * 52)
         for r in upcoming:
             days = (r["expected"] - today).days
+            flag = "?" if r["degraded"] else " "
             lines.append(
                 f"{r['label']:<6}{r['expected']:%a %d %b}  "
-                f"in {days:>3}d   Q/E {r['period']:%b %Y}  ±{r['spread']}d"
+                f"in {days:>3}d  {r['kind']:>6}{flag} "
+                f"P/E {r['period']:%b %Y}  ±{r['spread']}d"
             )
     else:
         lines.append(f"Nothing expected in the next {HORIZON_DAYS} days.")
