@@ -1,0 +1,59 @@
+name: Volume spikes
+
+on:
+  schedule:
+    # Every 15 min, weekdays, 11:00-22:59 UTC. Covers premarket through the
+    # close in both DST states:
+    #   EDT (summer, UTC-4): 7am - 6pm ET
+    #   EST (winter, UTC-5): 6am - 5pm ET
+    # Alpaca's free tier includes extended hours, so premarket gaps are caught.
+    - cron: "*/15 11-22 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Check ratios and log them without posting or saving state"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write   # commits spike_state.json
+
+concurrency:
+  group: volume-spikes
+  cancel-in-progress: false
+
+jobs:
+  spikes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Check volumes
+        timeout-minutes: 5
+        env:
+          ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          WEBHOOK_URL_ALERTS: ${{ secrets.WEBHOOK_URL_ALERTS }}
+          WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u volume_spike.py
+
+      - name: Persist state
+        run: |
+          if [[ -n "$(git status --porcelain spike_state.json)" ]]; then
+            git config user.name "volume-spikes"
+            git config user.email "actions@github.com"
+            git add spike_state.json
+            git commit -m "Update spike state [skip ci]"
+            git push
+          else
+            echo "No state change."
+          fi

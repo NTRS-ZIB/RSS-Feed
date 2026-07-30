@@ -35,6 +35,8 @@ jobs:
         timeout-minutes: 15
         env:
           WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
+          ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
           TWELVEDATA_KEY: ${{ secrets.TWELVEDATA_KEY }}
           # Empty on scheduled runs, so those always post.
           DRY_RUN: ${{ inputs.dry_run }}
