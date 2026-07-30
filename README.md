@@ -153,10 +153,15 @@ fully covered by EDGAR for anything material.
 
 ## Scaling
 
-Calibrated against a real run: 11 companies, 10 forms, 8 IR feeds produced
-**129 requests and 1,316 item IDs** per run, in roughly 80 seconds.
+Calibrated against a real run: 11 companies, 10 forms, 8 IR feeds and the
+insider channel produced **129 requests and 1,631 item IDs** per run.
 
-Per company that's ~11 requests (10 forms + insider) and ~112 EDGAR item IDs.
+Per company that's ~11 requests and ~140 item IDs (~112 from the press forms,
+~29 from Form 4).
+
+Note that several companies return exactly 40 Form 4 filings — the `count=40`
+ceiling in `EDGAR_ATOM`. Lowering it to 15 costs nothing at a 15-minute cadence
+and cuts insider IDs per run from ~315 to ~120.
 
 | Limit | Binds at | Failure mode |
 |---|---|---|
@@ -228,7 +233,7 @@ Checking insider filings (Form 4)...
 2 candidate(s) checked, 2 to post.
 Posted 2 press item(s).
 Posted 1 insider item(s).
-State: 3948 ids retained (cap 4000).
+State: 1634 ids retained (cap 4893).
 ```
 
 Each ticker and feed name prints *before* it is attempted, so if a run stalls,
