@@ -1,8 +1,25 @@
+# Watchlist monitor
+
+Automated Discord feeds for a watchlist of digital infrastructure and bitcoin
+mining companies. Runs entirely on GitHub Actions crons — no server, nothing to
+maintain.
+
+## Components
+
+| Script | Workflow | Posts to | When |
+|---|---|---|---|
+| `press_monitor.py` | `monitor.yml` | `WEBHOOK_URL` + `WEBHOOK_URL_INSIDER` | Every 15 min, weekdays 12:00–23:59 UTC |
+| `daily_recap.py` | `recap.yml` | `WEBHOOK_URL_MARKET` | 21:30 UTC, weekdays |
+
+The two are deliberately separate: a matplotlib or data-provider failure in the
+recap must not take down press release monitoring.
+
+---
+
 # Press release monitor
 
-Watches SEC EDGAR filings and company IR newsrooms for a watchlist of digital
-infrastructure and bitcoin mining companies, and posts anything new to a Discord
-channel. Runs on a GitHub Actions cron — no server, no dependencies to maintain.
+Watches SEC EDGAR filings and company IR newsrooms, and posts anything new to a
+Discord channel.
 
 ## How it works
 
@@ -27,8 +44,10 @@ New items are deduped against `state.json` and posted once each.
 ## Layout
 
 ```
-press_monitor.py                  all logic and configuration
-.github/workflows/monitor.yml     schedule and runner setup
+press_monitor.py                  press release / filing monitor
+daily_recap.py                    post-close market recap
+.github/workflows/monitor.yml     monitor schedule and runner setup
+.github/workflows/recap.yml       recap schedule and runner setup
 state.json                        auto-generated; do not hand-edit except to reset
 ```
 
@@ -41,6 +60,8 @@ Settings → Secrets and variables → Actions:
 | `WEBHOOK_URL` | Discord webhook URL. Slack incoming webhooks also work — payload shape is detected from the host. |
 | `SEC_USER_AGENT` | Real name and email, e.g. `Jane Doe jane@example.com`. SEC throttles anonymous traffic. |
 | `WEBHOOK_URL_INSIDER` | *Optional.* Webhook for a separate Form 4 channel. If unset, the insider check is skipped entirely. |
+| `WEBHOOK_URL_MARKET` | Webhook for the daily recap channel. |
+| `TWELVEDATA_KEY` | Free API key from twelvedata.com, used by the recap. |
 
 **Secrets must also be mapped in the workflow.** Adding one under repository
 settings is not enough — it has to be listed in the `env:` block of the
@@ -250,3 +271,79 @@ Lines worth reacting to:
 | `ReadTimeout` | A WAF stalling the request. Check the browser headers are still being sent. |
 | `NO FEED` | Autodiscovery found nothing on that URL. |
 | `Not found on EDGAR` | Only possible for `TICKERS` entries; pin the company by CIK in `EXTRA_CIKS` instead. |
+
+---
+
+# Daily market recap
+
+Posts a post-close performance table and a chart grid for the same watchlist.
+
+## Schedule
+
+`30 21 * * 1-5` — 21:30 UTC, weekdays. That lands after the US close in both
+DST states (5:30pm ET in summer, 4:30pm in winter), so no seasonal edits.
+
+## Output
+
+A monospace table sorted by daily move, plus a PNG grid of 60-day closing
+sparklines, green or red by period direction.
+
+| Column | Meaning |
+|---|---|
+| `Close` | Last close |
+| `Chg` | % change vs previous close |
+| `Vol` | Session volume |
+| `x30d` | Volume as a multiple of the trailing 30-day average |
+| `52w` | Position in the 52-week range, 0% = low, 100% = high |
+
+The header states the **actual date of the last bar** rather than assuming it
+is today. Tickers with no data are named, and tickers whose latest bar is older
+than the rest are flagged as `lagging`.
+
+If the newest bar is today's and the US close hasn't happened, the header reads
+`INTRADAY` instead of `Close`. Providers return the current, incomplete session
+as a normal-looking bar; the tell is `x30d` collapsing to ~0.1x across every
+ticker at once, because partial volume is being compared to full-day averages.
+
+## Testing
+
+Actions → Daily market recap → Run workflow. The **dry run** checkbox is ticked
+by default: it fetches, prints the table to the log, and uploads the chart as a
+downloadable artifact, but posts nothing. Untick to post for real.
+
+Scheduled runs pass no input, which reads as empty and therefore false, so the
+cron always posts.
+
+## Data sources — and why
+
+**Twelve Data** (`TWELVEDATA_KEY`). Free tier is ~800 requests/day and
+**8 requests/minute**; the recap needs 11, paced 8 seconds apart, so a run takes
+roughly 90 seconds. Hence the 15-minute step timeout.
+
+**Not Yahoo / yfinance.** Yahoo deprecated its API and discourages scraping.
+Unofficial wrappers break without warning.
+
+**Not Stooq**, despite being keyless — and this one cost a debugging cycle.
+Stooq enforces a low **per-IP daily quota** and, when exceeded, returns the
+plain text `Exceeded the daily hits limit` with **HTTP 200**, not an error
+status. GitHub Actions runners share an Azure IP pool with a huge number of
+unrelated jobs, so that quota is routinely already spent before the job starts.
+The symptom is every ticker failing identically. Stooq remains as a fallback
+when `TWELVEDATA_KEY` is unset, which works fine from a home IP.
+
+The general lesson: keyless does not mean usable from CI. Check whether a
+provider rate-limits by IP before depending on it from a shared runner.
+
+## Known quirks
+
+- **Free-tier history is patchy for recent listings.** `outputsize=300` gives
+  ~300 calendar days, not 252 trading days, and recently-listed tickers may
+  have only a few months. The `52w` column is only as good as the history
+  behind it.
+- **Split adjustment varies by provider.** Several of these companies have done
+  reverse splits. An implausible cliff in a chart is usually an unadjusted
+  split, not a real move.
+- **Provider risk.** Unlike EDGAR and the IR feeds, this depends on a
+  commercial free tier that can change. If it disappears, the fetch layer is
+  isolated in `fetch_twelvedata()` and can be swapped without touching the
+  table or chart code.
