@@ -139,8 +139,16 @@ returns `40-F` and `424B*`. Entries are filtered against
 `INSIDER_ALLOWED_FORMS` using the form type EDGAR reports per entry, so those
 collisions are discarded rather than mis-routed.
 
-**`MAX_POSTS_PER_RUN`** — flood guard, default 25. Items beyond the cap are
-marked as seen without being posted, so they don't queue up for the next run.
+**`MAX_POSTS_PER_RUN`** — flood guard, default 40 (insider channel: 25). Sized
+for earnings season, when ~10 companies each produce an 8-K, a 10-Q and an IR
+item within a short window.
+
+Two different outcomes, easily confused:
+
+- **Beyond the cap** — marked seen, never posted. Deliberate. A backlog must not
+  queue up and drip into the channel for hours.
+- **Failed to post** — un-marked and retried on the next run. Also deliberate;
+  see the rate limiting note below.
 
 ## Coverage
 
@@ -195,7 +203,7 @@ and cuts insider IDs per run from ~315 to ~120.
 |---|---|---|
 | `state.json` retention | ~60 companies | Items age out of state, reappear as new, get re-posted. Silent. |
 | 10-min step timeout | ~90 companies | Run killed mid-way; state never saved. |
-| `MAX_POSTS_PER_RUN` | any size | Overflow is marked seen and **discarded**, not queued. |
+| `MAX_POSTS_PER_RUN` | any size | Overflow beyond the cap is marked seen and **discarded**, not queued. Posts that *fail* are retried. |
 | SEC rate limit | not binding | Requests are sequential with a 0.15s gap, well under 10/sec. |
 
 The retained ID list must stay longer than the number of items one run can see,
@@ -244,6 +252,12 @@ baseline so a backlog can't flood the channel.
   and masked as `***`, but the watchlist and feed URLs are visible.
 - **`state.json` grows with the watchlist.** Retention scales with run volume
   by design — see Scaling. Don't replace it with a fixed cap.
+- **Discord rate limits are handled, and must stay handled.** Items are marked
+  seen before posting, so a dropped post would be lost permanently. `post()`
+  honours Discord's `retry_after` (capped at 30s, one retry), and anything
+  still failing is removed from `state["seen"]` so the next run retries it.
+  Rate limiting is most likely during earnings season — exactly when the items
+  matter most. Do not simplify this into a fire-and-forget POST.
 - **Don't add a `pull_request` trigger.** Only `schedule` and
   `workflow_dispatch` are safe here.
 
@@ -278,6 +292,8 @@ Lines worth reacting to:
 | `ReadTimeout` | A WAF stalling the request. Check the browser headers are still being sent. |
 | `NO FEED` | Autodiscovery found nothing on that URL. |
 | `Not found on EDGAR` | Only possible for `TICKERS` entries; pin the company by CIK in `EXTRA_CIKS` instead. |
+| `rate limited, waiting Ns` | Discord 429. Normal during heavy bursts; the item is retried automatically. |
+| `N item(s) failed to post; will retry next run` | Those items were removed from state and will be re-attempted in 15 minutes. Not a loss. |
 
 ---
 
