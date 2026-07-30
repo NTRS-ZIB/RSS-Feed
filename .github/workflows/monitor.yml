@@ -2,8 +2,13 @@ name: Press release monitor
 
 on:
   schedule:
-    # Every 15 minutes. GitHub queues cron jobs, so expect some drift.
-    - cron: "*/15 * * * *"
+    # Every 15 min, weekdays only, 12:00-23:59 UTC.
+    # GitHub cron is UTC and has no DST awareness, so this window is set wide
+    # enough to cover 8am-6pm Eastern year-round without seasonal edits:
+    #   EDT (summer, UTC-4): 8am - 7pm ET
+    #   EST (winter, UTC-5): 7am - 6pm ET
+    # GitHub queues scheduled jobs at low priority, so expect 15-25 min drift.
+    - cron: "*/15 12-23 * * 1-5"
   workflow_dispatch: # lets you trigger a run by hand from the Actions tab
 
 permissions:
