@@ -1,0 +1,34 @@
+name: Daily market recap
+
+on:
+  schedule:
+    # 21:30 UTC, weekdays. GitHub cron is UTC with no DST awareness, so this
+    # single time lands after the US close in both halves of the year:
+    #   EDT (summer, UTC-4): 5:30pm ET
+    #   EST (winter, UTC-5): 4:30pm ET
+    - cron: "30 21 * * 1-5"
+  workflow_dispatch:
+
+concurrency:
+  group: daily-recap
+  cancel-in-progress: false
+
+jobs:
+  recap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests matplotlib
+
+      - name: Build and post recap
+        timeout-minutes: 10
+        env:
+          WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u daily_recap.py
