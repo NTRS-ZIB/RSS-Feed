@@ -1,0 +1,40 @@
+name: Earnings calendar
+
+on:
+  schedule:
+    # Mondays 12:30 UTC — 8:30am ET in summer, 7:30am in winter. Before the
+    # week's first open, so upcoming reports are known ahead of time.
+    - cron: "30 12 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and log the calendar without posting to Discord"
+        type: boolean
+        default: true
+
+concurrency:
+  group: earnings-calendar
+  cancel-in-progress: false
+
+jobs:
+  calendar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Build and post calendar
+        timeout-minutes: 10
+        env:
+          WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          # Empty on scheduled runs, so those always post.
+          DRY_RUN: ${{ inputs.dry_run }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u earnings_calendar.py
