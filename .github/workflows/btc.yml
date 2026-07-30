@@ -1,0 +1,39 @@
+name: Bitcoin network context
+
+on:
+  schedule:
+    # 21:15 UTC weekdays — 15 minutes before the market recap, so the context
+    # lands above the performance table in the channel rather than below it.
+    - cron: "15 21 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and log the context without posting to Discord"
+        type: boolean
+        default: true
+
+concurrency:
+  group: btc-context
+  cancel-in-progress: false
+
+jobs:
+  context:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Build and post context
+        timeout-minutes: 5
+        env:
+          WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
+          # Empty on scheduled runs, so those always post.
+          DRY_RUN: ${{ inputs.dry_run }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u btc_context.py
