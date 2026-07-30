@@ -17,7 +17,7 @@ import sys
 import time
 from calendar import timegm
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import quote, urljoin
 
 import feedparser
 import requests
@@ -79,7 +79,25 @@ IR_FEEDS = {
 
 # EDGAR form types to watch. 8-K = US material events. 6-K = foreign issuers.
 # Add "10-Q", "10-K" if you want periodic reports too.
-FORM_TYPES = ["8-K", "6-K"]
+# EDGAR's type filter is a PREFIX match, which does useful work here:
+#   "8-K"  also catches 8-K/A       "10-Q" also catches 10-Q/A
+#   "424"  catches 424B1 ... 424B8  "SC 13D" also catches SC 13D/A
+FORM_TYPES = [
+    "8-K",     # US material events; press releases attach as EX-99
+    "6-K",     # same, foreign private issuers
+    "424",     # prospectus supplements — offerings being priced. Dilution.
+    "10-Q",    # quarterly financials
+    "10-K",    # annual financials
+    "20-F",    # annual, foreign private issuers
+    "40-F",    # annual, Canadian MJDS filers
+    "SC 13D",  # activist / >5% stake disclosures
+    "NT 10-K", # late filing notice — low volume, high signal
+    "NT 10-Q",
+]
+
+# The EX-99 exhibit check only makes sense for press-release-bearing forms.
+# Applying it to a 10-Q or 424 would discard every one of them.
+EXHIBIT_CHECK_FORMS = {"8-K", "6-K"}
 
 # If True, an EDGAR filing is only posted when it actually attaches a press
 # release (an EX-99 exhibit). Filters out pure administrative 8-Ks.
@@ -202,13 +220,14 @@ def collect_edgar(resolved):
     for ticker, (cik, name) in resolved.items():
         print(f"  {ticker} (CIK {cik})...")
         for form in FORM_TYPES:
-            xml = sec_get(EDGAR_ATOM.format(cik=cik, form=form))
+            xml = sec_get(EDGAR_ATOM.format(cik=cik, form=quote(form)))
             if not xml:
                 continue
             for entry in feedparser.parse(xml).entries:
                 items.append({
                     "uid": entry.get("id") or entry.get("link"),
                     "source": f"{name} ({ticker}) · SEC {form}",
+                    "form": form,
                     "title": entry.get("title", "Untitled filing"),
                     "link": entry.get("link", ""),
                     "published": entry_time(entry),
@@ -390,7 +409,7 @@ def main():
     for item in candidates:
         if len(to_post) >= MAX_POSTS_PER_RUN:
             break
-        if item["is_edgar"] and PRESS_RELEASE_EXHIBIT_ONLY:
+        if PRESS_RELEASE_EXHIBIT_ONLY and item.get("form") in EXHIBIT_CHECK_FORMS:
             if not has_press_release_exhibit(item["link"]):
                 continue
         to_post.append(item)
