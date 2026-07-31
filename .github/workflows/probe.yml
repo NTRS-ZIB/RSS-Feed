@@ -1,0 +1,31 @@
+name: Probe CUSIPs
+
+# TEMPORARY — delete this file and probe_cusips.py once the sweep is done.
+# Read-only: downloads SEC fails-to-deliver zips, prints, exits. No webhook,
+# no state, no commit, no schedule. Runs only when started by hand.
+
+on:
+  workflow_dispatch:
+    inputs:
+      periods:
+        description: "Half-month periods to sweep (24 = about a year, ~30 MB)"
+        type: string
+        default: "24"
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install requests
+      - name: Sweep
+        timeout-minutes: 20
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          SWEEP_PERIODS: ${{ inputs.periods }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u probe_cusips.py
