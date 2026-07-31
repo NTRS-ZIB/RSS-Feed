@@ -56,14 +56,40 @@ printed by dry runs:
 
 ## Critical: dataset selection
 
-The `otcMarket` group contains several short interest datasets and **only one
-covers exchange-listed securities**:
+**"OTC" means two different things in FINRA's data, and the `otcMarket` group
+contains both.** That is why the group name is no help as a filter, and why
+this took several rounds to get right.
 
-| Dataset | Coverage |
-|---|---|
-| `consolidatedShortInterest` | **Correct.** All exchanges. |
-| `equityShortInterest` | OTC only. Deprecated 2021-04-30. |
-| `equityShortInterestStandardized` | OTC only, despite the name. |
+| Sense | Scope | Applies to this watchlist? |
+|---|---|---|
+| OTC-**listed** | Issuers not listed on an exchange | **No.** All eleven are Nasdaq-listed SEC reporting issuers. |
+| Off-exchange **trading** | TRF and ADF venues, for exchange-**listed** securities | Yes. |
+
+### The rule that should have settled it without a query
+
+Every company on this watchlist is a Nasdaq-listed reporting issuer. **Any
+dataset scoped by listing venue to OTC therefore cannot contain them, and is
+disqualified before it is queried.** Scope is the test; the dataset name is
+not, and neither is the group name.
+
+Applied to the four datasets that have come up:
+
+| Dataset | Scoped by | Verdict |
+|---|---|---|
+| `consolidatedShortInterest` | all exchanges | **Correct** — used here |
+| `regShoDaily` | off-exchange *trading* | Correct — used by [short volume](regsho-volume.md), which states the caveat on every post |
+| `equityShortInterest` | OTC *listing* | Disqualified. Also deprecated 2021-04-30. |
+| `equityShortInterestStandardized` | OTC *listing*, despite the name | Disqualified |
+| FINRA `thresholdList` | non-reporting issuers (Rule 4320) | Disqualified — see [threshold list](threshold-list.md), where this was correctly ruled out *in advance* |
+
+The last row is the point. The same reasoning was applied a priori when the
+threshold list was built, and it saved the entire exercise: a FINRA-based
+version would have run indefinitely and never fired. Here it was reached only
+after the data contradicted the assumption.
+
+### The empirical backstop
+
+Kept because a scope claim can be wrong, and because the failure is silent.
 
 Both `equityShortInterest*` datasets return **HTTP 200 with well-formed rows**.
 They simply contain no Nasdaq-listed names. Nothing about the response says so.
