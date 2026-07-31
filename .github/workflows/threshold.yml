@@ -1,0 +1,56 @@
+name: Reg SHO threshold list
+
+on:
+  schedule:
+    # 23:15 UTC weekdays, just after the short volume job. FINRA publishes the
+    # threshold list daily; this posts only when a watchlist company is added
+    # or removed, so expect long stretches of silence.
+    - cron: "15 23 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Check and log without posting or saving state"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write   # commits threshold_state.json
+
+concurrency:
+  group: threshold-list
+  cancel-in-progress: false
+
+jobs:
+  threshold:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Check threshold list
+        timeout-minutes: 5
+        env:
+          # Prefers the alerts channel; falls back to market-data if unset.
+          WEBHOOK_URL_ALERTS: ${{ secrets.WEBHOOK_URL_ALERTS }}
+          WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u threshold_list.py
+
+      - name: Persist state
+        run: |
+          if [[ -n "$(git status --porcelain threshold_state.json)" ]]; then
+            git config user.name "threshold-list"
+            git config user.email "actions@github.com"
+            git add threshold_state.json
+            git commit -m "Update threshold list state [skip ci]"
+            git push
+          else
+            echo "No state change."
+          fi
