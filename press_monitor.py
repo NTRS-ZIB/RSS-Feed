@@ -63,7 +63,16 @@ FORM_TYPES = [
     "10-K",    # annual financials
     "20-F",    # annual, foreign private issuers
     "40-F",    # annual, Canadian MJDS filers
-    "SC 13D",  # activist / >5% stake disclosures
+    # BOTH spellings are needed. The SEC moved Schedule 13D/G to structured XML
+    # filings and the EDGAR form-type string changed from "SC 13D" to
+    # "SCHEDULE 13D" — and "SCHEDULE 13D".startswith("SC 13D") is False,
+    # because the fourth character is H rather than a space.
+    #
+    # The old prefix silently matched nothing from that point on. It was found
+    # only because a real 13D on Sphere 3D went unposted. `SC 13D` is retained
+    # for filings made before the changeover.
+    "SC 13D",
+    "SCHEDULE 13D",  # activist / >5% stake disclosures
     "NT 10-K", # late filing notice — low volume, high signal
     "NT 10-Q",
 ]
