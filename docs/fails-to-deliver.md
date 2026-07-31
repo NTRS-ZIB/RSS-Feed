@@ -154,10 +154,15 @@ Note the dates against the publication schedule. The 2026-07a file covers
 
 Three defences, in order of durability:
 
-1. **`CUSIP_PINS`** — a CUSIP pinned by hand survives every future rename. Both
-   companies above kept their CUSIP through the change. This is the same
-   reasoning as pinning EDGAR companies by CIK rather than ticker, and it is
-   the permanent fix once you know the number.
+1. **`CUSIP_PINS`** — a CUSIP pinned by hand survives every future *rename*.
+   Both companies above kept their CUSIP through the change. This is the same
+   reasoning as pinning EDGAR companies by CIK rather than ticker. Note the
+   limit: a CUSIP does **not** survive a reverse split (see below), so this is
+   durable against renames, not against every corporate action.
+
+   The script prints every CUSIP it learns that is not already pinned, so the
+   block goes quiet once all of them are in — and speaks up again the moment a
+   ticker turns up under a new one, which is itself the signal worth having.
 2. **`ALIASES`** — old and pending symbols mapped to the canonical one. Shared
    in spirit with the two FINRA components; keep the three in sync. Only works
    for renames someone has noticed.
@@ -187,6 +192,39 @@ and `VIP` reported a clean sheet in every period. The two visible tells were a
 `Dys` count higher than the number of settlement days in a period, and one
 ticker reporting zero balance every single period — which is why the per-period
 absentee list prints at all.
+
+## Reverse splits break the baseline
+
+**This dataset carries raw share counts and is not split-adjusted.** The recap
+requests `adjustment=all` from its provider; there is no equivalent here.
+
+A reverse split inside the baseline window divides every subsequent peak by the
+split ratio. A 1-for-10 leaves the trailing median ten times too high, so every
+later reading lands near `0.1x` — a permanent, silent understatement that looks
+exactly like a stock that has gone quiet. Nothing else in the output hints at
+it.
+
+Most of this watchlist is exposed. CUSIP characters 7-8 are the issue number,
+which increments on corporate actions, and as of the first live run ANY sits at
+`50`, BGDE at `40`, and BKKT, SLNH and VIP at `30`. Only CLSK, DGXX, MARA and
+NUAI are still on their original issue.
+
+The split announces itself in the data: **the CUSIP changes too.** The script
+tracks every CUSIP each ticker appears under across the run and warns when
+there is more than one:
+
+```
+WARNING: MARA appears under 2 CUSIPs: 565788106, 565788205
+```
+
+The fix is to delete that ticker's entries from `ftd_state.json` so the
+baseline restarts after the split rather than spanning it. The ticker will show
+`~` until it has rebuilt `MIN_FLAG_PERIODS` of history — correct, since it
+genuinely has no comparable history.
+
+Do not rescale the old peaks by the split ratio. That ratio is not in this
+dataset, and a wrong guess produces a plausible number rather than an obvious
+error.
 
 ## Cold start
 
