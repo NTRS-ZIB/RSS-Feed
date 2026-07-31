@@ -1,0 +1,34 @@
+name: Audit identifiers
+
+# Maintenance tool, not a component. Read-only: downloads SEC fails-to-deliver
+# files, prints what each watchlist company appears under, exits. No webhook,
+# no state, no commit, no schedule — it runs only when started by hand.
+#
+# Run it after adding a company, after a reverse split or ticker change, or
+# before trusting a deep FTD_REPLAY. See docs/watchlist.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      periods:
+        description: "Half-month periods to sweep (24 = about a year, ~30 MB)"
+        type: string
+        default: "24"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install requests
+      - name: Sweep
+        timeout-minutes: 20
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          SWEEP_PERIODS: ${{ inputs.periods }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u audit_identifiers.py
