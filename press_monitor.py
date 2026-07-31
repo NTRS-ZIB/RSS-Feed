@@ -315,6 +315,45 @@ def form_matches(form, prefixes):
     return any(form.startswith(p) for p in prefixes)
 
 
+def form_core(form):
+    """Alphanumeric core of a form type: 'SC 13D/A' -> 'SC13D'.
+
+    Amendment suffixes and spacing are stripped so that two spellings of the
+    same filing can be compared for family resemblance.
+    """
+    return re.sub(r"[^A-Z0-9]", "", form.upper().split("/")[0])
+
+
+def drift_candidates(seen_forms):
+    """Forms that resemble something tracked but do not match it.
+
+    A form type that matches nothing produces exactly the same output as one
+    whose filings never occur: no posts, no error, no log line. `SC 13D` sat in
+    FORM_TYPES matching nothing after the SEC renamed the form type to
+    `SCHEDULE 13D`, and it was found only when a real activist stake in a
+    watchlist company went unreported.
+
+    The rule that catches it without knowing the new spelling in advance: if an
+    unmatched form's core CONTAINS a tracked prefix's core, or vice versa, the
+    two are probably the same filing under a changed name. `SCHEDULE 13D` ->
+    `SCHEDULE13D` contains `13D`; `SC 13D` -> `SC13D` contains `13D`.
+    """
+    tracked = list(FORM_TYPES) + sorted(INSIDER_ALLOWED_FORMS)
+    # Cores short enough to appear inside unrelated forms would match
+    # everything, so require a distinctive stem.
+    stems = {p: re.sub(r"^(SC|SCHEDULE|NT|FORM)", "", form_core(p)) for p in tracked}
+    out = []
+    for form in sorted(seen_forms):
+        if form_matches(form, tracked) or form in INSIDER_ALLOWED_FORMS:
+            continue
+        core = form_core(form)
+        for prefix, stem in stems.items():
+            if len(stem) >= 3 and stem in core:
+                out.append((form, prefix))
+                break
+    return out
+
+
 def carries_press_release(form, items):
     """Whether an 8-K's item numbers indicate a press release.
 
@@ -411,6 +450,7 @@ def collect_all(resolved):
     """One submissions request per company; returns (press, insider)."""
     press, insider = [], []
     horizon = date.today() - timedelta(days=RETAIN_DAYS)
+    seen_forms = set()
     for ticker, (cik, name) in resolved.items():
         filings = company_filings(cik)
         if not filings:
@@ -419,6 +459,7 @@ def collect_all(resolved):
 
         kept = ins = skipped = 0
         for f in filings:
+            seen_forms.add(f["form"])
             try:
                 if date.fromisoformat(f["filed"]) < horizon:
                     skipped += 1
@@ -449,6 +490,16 @@ def collect_all(resolved):
                               "items": f["items"]})
         print(f"  {ticker}: {len(filings)} filing(s), {skipped} older than "
               f"{RETAIN_DAYS}d -> {kept} tracked, {ins} insider")
+
+    drift = drift_candidates(seen_forms)
+    if drift:
+        print(f"\n  WARNING: {len(drift)} form type(s) resemble something in "
+              f"FORM_TYPES but do not match it.")
+        print("  A renamed form matches nothing and reports nothing — check "
+              "whether these")
+        print("  are the same filing under a new EDGAR spelling:")
+        for form, prefix in drift:
+            print(f"    seen {form!r}  vs tracked {prefix!r}")
     return press, insider
 
 
