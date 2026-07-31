@@ -141,12 +141,14 @@ reporting no new data.
 
 This is the only component that reads *backwards* through months of files, so
 renames bite here in a way they do not elsewhere: a period predating a rename
-carries the old symbol throughout. Two on the current watchlist, both recent:
+carries the old symbol throughout. Four on the current watchlist — the full
+list, with dates, is in [the watchlist docs](watchlist.md#renames-on-the-current-watchlist).
+The two most recent:
 
 | Was | Now | Effective | Notes |
 |---|---|---|---|
 | `GREE` Greenidge Generation | `VIP` Vulcan Infrastructure and Power | 24 Jul 2026 | GREE traded through the close on 23 Jul |
-| `MIGI` Mawson Infrastructure | `BGDE` Big Digital Energy | 30 Apr 2026 | CUSIP unchanged, per the 8-K |
+| `MIGI` Mawson Infrastructure | `BGDE` Big Digital Energy | 30 Apr 2026 | CUSIP changed separately, Nov 2025 |
 
 Note the dates against the publication schedule. The 2026-07a file covers
 1–15 July, entirely *before* the VIP change — so Vulcan's fails are filed under

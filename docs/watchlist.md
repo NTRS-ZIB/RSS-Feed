@@ -41,6 +41,21 @@ the `GREE → SLNH` incident in [fails to deliver](fails-to-deliver.md#the-alias
 | `alt_symbols` | Former **and** pending tickers — see the scope note below. |
 | `ir_feed` | `None` for companies whose newsroom renders client-side. |
 
+### Renames on the current watchlist
+
+Every one confirmed from data by `audit_identifiers.py`, not from a filing:
+
+| Was | Now | Ticker changed | Notes |
+|---|---|---|---|
+| `GREE` Greenidge Generation | `VIP` Vulcan Infrastructure and Power | 2026-07-24 | |
+| `MIGI` Mawson Infrastructure | `BGDE` Big Digital Energy | 2026-04-30 | CUSIP also changed 2025-11, separately |
+| `NEHC` New Era Helium | `NUAI` New Era Energy & Digital | 2025-08-13 | |
+| `DGHI` Digihost Technology | `DGXX` Digi Power X | 2025-03-18 | `DGHIZZZZ` appears for one day mid-change |
+
+`DGHIZZZZ` is not a ticker. NSCC uses a `ZZZZ` suffix as a placeholder while a
+symbol change is processing, so it occupies a single settlement day between the
+old symbol and the new one. It is listed because it occurs in the data.
+
 ### `alt_symbols` is scoped, not exhaustive
 
 It covers renames recent enough to fall inside a component's lookback window,
@@ -53,7 +68,7 @@ EDGAR records more history than this file does. NUAI was New Era Helium until
 2025-07-29 and Roth CH V Holdings before that; only the first is listed here,
 as `NEHC`, because only that one has been observed in data a component reads.
 
-**What is recorded has been measured, not assumed.** `audit_identifiers.py` swept
+**What is recorded has been measured, not assumed.** `probe_cusips.py` swept
 twelve months of SEC fails files and reported every CUSIP and every symbol each
 company appears under. It found two things nobody had recorded — BGDE's retired
 CUSIP `57778N307` and NUAI's former ticker `NEHC` — and confirmed the rest.
