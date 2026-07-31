@@ -2,10 +2,13 @@ name: Reg SHO threshold list
 
 on:
   schedule:
-    # 23:15 UTC weekdays, just after the short volume job. FINRA publishes the
-    # threshold list daily; this posts only when a watchlist company is added
-    # or removed, so expect long stretches of silence.
-    - cron: "15 23 * * 1-5"
+    # 05:15 UTC Tue-Sat, which is 1:15am Eastern. Nasdaq publishes each
+    # settlement day's file before midnight Eastern, so running after that
+    # picks up the completed file for the day just ended. Running earlier
+    # only ever finds the previous day's.
+    #
+    # Tue-Sat in UTC covers Mon-Fri Eastern.
+    - cron: "15 5 * * 2-6"
   workflow_dispatch:
     inputs:
       dry_run:
