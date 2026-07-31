@@ -128,6 +128,21 @@ embed. Remove it afterwards.
 `threshold_state.json` holds the set of watchlist companies on the list as of
 the last check. A post fires only on a difference — an addition or a removal.
 
+**If that file never persists, the component breaks in a way nothing reports.**
+An empty state and an empty list both render as `previously: none`, so a run
+looks identical either way — right up until a watchlist company lands on the
+list, at which point `previous` is empty on every run and an addition posts
+every single morning. The log therefore says explicitly when there is no state
+file, and again when one is written:
+
+```
+previously: none  (no threshold_state.json — first run)
+State written: threshold_state.json (on_list empty, last_date 2026-07-30)
+```
+
+Seeing the second line once, followed by a commit from the workflow, is the
+confirmation that the diff has something to diff against.
+
 **Silence is the normal output and means the check ran.** The log always names
 the settlement date it read and what it found, so a run that posts nothing is
 still distinguishable from a run that failed.
