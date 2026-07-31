@@ -327,6 +327,7 @@ def main():
     state = load_state()
     first_run = not STATE_FILE.exists()
     rows, failed, changed, splits = [], [], 0, 0
+    any_drop = False
 
     for ticker, (cik, name) in sorted(watchlist.ciks().items()):
         try:
@@ -355,13 +356,17 @@ def main():
             (d0, v0, f0), (d1, v1, f1) = d["from"], d["to"]
             ratio = f"{d['ratio']:.1f}:1" if d["ratio"] else "?"
             print(f"      drop {d0} {v0:,} ({f0 or '?'})  ->  "
-                  f"{d1} {v1:,} ({f1 or '?'})  ratio {ratio}")
-            gap = (d1 - d0).days
-            print(f"      {gap}d apart. The ratio is a FLOOR on any split: "
-                  f"dilution between the two")
-            print(f"      observations pulls it down (SLNH reads 22.2:1 for a "
-                  f"1-for-25 split).")
+                  f"{d1} {v1:,} ({f1 or '?'})  {ratio} over {(d1 - d0).days}d")
+            any_drop = True
         time.sleep(REQUEST_GAP)
+
+    if any_drop:
+        # Printed once. Repeating it under every company was noise, and naming
+        # SLNH as the example read oddly on SLNH's own row.
+        print("\n  Ratios are a FLOOR on any split — dilution between the two")
+        print("  observations pulls them down. The GAP is the sharper tell: a")
+        print("  drop straddling filings a quarter apart is a corporate action;")
+        print("  one straddling years is a reporting gap with an action inside.")
 
     if failed:
         print(f"\n{len(failed)} company/companies unavailable: {', '.join(failed)}")
