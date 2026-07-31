@@ -69,7 +69,7 @@ WATCHLIST = [
         # which would place it before the April 2024 reverse split.
         #
         # Kept because a stale pin is inert while a missing one loses data,
-        # but it is not trusted until observed. audit_identifiers.py with
+        # but it is not trusted until observed. probe_cusips.py with
         # SWEEP_PERIODS=48 would settle it: if it appears in 2024 files it is
         # the pre-split common and correct; if it never appears, remove it
         # rather than risk matching a different Bakkt security.
@@ -143,8 +143,18 @@ WATCHLIST = [
         "ticker": "DGXX",
         "name": "Digi Power X",
         "cik": "0001854368",
+        # 25380B102 is described in the 2025-03-04 release as the company's
+        # NEW CUSIP, so an older one exists for the Digihost era. It has not
+        # been observed yet: the audit only sees DGHI from 2025-03-06 because
+        # neither the old symbol nor the old CUSIP was in this roster. Re-run
+        # audit_identifiers.py now that DGHI is listed and it should surface.
         "cusips": ["25380B102"],
-        "alt_symbols": [],
+        # Digihost Technology -> Digi Power X. Name change effective
+        # 2025-03-06, Nasdaq ticker DGHI -> DGXX on 2025-03-18. DGHIZZZZ is
+        # not a ticker: NSCC uses a ZZZZ suffix as a placeholder while a symbol
+        # change processes, and it appears for exactly one settlement day
+        # between the two. Listed because it occurs in the data.
+        "alt_symbols": ["DGHI", "DGHIZZZZ"],
         "ir_feed": None,                  # renders client-side; EDGAR only
     },
 ]
