@@ -61,7 +61,14 @@ VOLUME_FLAG_TIER = 1.5
 # Below this, a consolidated session is too thin for the ratio to mean much.
 MIN_FLAG_VOLUME = 50_000
 
-CHART_DAYS = 60        # trading days shown per sparkline
+# Chart mode: "intraday" plots today's session; "daily" plots CHART_DAYS of
+# closes. Intraday requires Alpaca — the fallback providers have no usable
+# intraday data, so the chart silently reverts to daily on that path.
+CHART_MODE = "intraday"
+CHART_INTERVAL = "5Min"
+CHART_EXTENDED = False   # True to include 04:00-20:00 ET rather than 09:30-16:00
+
+CHART_DAYS = 60        # trading days shown per sparkline in "daily" mode
 VOL_AVG_DAYS = 30      # baseline for the volume comparison
 GRID_COLS = 3
 
@@ -227,6 +234,50 @@ def fetch_series(symbol, stooq_symbol):
     return fetch_stooq(stooq_symbol)
 
 
+def fetch_intraday(symbols):
+    """Today's bars per symbol, for the day chart. {symbol: [closes]}."""
+    now = datetime.now(timezone.utc)
+    today_et = now.astimezone(EASTERN).date()
+    open_hour = dtime(4, 0) if CHART_EXTENDED else dtime(9, 30)
+    start = datetime.combine(today_et, open_hour, tzinfo=EASTERN)
+    end = now - timedelta(minutes=ALPACA_DELAY_MINUTES)
+    if end <= start:
+        return {}
+
+    out, token, pages = {}, None, 0
+    while pages < 6:
+        params = {
+            "symbols": ",".join(symbols),
+            "timeframe": CHART_INTERVAL,
+            "start": start.astimezone(timezone.utc).isoformat(
+                timespec="seconds").replace("+00:00", "Z"),
+            "end": end.isoformat(timespec="seconds").replace("+00:00", "Z"),
+            "limit": 10000,
+            "feed": ALPACA_FEED,
+        }
+        if token:
+            params["page_token"] = token
+        try:
+            r = requests.get(ALPACA_BARS, params=params, timeout=(10, 30),
+                             headers={"APCA-API-KEY-ID": ALPACA_KEY_ID,
+                                      "APCA-API-SECRET-KEY": ALPACA_SECRET})
+        except requests.RequestException as e:
+            print(f"  intraday fetch failed: {type(e).__name__}")
+            return out
+        if r.status_code != 200:
+            print(f"  intraday: HTTP {r.status_code} — chart falls back to daily")
+            return out
+        data = r.json()
+        for symbol, rows in (data.get("bars") or {}).items():
+            out.setdefault(symbol, []).extend(
+                float(b["c"]) for b in rows if b.get("c") is not None)
+        token = data.get("next_page_token")
+        pages += 1
+        if not token:
+            break
+    return out
+
+
 def summarise(label, rows):
     """Reduce a price series to the figures shown in the table."""
     if len(rows) < 2:
@@ -249,6 +300,8 @@ def summarise(label, rows):
         "hi": max(window),
         "lo": min(window),
         "series": closes[-CHART_DAYS:],
+        "prev_close": prev,
+        "intraday": None,          # filled in later when available
     }
 
 
@@ -307,7 +360,14 @@ def build_table(stats, partial=False):
 
 
 def build_chart(stats):
-    """Grid of closing-price sparklines. Returns PNG bytes."""
+    """Grid of sparklines. Returns PNG bytes.
+
+    In intraday mode each panel is today's session with a dashed line at the
+    previous close, and the fill sits between the two — so the shaded area
+    reads directly as gain or loss on the day. Colour is driven by the same
+    figure shown in the title, unlike daily mode where a 60-day direction and
+    a one-day percentage could disagree.
+    """
     n = len(stats)
     rows = (n + GRID_COLS - 1) // GRID_COLS
     fig, axes = plt.subplots(rows, GRID_COLS,
@@ -315,12 +375,33 @@ def build_chart(stats):
     fig.patch.set_facecolor("#0D1117")
     axes = axes.flatten() if n > 1 else [axes]
 
+    intraday_used = 0
     for ax, s in zip(axes, stats):
-        series = s["series"]
-        colour = UP if series[-1] >= series[0] else DOWN
+        series = s.get("intraday") or s["series"]
+        is_intraday = bool(s.get("intraday"))
+        intraday_used += is_intraday
+
+        if is_intraday:
+            # Title and colour now describe the same thing: the day's move.
+            colour = UP if s["pct"] >= 0 else DOWN
+            baseline = s.get("prev_close") or series[0]
+        else:
+            colour = UP if series[-1] >= series[0] else DOWN
+            baseline = min(series)
+
         ax.plot(series, color=colour, linewidth=1.4)
-        ax.fill_between(range(len(series)), series, min(series),
+        ax.fill_between(range(len(series)), series, baseline,
                         color=colour, alpha=0.12)
+
+        if is_intraday and s.get("prev_close"):
+            ax.axhline(s["prev_close"], color=FLAT, linewidth=0.8,
+                       linestyle=(0, (4, 3)), alpha=0.7)
+            # Keep the previous close on screen even on a big gap.
+            lo = min(min(series), s["prev_close"])
+            hi = max(max(series), s["prev_close"])
+            pad = (hi - lo) * 0.08 or hi * 0.01
+            ax.set_ylim(lo - pad, hi + pad)
+
         ax.set_title(f"{s['label']}  {s['pct']:+.1f}%",
                      color="#E6EDF3", fontsize=10, pad=4)
         ax.set_facecolor("#0D1117")
@@ -332,7 +413,15 @@ def build_chart(stats):
     for ax in axes[n:]:
         ax.set_visible(False)
 
-    fig.suptitle(f"{CHART_DAYS}-day close", color=FLAT, fontsize=9, y=0.99)
+    if intraday_used == n and n:
+        window = "04:00-20:00 ET" if CHART_EXTENDED else "09:30-16:00 ET"
+        caption = f"today's session  {window}   - - -  previous close"
+    elif intraday_used:
+        caption = f"today's session ({intraday_used}/{n}); rest {CHART_DAYS}-day close"
+    else:
+        caption = f"{CHART_DAYS}-day close"
+    fig.suptitle(caption, color=FLAT, fontsize=9, y=0.99)
+
     fig.tight_layout()
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=130, facecolor=fig.get_facecolor())
@@ -431,6 +520,15 @@ def main():
         text += "\n\nNo unusual volume."
     text += "\n\nVol = x30d avg\n52w = % of range"
     print(f"\n{text}\n")
+
+    if CHART_MODE == "intraday" and alpaca:
+        bars = fetch_intraday([s["label"] for s in stats])
+        for s in stats:
+            got = bars.get(s["label"]) or []
+            if len(got) >= 3:          # too few points to be a meaningful line
+                s["intraday"] = got
+        have = sum(1 for s in stats if s["intraday"])
+        print(f"Intraday chart data: {have}/{len(stats)} ticker(s)")
 
     png = build_chart(stats)
     with open(CHART_FILE, "wb") as fh:
