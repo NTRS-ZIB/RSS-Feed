@@ -153,6 +153,29 @@ than taken on trust:
 That line also exposes the span, which is not exactly a year — it is whatever
 observation fell in the permitted window.
 
+### The spans are not equal, and the post says so
+
+`1yr` figures are not directly comparable across companies. Each is measured
+against that company's own closest reported count at least a year old, and
+filing dates differ. On the first live run:
+
+| | Base | Span |
+|---|---|---|
+| NUAI | 2025-05-12 | 365d |
+| SLNH | 2025-03-20 | 418d |
+| DGXX | 2024-12-31 | 500d |
+
+DGXX's +174% covers 37% more time than NUAI's +600%, in the same column.
+
+The embed therefore states the range on every post, and names any company whose
+span runs more than 20 days past the label. The log shows each span
+individually; a reader of the Discord post cannot see the log, which is why the
+caveat travels with the number.
+
+**Annualising is not the fix.** Converting these to a compounded rate would
+replace an observed figure with a modelled one, and this repo measures rather
+than models wherever it can. The spans are stated instead.
+
 ## What this number is not
 
 **Not a float.** It includes insider and restricted holdings.
