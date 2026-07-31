@@ -160,6 +160,27 @@ On a **rename**, move the old symbol into `alt_symbols` and update `ticker` —
 do not replace one with the other. Both directions are needed, and the old
 symbol persists in historical data indefinitely.
 
+### Run the identifier audit, and expect two passes
+
+`audit_identifiers.py` reports every CUSIP and every symbol each company
+actually appears under in SEC data. Run it after adding a company, after any
+reverse split or ticker change, and before trusting a deep `FTD_REPLAY`.
+
+**A new company usually needs two runs**, because the two lookups bootstrap
+each other:
+
+1. **First run.** The company matches on its current ticker, so its CUSIPs are
+   discovered and reported as `NEW`. Former symbols are *not* found yet —
+   nothing links them to the company.
+2. **Add those CUSIPs, then run again.** Now a former symbol trading under a
+   pinned CUSIP resolves, and any earlier ticker appears.
+
+An established company already carries both, so one run is enough.
+
+Also watch for the `COLLISIONS` section. A row whose symbol names one company
+while its CUSIP names another means the roster is wrong somewhere, and nothing
+else in the output should be trusted until that is resolved.
+
 ## What does not belong here
 
 Anything derivable. `daily_recap.py` previously carried a ticker → Stooq symbol
