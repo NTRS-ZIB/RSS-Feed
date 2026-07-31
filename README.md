@@ -14,6 +14,7 @@ maintain.
 | [`volume_spike.py`](docs/volume-spikes.md) | `spikes.yml` | `WEBHOOK_URL_ALERTS` | Every 15 min, weekdays 11:00–22:59 UTC |
 | [`daily_recap.py`](docs/recap.md) | `recap.yml` | `WEBHOOK_URL_MARKET` | 21:30 UTC, weekdays |
 | [`short_interest.py`](docs/short-interest.md) | `shortinterest.yml` | `WEBHOOK_URL_MARKET` | Daily check, posts ~2x/month |
+| [`regsho_volume.py`](docs/regsho-volume.md) | `regsho.yml` | `WEBHOOK_URL_MARKET` | 23:00 UTC, weekdays |
 
 They are deliberately separate workflows: a failure in one data provider must
 not take down the others. The context posts 15 minutes before the recap so it
@@ -36,14 +37,17 @@ btc_context.py                    bitcoin network context
 earnings_calendar.py              projected reporting dates
 volume_spike.py                   intraday unusual-volume alerts
 short_interest.py                 twice-monthly FINRA short interest
+regsho_volume.py                  daily FINRA short sale volume
 .github/workflows/monitor.yml     monitor schedule and runner setup
 .github/workflows/recap.yml       recap schedule and runner setup
 .github/workflows/btc.yml         context schedule and runner setup
 .github/workflows/earnings.yml    calendar schedule and runner setup
 .github/workflows/spikes.yml      spike schedule and runner setup
 .github/workflows/shortinterest.yml  short interest schedule and runner setup
+.github/workflows/regsho.yml      short volume schedule and runner setup
 spike_state.json                  auto-generated; per-day alert tiers
 shortinterest_state.json          auto-generated; last posted settlement date
+regsho_state.json                 auto-generated; last posted trade date
 state.json                        auto-generated; do not hand-edit except to reset
 docs/                             per-component documentation
 ```
