@@ -263,19 +263,21 @@ def human(v):
 
 
 def build_embed(alerts):
+    # Kept under ~28 chars: Discord mobile wraps code blocks past that.
+    # The IEX share count is deliberately omitted — it is a fraction of
+    # consolidated volume and would invite misreading. The ratio is the signal.
     lines = []
     for a in alerts:
         move = f"{a['pct']:+.1f}%" if a["pct"] is not None else "n/a"
-        lines.append(f"{a['symbol']:<6}{a['ratio']:>5.1f}x ADV   "
-                     f"${a['close']:>8.2f}  {move:>7}   {human(a['volume']):>7}")
+        lines.append(f"{a['symbol']:<5}{a['ratio']:>5.1f}x"
+                     f"{a['close']:>8.2f}{move:>8}")
 
     return {
         "title": "Unusual volume",
         "description": (
-            "Session volume against each ticker's own 30-day average, "
-            "including premarket and after-hours.\n"
-            "Share counts are IEX-only and far below consolidated volume — "
-            "the ratio is the signal, not the absolute figure."
+            "Session volume vs each ticker's own 30-day average, "
+            "including extended hours. Ratio is the signal — IEX share "
+            "counts are far below consolidated volume."
         ),
         "color": UP if any((a["pct"] or 0) > 0 for a in alerts) else DOWN,
         "fields": [{"name": "\u200b", "value": "```\n" + "\n".join(lines) + "\n```"}],

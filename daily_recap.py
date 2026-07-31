@@ -285,18 +285,23 @@ def flagged(stats, partial):
 
 
 def build_table(stats, partial=False):
-    """Monospace table, sorted by move size."""
+    """Monospace table, sized for a phone.
+
+    Discord mobile wraps code blocks past ~28 characters. Absolute volume is
+    dropped from the grid — the x30d ratio is the actual signal, and the raw
+    share count is repeated for flagged names in the footer where it matters.
+    """
     hot = {s["label"] for s in flagged(stats, partial)}
     stats = sorted(stats, key=lambda s: s["pct"], reverse=True)
-    lines = [f"{'':6}{'Close':>9}{'Chg':>9}{'Vol':>8}{'x30d':>8}{'52w':>7}"]
-    lines.append("-" * 47)
+    lines = [f"{'':5}{'Close':>6}{'Chg':>7}{'Vol':>5} {'52w':>3}"]
+    lines.append("-" * 26)
     for s in stats:
         span = s["hi"] - s["lo"]
         pos = ((s["close"] - s["lo"]) / span * 100) if span else 0
         mark = "*" if s["label"] in hot else " "
         lines.append(
-            f"{s['label']:<6}{s['close']:>9.2f}{s['pct']:>8.1f}%"
-            f"{human_vol(s['vol']):>8}{s['vol_x']:>6.1f}x{mark}{pos:>6.0f}%"
+            f"{s['label']:<5}{s['close']:>6.2f}{s['pct']:>6.1f}%"
+            f"{s['vol_x']:>4.1f}x{mark}{pos:>3.0f}"
         )
     return "\n".join(lines)
 
@@ -405,24 +410,26 @@ def main():
 
     partial = session_in_progress(latest)
     if partial:
-        header = (f"INTRADAY {latest:%a %d %b %Y} — session still open, "
-                  f"volumes and changes are incomplete")
+        header = (f"INTRADAY {latest:%a %d %b}\n"
+                  f"session open — figures partial")
     else:
-        header = f"Close {latest:%a %d %b %Y}"
+        header = f"Close {latest:%a %d %b}"
     if missing:
-        header += f"   |  no data: {', '.join(missing)}"
+        header += f"\nno data: {', '.join(missing)}"
     if stale:
-        header += f"   |  lagging: {', '.join(stale)}"
+        header += f"\nlagging: {', '.join(stale)}"
 
-    header += f"   |  via {source}"
+    header += f"\nvia {source}"
     text = header + "\n\n" + build_table(stats, partial)
 
     hot = flagged(stats, partial)
     if hot:
-        text += ("\n\n* unusual volume: "
-                 + ", ".join(f"{s['label']} {s['vol_x']:.1f}x" for s in hot))
+        text += "\n\n* unusual volume"
+        for s in hot:
+            text += f"\n  {s['label']:<5}{s['vol_x']:>5.1f}x {human_vol(s['vol'])}"
     elif not partial:
         text += "\n\nNo unusual volume."
+    text += "\n\nVol = x30d avg\n52w = % of range"
     print(f"\n{text}\n")
 
     png = build_chart(stats)

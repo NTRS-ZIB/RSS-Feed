@@ -16,8 +16,9 @@ import socket
 import sys
 import time
 from calendar import timegm
+from datetime import date
 from pathlib import Path
-from urllib.parse import quote, urljoin
+from urllib.parse import urljoin
 
 import feedparser
 import requests
@@ -147,37 +148,107 @@ IR_HEADERS = {
     "Connection": "close",
 }
 TICKER_MAP_URL = "https://www.sec.gov/files/company_tickers.json"
-EDGAR_ATOM = (
-    "https://www.sec.gov/cgi-bin/browse-edgar"
-    "?action=getcompany&CIK={cik}&type={form}&dateb="
-    "&owner=include&count=40&output=atom"
-)
+# One request per company returns every recent filing, replacing what used to
+# be ~10 browse-edgar calls plus an index fetch per candidate. The legacy
+# cgi-bin/browse-edgar endpoint is slow and times out under load; this is the
+# modern JSON API and is markedly more reliable.
+SUBMISSIONS = "https://data.sec.gov/submissions/CIK{cik}.json"
+ARCHIVE = "https://www.sec.gov/Archives/edgar/data/{cik}/{acc_nodash}/{acc}-index.htm"
+
+# 8-K item numbers that carry a press release. Replaces fetching each filing's
+# index page to look for an EX-99 exhibit — the items are already in the
+# submissions payload, so this costs no extra request.
+#   2.02 results   7.01 Reg FD   8.01 other events
+PRESS_RELEASE_ITEMS = {"2.02", "7.01", "8.01"}
+
+# 8-K item codes in plain English, for Discord titles. SEC only supplies a
+# document label (usually just "8-K"), which is redundant next to the form
+# type already shown in the footer.
+ITEM_LABELS = {
+    "1.01": "Material agreement entered",
+    "1.02": "Material agreement terminated",
+    "1.03": "Bankruptcy or receivership",
+    "1.04": "Mine safety",
+    "1.05": "Cybersecurity incident",
+    "2.01": "Acquisition or disposition completed",
+    "2.02": "Results of operations",
+    "2.03": "Direct financial obligation created",
+    "2.04": "Obligation accelerated",
+    "2.05": "Exit or disposal costs",
+    "2.06": "Material impairment",
+    "3.01": "Delisting notice / listing rule",
+    "3.02": "Unregistered equity sales",
+    "3.03": "Security holder rights modified",
+    "4.01": "Auditor change",
+    "4.02": "Non-reliance on prior financials",
+    "5.01": "Change in control",
+    "5.02": "Director or officer change",
+    "5.03": "Bylaws or fiscal year change",
+    "5.04": "Employee plan trading suspension",
+    "5.05": "Code of ethics amended",
+    "5.06": "Shell company status change",
+    "5.07": "Shareholder vote results",
+    "5.08": "Shareholder director nominations",
+    "7.01": "Reg FD disclosure",
+    "8.01": "Other events",
+    "9.01": "Financial statements and exhibits",
+}
+
+# Boilerplate: appears on almost any 8-K carrying an attachment, so it says
+# nothing on its own. Suppressed unless it is the only item listed.
+GENERIC_ITEMS = {"9.01"}
+
+# Plain-English names for the other forms, longest prefix wins.
+FORM_LABELS = {
+    "NT 10-K": "LATE FILING NOTICE — annual report",
+    "NT 10-Q": "LATE FILING NOTICE — quarterly report",
+    "SC 13D": "Activist stake disclosure (>5%)",
+    "424": "Prospectus supplement — offering",
+    "10-Q": "Quarterly report",
+    "10-K": "Annual report",
+    "20-F": "Annual report (foreign issuer)",
+    "40-F": "Annual report (Canadian issuer)",
+    "6-K": "Foreign issuer report",
+    "8-K": "Material event",
+}
 
 
-def sec_headers():
+def sec_headers(host):
     return {
         "User-Agent": SEC_USER_AGENT,
         "Accept-Encoding": "gzip, deflate",
-        "Host": "www.sec.gov",
+        "Host": host,
     }
 
 
-def sec_get(url, tries=3):
-    """GET against sec.gov, politely. Returns text or None."""
+def sec_get_json(url, host, tries=2):
+    """GET JSON from an SEC host. Returns parsed JSON or None.
+
+    Timeouts are a (connect, read) tuple. A bare scalar applies to BOTH
+    phases separately, so a single stalled request could consume 60s rather
+    than 30 — which, multiplied by retries and form types, was enough to
+    blow the workflow's 10-minute budget.
+    """
     for attempt in range(tries):
         try:
-            r = requests.get(url, headers=sec_headers(), timeout=30)
+            r = requests.get(url, headers=sec_headers(host), timeout=(8, 20))
             if r.status_code == 200:
                 time.sleep(0.15)  # stay well under SEC's 10 req/sec ceiling
-                return r.text
+                return r.json()
+            if r.status_code == 404:
+                print(f"  not found: {url}", file=sys.stderr)
+                return None
             if r.status_code in (429, 503):
                 time.sleep(3 * (attempt + 1))
                 continue
             print(f"  HTTP {r.status_code} for {url}", file=sys.stderr)
             return None
         except requests.RequestException as e:
-            print(f"  request failed ({e}), retrying", file=sys.stderr)
-            time.sleep(2 * (attempt + 1))
+            print(f"  {type(e).__name__}, retrying", file=sys.stderr)
+            time.sleep(2)
+        except ValueError:
+            print(f"  unparseable JSON from {url}", file=sys.stderr)
+            return None
     return None
 
 
@@ -227,33 +298,138 @@ def resolve_ciks(tickers):
     return resolved
 
 
-def has_press_release_exhibit(index_url):
-    """Fetch a filing's index page and look for an EX-99 exhibit."""
-    html = sec_get(index_url)
-    if html is None:
-        return True  # fail open: better a false positive than a missed release
-    return bool(re.search(r"\bEX-99", html))
+def form_matches(form, prefixes):
+    """EDGAR-style prefix match: '8-K' also matches '8-K/A'."""
+    return any(form.startswith(p) for p in prefixes)
 
 
-def collect_edgar(resolved):
-    items = []
+def carries_press_release(form, items):
+    """Whether an 8-K's item numbers indicate a press release.
+
+    Replaces fetching each filing's index page to look for an EX-99 exhibit.
+    The items are already in the submissions payload, so this is free.
+    6-K has no item numbers, so it is never filtered.
+    """
+    if not form.startswith("8-K"):
+        return True
+    if not items:
+        return True          # no items listed: fail open rather than drop it
+    listed = {i.strip() for i in items.split(",") if i.strip()}
+    return bool(listed & PRESS_RELEASE_ITEMS)
+
+
+def form_label(form):
+    """Plain-English name for a form, longest matching prefix wins."""
+    for prefix in sorted(FORM_LABELS, key=len, reverse=True):
+        if form.startswith(prefix):
+            label = FORM_LABELS[prefix]
+            return f"{label} (amended)" if form.endswith("/A") else label
+    return ""
+
+
+def filing_title(form, items, description):
+    """A title worth reading in Discord.
+
+    For 8-Ks the item codes say what actually happened; SEC's own document
+    label is usually just the form name, which the footer already shows.
+    """
+    if form.startswith("8-K") and items:
+        codes = [c.strip() for c in items.split(",") if c.strip()]
+        named = [(c, ITEM_LABELS[c]) for c in codes if c in ITEM_LABELS]
+        meaningful = [lbl for c, lbl in named if c not in GENERIC_ITEMS]
+        chosen = meaningful or [lbl for _, lbl in named]
+        if chosen:
+            title = ", ".join(dict.fromkeys(chosen))
+            return f"{title} (amended)" if form.endswith("/A") else title
+
+    return form_label(form) or description or f"{form} filing"
+
+
+def company_filings(cik):
+    """Every recent filing for a company, in one request."""
+    data = sec_get_json(SUBMISSIONS.format(cik=cik), "data.sec.gov")
+    if not data:
+        return []
+    recent = (data.get("filings") or {}).get("recent") or {}
+    forms = recent.get("form") or []
+    if not forms:
+        return []
+
+    accessions = recent.get("accessionNumber") or []
+    dates = recent.get("filingDate") or []
+    items = recent.get("items") or []
+    descriptions = recent.get("primaryDocDescription") or []
+
+    out = []
+    for i, form in enumerate(forms):
+        try:
+            acc = accessions[i]
+            filed = dates[i]
+        except IndexError:
+            continue
+        out.append({
+            "form": form,
+            "accession": acc,
+            "filed": filed,
+            "items": items[i] if i < len(items) else "",
+            "description": descriptions[i] if i < len(descriptions) else "",
+        })
+    return out
+
+
+def filing_url(cik, accession):
+    return ARCHIVE.format(cik=int(cik), acc_nodash=accession.replace("-", ""),
+                          acc=accession)
+
+
+def filing_uid(accession):
+    """Match the id format the old Atom feed produced, so switching data
+    sources does not make every historical filing look new."""
+    return f"urn:tag:sec.gov,2008:accession-number={accession}"
+
+
+def filed_time(datestr):
+    try:
+        return timegm(date.fromisoformat(datestr).timetuple())
+    except (ValueError, TypeError):
+        return 0
+
+
+def collect_all(resolved):
+    """One submissions request per company; returns (press, insider)."""
+    press, insider = [], []
     for ticker, (cik, name) in resolved.items():
-        print(f"  {ticker} (CIK {cik})...")
-        for form in FORM_TYPES:
-            xml = sec_get(EDGAR_ATOM.format(cik=cik, form=quote(form)))
-            if not xml:
-                continue
-            for entry in feedparser.parse(xml).entries:
-                items.append({
-                    "uid": entry.get("id") or entry.get("link"),
-                    "source": f"{name} ({ticker}) · SEC {form}",
-                    "form": form,
-                    "title": entry.get("title", "Untitled filing"),
-                    "link": entry.get("link", ""),
-                    "published": entry_time(entry),
-                    "is_edgar": True,
-                })
-    return items
+        filings = company_filings(cik)
+        if not filings:
+            print(f"  {ticker}: no filings returned")
+            continue
+
+        kept = ins = 0
+        for f in filings:
+            form, acc = f["form"], f["accession"]
+            base = {
+                "uid": filing_uid(acc),
+                "accession": acc,
+                "link": filing_url(cik, acc),
+                "published": filed_time(f["filed"]),
+                "is_edgar": True,
+            }
+            title = filing_title(form, f["items"], f["description"])
+
+            if form in INSIDER_ALLOWED_FORMS:
+                ins += 1
+                insider.append({**base, "form": form,
+                                "source": f"{name} ({ticker}) · Form {form}",
+                                "title": title})
+            elif form_matches(form, FORM_TYPES):
+                kept += 1
+                press.append({**base, "form": form,
+                              "source": f"{name} ({ticker}) · SEC {form}",
+                              "title": title,
+                              "items": f["items"]})
+        print(f"  {ticker}: {len(filings)} filing(s) -> {kept} tracked, "
+              f"{ins} insider")
+    return press, insider
 
 
 def discover_feed(page_url):
@@ -331,32 +507,6 @@ def collect_ir():
                 "published": entry_time(entry),
                 "is_edgar": False,
             })
-    return items
-
-
-def collect_insider(resolved):
-    """Form 4 / 4-A filings only, for the insider channel."""
-    items = []
-    for ticker, (cik, name) in resolved.items():
-        xml = sec_get(EDGAR_ATOM.format(cik=cik, form=quote(INSIDER_QUERY_FORM)))
-        if not xml:
-            continue
-        kept = 0
-        for entry in feedparser.parse(xml).entries:
-            form = entry_form(entry)
-            if form not in INSIDER_ALLOWED_FORMS:
-                continue  # prefix match collision: 40-F, 424B*, etc.
-            kept += 1
-            items.append({
-                "uid": entry.get("id") or entry.get("link"),
-                "source": f"{name} ({ticker}) · Form {form}",
-                "title": entry.get("title", "Untitled filing"),
-                "link": entry.get("link", ""),
-                "published": entry_time(entry),
-                "form": form,
-                "is_edgar": True,
-            })
-        print(f"  {ticker}: {kept} insider filing(s)")
     return items
 
 
@@ -445,6 +595,10 @@ def main():
 
     state = load_state()
     seen = set(state["seen"])
+    # Older state may hold ids in a different shape. Index by accession number
+    # so a change of data source can't make every historical filing look new.
+    seen_accessions = {u.rsplit("accession-number=", 1)[-1]
+                       for u in state["seen"] if "accession-number=" in u}
 
     resolved = {}
     if TICKERS:
@@ -454,21 +608,25 @@ def main():
         resolved[label] = (cik.zfill(10), name)
         print(f"  {label}: pinned to CIK {cik.zfill(10)} ({name})")
     print(f"Checking EDGAR for {len(resolved)} companies...")
-    items = collect_edgar(resolved)
+    items, edgar_insider = collect_all(resolved)
     print(f"Checking {len(IR_FEEDS)} IR feeds...")
     items += collect_ir()
 
     insider_items = []
     if INSIDER_WEBHOOK_URL:
-        print("Checking insider filings (Form 4)...")
-        insider_items = collect_insider(resolved)
+        insider_items = edgar_insider
+        print(f"Insider channel: {len(insider_items)} Form 4 filing(s).")
     else:
         print("WEBHOOK_URL_INSIDER not set — skipping insider channel.")
 
     all_items = items + insider_items
-    fresh = [i for i in items if i["uid"] and i["uid"] not in seen]
-    insider_fresh = [i for i in insider_items
-                     if i["uid"] and i["uid"] not in seen]
+    def is_new(i):
+        if not i["uid"] or i["uid"] in seen:
+            return False
+        return i.get("accession") not in seen_accessions
+
+    fresh = [i for i in items if is_new(i)]
+    insider_fresh = [i for i in insider_items if is_new(i)]
     print(f"{len(all_items)} items seen, {len(fresh)} new, "
           f"{len(insider_fresh)} new insider.")
 
@@ -497,7 +655,7 @@ def main():
         if len(to_post) >= MAX_POSTS_PER_RUN:
             break
         if PRESS_RELEASE_EXHIBIT_ONLY and item.get("form") in EXHIBIT_CHECK_FORMS:
-            if not has_press_release_exhibit(item["link"]):
+            if not carries_press_release(item["form"], item.get("items", "")):
                 continue
         to_post.append(item)
 

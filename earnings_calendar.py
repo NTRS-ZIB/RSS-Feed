@@ -184,6 +184,9 @@ def project(label, name, filings):
 
 
 def build_message(rows):
+    """Compact layout. Discord mobile wraps code blocks past ~28 characters,
+    so every column here is earning its width. Form type and period end are
+    pushed into markers and a header rather than per-row columns."""
     today = date.today()
     horizon = today + timedelta(days=HORIZON_DAYS)
 
@@ -195,46 +198,66 @@ def build_message(rows):
     later = sorted((r for r in rows if r["expected"] > horizon),
                    key=lambda r: r["expected"])
 
+    def marker(r):
+        if r["degraded"]:
+            return "?"
+        if r["spread"] > LOW_CONFIDENCE_SPREAD:
+            return "~"
+        if r["kind"] == "annual":
+            return "*"
+        return " "
+
+    def row(r, weekday=True):
+        days = (r["expected"] - today).days
+        when = f"{r['expected']:%a %d %b}" if weekday else f"{r['expected']:%d %b}"
+        return (f"{r['label']:<4}{marker(r)} {when}"
+                f"{days:>4}d {r['spread']:>3}d")
+
     lines = []
     if upcoming:
-        lines.append(f"Expected in the next {HORIZON_DAYS} days")
-        lines.append("-" * 52)
+        periods = {r["period"] for r in upcoming}
+        head = f"Next {HORIZON_DAYS}d"
+        if len(periods) == 1:
+            head += f" · P/E {upcoming[0]['period']:%b %Y}"
+        lines.append(head)
+        lines.append("-" * 26)
+        # A period column only appears when period ends differ. Drop the
+        # weekday to pay for it rather than overflow the phone width.
+        mixed = len(periods) > 1
         for r in upcoming:
-            days = (r["expected"] - today).days
-            flag = ("?" if r["degraded"]
-                    else "~" if r["spread"] > LOW_CONFIDENCE_SPREAD else " ")
-            lines.append(
-                f"{r['label']:<6}{r['expected']:%a %d %b}  "
-                f"in {days:>3}d  {r['kind']:>6}{flag} "
-                f"P/E {r['period']:%b %Y}  ±{r['spread']}d"
-            )
+            line = row(r, weekday=not mixed)
+            if mixed:
+                line += f" {r['period']:%b}"
+            lines.append(line)
     else:
-        lines.append(f"Nothing expected in the next {HORIZON_DAYS} days.")
+        lines.append(f"Nothing expected in {HORIZON_DAYS}d.")
 
     if overdue:
         lines.append("")
-        lines.append("Past estimate — watch for NT 10-Q / NT 10-K")
-        lines.append("-" * 52)
+        lines.append("Past estimate")
+        lines.append("-" * 26)
         for r in overdue:
-            days = (today - r["expected"]).days
-            lines.append(
-                f"{r['label']:<6}est. {r['expected']:%d %b}  "
-                f"{days}d ago   last filed {r['last_filed']:%d %b %Y}"
-            )
+            late = (today - r["expected"]).days
+            lines.append(f"{r['label']:<4}{marker(r)} est {r['expected']:%d %b}"
+                         f"{late:>4}d ago")
 
     if later:
         lines.append("")
-        lines.append("Later: " + ", ".join(
-            f"{r['label']} {r['expected']:%d %b}"
-            f"{'~' if r['spread'] > LOW_CONFIDENCE_SPREAD else ''}"
-            for r in later))
+        for r in later:
+            lines.append(f"{r['label']:<4}{marker(r)} {r['expected']:%a %d %b}"
+                         f"  later")
 
-    shaky = sorted(r["label"] for r in rows
-                   if r["spread"] > LOW_CONFIDENCE_SPREAD or r["degraded"])
-    if shaky:
+    key = []
+    if any(r["kind"] == "annual" for r in rows):
+        key.append("* annual report")
+    if any(r["spread"] > LOW_CONFIDENCE_SPREAD for r in rows):
+        key.append("~ erratic filer")
+    if any(r["degraded"] for r in rows):
+        key.append("? thin history")
+    if key:
         lines.append("")
-        lines.append(f"~ files erratically; date is indicative only: "
-                     f"{', '.join(shaky)}")
+        lines.extend(key)
+        lines.append("last col = +/- spread")
 
     return "\n".join(lines)
 
