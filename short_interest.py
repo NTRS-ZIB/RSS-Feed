@@ -62,6 +62,37 @@ TICKERS = {
     "VIP":  "Vulcan Infrastructure and Power",
 }
 
+# Former or pending symbols, queried alongside the canonical ticker and mapped
+# back to it. FINRA files by the symbol in force ON THE SETTLEMENT DATE, so a
+# rename splits a company's history across two symbols — the 2026-07-15
+# settlement predates GREE -> VIP (2026-07-24) and is filed under GREE.
+#
+# Add to this rather than editing TICKERS when a company renames: keeping both
+# preserves continuity across the changeover.
+ALIASES = {
+    "VIP": ["GREE"],          # renamed from Greenidge, 2026-07-24
+    "ANY": ["DRK"],           # pending change to DarkHorse Technologies
+}
+
+
+def query_symbols():
+    """Every symbol to ask FINRA for, canonical plus aliases."""
+    out = list(TICKERS)
+    for alts in ALIASES.values():
+        out.extend(alts)
+    return out
+
+
+def canonical(symbol):
+    """Map a returned symbol back to our canonical ticker, or None."""
+    symbol = symbol.upper()
+    if symbol in TICKERS:
+        return symbol
+    for ticker, alts in ALIASES.items():
+        if symbol in (a.upper() for a in alts):
+            return ticker
+    return None
+
 # How many recent settlement dates to search when looking for fresh data.
 LOOKBACK_RECORDS = 5000
 
@@ -84,6 +115,20 @@ TOKEN_URL = ("https://ews.fip.finra.org/fip/rest/ews/oauth2/access_token"
 CLIENT_ID = os.environ.get("FINRA_CLIENT_ID", "").strip()
 CLIENT_SECRET = os.environ.get("FINRA_CLIENT_SECRET", "").strip()
 
+# Set to force anonymous access even when credentials exist. Use this to test
+# whether this dataset actually needs them — if it does not, delete the two
+# secrets and the expiry problem below disappears with them.
+FORCE_ANONYMOUS = os.environ.get("FINRA_ANONYMOUS", "").strip().lower() \
+    in ("1", "true", "yes")
+
+# FINRA API secrets expire. An expired secret fails at the token exchange and
+# the script falls back to anonymous — which, if this dataset needs auth,
+# means silently posting nothing rather than erroring. Set this to the expiry
+# date shown in the API Console so the run warns in advance.
+# Empty string disables the check.
+CREDENTIAL_EXPIRY = "2027-07-30"
+EXPIRY_WARN_DAYS = 45
+
 # FINRA publishes twice a month. If the newest settlement date is older than
 # this, something is wrong with the dataset rather than with the market.
 STALE_WARN_DAYS = 60
@@ -98,8 +143,8 @@ STALE_WARN_DAYS = 60
 # diagnoses it. The first entry is the one confirmed for the OTC datasets and
 # is a reasonable first guess here too.
 SYMBOL_FIELDS = [
+    "symbolCode",                       # confirmed for consolidatedShortInterest
     "securitiesInformationProcessorSymbolIdentifier",
-    "symbolCode",
     "issueSymbolIdentifier",
     "securitySymbol",
     "issueSymbol",
@@ -130,8 +175,25 @@ def get_token():
     The Basic header is base64 of "id:secret" — the colon is required before
     encoding. The token itself is then used as Bearer, not Basic.
     """
+    if FORCE_ANONYMOUS:
+        print("  FINRA_ANONYMOUS set — skipping credentials deliberately")
+        return None
     if not (CLIENT_ID and CLIENT_SECRET):
         return None
+
+    if CREDENTIAL_EXPIRY:
+        try:
+            left = (date.fromisoformat(CREDENTIAL_EXPIRY) - date.today()).days
+            if left < 0:
+                print(f"  WARNING: API secret expired {-left} days ago "
+                      f"({CREDENTIAL_EXPIRY}). Regenerate it in the FINRA "
+                      f"API Console.")
+            elif left <= EXPIRY_WARN_DAYS:
+                print(f"  WARNING: API secret expires in {left} days "
+                      f"({CREDENTIAL_EXPIRY}). Regenerate it in the FINRA "
+                      f"API Console.")
+        except ValueError:
+            pass
     basic = base64.b64encode(
         f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
     try:
@@ -197,7 +259,7 @@ def fetch_with(symbol_field):
     payload = {
         "compareFilters": [],
         "domainFilters": [{"fieldName": symbol_field,
-                           "values": list(TICKERS)}],
+                           "values": query_symbols()}],
         "limit": LOOKBACK_RECORDS,
     }
     try:
@@ -263,13 +325,15 @@ def parse(rows):
     """Group by settlement date -> {date: {ticker: metrics}}."""
     by_date = {}
     for row in rows or []:
-        sym = ""
+        raw = ""
         for key in [globals().get("ACTIVE_SYMBOL_FIELD")] + SYMBOL_FIELDS:
             if key and row.get(key):
-                sym = str(row[key]).upper()
+                raw = str(row[key]).upper()
                 break
+        sym = canonical(raw) or ""
+        alias_used = sym and raw != sym
         settled = row.get("settlementDate") or ""
-        if sym not in TICKERS or not settled:
+        if not sym or not settled:
             continue
         current = num(row, "currentShortPositionQuantity")
         previous = num(row, "previousShortPositionQuantity")
@@ -285,6 +349,9 @@ def parse(rows):
             "avg_volume": num(row, "averageDailyVolumeQuantity"),
             "revised": str(row.get("revisionFlag") or "").strip().upper()
                        in ("Y", "TRUE", "1"),
+            "split": str(row.get("stockSplitFlag") or "").strip().upper()
+                     in ("Y", "TRUE", "1"),
+            "filed_as": raw if alias_used else None,
         }
     return by_date
 
@@ -331,6 +398,15 @@ def build_embed(settled, data, missing):
     revised = sorted(s for s, m in data.items() if m.get("revised"))
     if revised:
         desc += f"\n\nRevised by FINRA: {', '.join(revised)}."
+    split = sorted(s for s, m in data.items() if m.get("split"))
+    if split:
+        desc += (f"\n\nStock split flagged: {', '.join(split)} — a large "
+                 f"percentage change may be a split artefact, not real "
+                 f"covering.")
+    aliased = sorted(f"{s} (as {m['filed_as']})"
+                     for s, m in data.items() if m.get("filed_as"))
+    if aliased:
+        desc += f"\n\nFiled under a former symbol: {', '.join(aliased)}."
 
     return {
         "title": "Short interest",
@@ -365,9 +441,12 @@ def main():
 
     globals()["ACCESS_TOKEN"] = get_token()
     if not globals()["ACCESS_TOKEN"]:
-        if CLIENT_ID or CLIENT_SECRET:
-            print("  credentials set but token exchange failed — "
-                  "continuing anonymously")
+        if FORCE_ANONYMOUS:
+            pass                      # already announced
+        elif CLIENT_ID or CLIENT_SECRET:
+            print("  credentials set but token exchange FAILED — falling back "
+                  "to anonymous. If results look wrong, the secret has likely "
+                  "expired.")
         else:
             print("  no FINRA credentials set — querying anonymously")
 
