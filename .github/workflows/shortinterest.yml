@@ -38,6 +38,8 @@ jobs:
         timeout-minutes: 5
         env:
           WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
+          FINRA_CLIENT_ID: ${{ secrets.FINRA_CLIENT_ID }}
+          FINRA_CLIENT_SECRET: ${{ secrets.FINRA_CLIENT_SECRET }}
           # Empty on scheduled runs, so those always post.
           DRY_RUN: ${{ inputs.dry_run }}
           PYTHONUNBUFFERED: "1"
