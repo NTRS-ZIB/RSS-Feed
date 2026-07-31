@@ -16,7 +16,7 @@ import socket
 import sys
 import time
 from calendar import timegm
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -122,6 +122,16 @@ KEYWORDS = []
 # An age floor is independent of state, so backfill can never be mistaken for
 # news. Keep it comfortably above the run interval.
 MAX_AGE_DAYS = 7
+
+# Only EDGAR filings from the last N days enter the dedupe set at all.
+# Nothing older can post (MAX_AGE_DAYS), so remembering it is pure state-file
+# bloat: the submissions endpoint returns ~1,000 filings per company, which
+# put 4,275 ids in state.json for a watchlist of eleven.
+#
+# Must stay comfortably above MAX_AGE_DAYS — the gap is the safety margin for
+# a workflow outage. Not applied to IR feed items, which are ~10 per feed and
+# whose timestamps are less reliable.
+RETAIN_DAYS = 30
 
 # Safety valve: never post more than this in one run, per channel.
 # Sized for earnings season: ~10 companies x (8-K + 10-Q + IR item) landing in
@@ -416,14 +426,22 @@ def filed_time(datestr):
 def collect_all(resolved):
     """One submissions request per company; returns (press, insider)."""
     press, insider = [], []
+    horizon = date.today() - timedelta(days=RETAIN_DAYS)
     for ticker, (cik, name) in resolved.items():
         filings = company_filings(cik)
         if not filings:
             print(f"  {ticker}: no filings returned")
             continue
 
-        kept = ins = 0
+        kept = ins = skipped = 0
         for f in filings:
+            try:
+                if date.fromisoformat(f["filed"]) < horizon:
+                    skipped += 1
+                    continue
+            except (ValueError, TypeError):
+                skipped += 1      # unparseable date: cannot post it anyway
+                continue
             form, acc = f["form"], f["accession"]
             base = {
                 "uid": filing_uid(acc),
@@ -445,8 +463,8 @@ def collect_all(resolved):
                               "source": f"{name} ({ticker}) · SEC {form}",
                               "title": title,
                               "items": f["items"]})
-        print(f"  {ticker}: {len(filings)} filing(s) -> {kept} tracked, "
-              f"{ins} insider")
+        print(f"  {ticker}: {len(filings)} filing(s), {skipped} older than "
+              f"{RETAIN_DAYS}d -> {kept} tracked, {ins} insider")
     return press, insider
 
 
