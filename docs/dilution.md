@@ -95,7 +95,19 @@ WYFI    5.0M     -      -
 `*` marks trailing growth at or above `NOTABLE_YEAR_PCT` (25%). A single step at
 or above `NOTABLE_STEP_PCT` (10%) gets a prose line naming both figures.
 
-`-` means not computable: too few observations, or a split in the window.
+**An absent `1yr` figure has two opposite causes, and they are shown
+differently:**
+
+| Shown | Cause | Means |
+|---|---|---|
+| `-~` | Fewer than a year of reported observations | The company has not been reporting long enough. Says nothing about dilution. |
+| `split` | A reverse split inside the trailing year | The comparison is invalid, not unavailable. Growth may be large and is unknown. |
+
+Both are also named in prose beneath the table. On the first live run these
+split cleanly: BKKT and IREN had three observations each and WYFI four —
+recent domestic filers — while ANY (30 observations) and BGDE (60) were
+suppressed by splits. A single `-` for both would have made a young company
+look identical to one whose history is uncomparable.
 
 Rows sort by trailing growth, so the most diluted name leads. Percentages are
 width-capped at `>999%` and `<-99%` — an extreme reading must not widen the
