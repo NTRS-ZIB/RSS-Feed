@@ -6,12 +6,20 @@ FINRA publishes consolidated short interest twice a month: mid-month and
 end-of-month settlement dates, released roughly eight business days later. This
 posts once per new settlement date and stays silent otherwise.
 
-Data: FINRA Query API, group `otcMarket`, dataset `EquityShortInterest`.
+Data: FINRA Query API, group `otcMarket`, dataset
+`equityShortInterestStandardized`.
 
-The `otcMarket` group name is LEGACY. Before June 2021 the dataset really was
-OTC-only; since then it covers all exchange-listed securities too — Nasdaq,
-NYSE, NYSE American, NYSE Arca and Cboe BZX. Do not conclude from the URL that
-Nasdaq names are missing.
+TWO NAMING TRAPS, both of which cost a debugging cycle:
+
+1. The group is `otcMarket`, but the data is NOT OTC-only. It covers
+   exchange-listed securities — Nasdaq, NYSE, NYSE American, NYSE Arca,
+   Cboe BZX — as well. The group name is legacy.
+2. The obvious dataset name, `equityShortInterest`, was DEPRECATED on
+   2021-04-30 and replaced by `equityShortInterestStandardized`. The old one
+   still answers requests; it just returns nothing published after that date.
+   The symptom is subtle: a successful 200 response, plausible-looking rows,
+   and a latest settlement date years in the past. STALE_WARN_DAYS below
+   exists to catch exactly this.
 
 NOTE ON KEYING: this is the only component keyed by TICKER rather than CIK.
 FINRA reports by symbol, so a rename breaks the lookup silently. Every run
@@ -57,7 +65,12 @@ WEBHOOK_URL = os.environ.get("WEBHOOK_URL_MARKET", "").strip()
 DRY_RUN = os.environ.get("DRY_RUN", "").strip().lower() in ("1", "true", "yes")
 STATE_FILE = Path(os.environ.get("SI_STATE", "shortinterest_state.json"))
 
-API = "https://api.finra.org/data/group/otcMarket/name/EquityShortInterest"
+DATASET = "equityShortInterestStandardized"
+API = f"https://api.finra.org/data/group/otcMarket/name/{DATASET}"
+
+# FINRA publishes twice a month. If the newest settlement date is older than
+# this, something is wrong with the dataset rather than with the market.
+STALE_WARN_DAYS = 60
 HEADERS = {"Content-Type": "application/json", "Accept": "application/json"}
 
 UP, DOWN, FLAT = 0x3FB950, 0xF85149, 0x8B949E
@@ -232,6 +245,15 @@ def main():
     data = by_date[latest]
     missing = sorted(set(TICKERS) - set(data))
     print(f"Latest settlement: {latest} — {len(data)} of {len(TICKERS)} found")
+
+    try:
+        age = (date.today() - date.fromisoformat(latest)).days
+    except ValueError:
+        age = None
+    if age is not None and age > STALE_WARN_DAYS:
+        sys.exit(f"Newest settlement is {age} days old — FINRA publishes twice "
+                 f"a month, so the dataset '{DATASET}' is likely wrong or "
+                 f"deprecated. Not posting.")
     if missing:
         print(f"  NOT FOUND: {', '.join(missing)}  (symbol change?)")
 
