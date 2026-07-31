@@ -70,7 +70,7 @@ its amendments:
 | `10-Q` / `10-K` | Quarterly and annual financials |
 | `20-F` / `40-F` | Annual reports, foreign and Canadian MJDS filers |
 | `SC 13D` + `SCHEDULE 13D` | Activist / >5% stake disclosures. **Both spellings are required** — see below |
-| `NT 10-K` / `NT 10-Q` | Late filing notices — rare, high signal |
+| `NT ` | Late filing notices under Rule 12b-25 — `NT 10-K`, `NT 10-Q`, `NT 20-F`, `NT 40-F`. Rare, high signal |
 
 Form 4 is deliberately absent; it has its own channel. Note that earnings news
 arrives as an 8-K Item 2.02 press release, typically before the 10-Q, so the
@@ -148,6 +148,24 @@ It is deliberately conservative. `SCHEDULE 13G`, `SCHEDULE 13F-HR`, `DEF 14A`,
 `S-8` and `144` are all seen and none is flagged — they are different filings,
 not renamings of something tracked. A detector that fired on every untracked
 form would be ignored within a week.
+
+#### What its first run found
+
+Three flags, of which one was a real gap:
+
+| Flagged | Verdict |
+|---|---|
+| `NT 20-F` vs `20-F` | **Real gap.** `NT 10-K` and `NT 10-Q` were listed individually, so the foreign-issuer late-filing notice was missing — precisely the form IREN or DGXX would file. Fixed by tracking the prefix `NT `, which now covers `NT 40-F` too. |
+| `10KSB` vs `10-K` | Obsolete. Small-business annual report, discontinued around 2009. |
+| `10QSB` vs `10-Q` | Obsolete, same. |
+
+The two obsolete forms are in `DRIFT_IGNORE`. They sit in old filing histories
+and would flag on every run otherwise — and a warning that always fires is one
+nobody reads, which is the same failure as not having it.
+
+Note the shape of the real finding: enumerating family members individually
+(`NT 10-K`, `NT 10-Q`) left a sibling out. Tracking the family prefix (`NT `)
+is both shorter and complete.
 
 `SCHEDULE 13G` — the passive counterpart, filed by index funds and most
 institutions — is deliberately **not** listed. A 13D signals intent; a 13G
