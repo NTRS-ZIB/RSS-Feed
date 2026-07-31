@@ -69,7 +69,7 @@ WATCHLIST = [
         # which would place it before the April 2024 reverse split.
         #
         # Kept because a stale pin is inert while a missing one loses data,
-        # but it is not trusted until observed. probe_cusips.py with
+        # but it is not trusted until observed. audit_identifiers.py with
         # SWEEP_PERIODS=48 would settle it: if it appears in 2024 files it is
         # the pre-split common and correct; if it never appears, remove it
         # rather than risk matching a different Bakkt security.
