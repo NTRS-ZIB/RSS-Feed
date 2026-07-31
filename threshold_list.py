@@ -140,12 +140,18 @@ def fetch_file(day):
 
 
 def parse_file(text):
-    """{canonical ticker: (security name, market category)} for our watchlist.
+    """({canonical ticker: (name, category)} for our watchlist, all flagged).
 
     Format: Symbol|Security Name|Market Category|Threshold Flag|Rule 3210|Filler
     The trailing Filler field means rows end with a pipe.
+
+    The second return value is every flagged symbol in the file, watchlist or
+    not. It exists because this component's normal output is silence, and
+    "nobody on our list" is otherwise indistinguishable from "the parse broke
+    and nobody will ever be on our list" — a layout change here fails silently
+    and forever. A plausible total is proof the file was actually read.
     """
-    found = {}
+    found, all_flagged = {}, []
     for line in text.split("\n")[1:]:
         line = line.strip()
         if not line or "|" not in line:
@@ -154,22 +160,23 @@ def parse_file(text):
         if len(parts) < 4:
             continue
         sym = canonical(parts[0])
-        if not sym:
-            continue
         if parts[3].strip().upper() != "Y":     # Reg SHO Threshold Flag
             continue
-        found[sym] = (parts[1].strip(), parts[2].strip())
-    return found
+        all_flagged.append(parts[0].strip().upper())
+        if sym:
+            found[sym] = (parts[1].strip(), parts[2].strip())
+    return found, sorted(all_flagged)
 
 
 def latest_file():
-    """Most recent available file. Returns (date, parsed) or (None, None)."""
+    """Most recent available file: (date, watchlist hits, all flagged symbols)."""
     for back in range(MAX_DAYS_BACK + 1):
         day = date.today() - timedelta(days=back)
         text = fetch_file(day)
         if text is not None:
-            return day, parse_file(text)
-    return None, None
+            found, all_flagged = parse_file(text)
+            return day, found, all_flagged
+    return None, None, None
 
 
 def count_run(symbol, latest_day):
@@ -185,7 +192,7 @@ def count_run(symbol, latest_day):
         if text is None:
             continue
         checked += 1
-        if symbol in parse_file(text):
+        if symbol in parse_file(text)[0]:
             run += 1
         else:
             break
@@ -260,12 +267,20 @@ def main():
         sys.exit("No webhook set (WEBHOOK_URL_ALERTS or WEBHOOK_URL_MARKET).")
 
     print("Fetching Nasdaq threshold list...")
-    day, found = latest_file()
+    day, found, all_flagged = latest_file()
     if day is None:
         sys.exit(f"No threshold file found in the last {MAX_DAYS_BACK} days. "
                  f"Check the URL pattern is still current.")
 
-    print(f"Settlement date {day:%Y-%m-%d}")
+    # Always state the file-wide total. Zero here means the parse or the file
+    # layout is broken, which otherwise looks exactly like a quiet day.
+    sample = ", ".join(all_flagged[:4])
+    print(f"Settlement date {day:%Y-%m-%d} — {len(all_flagged)} securities "
+          f"flagged in the file" + (f" (e.g. {sample})" if sample else ""))
+    if not all_flagged:
+        sys.exit("Zero flagged securities in a valid file — the layout has "
+                 "probably changed. Not treating this as a quiet day.")
+
     current = set(found)
     if current:
         for sym in sorted(current):
