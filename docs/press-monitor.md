@@ -123,6 +123,32 @@ The general lesson: an entry in `FORM_TYPES` is an assumption until a filing of
 that type has actually been posted. The others were confirmed by observing real
 posts. This one never had been.
 
+### The drift detector
+
+So it cannot happen silently again. Every run collects the distinct form types
+seen across the watchlist and flags any that **resemble** something tracked but
+do not match it:
+
+```
+WARNING: 1 form type(s) resemble something in FORM_TYPES but do not match it.
+  seen 'SCHEDULE 13D'  vs tracked 'SC 13D'
+```
+
+The rule needs no advance knowledge of the new spelling. It strips each form to
+its alphanumeric core, drops leading `SC` / `SCHEDULE` / `NT` / `FORM`, and
+flags an unmatched form whose core contains a tracked stem of three characters
+or more. `SCHEDULE 13D` → `SCHEDULE13D` contains `13D`; `SC 13D` → `SC13D`
+contains `13D`.
+
+Verified against the actual bug: with `SCHEDULE 13D` removed from
+`FORM_TYPES`, the detector flags it and its amendments. It would equally catch
+a future `FORM 20-F` or `NOTIFICATION 10-Q`.
+
+It is deliberately conservative. `SCHEDULE 13G`, `SCHEDULE 13F-HR`, `DEF 14A`,
+`S-8` and `144` are all seen and none is flagged — they are different filings,
+not renamings of something tracked. A detector that fired on every untracked
+form would be ignored within a week.
+
 `SCHEDULE 13G` — the passive counterpart, filed by index funds and most
 institutions — is deliberately **not** listed. A 13D signals intent; a 13G
 signals that someone owns a lot and files an amendment each February. If it is
