@@ -39,6 +39,7 @@ import statistics
 import sys
 import time
 import zipfile
+from collections import Counter
 from datetime import datetime, timezone
 from urllib.parse import urljoin
 
@@ -153,6 +154,10 @@ def fetch_index(sess):
     return sorted(found.items(), reverse=True)
 
 
+def mmdd(yyyymmdd):
+    return f"{yyyymmdd[4:6]}-{yyyymmdd[6:]}"
+
+
 def pretty(period):
     return f"{period[:4]}-{period[4:6]}{period[6]}"
 
@@ -186,7 +191,7 @@ def fetch_period(sess, url, cusips):
             skipped += 1
             continue
         rows.setdefault(ticker, []).append((date, shares, cusip))
-        seen_syms.setdefault(ticker, set()).add(symbol.upper())
+        seen_syms.setdefault(ticker, {}).setdefault(symbol.upper(), set()).add(date)
         if cusip and cusip not in cusips:
             learned[cusip] = ticker
     return rows, learned, skipped, seen_syms
@@ -374,7 +379,7 @@ def main():
     if cold:
         print(f"Cold start: pulling {len(wanted)} periods to build a baseline.")
 
-    span, cusip_hist = "", {}
+    span, cusip_hist, overlapped = "", {}, set()
     for period, url in sorted(wanted):
         print(f"  {pretty(period)} ...", end=" ", flush=True)
         rows, learned, skipped, seen_syms = fetch_period(sess, url, state["cusips"])
@@ -399,14 +404,32 @@ def main():
               + (f", zero: {' '.join(absent)}" if absent else "")
               + (f", {skipped} unparsable" if skipped else ""))
 
-        # A canonical ticker matched under two different symbols in one period
-        # is the signature of a wrong ALIASES entry: the alias and the real
-        # symbol are both live, so one company's fails are being merged into
-        # another's. Silent otherwise, and it corrupts the series.
-        for ticker, syms in seen_syms.items():
-            if len(syms) > 1:
-                print(f"    WARNING: {ticker} matched {'/'.join(sorted(syms))}"
-                      f" — check ALIASES, these may be different companies")
+        # Two symbols mapping to one canonical ticker in a single period is
+        # either a rename mid-period (benign) or a wrong ALIASES entry merging
+        # two companies (corrupting). Symbol count alone cannot tell them
+        # apart, and neither can CUSIP: renames in this sector frequently
+        # arrive alongside a reverse split, which changes the CUSIP too.
+        #
+        # Time separates them. A rename means the old symbol stops and the new
+        # one starts, so the date sets are disjoint. Two live companies trade
+        # on the same settlement days.
+        for ticker, symmap in sorted(seen_syms.items()):
+            if len(symmap) < 2:
+                continue
+            counts = Counter(d for ds in symmap.values() for d in ds)
+            shared = sorted(d for d, n in counts.items() if n > 1)
+            spans = ", ".join(
+                f"{sym} {mmdd(min(ds))}..{mmdd(max(ds))}"
+                for sym, ds in sorted(symmap.items(), key=lambda kv: min(kv[1]))
+            )
+            if shared:
+                overlapped.add(ticker)
+                print(f"    WARNING: {ticker} matched {len(symmap)} symbols on"
+                      f" {len(shared)} shared settlement date(s): {spans}")
+                print("      Same-day overlap means these are different"
+                      " securities. Check ALIASES.")
+            else:
+                print(f"    note: {ticker} spans a rename — {spans}")
         time.sleep(REQUEST_GAP)
 
     # A ticker under two CUSIPs across the window is almost always a reverse
@@ -414,7 +437,10 @@ def main():
     # share counts with no split adjustment, so peaks either side of one are
     # not comparable and the median silently misstates every later ratio.
     for t, cs in sorted(cusip_hist.items()):
-        if len(cs) > 1:
+        # Skip tickers already flagged for same-day symbol overlap: two live
+        # securities merged also produces two CUSIPs, and "clear the history"
+        # would be the wrong remedy for it.
+        if len(cs) > 1 and t not in overlapped:
             print(f"\nWARNING: {t} appears under {len(cs)} CUSIPs: {', '.join(sorted(cs))}")
             print("  Usually a reverse split. Share counts are NOT split-adjusted in")
             print("  this dataset, so this ticker's baseline spans a discontinuity and")
