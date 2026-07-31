@@ -27,6 +27,7 @@ prints which tickers were not found — treat that list as a maintenance alarm,
 not noise. See TICKERS below.
 """
 
+import base64
 import json
 import os
 import sys
@@ -68,6 +69,13 @@ STATE_FILE = Path(os.environ.get("SI_STATE", "shortinterest_state.json"))
 DATASET = "equityShortInterestStandardized"
 API = f"https://api.finra.org/data/group/otcMarket/name/{DATASET}"
 
+# OAuth2 client-credentials. Optional: without them the script still runs
+# anonymously, which works for public datasets but may not expose all of them.
+TOKEN_URL = ("https://ews.fip.finra.org/fip/rest/ews/oauth2/access_token"
+             "?grant_type=client_credentials")
+CLIENT_ID = os.environ.get("FINRA_CLIENT_ID", "").strip()
+CLIENT_SECRET = os.environ.get("FINRA_CLIENT_SECRET", "").strip()
+
 # FINRA publishes twice a month. If the newest settlement date is older than
 # this, something is wrong with the dataset rather than with the market.
 STALE_WARN_DAYS = 60
@@ -103,10 +111,48 @@ def save_state(state):
     STATE_FILE.write_text(json.dumps(state, indent=1))
 
 
+def get_token():
+    """Exchange client credentials for a bearer token. None if unavailable.
+
+    The Basic header is base64 of "id:secret" — the colon is required before
+    encoding. The token itself is then used as Bearer, not Basic.
+    """
+    if not (CLIENT_ID and CLIENT_SECRET):
+        return None
+    basic = base64.b64encode(
+        f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
+    try:
+        r = requests.post(TOKEN_URL,
+                          headers={"Authorization": f"Basic {basic}"},
+                          timeout=(10, 30))
+    except requests.RequestException as e:
+        print(f"token request failed: {type(e).__name__}")
+        return None
+    if r.status_code != 200:
+        print(f"token endpoint returned HTTP {r.status_code}: {r.text[:200]}")
+        return None
+    try:
+        token = r.json().get("access_token")
+    except ValueError:
+        print("token response was not JSON")
+        return None
+    if token:
+        print("  authenticated via OAuth2")
+    return token
+
+
+def auth_headers():
+    h = dict(HEADERS)
+    token = globals().get("ACCESS_TOKEN")
+    if token:
+        h["Authorization"] = f"Bearer {token}"
+    return h
+
+
 def show_schema():
     """Print the dataset's real field names. Called when a filter is rejected."""
     try:
-        r = requests.get(METADATA, timeout=(10, 30))
+        r = requests.get(METADATA, headers=auth_headers(), timeout=(10, 30))
         if r.status_code != 200:
             print(f"  (metadata lookup returned HTTP {r.status_code})")
             return
@@ -142,7 +188,8 @@ def fetch_with(symbol_field):
         "limit": LOOKBACK_RECORDS,
     }
     try:
-        r = requests.post(API, headers=HEADERS, json=payload, timeout=(10, 40))
+        r = requests.post(API, headers=auth_headers(), json=payload,
+                          timeout=(10, 40))
     except requests.RequestException as e:
         print(f"request failed: {type(e).__name__}")
         return None, False
@@ -302,6 +349,14 @@ def main():
         print("DRY RUN — nothing posted, state not saved.\n")
     elif not WEBHOOK_URL:
         sys.exit("WEBHOOK_URL_MARKET is not set.")
+
+    globals()["ACCESS_TOKEN"] = get_token()
+    if not globals()["ACCESS_TOKEN"]:
+        if CLIENT_ID or CLIENT_SECRET:
+            print("  credentials set but token exchange failed — "
+                  "continuing anonymously")
+        else:
+            print("  no FINRA credentials set — querying anonymously")
 
     print(f"Querying FINRA for {len(TICKERS)} ticker(s)...")
     rows = fetch()
