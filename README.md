@@ -22,6 +22,12 @@ They are deliberately separate workflows: a failure in one data provider must
 not take down the others. The context posts 15 minutes before the recap so it
 lands above the performance table in the channel.
 
+**One roster, nine consumers.** Which companies are tracked, and how they are
+identified, lives once in [`watchlist.py`](docs/watchlist.md). Adding a company
+is one record. Each component derives the shape it needs — symbols, CIKs,
+CUSIPs, former tickers, IR feeds — so the same company cannot be spelled two
+ways or aliased in two directions.
+
 **They do not share a sense of "now."** Latency runs from minutes for the press
 monitor to two-to-six weeks for
 [fails to deliver](docs/fails-to-deliver.md), whose data the SEC publishes
@@ -47,6 +53,7 @@ earnings_calendar.py              projected reporting dates
 volume_spike.py                   intraday unusual-volume alerts
 short_interest.py                 twice-monthly FINRA short interest
 regsho_volume.py                  daily FINRA short sale volume
+watchlist.py                      the roster: one record per company
 ftd_monitor.py                    SEC fails-to-deliver
 threshold_list.py                 Reg SHO threshold list (exception report)
 .github/workflows/monitor.yml     monitor schedule and runner setup

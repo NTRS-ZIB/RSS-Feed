@@ -426,7 +426,7 @@ def main():
               + (f", {skipped} unparsable" if skipped else ""))
 
         # Two symbols mapping to one canonical ticker in a single period is
-        # either a rename mid-period (benign) or a wrong ALIASES entry merging
+        # either a rename mid-period (benign) or a wrong alt_symbols entry
         # two companies (corrupting). Symbol count alone cannot tell them
         # apart, and neither can CUSIP: renames in this sector frequently
         # arrive alongside a reverse split, which changes the CUSIP too.
