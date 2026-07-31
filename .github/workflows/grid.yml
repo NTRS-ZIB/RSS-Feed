@@ -1,0 +1,39 @@
+name: Grid and fuel context
+
+on:
+  schedule:
+    # 21:20 UTC weekdays, five minutes after the bitcoin context. The two are
+    # the revenue and cost halves of the same margin question and read best
+    # together — btc_context.py covers hashprice, this covers what it costs to
+    # earn it.
+    - cron: "20 21 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Fetch and log without posting"
+        type: boolean
+        default: true
+
+concurrency:
+  group: grid-context
+  cancel-in-progress: false
+
+jobs:
+  grid:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install requests
+      - name: Fetch and post
+        # Five requests: actual and forecast demand for two regions, plus gas.
+        timeout-minutes: 5
+        env:
+          WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
+          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u grid_context.py
