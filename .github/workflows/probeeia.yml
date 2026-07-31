@@ -1,0 +1,28 @@
+name: Probe EIA
+
+# TEMPORARY — delete this file and probe_eia.py once the questions are
+# answered. Read-only: queries the EIA open API, prints, exits. No webhook,
+# no state, no commit, no schedule.
+#
+# Needs a new secret, EIA_API_KEY. Free and instant:
+#   https://www.eia.gov/opendata/register.php
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install requests
+      - name: Probe
+        timeout-minutes: 5
+        env:
+          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u probe_eia.py
