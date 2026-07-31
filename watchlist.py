@@ -60,19 +60,12 @@ WATCHLIST = [
         "ticker": "BKKT",
         "name": "Bakkt Holdings",
         "cik": "0001820302",
-        # [1] UNCONFIRMED BY DATA. Taken from the 8-K12B of 3 Nov 2025, which
-        # states this CUSIP at the point New Bakkt became successor issuer.
-        # But a 12-month sweep of the SEC fails files (2025-07 to 2026-07)
-        # shows BKKT under 05759B305 throughout and never under this one — so
-        # either it predates the sweep window or the filing refers to another
-        # security. The issue number `10` suggests original common stock,
-        # which would place it before the April 2024 reverse split.
-        #
-        # Kept because a stale pin is inert while a missing one loses data,
-        # but it is not trusted until observed. probe_cusips.py with
-        # SWEEP_PERIODS=48 would settle it: if it appears in 2024 files it is
-        # the pre-split common and correct; if it never appears, remove it
-        # rather than risk matching a different Bakkt security.
+        # [1] CONFIRMED by a 3-year audit: in use 2023-07-17 to 2024-04-29,
+        # replaced by 05759B305 on 2024-05-01. That is the 1-for-25 reverse
+        # split effective 29 Apr 2024 — NOT the Nov 2025 reorganisation, which
+        # changed no identifier. The 8-K12B filed at that reorganisation quotes
+        # this CUSIP, by then eighteen months stale. The data establishes it;
+        # the filing did not.
         "cusips": ["05759B305", "05759B107"],
         "alt_symbols": [],
         "ir_feed": "https://investors.bakkt.com/rss/news-releases.xml",
@@ -113,7 +106,11 @@ WATCHLIST = [
         "ticker": "SLNH",
         "name": "Soluna Holdings",
         "cik": "0000064463",
-        "cusips": ["583543301"],
+        # [1] pre-reverse-split, in use to 2023-10-13. Corroborated
+        # independently by the dilution tracker, which found the share count
+        # dropping 22.2:1 across the same window from XBRL — a different
+        # dataset reaching the same conclusion.
+        "cusips": ["583543301", "583543103"],
         "alt_symbols": [],
         # WordPress. The /news/ archive feed, not the site-root blog feed that
         # autodiscovery finds — see docs/press-monitor.md.
@@ -143,12 +140,12 @@ WATCHLIST = [
         "ticker": "DGXX",
         "name": "Digi Power X",
         "cik": "0001854368",
-        # 25380B102 is described in the 2025-03-04 release as the company's
-        # NEW CUSIP, so an older one exists for the Digihost era. It has not
-        # been observed yet: the audit only sees DGHI from 2025-03-06 because
-        # neither the old symbol nor the old CUSIP was in this roster. Re-run
-        # audit_identifiers.py now that DGHI is listed and it should surface.
-        "cusips": ["25380B102"],
+        # [1] the Digihost-era identifier, in use to 2025-03-06. Note the
+        # ISSUER prefix changes — 25381D to 25380B — not just the issue number,
+        # so this was an issuer-level reassignment rather than a split. Found
+        # only after DGHI was added to alt_symbols: the audit needs one of the
+        # two to resolve the other. See the two-pass note in docs/watchlist.md.
+        "cusips": ["25380B102", "25381D206"],
         # Digihost Technology -> Digi Power X. Name change effective
         # 2025-03-06, Nasdaq ticker DGHI -> DGXX on 2025-03-18. DGHIZZZZ is
         # not a ticker: NSCC uses a ZZZZ suffix as a placeholder while a symbol
