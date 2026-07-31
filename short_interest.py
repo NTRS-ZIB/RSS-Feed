@@ -58,11 +58,16 @@ import watchlist
 # ------------------------------------------------------------------ CONFIG
 
 # The watchlist lives in watchlist.py — one record per company, one edit to add
-# one. These two names are DERIVED, not restated: these three components need
+# one. Both names are DERIVED, not restated: this component needs
 # canonical -> [former symbols], while ftd_monitor.py needs the exact inverse.
 # Hand-maintaining both directions is how GREE was once mapped to Soluna,
 # merging two companies' data under a plausible number with no error anywhere.
-TICKERS = watchlist.names()            # {ticker: display name}
+#
+# A LIST, not a dict. This component never reads a display name — it uses the
+# watchlist purely as a set of symbols to query. Binding a ticker -> name map
+# and consuming only its keys is how daily_recap.py ended up with a `TICKERS`
+# dict that looked like names and was actually Stooq symbols.
+TICKERS = watchlist.tickers()          # ['MARA', 'CLSK', ...]
 ALIASES = watchlist.alt_by_ticker()    # {ticker: [former or pending symbols]}
 
 
