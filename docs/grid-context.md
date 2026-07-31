@@ -109,23 +109,45 @@ all. These are the two regions most likely to matter, not coverage of the
 watchlist. Treating the table as "the grids our companies are on" would be
 wrong.
 
+## Critical: the horizon is hours, not a day
+
+EIA publishes the day-ahead forecast **with a lag**, so `DF` extends only about
+8–10 hours past the present at any moment. Measured on the first live run:
+ERCOT 9 hours ahead, PJM 8.
+
+Calling that a "day-ahead peak" would be wrong, and at the 21:20 UTC schedule
+the window does **not** reach the following afternoon's peak. It reaches the
+end of the current evening. Every post therefore states the horizon it actually
+had rather than implying a day.
+
 ## Output
 
 ```
-        Fcst  7d pk
-------------------------
-ERCOT   84.2   79.4 +6%*
-PJM    151.3  148.9  +2%
+        7d pk   Now  Fcst
+-------------------------
+ERCOT    90.1   84%  100%
+PJM     133.9   91%  100%
 ```
 
 | Column | Meaning |
 |---|---|
-| `Fcst` | Day-ahead forecast peak, GW |
 | `7d pk` | Highest **actual** demand of the last 7 days, GW |
-| `+n%` | Forecast against that trailing peak |
+| `Now` | Latest actual demand, as a percentage of that peak |
+| `Fcst` | Peak of the available forecast window, same percentage basis |
+
+**Both figures are percentages of the 7-day peak** because absolute gigawatts
+say nothing without a reference, and ERCOT and PJM are not comparable in
+absolute terms — 90 GW versus 134 GW is a difference in grid size, not stress.
 
 `*` marks a forecast at or above `NOTABLE_PEAK_PCT` (5%) over the trailing
 peak, which also gets a prose line and turns the embed amber.
+
+An earlier version compared the forecast peak against the 7-day peak as a bare
+percentage change. Both regions read `+0%` on the first live run, and that is
+structural rather than coincidental: an 8-hour forecast window compared against
+a 7-day peak that already contains yesterday's equivalent hours will nearly
+always land at parity. Showing where demand sits **now** carries the
+information that comparison did not.
 
 Henry Hub appears as a prose line with week-on-week and 45-day changes.
 
