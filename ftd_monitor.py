@@ -45,53 +45,24 @@ from urllib.parse import urljoin
 
 import requests
 
+import watchlist
 # ---------------------------------------------------------------- CONFIG ----
 
-TICKERS = [
-    "MARA", "CLSK", "BKKT", "NUAI", "IREN",
-    "VIP", "ANY", "SLNH", "BGDE", "WYFI", "DGXX",
-]
-
-# Historical or pending symbols -> canonical symbol. This sector renames
-# constantly, and unlike the FINRA components this one reads BACKWARDS through
-# several months of files, so old symbols genuinely appear in the data. Keep in
-# sync with short_interest.py and regsho_volume.py.
-ALIASES = {
-    "GREE": "VIP",    # Greenidge Generation -> Vulcan Infra & Power, 24 Jul 2026
-    "MIGI": "BGDE",   # Mawson Infrastructure -> Big Digital Energy, 30 Apr 2026
-    "DRK": "ANY",     # pending: ANY -> DarkHorse
-}
-
-# CUSIPs pinned by hand, merged into the learned map at startup. Pinning is the
-# fix for a rename: both companies above kept their CUSIP through the change
-# (Big Digital's 8-K says so explicitly), so a pinned CUSIP survives renames
-# that ALIASES only handles once someone notices them.
+# The watchlist lives in watchlist.py — one record per company, one edit to add
+# one. All three names below are DERIVED.
 #
-# These were read from the data itself — the script prints every CUSIP it
-# learns that is not already here, so the block below goes quiet once complete
-# and speaks up again the moment a ticker turns up under a new one.
+# CANON maps OLD OR PENDING SYMBOL -> canonical ticker, because this component
+# filters a bulk file rather than querying by symbol. That is the exact INVERSE
+# of what short_interest.py, regsho_volume.py and threshold_list.py need. Both
+# directions come from the same `alt_symbols` list, so they cannot disagree —
+# hand-maintaining them is how GREE was once mapped to Soluna.
 #
-# TWELVE ENTRIES FOR ELEVEN TICKERS is correct, not a mistake. ANY appears
-# twice: 84841L407 is its pre-reverse-split identifier and 84841L506 the
-# current one. Both share the issuer prefix 84841L, so they are the same
-# company either side of a corporate action. The retired CUSIP is kept because
-# it still appears in older files, which a replay over historical periods
-# reads. A pin survives a rename; it does NOT survive a reverse split, which
-# is why a second entry appears rather than the first being replaced.
-CUSIP_PINS = {
-    "84841L407": "ANY",     # pre-reverse-split
-    "84841L506": "ANY",
-    "57778N406": "BGDE",
-    "05759B305": "BKKT",
-    "18452B209": "CLSK",
-    "25380B102": "DGXX",
-    "Q4982L109": "IREN",    # CINS: Q prefix, non-US issuer (Australia)
-    "565788106": "MARA",
-    "64428N109": "NUAI",
-    "583543301": "SLNH",
-    "39531G308": "VIP",
-    "G96115103": "WYFI",    # CINS: G prefix, non-US issuer
-}
+# CUSIP_PINS carries every CUSIP, current and retired. Twelve entries for
+# eleven tickers is correct: ANY appears twice because a CUSIP survives a
+# rename but NOT a reverse split. watchlist.py validates the check digits.
+TICKERS = watchlist.tickers()
+CANON = watchlist.symbol_to_ticker()
+CUSIP_PINS = watchlist.cusip_pins()
 
 INDEX_URL = "https://www.sec.gov/data-research/sec-markets-data/fails-deliver-data"
 
@@ -128,48 +99,6 @@ except ValueError:
     REPLAY = 0
 if REPLAY:
     DRY_RUN = True
-
-CANON = {t: t for t in TICKERS}
-CANON.update(ALIASES)
-
-# ------------------------------------------------------- CONFIG VALIDATION --
-
-
-def cusip_check_digit(cusip):
-    """Modulus-10 double-add-double check digit over the first 8 characters.
-
-    Applies to CINS identifiers too, where a leading letter is valued A=10.
-    """
-    total = 0
-    for i, ch in enumerate(cusip[:8]):
-        if ch.isdigit():
-            v = int(ch)
-        elif ch.isalpha():
-            v = ord(ch.upper()) - ord("A") + 10
-        else:
-            v = {"*": 36, "@": 37, "#": 38}.get(ch, 0)
-        if i % 2:                       # positions 2, 4, 6, 8 (1-indexed)
-            v *= 2
-        total += v // 10 + v % 10
-    return str((10 - total % 10) % 10)
-
-
-def validate_pins():
-    """Catch a mistyped pin, which is otherwise a silent permanent no-op.
-
-    A malformed CUSIP raises no error: it simply never matches a row, so the
-    ticker quietly falls back to symbol matching and the pin does nothing for
-    as long as it sits there. Pins are added by hand immediately after a
-    rename — precisely the moment a transcription error is likely and least
-    likely to be noticed. The check digit makes that detectable for free.
-    """
-    bad = [c for c in CUSIP_PINS
-           if len(c) != 9 or cusip_check_digit(c) != c[8]]
-    for c in sorted(bad):
-        print(f"WARNING: CUSIP_PINS entry {c!r} ({CUSIP_PINS[c]}) fails its "
-              f"check digit — likely a typo. It will never match anything.")
-    return not bad
-
 
 # ------------------------------------------------------------------ STATE ---
 
@@ -437,7 +366,8 @@ def main():
         return 1
     if not USER_AGENT:
         print("WARNING: SEC_USER_AGENT not set. SEC throttles anonymous traffic.")
-    validate_pins()
+    for problem in watchlist.validate():
+        print(f"WARNING: watchlist.py — {problem}")
 
     state = load_state()
     sess = session()
@@ -530,7 +460,7 @@ def main():
                 print(f"    WARNING: {ticker} matched {len(symmap)} symbols"
                       f"{detail}: {spans}")
                 print("      Concurrent trading means these are different"
-                      " securities. Check ALIASES.")
+                      " securities. Check alt_symbols in watchlist.py.")
             else:
                 print(f"    note: {ticker} spans a rename — {spans}")
         time.sleep(REQUEST_GAP)
@@ -564,8 +494,8 @@ def main():
 
     unpinned = {c: t for c, t in state["cusips"].items() if c not in CUSIP_PINS}
     if unpinned:
-        print("\nCUSIPs learned this run. Paste into CUSIP_PINS to make the")
-        print("watchlist survive future renames without an ALIASES edit:")
+        print("\nCUSIPs seen in the data but absent from watchlist.py. Add each")
+        print("to that company's `cusips` list so it survives a state rebuild:")
         for c, t in sorted(unpinned.items(), key=lambda kv: (kv[1], kv[0])):
             print(f'    "{c}": "{t}",')
 
