@@ -1,0 +1,133 @@
+[← Watchlist monitor](../README.md)
+
+# The watchlist
+
+`watchlist.py` is the single source of truth for which companies are tracked
+and how they are identified. Every component derives its own view from it.
+
+Adding a company is one record.
+
+## Why it exists
+
+The watchlist used to be defined **eight times in five incompatible shapes** —
+plain ticker lists, ticker → name dicts, ticker → (CIK, name) dicts, an
+IR feed map keyed by display label, and two alias maps pointing in *opposite
+directions*. Adding one company meant eight edits, and the alias maps could not
+be copied between files because they were inverses of each other.
+
+That is not a hypothetical cost. Writing an alias backwards merges two
+companies' data under a plausible number with no error raised anywhere — see
+the `GREE → SLNH` incident in [fails to deliver](fails-to-deliver.md#the-alias-collision-guard).
+
+## The record
+
+```python
+{
+    "ticker":      "VIP",
+    "name":        "Vulcan Infrastructure and Power",
+    "cik":         "0001844971",
+    "cusips":      ["39531G308"],
+    "alt_symbols": ["GREE"],
+    "ir_feed":     "https://ir.vulcanip.com/rss/news-releases.xml",
+}
+```
+
+| Field | Notes |
+|---|---|
+| `ticker` | Current symbol. The key everything else is joined on. |
+| `name` | Display name. One spelling — BKKT was previously written three ways across the repo. |
+| `cik` | Permanent. Ten digits, zero-padded. What EDGAR is keyed on. |
+| `cusips` | `[0]` is current; later entries are retired. See below. |
+| `alt_symbols` | Former **and** pending tickers. |
+| `ir_feed` | `None` for companies whose newsroom renders client-side. |
+
+## Derived views
+
+Nothing restates the roster. Each component asks for the shape it needs:
+
+| Accessor | Returns | Used by |
+|---|---|---|
+| `tickers()` | `['MARA', ...]` | short interest, short volume, volume spikes, recap, FTD |
+| `names()` | `{ticker: name}` | threshold list |
+| `ciks()` | `{ticker: (cik, name)}` | press monitor, earnings calendar |
+| `alt_by_ticker()` | `{'VIP': ['GREE']}` | short interest, short volume, threshold list |
+| `symbol_to_ticker()` | `{'GREE': 'VIP', 'MARA': 'MARA'}` | FTD |
+| `cusip_pins()` | `{cusip: ticker}` | FTD |
+| `ir_feeds()` | `{ticker: url}` | press monitor |
+
+`btc_context.py` is the one component that imports none of this — bitcoin
+network data has no per-company dimension.
+
+## Critical: the two alias directions
+
+The last two rows of that table are the same data inverted, and the reason this
+file exists.
+
+| | Needs | Because |
+|---|---|---|
+| FINRA components, threshold list | canonical → `[former]` | They **query by symbol** and must ask for every symbol a company has traded under. |
+| Fails to deliver | former → canonical | It **filters a bulk file** and must map any symbol it encounters back to one company. |
+
+Both are generated from the same `alt_symbols` list, so they cannot disagree.
+Hand-maintaining both is what produced the `GREE → SLNH` bug: GREE was assumed
+to be a Soluna legacy symbol, so Vulcan's data was attributed to Soluna,
+Soluna's series was inflated, and VIP reported a clean sheet in every period.
+
+## CUSIPs: what they survive
+
+A CUSIP survives a **rename**. It does not survive a **reverse split**.
+
+That is why `cusips` is a list. ANY carries two — `84841L506` current and
+`84841L407` pre-split — sharing the issuer prefix `84841L`, so they are one
+company either side of a corporate action rather than two issuers. The retired
+one is kept because historical files still carry it, and `FTD_REPLAY` reads
+those.
+
+Two entries are **CINS** rather than CUSIP: `Q4982L109` (IREN) and `G96115103`
+(WYFI). The `Q` and `G` prefixes mark non-US issuers. The same check digit
+applies.
+
+## Validation
+
+`validate()` returns a list of problems; `python -u watchlist.py` prints the
+roster and runs it. Components call it at startup and warn rather than exit.
+
+It checks:
+
+- duplicate tickers
+- CIKs that are not ten zero-padded digits
+- CUSIP check digits — a mistyped identifier never matches anything and never
+  errors, so it is a silent, permanent no-op
+- the same CUSIP claimed by two companies
+- **the same symbol claimed as an alternate by two companies**
+- a symbol that is both a live ticker and someone else's alternate
+
+The last two are the point. **They are undetectable when the data lives in
+eight files** — the `GREE → SLNH` bug took a live run and a wrong number to
+find. Here it is a startup warning.
+
+## Adding a company
+
+Add one record. Nothing else changes, with two things worth checking:
+
+1. **Is its IR newsroom a real feed?** Some render client-side and cannot be
+   scraped — see [press monitor](press-monitor.md#coverage). Use `None`.
+2. **Run `python -u watchlist.py`** before committing. A malformed CIK or a bad
+   check digit is caught there rather than in nine workflow logs.
+
+On a **rename**, move the old symbol into `alt_symbols` and update `ticker` —
+do not replace one with the other. Both directions are needed, and the old
+symbol persists in historical data indefinitely.
+
+## What does not belong here
+
+Anything derivable. `daily_recap.py` previously carried a ticker → Stooq symbol
+map, but every value was `ticker.lower() + ".us"` — a transformation, not a
+fact about the company. It now lives in `stooq_symbol()` beside the fetch that
+uses it.
+
+Anything component-specific. Thresholds, schedules, webhooks and lookback
+windows stay in the component that owns them.
+
+If one company ever needs an irregular provider symbol, *that* is when it earns
+a field.

@@ -90,13 +90,13 @@ reason: FINRA files by the symbol in force on the trade date, so a rename
 splits history.
 
 ```python
-ALIASES = {
-    "VIP": ["GREE"],   # renamed from Greenidge, 2026-07-24
-    "ANY": ["DRK"],    # pending change to DarkHorse Technologies
-}
+TICKERS = watchlist.tickers()
+ALIASES = watchlist.alt_by_ticker()
 ```
 
-Add on a rename rather than editing `TICKERS`. Both files must be kept in sync.
+Both are derived from [`watchlist.py`](watchlist.md), so this component and
+short interest cannot drift apart — they previously had to be kept in sync by
+hand, and `MIGI` was missing from both.
 
 ## Guards
 

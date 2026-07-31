@@ -152,48 +152,40 @@ Note the dates against the publication schedule. The 2026-07a file covers
 1–15 July, entirely *before* the VIP change — so Vulcan's fails are filed under
 `GREE` in a period that publishes after the ticker no longer exists.
 
-Three defences, in order of durability:
+Three defences, in order of durability. All three read from
+[`watchlist.py`](watchlist.md):
 
-1. **`CUSIP_PINS`** — a CUSIP pinned by hand survives every future *rename*.
-   Both companies above kept their CUSIP through the change. This is the same
-   reasoning as pinning EDGAR companies by CIK rather than ticker. Note the
-   limit: a CUSIP does **not** survive a reverse split (see below), so this is
-   durable against renames, not against every corporate action.
+1. **CUSIPs** — `CUSIP_PINS = watchlist.cusip_pins()`. A CUSIP survives a
+   *rename* but **not a reverse split**, which is why `cusips` is a list and
+   ANY carries two. See
+   [what CUSIPs survive](watchlist.md#cusips-what-they-survive).
 
-   The script prints every CUSIP it learns that is not already pinned, so the
-   block goes quiet once all of them are in — and speaks up again the moment a
-   ticker turns up under a new one, which is itself the signal worth having.
+   The script prints every CUSIP it finds in the data that is **not** in the
+   roster, so the block stays silent once complete and speaks up the moment a
+   ticker turns up under a new one — itself the signal worth having.
 
-   **Twelve entries for eleven tickers is correct.** ANY appears twice:
-   `84841L407` is its pre-reverse-split identifier and `84841L506` the current
-   one. Both share the issuer prefix `84841L`, so they are the same company
-   either side of a corporate action rather than two issuers. The retired one
-   is kept because it still appears in older files, which `FTD_REPLAY` reads.
+### The roster is validated at startup
 
-   Two entries are CINS rather than CUSIP — `Q4982L109` (IREN) and
-   `G96115103` (WYFI). The `Q` and `G` prefixes mark non-US issuers. The same
-   check digit applies.
+A mistyped CUSIP raises no error. It simply never matches a row, so the ticker
+falls back to symbol matching and the entry does nothing for as long as it sits
+there — a silent, permanent no-op. Identifiers are edited by hand immediately
+after a rename, exactly when a transcription error is likely and least likely
+to be noticed.
 
-### Pins are check-digit validated at startup
-
-A mistyped pin raises no error. It simply never matches a row, so the ticker
-falls back to symbol matching and the pin does nothing for as long as it sits
-there — a silent, permanent no-op.
-
-Pins are added by hand immediately after a rename, which is exactly the moment
-a transcription error is likely and least likely to be noticed. CUSIPs carry a
-modulus-10 check digit, so `validate_pins()` catches it for free on every run:
+Every run calls `watchlist.validate()` and prints whatever it returns:
 
 ```
-WARNING: CUSIP_PINS entry '84841L400' (ANY) fails its check digit — likely a
-typo. It will never match anything.
+WARNING: watchlist.py — ANY: CUSIP '84841L400' fails its check digit
 ```
 
-It warns rather than exits: a bad pin degrades to symbol matching, which still
-works, so it is not worth failing a run over.
-2. **`ALIASES`** — old and pending symbols mapped to the canonical one. Shared
-   in spirit with the two FINRA components; keep the three in sync. Only works
-   for renames someone has noticed.
+It warns rather than exits, because a bad identifier degrades to symbol
+matching, which still works. See
+[validation](watchlist.md#validation) for everything it covers — including the
+symbol-claimed-by-two-companies check that would have caught the bug below.
+2. **Symbol mapping** — `CANON = watchlist.symbol_to_ticker()`, old or pending
+   symbol to canonical. This is the **inverse** of what the FINRA components
+   need, and both are generated from the same `alt_symbols` list so they cannot
+   disagree. Only works for renames someone has recorded.
 3. **Learned CUSIPs** — every matched row's CUSIP is written to
    `ftd_state.json`, so once a ticker matches by symbol it also matches by
    CUSIP thereafter. Catches a rename mid-window without an edit, but cannot
@@ -239,11 +231,13 @@ note: VIP spans a rename — GREE 07-16..07-23, VIP 07-24..07-31
 
 WARNING: CLSK matched 2 symbols, 6 shared settlement date(s):
          MARA 06-16..06-26, CLSK 06-16..06-26
-  Concurrent trading means these are different securities. Check ALIASES.
+  Concurrent trading means these are different
+  securities. Check alt_symbols in watchlist.py.
 
 WARNING: CLSK matched 2 symbols, ranges interleave:
          MARA 07-01..07-13, CLSK 07-10..07-10
-  Concurrent trading means these are different securities. Check ALIASES.
+  Concurrent trading means these are different
+  securities. Check alt_symbols in watchlist.py.
 ```
 
 Both warning forms were produced against real SEC files by temporarily

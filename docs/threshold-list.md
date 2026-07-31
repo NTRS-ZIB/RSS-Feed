@@ -154,19 +154,18 @@ Shared with [short interest](short-interest.md#aliases) and
 ticker mapped to a list of former or pending symbols.
 
 ```python
-ALIASES = {
-    "VIP": ["GREE"],   # renamed from Greenidge, 2026-07-24
-    "ANY": ["DRK"],    # pending change to DarkHorse Technologies
-}
+TICKERS = watchlist.names()            # values used on removal lines
+ALIASES = watchlist.alt_by_ticker()
 ```
 
 The list is published per settlement day under the symbol in force that day, so
 a rename splits history exactly as it does for the FINRA components.
 
-Note that [fails to deliver](fails-to-deliver.md) maps the *opposite*
-direction — old symbol to canonical — because it filters a bulk file rather
-than querying by symbol. The four files must stay in sync, but their alias maps
-are not interchangeable.
+[Fails to deliver](fails-to-deliver.md) needs the *opposite* direction — old
+symbol to canonical — because it filters a bulk file rather than querying by
+symbol. Both are generated from the same `alt_symbols` list in
+[`watchlist.py`](watchlist.md#critical-the-two-alias-directions), so neither
+can be written backwards.
 
 ## Known quirks
 

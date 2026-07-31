@@ -131,19 +131,18 @@ This is not hypothetical. The 2026-07-15 settlement predates the GREE → VIP
 change on 2026-07-24, so Vulcan is filed under `GREE` for that period and was
 initially missing from the report.
 
-`ALIASES` maps former and pending symbols back to the canonical ticker:
+`ALIASES` is derived from [`watchlist.py`](watchlist.md), which owns the
+roster:
 
 ```python
-ALIASES = {
-    "VIP": ["GREE"],   # renamed from Greenidge, 2026-07-24
-    "ANY": ["DRK"],    # pending change to DarkHorse Technologies
-}
+TICKERS = watchlist.tickers()          # symbols to query
+ALIASES = watchlist.alt_by_ticker()    # {ticker: [former or pending symbols]}
 ```
 
-When a company renames, **add to `ALIASES` rather than editing `TICKERS`** —
-keeping both preserves continuity across the changeover. Both symbols are
-queried and results map to the canonical ticker, with a note in the embed
-saying which was used.
+Every symbol is queried and results map back to the canonical ticker, with a
+note in the embed saying which was used. On a rename, move the old symbol into
+that company's `alt_symbols` — see
+[adding a company](watchlist.md#adding-a-company).
 
 Any ticker not found is named explicitly in the log and the embed. Treat that
 as a maintenance alarm: it usually means a symbol change, not an outage.

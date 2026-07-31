@@ -41,16 +41,23 @@ Change `12-23` to `11-23` to also catch 7:00am ET premarket releases in summer.
 
 Everything lives in the CONFIG block at the top of `press_monitor.py`.
 
-**`EXTRA_CIKS`** — the watchlist, pinned by CIK rather than ticker. CIKs are
-permanent; tickers are not. This sector renames constantly (BGDE renamed Apr
-2026, VIP Jul 2026, ANY has a pending change to DarkHorse/DRK), and SEC's
-ticker lookup file lags renames by weeks. Pinning by CIK sidesteps that
-entirely. `TICKERS` is left empty as a result, but still works if you'd rather
-add a company by symbol.
+**`EXTRA_CIKS`** — `watchlist.ciks()`. The roster, pinned by CIK rather than
+ticker. CIKs are permanent; tickers are not. This sector renames constantly
+(BGDE renamed Apr 2026, VIP Jul 2026, ANY has a pending change to
+DarkHorse/DRK), and SEC's ticker lookup file lags renames by weeks. Pinning by
+CIK sidesteps that entirely. `TICKERS` is left empty as a result, but still
+works if you'd rather add a company by symbol. See
+[the watchlist](watchlist.md).
 
-**`IR_FEEDS`** — label → URL. Accepts either a direct feed URL or a newsroom
-page; if the URL isn't a feed, the script reads the page's
-`<link rel="alternate">` tag and uses whatever feed it finds.
+**`IR_FEEDS`** — `watchlist.ir_feeds()`, **ticker → URL**. Accepts either a
+direct feed URL or a newsroom page; if the URL isn't a feed, the script reads
+the page's `<link rel="alternate">` tag and uses whatever feed it finds.
+
+This map was previously keyed by *display label* — a mix of tickers (`MARA`,
+`IREN`) and company names (`CleanSpark`, `Soluna`, `Bakkt`). Nothing joined a
+feed to its company, so a company could be dropped from the watchlist while its
+feed kept being polled, and nothing would notice. Keying by ticker makes the
+join structural. Feed URLs are unchanged; only the log labels differ.
 
 **`FORM_TYPES`** — ten forms, exploiting EDGAR's prefix matching so that
 `8-K` also catches `8-K/A`, `424` catches `424B1`–`424B8`, and `SC 13D` catches
