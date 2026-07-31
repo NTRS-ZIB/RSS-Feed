@@ -1,0 +1,56 @@
+name: 52-week crossings
+
+on:
+  schedule:
+    # 21:45 UTC weekdays, after the close in both DST states and 15 minutes
+    # after the recap. Uses daily closing bars, so there is nothing to gain
+    # from running intraday — and Alpaca's free tier restricts recency anyway.
+    - cron: "45 21 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Fetch and log without posting or saving state"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write   # commits crossings_state.json
+
+concurrency:
+  group: crossings
+  cancel-in-progress: false
+
+jobs:
+  crossings:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install requests
+      - name: Check crossings
+        # One Alpaca request covers every ticker.
+        timeout-minutes: 5
+        env:
+          # Alerts channel; falls back to market data if unset.
+          WEBHOOK_URL_ALERTS: ${{ secrets.WEBHOOK_URL_ALERTS }}
+          WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
+          ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u crossings.py
+
+      - name: Persist state
+        run: |
+          if [[ -n "$(git status --porcelain crossings_state.json)" ]]; then
+            git config user.name "crossings"
+            git config user.email "actions@github.com"
+            git add crossings_state.json
+            git commit -m "Update crossings state [skip ci]"
+            git push
+          else
+            echo "No state change."
+          fi
