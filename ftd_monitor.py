@@ -104,24 +104,8 @@ except ValueError:
 if REPLAY:
     DRY_RUN = True
 
-# ------------------------------------------------------------ TEST BUILD ----
-# TEMPORARY — DELETE THIS BLOCK WHEN THE TEST IS DONE.
-#
-# This build deliberately mis-aliases MARA onto CLSK to exercise the same-day
-# overlap guard against real SEC files. It reproduces the original GREE->SLNH
-# bug on purpose: two live companies merged into one canonical ticker.
-#
-# While this is non-empty the script REFUSES to run outside replay mode, so a
-# forgotten revert fails the scheduled run loudly instead of quietly posting
-# merged data. Deleting the block restores normal behaviour.
-TEST_ALIASES = {
-    "MARA": "CLSK",
-}
-# ----------------------------------------------------------------------------
-
 CANON = {t: t for t in TICKERS}
 CANON.update(ALIASES)
-CANON.update(TEST_ALIASES)
 
 # ------------------------------------------------------------------ STATE ---
 
@@ -382,12 +366,6 @@ def post(embed):
 
 
 def main():
-    if TEST_ALIASES and not REPLAY:
-        print("REFUSING TO RUN: TEST_ALIASES is set in ftd_monitor.py.")
-        print(f"  {TEST_ALIASES}")
-        print("  This is a deliberately broken test build. It may only be used")
-        print("  with FTD_REPLAY set. Delete the TEST BUILD block and re-upload.")
-        return 1
     if DRY_RUN:
         print("DRY RUN — nothing posted, state not saved.")
     elif not WEBHOOK:
