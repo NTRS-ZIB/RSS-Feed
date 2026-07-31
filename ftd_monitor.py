@@ -329,8 +329,14 @@ def build_embed(period, rows, missing, span):
         "title": f"Fails to deliver — {pretty(period)}",
         "description": "\n".join(lines),
         "color": 0xC77D2B if any(r["flag"] for r in rows) else 0x5A6672,
+        # The baseline length belongs on the post. xMed is not a property of
+        # the ticker, it is a property of the window: measured over 12 periods
+        # instead of 6, NUAI's first reading moved from 27.0x to 4.3x and
+        # DGXX's from 0.4x to 3.4x. A reader cannot judge the number without
+        # knowing what it is divided by.
         "footer": {"text": "SEC CNS fails"
                            + (f" · settled {span}" if span else "")
+                           + f" · xMed vs <={BASELINE_PERIODS - 1} prior periods"
                            + " · published with a 2-6 week lag"},
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
