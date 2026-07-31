@@ -18,6 +18,14 @@ They are deliberately separate workflows: a failure in one data provider must
 not take down the others. The context posts 15 minutes before the recap so it
 lands above the performance table in the channel.
 
+## Output width
+
+Every monospace block is kept to **≤28 characters**. Discord mobile wraps code
+blocks past roughly that width, and a wrapped table splits each row across two
+lines and becomes unreadable. The earnings calendar was originally 52 characters
+wide and the recap 47; both were rebuilt narrower rather than accepting the
+wrap. When adding a column, something else has to give.
+
 ---
 
 # Press release monitor
@@ -314,16 +322,26 @@ DST states (5:30pm ET in summer, 4:30pm in winter), so no seasonal edits.
 
 ## Output
 
-A monospace table sorted by daily move, plus a PNG grid of 60-day closing
-sparklines, green or red by period direction.
+A monospace table sorted by daily move, plus a PNG grid of intraday charts.
+
+```
+      Close    Chg  Vol 52w
+--------------------------
+IREN  37.18  26.9% 2.4x* 88
+CLSK  14.40  19.9% 1.6x* 52
+MARA  11.86  18.0% 1.2x  37
+```
 
 | Column | Meaning |
 |---|---|
 | `Close` | Last close |
 | `Chg` | % change vs previous close |
-| `Vol` | Session volume |
-| `x30d` | Volume as a multiple of the trailing 30-day average. A trailing `*` marks unusual volume — see below. |
-| `52w` | Position in the 52-week range, 0% = low, 100% = high |
+| `Vol` | Multiple of the trailing 30-day average volume. A trailing `*` marks unusual volume — see below. |
+| `52w` | Position in the 52-week range, 0 = low, 100 = high |
+
+Absolute share counts are **not** in the grid — there is no room at mobile
+width, and the ratio is what you act on. The raw figure appears in the footer
+for flagged tickers only, where it is worth reading.
 
 The header states the **actual date of the last bar** rather than assuming it
 is today. Tickers with no data are named, and tickers whose latest bar is older
@@ -336,6 +354,48 @@ once, because partial volume is being compared to full-day averages.
 
 The header also always names the data source (`via Alpaca sip`), so a silent
 fallback to a lagging provider is impossible.
+
+## The chart
+
+A grid of **intraday** charts, two per row, one per ticker: today's regular
+session in 5-minute bars, 09:30–16:00 ET.
+
+- A dashed line marks the **previous close**, and the shaded fill sits between
+  the line and that reference — so the shaded area reads directly as the day's
+  gain or loss.
+- The y-range always includes the previous close, so an opening gap is visible
+  rather than being scaled off-screen.
+- Colour comes from the **day's** move, the same figure shown in each panel's
+  title.
+
+That last point was a real bug in the first version. The chart plotted 60 days
+of closes and coloured by the 60-day direction, while the title showed the
+*one-day* change — so a stock up 27% on the day but below where it sat two
+months earlier rendered as a red line labelled `+27.0%`. Charting the day
+resolves it: one timeframe, one number, one colour.
+
+`CHART_MODE = "daily"` restores the 60-day view; both paths stay live, and the
+caption states which one you are looking at. `CHART_EXTENDED = True` widens the
+window to 04:00–20:00 ET.
+
+Note the boundary differs from the volume alerts on purpose: **alerts count
+extended hours, the chart does not.** A ticker can trigger a premarket alert
+whose bars never appear on that evening's chart.
+
+Intraday needs Alpaca. On the fallback provider there is no usable intraday
+data, so panels revert to the 60-day series and the caption says so.
+
+### Image shape is deliberate
+
+Discord caps the **height** of an embedded image, so a tall portrait image is
+displayed *narrower* — the height limit binds before the width one. The first
+two-column version was 884×1481 (aspect 1.68) and rendered as a thin column on
+mobile. Reshaping the panels to 4.2×1.55 inches gives 1092×1209 (aspect 1.11),
+which fills the available width.
+
+`MAX_ASPECT` (1.15) enforces this. Adding tickers means more rows, which would
+push the image tall again and reintroduce the problem; the cap squeezes panel
+height instead. At 20 tickers it still renders 1092×1255.
 
 ## End-of-day volume flagging
 
