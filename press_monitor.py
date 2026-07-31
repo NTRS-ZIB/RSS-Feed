@@ -296,7 +296,10 @@ def save_state(state, items_this_run=0):
     or items age out of state, reappear as "new", and get re-posted. Since
     visibility scales with the watchlist, the cap scales with it too.
     """
-    floor = max(4000, items_this_run * 3)
+    # 3x a run's visibility is the real protection; the constant is just a
+    # sane minimum. It was 4000 when a run saw ~4,200 ids. With RETAIN_DAYS a
+    # run sees ~130, so 4000 would pin the file at ~250KB of dead history.
+    floor = max(1000, items_this_run * 3)
     state["seen"] = state["seen"][-floor:]
     STATE_FILE.write_text(json.dumps(state, indent=1))
     print(f"State: {len(state['seen'])} ids retained (cap {floor}).")
