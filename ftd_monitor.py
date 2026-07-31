@@ -419,6 +419,13 @@ def main():
     if missing:
         print(f"Zero balance all period: {', '.join(sorted(missing))}")
 
+    unpinned = {c: t for c, t in state["cusips"].items() if c not in CUSIP_PINS}
+    if unpinned:
+        print("\nCUSIPs learned this run. Paste into CUSIP_PINS to make the")
+        print("watchlist survive future renames without an ALIASES edit:")
+        for c, t in sorted(unpinned.items(), key=lambda kv: (kv[1], kv[0])):
+            print(f'    "{c}": "{t}",')
+
     if DRY_RUN:
         print(f"\nDry run: would post {pretty(newest)}. State not saved.")
         return 0
