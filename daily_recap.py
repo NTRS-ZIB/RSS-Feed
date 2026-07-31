@@ -236,6 +236,10 @@ def stooq_symbol(ticker):
     A transformation, not a fact about the company, so it belongs here rather
     than in watchlist.py. If a company ever needs an irregular provider symbol,
     that is when it earns a field in the roster.
+
+    Stooq indexes by the symbol in force, and lags renames. If VIP ever returns
+    nothing here, try `gree.us` — Stooq may still be filing it under Greenidge.
+    This only matters on a local run, since CI reaches Twelve Data first.
     """
     return f"{ticker.lower()}.us"
 
