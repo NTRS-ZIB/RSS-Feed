@@ -464,17 +464,29 @@ def main():
         for ticker, symmap in sorted(seen_syms.items()):
             if len(symmap) < 2:
                 continue
+            # Test INTERVAL overlap, not exact shared dates. This data is
+            # sparse — only days with a non-zero balance appear — so two live
+            # companies frequently miss each other's exact dates by chance. A
+            # real observation: MARA 07-01..07-13 and CLSK 07-10..07-10 share
+            # no date at all, yet plainly interleave. A rename is the strict
+            # case where one symbol's whole range ends before the other begins.
+            ordered = sorted(
+                ((sym, min(ds), max(ds)) for sym, ds in symmap.items()),
+                key=lambda t: t[1],
+            )
+            concurrent = any(
+                ordered[i][2] >= ordered[i + 1][1] for i in range(len(ordered) - 1)
+            )
             counts = Counter(d for ds in symmap.values() for d in ds)
             shared = sorted(d for d, n in counts.items() if n > 1)
-            spans = ", ".join(
-                f"{sym} {mmdd(min(ds))}..{mmdd(max(ds))}"
-                for sym, ds in sorted(symmap.items(), key=lambda kv: min(kv[1]))
-            )
-            if shared:
+            spans = ", ".join(f"{sym} {mmdd(lo)}..{mmdd(hi)}" for sym, lo, hi in ordered)
+            if concurrent:
                 overlapped.add(ticker)
-                print(f"    WARNING: {ticker} matched {len(symmap)} symbols on"
-                      f" {len(shared)} shared settlement date(s): {spans}")
-                print("      Same-day overlap means these are different"
+                detail = (f", {len(shared)} shared settlement date(s)"
+                          if shared else ", ranges interleave")
+                print(f"    WARNING: {ticker} matched {len(symmap)} symbols"
+                      f"{detail}: {spans}")
+                print("      Concurrent trading means these are different"
                       " securities. Check ALIASES.")
             else:
                 print(f"    note: {ticker} spans a rename — {spans}")
