@@ -160,6 +160,52 @@ def main():
             print(f"    newest period {newest}, {d} days old — {verdict}")
 
     print("\n" + "=" * 74)
+    print("3. RTO ROUTE — WHICH GRIDS, AND WHAT IS MEASURED")
+    print("=" * 74)
+    print("  No wholesale PRICE exists in the open API for any region, so the")
+    print("  question is what the hourly RTO route does carry. ERCOT covers")
+    print("  NUAI (Midland, Texas); PJM covers BGDE (Midland, Pennsylvania).\n")
+
+    for facet in ("respondent", "type"):
+        payload, err = get(f"electricity/rto/region-data/facet/{facet}")
+        if err:
+            print(f"  facet/{facet}: FAILED — {err}")
+            continue
+        vals = (payload or {}).get("response", {}).get("facets", [])
+        print(f"  facet/{facet}: {len(vals)} value(s)")
+        if facet == "respondent":
+            want = {"ERCO", "ERCOT", "PJM", "NYIS", "NYISO", "MISO", "SWPP", "CISO"}
+            hits = [v for v in vals if str(v.get("id", "")).upper() in want]
+            for v in hits:
+                print(f"      {v.get('id'):<8} {v.get('name', '')}")
+            if not hits:
+                for v in vals[:12]:
+                    print(f"      {v.get('id'):<8} {v.get('name', '')}")
+                print(f"      ... ({len(vals)} total; none matched the expected codes)")
+        else:
+            for v in vals:
+                print(f"      {v.get('id'):<8} {v.get('name', '')}")
+
+    print()
+    for label, resp in (("ERCOT", "ERCO"), ("PJM", "PJM")):
+        payload, err = get("electricity/rto/region-data/data", {
+            "data[]": "value", "facets[respondent][]": resp,
+            "frequency": "hourly", "sort[0][column]": "period",
+            "sort[0][direction]": "desc", "length": "4"})
+        print(f"  {label} ({resp}) sample:")
+        if err:
+            print(f"    FAILED — {err}")
+            continue
+        rows = (payload or {}).get("response", {}).get("data", [])
+        if not rows:
+            print("    no rows — wrong respondent code?")
+            continue
+        for r in rows:
+            print(f"      {r.get('period','?'):>16}  {str(r.get('value','?')):>10} "
+                  f"{r.get('value-units','') or r.get('units','')}  "
+                  f"type={r.get('type','?')}")
+
+    print("\n" + "=" * 74)
     print("VERDICT")
     print("=" * 74)
     print("""  Read section 1 for whether a WHOLESALE price route exists at all. If it
@@ -170,7 +216,14 @@ def main():
   Read section 2 for the lag. A two-month lag makes this a contextual post
   like fails-to-deliver rather than something to sit beside the daily recap,
   and the component's schedule and framing should follow from that rather than
-  the other way round.""")
+  the other way round.
+
+  Read section 3 for whether grid DEMAND is a usable substitute for the price
+  that is not there. Demand is what drives curtailment, and curtailment is when
+  a miner gets paid to switch off — arguably closer to these companies'
+  economics than a price series anyway. What matters is whether the `type`
+  facet distinguishes actual demand from forecast, and whether ERCOT and PJM
+  both report on the same basis.""")
     return 0
 
 
