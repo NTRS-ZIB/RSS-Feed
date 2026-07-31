@@ -166,19 +166,31 @@ def summarise(series):
     split = step is not None and step <= -SPLIT_DROP_PCT
 
     year = None
-    if not split:
+    year_reason = None          # why year is absent: "split" or "thin"
+    if split:
+        year_reason = "split"
+    else:
         target = latest_date - timedelta(days=YEAR_DAYS)
         older = [(d, v) for d, v, _ in series if d <= target]
-        if older:
+        if not older:
+            # No observation a year back. Distinct from a split: this company
+            # has not been reporting long enough, which is information about
+            # the company rather than about the arithmetic.
+            year_reason = "thin"
+        else:
             base_date, base = older[-1]
-            # A split anywhere in the window invalidates the comparison too.
+            # A split anywhere in the window invalidates the comparison too,
+            # not only one in the most recent step.
             window = [v for d, v, _ in series if d >= base_date]
             drops = [pct(b, a) for a, b in zip(window, window[1:])]
-            if not any(x is not None and x <= -SPLIT_DROP_PCT for x in drops):
+            if any(x is not None and x <= -SPLIT_DROP_PCT for x in drops):
+                year_reason = "split"
+            else:
                 year = pct(latest, base)
 
     return {"date": latest_date, "shares": latest, "form": form,
-            "step": step, "prior": prior, "year": year, "split": split}
+            "step": step, "prior": prior, "year": year, "split": split,
+            "year_reason": year_reason, "obs": len(series)}
 
 
 # ------------------------------------------------------------------ FORMAT
@@ -211,8 +223,14 @@ def build_table(rows):
     for r in rows:
         m = r["m"]
         step = "split" if m["split"] else fmt_pct(m["step"])
-        year = fmt_pct(m["year"])
-        mark = "*" if (m["year"] is not None and m["year"] >= NOTABLE_YEAR_PCT) else ""
+        # `-` alone conflated two opposite meanings: a split makes the
+        # comparison invalid, thin history makes it unavailable.
+        if m["year"] is not None:
+            year, mark = fmt_pct(m["year"]), ("*" if m["year"] >= NOTABLE_YEAR_PCT else "")
+        elif m["year_reason"] == "split":
+            year, mark = "split", ""
+        else:
+            year, mark = "-", "~"
         out.append(f"{r['ticker']:<5}{fmt_shares(m['shares']):>7}"
                    f"{step:>6}{(year + mark):>7}"[:25])
     return "\n".join(out)
@@ -233,6 +251,15 @@ def build_embed(rows, changed, splits):
                 f"**{r['ticker']}** +{m['step']:.0f}% in one filing, "
                 f"{fmt_shares(m['prior'])} → {fmt_shares(m['shares'])} "
                 f"(as of {m['date']:%d %b})")
+
+    thin = [r["ticker"] for r in rows if r["m"]["year_reason"] == "thin"]
+    if thin:
+        lines.append(f"`~` under a year of reported history: {', '.join(thin)}")
+    suppressed = [r["ticker"] for r in rows
+                  if r["m"]["year_reason"] == "split" and not r["m"]["split"]]
+    if suppressed:
+        lines.append(f"`split` in the trailing year, growth not comparable: "
+                     f"{', '.join(suppressed)}")
 
     lines.append(
         "_Cover-page shares outstanding, as of each filing's own date — not a "
