@@ -187,6 +187,7 @@ def summarise(series):
                     "ratio": (v0 / v1) if v1 else None}
 
     year = None
+    year_base = None            # (date, shares) the year figure is measured from
     year_reason = None          # why year is absent: "split" or "thin"
     if split:
         year_reason = "split"
@@ -209,10 +210,12 @@ def summarise(series):
                 year_reason = "split"
             else:
                 year = pct(latest, base)
+                year_base = (base_date, base)
 
     return {"date": latest_date, "shares": latest, "form": form,
             "step": step, "prior": prior, "year": year, "split": split,
-            "year_reason": year_reason, "obs": len(series), "drop": drop}
+            "year_reason": year_reason, "obs": len(series), "drop": drop,
+            "year_base": year_base}
 
 
 # ------------------------------------------------------------------ FORMAT
@@ -229,11 +232,17 @@ def fmt_shares(n):
 
 
 def fmt_pct(p):
-    """Width-capped: an extreme reading must not widen the table."""
+    """Width-capped — but a cap must not swallow the answer.
+
+    Past about 900% a percentage stops being readable and `>999%` hides the
+    magnitude entirely: 1,000% and 10,000% render identically. Beyond that
+    threshold the figure is shown as a MULTIPLE instead, which is both shorter
+    and more informative — `16x` says what `>999%` refuses to.
+    """
     if p is None:
         return "-"
-    if p > 999:
-        return ">999%"
+    if p > 900:
+        return f"{1 + p / 100:.0f}x"
     if p < -99:
         return "<-99%"
     return f"{p:+.0f}%"
@@ -351,6 +360,10 @@ def main():
             splits += 1
         print(f"  {ticker}: {fmt_shares(m['shares'])} as of {m['date']} "
               f"({m['form'] or '?'}, {len(series)} obs, {concept})")
+        if m["year_base"] and m["year"] is not None and m["year"] >= NOTABLE_YEAR_PCT:
+            bd, bv = m["year_base"]
+            print(f"      1yr base {bd} {bv:,}  ->  {m['shares']:,}  "
+                  f"({fmt_pct(m['year'])} over {(m['date'] - bd).days}d)")
         if m["drop"]:
             d = m["drop"]
             (d0, v0, f0), (d1, v1, f1) = d["from"], d["to"]
