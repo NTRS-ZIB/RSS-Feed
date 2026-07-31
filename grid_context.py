@@ -31,6 +31,13 @@ stop mining, and that payment is a real revenue line. Demand approaching a
 recent peak is when that happens, so a day-ahead forecast running above the
 trailing norm is the signal — not the absolute megawatts.
 
+CRITICAL: THE FORECAST HORIZON IS HOURS, NOT A DAY
+EIA publishes the day-ahead forecast with a lag, so DF extends only about 8-10
+hours past the present at any moment — measured, not assumed. Calling it a
+"day-ahead peak" would be wrong, and at the 21:20 UTC schedule the window does
+not reach the following afternoon's peak. Every post states the horizon it
+actually had.
+
 CRITICAL: FORECAST IS NOT ACTUAL
 The RTO route carries four types: D (demand), DF (day-ahead forecast), NG (net
 generation), TI (interchange). Sorting by newest period returns DF first,
@@ -139,12 +146,14 @@ def region_demand(code):
         print(f"    {label:<9} {len(vals):>5} hour(s)"
               + (f", newest {max(v[0] for v in vals):%Y-%m-%d %H}Z" if vals else ""))
 
-    actual = [v for w, v in out.get("D", []) if w >= now - timedelta(days=BASELINE_DAYS)]
+    recent = [(w, v) for w, v in out.get("D", [])
+              if w >= now - timedelta(days=BASELINE_DAYS)]
     forward = [v for w, v in out.get("DF", []) if w >= now]
-    if not actual or not forward:
+    if not recent or not forward:
         return None
-    return {"actual_peak": max(actual), "forecast_peak": max(forward),
-            "hours_ahead": len(forward)}
+    latest = max(recent, key=lambda t: t[0])[1]
+    return {"actual_peak": max(v for _, v in recent), "latest": latest,
+            "forecast_peak": max(forward), "hours_ahead": len(forward)}
 
 
 # -------------------------------------------------------------------- GAS
@@ -180,12 +189,14 @@ def gas():
 
 def build_table(grids):
     """Kept to 24 characters. See the output-width note in the README."""
-    out = [f"{'':<6}{'Fcst':>6}{'7d pk':>7}{'':>5}", "-" * 24]
+    out = [f"{'':<6}{'7d pk':>7}{'Now':>6}{'Fcst':>6}", "-" * 25]
     for code, g in grids.items():
-        delta = (g["forecast_peak"] - g["actual_peak"]) / g["actual_peak"] * 100
-        mark = "*" if delta >= NOTABLE_PEAK_PCT else ""
-        out.append(f"{REGIONS[code]:<6}{g['forecast_peak'] / 1000:>6.1f}"
-                   f"{g['actual_peak'] / 1000:>7.1f}{f'{delta:+.0f}%' + mark:>5}")
+        pk = g["actual_peak"]
+        now_pct = g["latest"] / pk * 100 if pk else 0
+        fc_pct = g["forecast_peak"] / pk * 100 if pk else 0
+        mark = "*" if fc_pct - 100 >= NOTABLE_PEAK_PCT else ""
+        out.append(f"{REGIONS[code]:<6}{pk / 1000:>7.1f}{now_pct:>5.0f}%"
+                   f"{f'{fc_pct:.0f}%' + mark:>6}")
     return "\n".join(out)
 
 
@@ -193,15 +204,19 @@ def build_embed(grids, g):
     lines = []
     if grids:
         lines.append(f"```\n{build_table(grids)}\n```")
-        lines.append("_GW. `Fcst` is the day-ahead forecast peak, `7d pk` the "
-                     "highest actual demand of the last 7 days._")
+        horizon = min(d["hours_ahead"] for d in grids.values())
+        lines.append(
+            f"_`7d pk` is the highest actual demand of the last 7 days, in GW. "
+            f"`Now` and `Fcst` are percentages of it — current demand, and the "
+            f"peak of the next **{horizon}h** of forecast._")
         for code, d in grids.items():
             delta = (d["forecast_peak"] - d["actual_peak"]) / d["actual_peak"] * 100
             if delta >= NOTABLE_PEAK_PCT:
                 lines.append(
-                    f"**{REGIONS[code]}** day-ahead peak {d['forecast_peak']/1000:.1f} GW, "
+                    f"**{REGIONS[code]}** forecast to reach "
+                    f"{d['forecast_peak']/1000:.1f} GW within {d['hours_ahead']}h, "
                     f"{delta:+.0f}% above its 7-day high — curtailment is likelier "
-                    f"on days like this")
+                    f"in windows like this")
     else:
         lines.append("_No grid data this run._")
 
@@ -257,9 +272,10 @@ def main():
         d = region_demand(code)
         if d:
             delta = (d["forecast_peak"] - d["actual_peak"]) / d["actual_peak"] * 100
-            print(f"    forecast peak {d['forecast_peak']/1000:.1f} GW over "
-                  f"{d['hours_ahead']}h ahead, 7d actual peak "
-                  f"{d['actual_peak']/1000:.1f} GW  ({delta:+.0f}%)")
+            print(f"    now {d['latest']/1000:.1f} GW "
+                  f"({d['latest']/d['actual_peak']*100:.0f}% of 7d peak), "
+                  f"forecast peak {d['forecast_peak']/1000:.1f} GW within "
+                  f"{d['hours_ahead']}h ({delta:+.0f}%)")
             grids[code] = d
         else:
             print("    no usable data")
