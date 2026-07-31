@@ -1,0 +1,54 @@
+name: Short sale volume
+
+on:
+  schedule:
+    # 23:00 UTC weekdays. FINRA publishes Reg SHO daily files with about a
+    # one-day lag and the exact release time varies, so this checks daily and
+    # posts only when the trade date is newer than the last one recorded.
+    - cron: "0 23 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Fetch and log without posting or saving state"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write   # commits regsho_state.json
+
+concurrency:
+  group: regsho-volume
+  cancel-in-progress: false
+
+jobs:
+  regsho:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Fetch and post
+        timeout-minutes: 10
+        env:
+          WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u regsho_volume.py
+
+      - name: Persist state
+        run: |
+          if [[ -n "$(git status --porcelain regsho_state.json)" ]]; then
+            git config user.name "regsho-volume"
+            git config user.email "actions@github.com"
+            git add regsho_state.json
+            git commit -m "Update Reg SHO state [skip ci]"
+            git push
+          else
+            echo "No state change."
+          fi
