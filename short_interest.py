@@ -9,17 +9,25 @@ posts once per new settlement date and stays silent otherwise.
 Data: FINRA Query API, group `otcMarket`, dataset
 `equityShortInterestStandardized`.
 
-TWO NAMING TRAPS, both of which cost a debugging cycle:
+DATASET SELECTION — this cost several debugging rounds, so read this before
+changing it.
 
-1. The group is `otcMarket`, but the data is NOT OTC-only. It covers
-   exchange-listed securities — Nasdaq, NYSE, NYSE American, NYSE Arca,
-   Cboe BZX — as well. The group name is legacy.
-2. The obvious dataset name, `equityShortInterest`, was DEPRECATED on
-   2021-04-30 and replaced by `equityShortInterestStandardized`. The old one
-   still answers requests; it just returns nothing published after that date.
-   The symptom is subtle: a successful 200 response, plausible-looking rows,
-   and a latest settlement date years in the past. STALE_WARN_DAYS below
-   exists to catch exactly this.
+The `otcMarket` group contains SEVERAL short interest datasets and only one of
+them covers exchange-listed securities:
+
+  consolidatedShortInterest         <- CORRECT. "Consolidated" = all exchanges.
+  equityShortInterest               OTC only; deprecated 2021-04-30.
+  equityShortInterestStandardized   OTC only, despite the name.
+
+Both `equityShortInterest*` datasets return HTTP 200 with well-formed rows —
+they simply contain no exchange-listed names. The symptom is a plausible
+response whose newest settlement date is years old. A Nasdaq-listed company
+that was once OTC (CleanSpark, for instance) appears with records that stop
+dead on the date it uplisted, which is a good way to recognise this mistake.
+
+Credentials do not fix it: authenticating changed nothing, because the
+limitation is dataset content, not permission. STALE_WARN_DAYS below is the
+guard that catches it.
 
 NOTE ON KEYING: this is the only component keyed by TICKER rather than CIK.
 FINRA reports by symbol, so a rename breaks the lookup silently. Every run
@@ -66,7 +74,7 @@ WEBHOOK_URL = os.environ.get("WEBHOOK_URL_MARKET", "").strip()
 DRY_RUN = os.environ.get("DRY_RUN", "").strip().lower() in ("1", "true", "yes")
 STATE_FILE = Path(os.environ.get("SI_STATE", "shortinterest_state.json"))
 
-DATASET = "equityShortInterestStandardized"
+DATASET = "consolidatedShortInterest"
 API = f"https://api.finra.org/data/group/otcMarket/name/{DATASET}"
 
 # OAuth2 client-credentials. Optional: without them the script still runs
@@ -85,12 +93,17 @@ STALE_WARN_DAYS = 60
 # API accepts is used. On a field error the script prints the dataset's real
 # schema from the /metadata endpoint, so a single run diagnoses any future
 # rename rather than needing a guessing round-trip.
+# Field names differ per dataset. These are probed in order; if none match,
+# the script prints the dataset's real schema from /metadata so a single run
+# diagnoses it. The first entry is the one confirmed for the OTC datasets and
+# is a reasonable first guess here too.
 SYMBOL_FIELDS = [
-    # Confirmed against the live /metadata endpoint, 2026-08.
     "securitiesInformationProcessorSymbolIdentifier",
-    # Legacy / plausible alternates, kept only as future-proofing.
     "symbolCode",
     "issueSymbolIdentifier",
+    "securitySymbol",
+    "issueSymbol",
+    "symbol",
 ]
 METADATA = f"https://api.finra.org/metadata/group/otcMarket/name/{DATASET}"
 HEADERS = {"Content-Type": "application/json", "Accept": "application/json"}
