@@ -63,10 +63,35 @@ ALIASES = {
 }
 
 # CUSIPs pinned by hand, merged into the learned map at startup. Pinning is the
-# permanent fix for a rename: both companies above kept their CUSIP through the
-# change (Big Digital's 8-K says so explicitly), so a pinned CUSIP survives
-# renames that ALIASES only handles once someone notices them.
-CUSIP_PINS = {}
+# fix for a rename: both companies above kept their CUSIP through the change
+# (Big Digital's 8-K says so explicitly), so a pinned CUSIP survives renames
+# that ALIASES only handles once someone notices them.
+#
+# These were read from the data itself — the script prints every CUSIP it
+# learns that is not already here, so the block below goes quiet once complete
+# and speaks up again the moment a ticker turns up under a new one.
+#
+# TWELVE ENTRIES FOR ELEVEN TICKERS is correct, not a mistake. ANY appears
+# twice: 84841L407 is its pre-reverse-split identifier and 84841L506 the
+# current one. Both share the issuer prefix 84841L, so they are the same
+# company either side of a corporate action. The retired CUSIP is kept because
+# it still appears in older files, which a replay over historical periods
+# reads. A pin survives a rename; it does NOT survive a reverse split, which
+# is why a second entry appears rather than the first being replaced.
+CUSIP_PINS = {
+    "84841L407": "ANY",     # pre-reverse-split
+    "84841L506": "ANY",
+    "57778N406": "BGDE",
+    "05759B305": "BKKT",
+    "18452B209": "CLSK",
+    "25380B102": "DGXX",
+    "Q4982L109": "IREN",    # CINS: Q prefix, non-US issuer (Australia)
+    "565788106": "MARA",
+    "64428N109": "NUAI",
+    "583543301": "SLNH",
+    "39531G308": "VIP",
+    "G96115103": "WYFI",    # CINS: G prefix, non-US issuer
+}
 
 INDEX_URL = "https://www.sec.gov/data-research/sec-markets-data/fails-deliver-data"
 
@@ -106,6 +131,45 @@ if REPLAY:
 
 CANON = {t: t for t in TICKERS}
 CANON.update(ALIASES)
+
+# ------------------------------------------------------- CONFIG VALIDATION --
+
+
+def cusip_check_digit(cusip):
+    """Modulus-10 double-add-double check digit over the first 8 characters.
+
+    Applies to CINS identifiers too, where a leading letter is valued A=10.
+    """
+    total = 0
+    for i, ch in enumerate(cusip[:8]):
+        if ch.isdigit():
+            v = int(ch)
+        elif ch.isalpha():
+            v = ord(ch.upper()) - ord("A") + 10
+        else:
+            v = {"*": 36, "@": 37, "#": 38}.get(ch, 0)
+        if i % 2:                       # positions 2, 4, 6, 8 (1-indexed)
+            v *= 2
+        total += v // 10 + v % 10
+    return str((10 - total % 10) % 10)
+
+
+def validate_pins():
+    """Catch a mistyped pin, which is otherwise a silent permanent no-op.
+
+    A malformed CUSIP raises no error: it simply never matches a row, so the
+    ticker quietly falls back to symbol matching and the pin does nothing for
+    as long as it sits there. Pins are added by hand immediately after a
+    rename — precisely the moment a transcription error is likely and least
+    likely to be noticed. The check digit makes that detectable for free.
+    """
+    bad = [c for c in CUSIP_PINS
+           if len(c) != 9 or cusip_check_digit(c) != c[8]]
+    for c in sorted(bad):
+        print(f"WARNING: CUSIP_PINS entry {c!r} ({CUSIP_PINS[c]}) fails its "
+              f"check digit — likely a typo. It will never match anything.")
+    return not bad
+
 
 # ------------------------------------------------------------------ STATE ---
 
@@ -373,6 +437,7 @@ def main():
         return 1
     if not USER_AGENT:
         print("WARNING: SEC_USER_AGENT not set. SEC throttles anonymous traffic.")
+    validate_pins()
 
     state = load_state()
     sess = session()
