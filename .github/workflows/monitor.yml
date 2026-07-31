@@ -9,7 +9,12 @@ on:
     #   EST (winter, UTC-5): 7am - 6pm ET
     # GitHub queues scheduled jobs at low priority, so expect 15-25 min drift.
     - cron: "*/15 12-23 * * 1-5"
-  workflow_dispatch: # lets you trigger a run by hand from the Actions tab
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Evaluate and log without posting or saving state"
+        type: boolean
+        default: true
 
 permissions:
   contents: write # needed to commit the updated state file
@@ -37,6 +42,8 @@ jobs:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           WEBHOOK_URL_INSIDER: ${{ secrets.WEBHOOK_URL_INSIDER }}
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          # Empty on scheduled runs, so those always post.
+          DRY_RUN: ${{ inputs.dry_run }}
           PYTHONUNBUFFERED: "1"
         run: python -u press_monitor.py
 
