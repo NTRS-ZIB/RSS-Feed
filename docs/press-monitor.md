@@ -97,6 +97,32 @@ almost every 8-K with an attachment.
 
 **`KEYWORDS`** — optional title filter. Empty means post everything.
 
+**`MAX_AGE_DAYS` (7) — the age floor.** A filing older than this is recorded
+but **never posted**, whatever `state.json` says.
+
+The dedupe set alone is not enough. It answers *"have I seen this?"*, which
+silently becomes *"no"* for thousands of old filings whenever state is reset or
+the data source starts returning deeper history. The migration from
+`browse-edgar` (40 filings per form) to the submissions API (~1,000 filings of
+all types) did exactly that on 2026-08-06: 1,471 historical filings looked new
+at once and 65 messages of old news reached the channel.
+
+An age floor is independent of state, so backfill can never be mistaken for
+news. Against that same event it would have posted 4 items instead of 40. It
+also makes the `state.json` reset in Testing safe.
+
+The trade-off: if the workflow is down for more than a week, genuinely missed
+news older than seven days will not post.
+
+**`RETAIN_DAYS` (30) — the dedupe horizon.** Only EDGAR filings from the last
+30 days enter the dedupe set at all. Nothing older can post, so remembering it
+is pure state-file bloat — the submissions endpoint returns ~1,000 filings per
+company, which put 4,275 ids in `state.json` for a watchlist of eleven.
+
+Keep it comfortably above `MAX_AGE_DAYS`; the 23-day gap is the safety margin
+for an outage. Not applied to IR feed items, which are ~10 per feed and whose
+timestamps are less reliable.
+
 **Insider channel** — Form 4 and 4/A filings go to `WEBHOOK_URL_INSIDER`
 instead of the main channel, with their own `MAX_INSIDER_POSTS_PER_RUN` cap and
 amber embeds. Form 4 volume across eleven companies would swamp a press release
@@ -167,14 +193,23 @@ per company *per form type* plus an index fetch per candidate filing — about
 a run reached only 4 of 11 companies before hitting the step timeout. Worst
 case with every request stalling fell from roughly 600 minutes to 10.
 
-> **Item-ID counts need recalibrating.** The pre-migration figure was 1,631 IDs
-> per run. The submissions endpoint returns roughly the last 1,000 filings of
-> *all* types per company, rather than 40 per form, so the tracked total will
-> differ. Read `State: N ids retained` from a run and update this.
+**Item IDs per run: ~330**, of which ~250 are EDGAR filings within
+`RETAIN_DAYS` and ~80 are IR feed entries. `state.json` sits around 20KB.
+
+That figure has moved twice and the history is instructive:
+
+| | IDs per run | state.json |
+|---|---|---|
+| browse-edgar, 40 per form | 1,631 | ~100KB |
+| submissions, unfiltered | 4,275 | ~265KB |
+| submissions + `RETAIN_DAYS` | ~330 | ~20KB |
+
+The middle row is what caused the 2026-08-06 flood. The bloat was a symptom of
+the same mistake: remembering filings that could never be posted anyway.
 
 | Limit | Binds at | Failure mode |
 |---|---|---|
-| `state.json` retention | ~60 companies | Items age out of state, reappear as new, get re-posted. Silent. |
+| `state.json` retention | not binding at current scale | Was ~60 companies before `RETAIN_DAYS`. Items ageing out of state now cannot post anyway, so the failure mode is gone. |
 | 15-min step timeout | not binding at current scale | Run killed mid-way; state never saved. This was the binding limit under the old endpoint. |
 | `MAX_POSTS_PER_RUN` | any size | Overflow beyond the cap is marked seen and **discarded**, not queued. Posts that *fail* are retried. |
 | SEC rate limit | not binding | Requests are sequential with a 0.15s gap, well under 10/sec. |
@@ -187,12 +222,13 @@ committed up to 48 times a day.
 
 To go beyond ~60 companies, in order of effect:
 
-1. **Trim `FORM_TYPES`.** No longer a multiplier on *requests* — one call
-   returns everything regardless — but still a multiplier on tracked item IDs,
-   and therefore on state size. `NT 10-K`/`NT 10-Q` are near-zero volume.
-2. **Raise `MAX_POSTS_PER_RUN`** so a busy morning can't silently overflow it.
-3. **Drop the insider channel** if Form 4 dominates the ID count. It is
-   typically the largest share of filings per company.
+1. **Raise `MAX_POSTS_PER_RUN`** so a busy morning can't silently overflow it.
+   This is the first thing that binds now.
+2. **Lower `RETAIN_DAYS`** toward `MAX_AGE_DAYS` to shrink state further,
+   at the cost of outage margin.
+3. **Trim `FORM_TYPES`.** No longer a multiplier on *requests* — one call
+   returns everything regardless — and with `RETAIN_DAYS` in place it barely
+   moves state size either. Mostly a noise-reduction lever now.
 
 Past that, the right redesign is storing a per-company high-water timestamp
 instead of a list of every ID seen. That stays constant-size regardless of
@@ -200,14 +236,30 @@ watchlist length. Not worth the complexity below ~60 companies.
 
 ## Testing
 
-To force a live run that posts:
+**Dry run.** Actions → Press release monitor → Run workflow. The checkbox is
+ticked by default: it fetches, evaluates, and prints exactly what *would* post,
+but posts nothing.
 
-1. Replace the contents of `state.json` with `{"seen": [], "initialized": true}`
-2. Commit
-3. Actions → Press release monitor → Run workflow
+Critically it also does **not save state**. Saving would mark everything seen
+and the next real run would post nothing at all — a quieter failure than a
+flood. Scheduled runs pass no input, so they always post normally.
+
+```
+2 candidate(s) checked, 2 to post.
+  [press]   MARA Holdings (MARA) · SEC 8-K — Results of operations
+  [press]   MARA Holdings (MARA) · SEC 10-Q — Quarterly report
+  [insider] MARA Holdings (MARA) · Form 4 — FORM 4
+
+Dry run: would post 2 press and 1 insider item(s). State not saved.
+```
+
+**Forcing a live post.** Replace `state.json` with
+`{"seen": [], "initialized": true}`, commit, and run with the checkbox
+unticked. The age floor means only filings from the last 7 days can post, so
+this no longer risks a backlog flood.
 
 The very first run on a fresh state file posts nothing by design — it records a
-baseline so a backlog can't flood the channel.
+baseline.
 
 ## Known quirks
 
@@ -237,20 +289,20 @@ baseline so a backlog can't flood the channel.
 ```
   VIP: pinned to CIK 0001844971 (Vulcan Infrastructure and Power)
 Checking EDGAR for 11 companies...
-  MARA: 847 filing(s) -> 6 tracked, 40 insider
+  MARA: 1001 filing(s), 959 older than 30d -> 25 tracked, 17 insider
 Checking 8 IR feeds...
   MARA: 10 items
-Insider channel: 312 Form 4 filing(s).
-4102 items seen, 2 new, 1 new insider.
+Insider channel: 98 Form 4 filing(s).
+332 items seen, 2 new, 1 new insider.
 2 candidate(s) checked, 2 to post.
 Posted 2 press item(s).
 Posted 1 insider item(s).
-State: 4105 ids retained (cap 12306).
+State: 334 ids retained (cap 4000).
 ```
 
 Each company and feed name prints *before* it is attempted, so if a run stalls,
 the last line names the culprit. The per-company line reads
-`total filings -> forms we track, Form 4 count`.
+`total filings, dropped by age -> forms we track, Form 4 count`.
 
 A normal run reports `0 new` and posts nothing. That is success.
 
