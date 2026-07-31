@@ -1,0 +1,60 @@
+name: Fails to deliver
+
+on:
+  schedule:
+    # 13:00 UTC every day. The SEC publishes the first half of a month at
+    # month end and the second half around the 15th of the next month, but
+    # gives no guarantee of a date and does not align to weekdays — so this
+    # checks daily and posts only when a period newer than ftd_state.json's
+    # appears. Roughly two posts a month; the other ~28 runs fetch one index
+    # page and exit.
+    - cron: "0 13 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Fetch and log without posting or saving state"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write   # commits ftd_state.json
+
+concurrency:
+  group: fails-to-deliver
+  cancel-in-progress: false
+
+jobs:
+  ftd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Fetch and post
+        # The first run downloads six zips (~8 MB) to build a baseline;
+        # every run after that downloads one.
+        timeout-minutes: 10
+        env:
+          WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u ftd_monitor.py
+
+      - name: Persist state
+        run: |
+          if [[ -n "$(git status --porcelain ftd_state.json)" ]]; then
+            git config user.name "fails-to-deliver"
+            git config user.email "actions@github.com"
+            git add ftd_state.json
+            git commit -m "Update FTD state [skip ci]"
+            git push
+          else
+            echo "No state change."
+          fi
