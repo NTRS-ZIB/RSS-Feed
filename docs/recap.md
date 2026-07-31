@@ -165,11 +165,22 @@ explicit warning when Twelve Data is used.
 
 **Not Yahoo / yfinance.** Yahoo deprecated its API and discourages scraping.
 
-**Not Stooq**, despite being keyless. It enforces a low **per-IP daily quota**
-and returns the plain text `Exceeded the daily hits limit` with **HTTP 200**,
-not an error status. GitHub runners share an Azure IP pool, so the quota is
-routinely spent by unrelated jobs before this one starts. The symptom is every
-ticker failing identically.
+**Stooq — third tier, and deliberately kept for LOCAL runs only.** It is
+keyless, which makes it the one source that works on a developer machine with
+no secrets configured. It is not usable from CI: it enforces a low **per-IP
+daily quota** and returns the plain text `Exceeded the daily hits limit` with
+**HTTP 200**, not an error status. GitHub runners share an Azure IP pool, so
+the quota is routinely spent by unrelated jobs before this one starts, and the
+symptom is every ticker failing identically.
+
+`fetch_stooq()` checks the body starts with `Date` rather than trusting the
+status code, so it fails cleanly and prints the response instead of parsing an
+error message as data.
+
+**In practice this path never executes.** `TWELVEDATA_KEY` is set and mapped in
+`recap.yml`, so `fetch_series()` reaches Twelve Data first. Do not delete the
+Stooq path on the grounds that it is unreachable — unreachable *in CI* is the
+point, and the header always names whichever source was used.
 
 The general lesson: keyless does not mean usable from CI, and a provider that
 returns *plausible* numbers is more dangerous than one that fails outright.
