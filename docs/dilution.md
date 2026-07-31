@@ -135,9 +135,23 @@ recent domestic filers — while ANY (30 observations) and BGDE (60) were
 suppressed by splits. A single `-` for both would have made a young company
 look identical to one whose history is uncomparable.
 
-Rows sort by trailing growth, so the most diluted name leads. Percentages are
-width-capped at `>999%` and `<-99%` — an extreme reading must not widen the
-table past the mobile wrap point.
+Rows sort by trailing growth, so the most diluted name leads.
+
+**Growth above about 900% is shown as a multiple, not a percentage.** `16x` is
+both shorter and more informative than `>999%`, which renders 1,000% and
+10,000% identically and so hides exactly the cases worth seeing. Decreases are
+still capped at `<-99%`, where there is no comparable ambiguity.
+
+For any company at or above `NOTABLE_YEAR_PCT`, the log prints the base
+observation the figure is measured from, so the number can be checked rather
+than taken on trust:
+
+```
+1yr base 2025-05-01 9,800,000  ->  157,700,000  (16x over 376d)
+```
+
+That line also exposes the span, which is not exactly a year — it is whatever
+observation fell in the permitted window.
 
 ## What this number is not
 
