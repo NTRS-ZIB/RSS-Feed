@@ -79,6 +79,11 @@ DGXX    31K  0.9x   10
 | `xMed` | That peak as a multiple of the ticker's median peak over prior periods |
 | `Dys` | Settlement days in the period with a non-zero balance |
 
+`>99x` in the `xMed` column means the median is **zero** — every prior period
+was clean and this is the first time the name has failed at all. That is the
+most interesting row the table can produce, so it sorts to the top. It is also
+the display for any ratio genuinely above 99x.
+
 | Marker | Meaning |
 |---|---|
 | `*` | Peak is ≥`FLAG_MULTIPLE` (3x) the median **and** ≥`MIN_FLAG_SHARES` (50,000) |
@@ -93,11 +98,22 @@ the raw median never appears in the grid, where there is no room for it.
 block. A 2x peak sustained across every settlement day in the period is a
 different situation. Read the two columns together.
 
-**Absence is reported, not hidden.** The SEC only includes securities with a
-non-zero balance, so a ticker missing from the file had zero net fails on every
-settlement date — a real and common result. Those tickers are listed under the
-table rather than silently dropped, so a broken symbol match can't masquerade
-as a clean period.
+## Absence is a zero, not a gap
+
+The SEC only lists securities with a non-zero balance, so a ticker missing from
+a file had zero net fails on every settlement date in it. That is a
+measurement, not missing data, and the script stores it as a literal zero.
+
+This matters more than it sounds. Computing the median over only the periods
+where a ticker *appeared* would take the median of its non-zero periods —
+understating every ratio, and erasing the single most informative case: a name
+that never fails suddenly failing. Under that treatment a company with five
+clean periods and one 700K period reads as ordinary. Stored as zeros, its
+median is 0 and it goes straight to the top of the table.
+
+Absent tickers are also named under the table and in the log for every period,
+rather than silently dropped, so a broken symbol match cannot masquerade as a
+clean period. That distinction is the whole diagnostic — see below.
 
 ## Critical: the download URLs are not constructible
 
@@ -121,22 +137,56 @@ and would fail as a 404 that looks identical to "not published yet".
 ever changes so no links match, the script says so explicitly rather than
 reporting no new data.
 
-## Ticker renames and CUSIPs
+## Ticker renames are the main failure mode
 
-This is the only component that reads *backwards* through several months of
-history, so renames genuinely bite: a period from before a rename carries the
-old symbol. Two defences:
+This is the only component that reads *backwards* through months of files, so
+renames bite here in a way they do not elsewhere: a period predating a rename
+carries the old symbol throughout. Two on the current watchlist, both recent:
 
-1. **`ALIASES`** maps historical and pending symbols to the canonical one, the
-   same map used by the two FINRA components. Keep the three in sync.
-2. **CUSIPs are learned and persisted.** The file supplies a CUSIP per row, so
-   once a ticker has been matched by symbol its CUSIP goes into
-   `ftd_state.json` and later rows match on either. A rename mid-window is
-   picked up without an edit.
+| Was | Now | Effective | Notes |
+|---|---|---|---|
+| `GREE` Greenidge Generation | `VIP` Vulcan Infrastructure and Power | 24 Jul 2026 | GREE traded through the close on 23 Jul |
+| `MIGI` Mawson Infrastructure | `BGDE` Big Digital Energy | 30 Apr 2026 | CUSIP unchanged, per the 8-K |
 
-Neither is bulletproof — a reincorporation can change the CUSIP too — so the
-log prints how many of the eleven tickers matched in each period. A count that
-drops without an obvious reason means a rename to add to `ALIASES`.
+Note the dates against the publication schedule. The 2026-07a file covers
+1–15 July, entirely *before* the VIP change — so Vulcan's fails are filed under
+`GREE` in a period that publishes after the ticker no longer exists.
+
+Three defences, in order of durability:
+
+1. **`CUSIP_PINS`** — a CUSIP pinned by hand survives every future rename. Both
+   companies above kept their CUSIP through the change. This is the same
+   reasoning as pinning EDGAR companies by CIK rather than ticker, and it is
+   the permanent fix once you know the number.
+2. **`ALIASES`** — old and pending symbols mapped to the canonical one. Shared
+   in spirit with the two FINRA components; keep the three in sync. Only works
+   for renames someone has noticed.
+3. **Learned CUSIPs** — every matched row's CUSIP is written to
+   `ftd_state.json`, so once a ticker matches by symbol it also matches by
+   CUSIP thereafter. Catches a rename mid-window without an edit, but cannot
+   help a company that was never matched in the first place.
+
+### The alias collision guard
+
+A wrong alias is far worse than a missing one. A missing alias loses a
+company's data; a wrong one **merges one company's fails into another's**, and
+both the source and the destination end up misreported with no error anywhere.
+
+So when a canonical ticker matches under two different symbols in the same
+period, the log says so:
+
+```
+2026-07a ... 9/11, zero: VIP ANY
+  WARNING: SLNH matched GREE/SLNH — check ALIASES, these may be different companies
+```
+
+That is a real example. An early version of this file mapped `GREE` to Soluna
+rather than Vulcan, on the assumption that GREE was a Soluna legacy symbol. The
+result: Vulcan's fails were attributed to Soluna, Soluna's series was inflated,
+and `VIP` reported a clean sheet in every period. The two visible tells were a
+`Dys` count higher than the number of settlement days in a period, and one
+ticker reporting zero balance every single period — which is why the per-period
+absentee list prints at all.
 
 ## Cold start
 
@@ -164,3 +214,9 @@ here: one period is one post.
   have historically contained scanning artefacts.
 - **Absence of a period is not an error.** If the SEC is late, the run simply
   finds nothing newer and exits quietly.
+- **The index lists every period back to 2004** — around 400 links. Only the
+  newest `BASELINE_PERIODS` are ever downloaded; the pre-2009 quarterly
+  archives use a different filename and do not match the pattern at all.
+- **A ticker reporting zero in every period deserves suspicion.** For a genuinely
+  illiquid name it is plausible. For anything that trades, it usually means a
+  rename the symbol match is missing.
