@@ -50,7 +50,7 @@ Every one confirmed from data by `audit_identifiers.py`, not from a filing:
 | `GREE` Greenidge Generation | `VIP` Vulcan Infrastructure and Power | 2026-07-24 | |
 | `MIGI` Mawson Infrastructure | `BGDE` Big Digital Energy | 2026-04-30 | CUSIP also changed 2025-11, separately |
 | `NEHC` New Era Helium | `NUAI` New Era Energy & Digital | 2025-08-13 | |
-| `DGHI` Digihost Technology | `DGXX` Digi Power X | 2025-03-18 | `DGHIZZZZ` appears for one day mid-change |
+| `DGHI` Digihost Technology | `DGXX` Digi Power X | 2025-03-18 | `DGHIZZZZ` one day mid-change; CUSIP issuer prefix changed too |
 
 `DGHIZZZZ` is not a ticker. NSCC uses a `ZZZZ` suffix as a placeholder while a
 symbol change is processing, so it occupies a single settlement day between the
@@ -68,12 +68,12 @@ EDGAR records more history than this file does. NUAI was New Era Helium until
 2025-07-29 and Roth CH V Holdings before that; only the first is listed here,
 as `NEHC`, because only that one has been observed in data a component reads.
 
-**What is recorded has been measured, not assumed.** `probe_cusips.py` swept
-twelve months of SEC fails files and reported every CUSIP and every symbol each
-company appears under. It found two things nobody had recorded — BGDE's retired
-CUSIP `57778N307` and NUAI's former ticker `NEHC` — and confirmed the rest.
-Re-run it with a larger `SWEEP_PERIODS` if a replay ever needs to reach further
-back than a year.
+**What is recorded has been measured, not assumed.** `audit_identifiers.py` swept
+three years of SEC fails files and reported every CUSIP and every symbol each
+company appears under. It found five things nobody had recorded — retired
+CUSIPs for BGDE, SLNH and DGXX, and former tickers `NEHC` and `DGHI` — and
+confirmed every remaining identifier. Re-run it with a larger `SWEEP_PERIODS`
+if a replay ever needs to reach further back than three years.
 
 **The exception is `FTD_REPLAY`, which is unbounded.** `FTD_REPLAY=24` reads a
 year back, past renames this file does not record, and an unrecognised symbol
@@ -129,19 +129,27 @@ applies.
 
 ## Identifiers are added from data, not from filings
 
-One entry in this file was added from a document rather than from observation:
-BKKT's `05759B107`, taken from an 8-K12B. The twelve-month sweep never saw it,
-and it is marked unconfirmed in the source.
+Every CUSIP and symbol here has been observed in SEC data by
+`audit_identifiers.py`. That is a deliberate standard, and one case shows why.
 
-The distinction matters because the two failure modes are not symmetric. A
+BKKT's `05759B107` was originally added from an 8-K12B, described as the
+pre-reorganisation identifier. A twelve-month sweep never saw it and it was
+nearly deleted as unverifiable. A three-year sweep found it: in use from
+2023-07-17 to 2024-04-29, retired at the 1-for-25 reverse split of 29 April
+2024 — **eighteen months before the filing that quoted it.**
+
+So the value was right and my reasoning was wrong, and the filing was quoting a
+long-stale number. Neither the filing nor the inference established anything;
+the sweep did.
+
+The two failure modes are not symmetric, which is why this matters. the two failure modes are not symmetric. A
 missing identifier loses a company's rows and shows up as an unexplained gap.
 A *wrong* identifier silently attributes another security's rows to a company
 that never had them — the same class of error as a backwards alias, and just
 as quiet.
 
-So: prefer an identifier observed in the data a component actually reads. Where
-one comes from a filing instead, say so next to it and verify before relying on
-it.
+**Prefer an identifier observed in data a component actually reads.** Where one
+comes from a filing, treat it as a lead to verify rather than a fact to record.
 
 ## Validation
 
