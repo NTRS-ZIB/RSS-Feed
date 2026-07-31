@@ -38,16 +38,18 @@ from pathlib import Path
 
 import requests
 
+import watchlist
+
 try:
     from zoneinfo import ZoneInfo
     EASTERN = ZoneInfo("America/New_York")
 except Exception:              # no tzdata available
     EASTERN = timezone(timedelta(hours=-4))
-
 # ------------------------------------------------------------------ CONFIG
 
-TICKERS = ["BGDE", "ANY", "NUAI", "SLNH", "DGXX", "BKKT",
-           "MARA", "WYFI", "IREN", "CLSK", "VIP"]
+# The watchlist lives in watchlist.py — one record per company, one edit to add
+# one. A list: this component uses symbols only.
+TICKERS = watchlist.tickers()
 
 # Alert tiers. Each ticker alerts at most once per tier per day, so a stock
 # that keeps climbing escalates rather than spamming or going quiet.

@@ -33,24 +33,17 @@ matplotlib.use("Agg")  # headless: no display on the runner
 import matplotlib.pyplot as plt
 import requests
 
+import watchlist
 # ------------------------------------------------------------------ CONFIG
 
-# Display label -> Stooq symbol. US equities are lowercase with a .us suffix.
-# Recently renamed tickers may still sit under their old symbol on Stooq, so
-# override here if one stops resolving.
-TICKERS = {
-    "BGDE": "bgde.us",
-    "ANY":  "any.us",
-    "NUAI": "nuai.us",
-    "SLNH": "slnh.us",
-    "DGXX": "dgxx.us",
-    "BKKT": "bkkt.us",
-    "MARA": "mara.us",
-    "WYFI": "wyfi.us",
-    "IREN": "iren.us",
-    "CLSK": "clsk.us",
-    "VIP":  "vip.us",   # renamed from GREE Jul 2026; try gree.us if this fails
-}
+# The watchlist lives in watchlist.py — one record per company, one edit to add
+# one. A list: this component uses symbols only.
+#
+# This previously held a ticker -> Stooq symbol map, which read like a name map
+# and was not one. Every value was `ticker.lower() + ".us"` — a transformation,
+# not a fact about the company — so it now lives in stooq_symbol() beside the
+# fetch that needs it.
+TICKERS = watchlist.tickers()
 
 # Volume flagging. Matches the first tier in volume_spike.py so the intraday
 # alert and this end-of-day confirmation agree on what "unusual" means.
@@ -237,11 +230,21 @@ def fetch_stooq(symbol):
     return rows
 
 
-def fetch_series(symbol, stooq_symbol):
+def stooq_symbol(ticker):
+    """Stooq's identifier for a US listing: lowercase ticker plus `.us`.
+
+    A transformation, not a fact about the company, so it belongs here rather
+    than in watchlist.py. If a company ever needs an irregular provider symbol,
+    that is when it earns a field in the roster.
+    """
+    return f"{ticker.lower()}.us"
+
+
+def fetch_series(symbol):
     """Twelve Data when a key is present, Stooq otherwise."""
     if TWELVEDATA_KEY:
         return fetch_twelvedata(symbol)
-    return fetch_stooq(stooq_symbol)
+    return fetch_stooq(stooq_symbol(symbol))
 
 
 def fetch_intraday(symbols):
@@ -490,11 +493,11 @@ def main():
                   "2026-07-30: it reported IREN at 7.6M shares while "
                   "consolidated volume was 46.0M. Treat same-day volume and "
                   "x30d as unreliable from this source.\n")
-        for i, (label, stooq_symbol) in enumerate(TICKERS.items()):
+        for i, label in enumerate(TICKERS):
             if TWELVEDATA_KEY and i:
                 time.sleep(TWELVEDATA_GAP)   # 8 req/min free-tier ceiling
             print(f"  {label}...")
-            summary = summarise(label, fetch_series(label, stooq_symbol))
+            summary = summarise(label, fetch_series(label))
             if summary:
                 stats.append(summary)
             else:
