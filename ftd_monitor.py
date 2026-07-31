@@ -374,7 +374,7 @@ def main():
     if cold:
         print(f"Cold start: pulling {len(wanted)} periods to build a baseline.")
 
-    span = ""
+    span, cusip_hist = "", {}
     for period, url in sorted(wanted):
         print(f"  {pretty(period)} ...", end=" ", flush=True)
         rows, learned, skipped, seen_syms = fetch_period(sess, url, state["cusips"])
@@ -391,6 +391,9 @@ def main():
         if period == newest and dates:
             span = f"{dates[0][4:6]}-{dates[0][6:]} to {dates[-1][4:6]}-{dates[-1][6:]}"
 
+        for t, entries in rows.items():
+            cusip_hist.setdefault(t, set()).update(c for _, _, c in entries if c)
+
         absent = [t for t in TICKERS if t not in summary]
         print(f"{len(summary)}/{len(TICKERS)}"
               + (f", zero: {' '.join(absent)}" if absent else "")
@@ -405,6 +408,17 @@ def main():
                 print(f"    WARNING: {ticker} matched {'/'.join(sorted(syms))}"
                       f" — check ALIASES, these may be different companies")
         time.sleep(REQUEST_GAP)
+
+    # A ticker under two CUSIPs across the window is almost always a reverse
+    # split. That matters more than the identifier: the SEC file carries RAW
+    # share counts with no split adjustment, so peaks either side of one are
+    # not comparable and the median silently misstates every later ratio.
+    for t, cs in sorted(cusip_hist.items()):
+        if len(cs) > 1:
+            print(f"\nWARNING: {t} appears under {len(cs)} CUSIPs: {', '.join(sorted(cs))}")
+            print("  Usually a reverse split. Share counts are NOT split-adjusted in")
+            print("  this dataset, so this ticker's baseline spans a discontinuity and")
+            print("  its xMed is unreliable. Clear its history from ftd_state.json.")
 
     current = {
         t: v[newest] for t, v in state["history"].items()
