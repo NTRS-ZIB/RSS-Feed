@@ -71,6 +71,20 @@ API = f"https://api.finra.org/data/group/otcMarket/name/{DATASET}"
 # FINRA publishes twice a month. If the newest settlement date is older than
 # this, something is wrong with the dataset rather than with the market.
 STALE_WARN_DAYS = 60
+
+# The standardized dataset renamed fields relative to the deprecated one, so
+# the symbol column is looked up by trying these in order. The first that the
+# API accepts is used. On a field error the script prints the dataset's real
+# schema from the /metadata endpoint, so a single run diagnoses any future
+# rename rather than needing a guessing round-trip.
+SYMBOL_FIELDS = [
+    "symbolCode",
+    "issueSymbolIdentifier",
+    "securitySymbol",
+    "issueSymbol",
+    "symbol",
+]
+METADATA = f"https://api.finra.org/metadata/group/otcMarket/name/{DATASET}"
 HEADERS = {"Content-Type": "application/json", "Accept": "application/json"}
 
 UP, DOWN, FLAT = 0x3FB950, 0xF85149, 0x8B949E
@@ -89,34 +103,84 @@ def save_state(state):
     STATE_FILE.write_text(json.dumps(state, indent=1))
 
 
-def fetch():
-    """Rows for our tickers, newest settlement dates first."""
+def show_schema():
+    """Print the dataset's real field names. Called when a filter is rejected."""
+    try:
+        r = requests.get(METADATA, timeout=(10, 30))
+        if r.status_code != 200:
+            print(f"  (metadata lookup returned HTTP {r.status_code})")
+            return
+        meta = r.json()
+    except (requests.RequestException, ValueError) as e:
+        print(f"  (metadata lookup failed: {type(e).__name__})")
+        return
+
+    fields = []
+    if isinstance(meta, dict):
+        for key in ("fields", "columns", "datasetFields"):
+            if isinstance(meta.get(key), list):
+                fields = meta[key]
+                break
+    names = []
+    for f in fields:
+        names.append(f.get("name") or f.get("fieldName") or str(f)
+                     if isinstance(f, dict) else str(f))
+    if names:
+        print(f"  Dataset '{DATASET}' fields:")
+        for n in sorted(names):
+            print(f"    {n}")
+    else:
+        print(f"  Raw metadata: {json.dumps(meta)[:800]}")
+
+
+def fetch_with(symbol_field):
+    """One attempt using `symbol_field` as the filter column."""
     payload = {
         "compareFilters": [],
-        "domainFilters": [{
-            "fieldName": "issueSymbolIdentifier",
-            "values": list(TICKERS),
-        }],
+        "domainFilters": [{"fieldName": symbol_field,
+                           "values": list(TICKERS)}],
         "limit": LOOKBACK_RECORDS,
     }
     try:
         r = requests.post(API, headers=HEADERS, json=payload, timeout=(10, 40))
     except requests.RequestException as e:
         print(f"request failed: {type(e).__name__}")
-        return None
+        return None, False
 
     if r.status_code in (401, 403):
-        print(f"HTTP {r.status_code} — this endpoint needs credentials from "
-              f"this IP. A free FINRA API account would be required.")
-        return None
+        print(f"HTTP {r.status_code} — this endpoint needs credentials. "
+              f"A free FINRA API account would be required.")
+        return None, False
+    if r.status_code == 400 and "not available in this dataset" in r.text:
+        # Wrong column name for this dataset — try the next candidate.
+        return None, True
     if r.status_code != 200:
         print(f"HTTP {r.status_code}: {r.text[:200]}")
-        return None
+        return None, False
     try:
-        return r.json()
+        return r.json(), False
     except ValueError:
         print("unparseable JSON")
-        return None
+        return None, False
+
+
+def fetch():
+    """Rows for our tickers. Tries each candidate symbol field in turn."""
+    for field in SYMBOL_FIELDS:
+        rows, retry = fetch_with(field)
+        if rows is not None:
+            if field != SYMBOL_FIELDS[0]:
+                print(f"  (symbol field is '{field}' — move it to the front "
+                      f"of SYMBOL_FIELDS)")
+            globals()["ACTIVE_SYMBOL_FIELD"] = field
+            return rows
+        if not retry:
+            return None
+        print(f"  '{field}' not in this dataset, trying next...")
+
+    print(f"None of {SYMBOL_FIELDS} exist in '{DATASET}'.")
+    show_schema()
+    return None
 
 
 def num(row, *keys):
@@ -139,7 +203,11 @@ def parse(rows):
     """Group by settlement date -> {date: {ticker: metrics}}."""
     by_date = {}
     for row in rows or []:
-        sym = (row.get("issueSymbolIdentifier") or "").upper()
+        sym = ""
+        for key in [globals().get("ACTIVE_SYMBOL_FIELD")] + SYMBOL_FIELDS:
+            if key and row.get(key):
+                sym = str(row[key]).upper()
+                break
         settled = row.get("settlementDate") or ""
         if sym not in TICKERS or not settled:
             continue
