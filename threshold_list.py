@@ -290,17 +290,25 @@ def main():
     else:
         print("  no watchlist company on the list")
 
+    # Distinguish "state loaded, nobody listed" from "no state file at all".
+    # Both render as an empty set, and the difference matters: if the state
+    # file never persists, previous is empty on every run, so the first time a
+    # watchlist company appears it would post an addition every single day.
+    had_state = STATE_FILE.exists()
     state = load_state()
     previous = set(state.get("on_list") or [])
     added = current - previous
     removed = previous - current
-    print(f"previously: {sorted(previous) or 'none'}")
+    print(f"previously: {sorted(previous) or 'none'}"
+          + ("" if had_state else f"  (no {STATE_FILE.name} — first run)"))
 
     if not (added or removed):
         print("No change. Nothing to post.")
         if not DRY_RUN and state.get("last_date") != day.isoformat():
             state["last_date"] = day.isoformat()
             save_state(state)
+            print(f"State written: {STATE_FILE.name} "
+                  f"(on_list empty, last_date {day:%Y-%m-%d})")
         return
 
     # Runs cost one request per prior file, so only count them on a change.
@@ -319,6 +327,8 @@ def main():
         state["on_list"] = sorted(current)
         state["last_date"] = day.isoformat()
         save_state(state)
+        print(f"State written: {STATE_FILE.name} "
+              f"(on_list {sorted(current) or 'empty'})")
         print(f"Posted. Added {sorted(added) or 'none'}, "
               f"removed {sorted(removed) or 'none'}.")
     else:
