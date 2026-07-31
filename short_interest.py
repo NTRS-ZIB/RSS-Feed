@@ -126,7 +126,11 @@ FORCE_ANONYMOUS = os.environ.get("FINRA_ANONYMOUS", "").strip().lower() \
 # means silently posting nothing rather than erroring. Set this to the expiry
 # date shown in the API Console so the run warns in advance.
 # Empty string disables the check.
-CREDENTIAL_EXPIRY = "2027-07-30"
+# Confirmed 2026-08: this dataset serves full results ANONYMOUSLY. Credentials
+# are optional and none are set, so the expiry check is off. If FINRA ever
+# starts requiring auth, set this to the expiry date from the API Console —
+# an expired secret otherwise fails silently into anonymous mode.
+CREDENTIAL_EXPIRY = ""
 EXPIRY_WARN_DAYS = 45
 
 # FINRA publishes twice a month. If the newest settlement date is older than
@@ -483,6 +487,12 @@ def main():
     embed = build_embed(latest, data, missing)
     print()
     print(embed["fields"][0]["value"])
+    # The description carries the revision / split / alias notes, which are
+    # exactly what a dry run needs to show.
+    for line in embed["description"].split("\n"):
+        line = line.strip()
+        if line and not line.startswith("Settlement "):
+            print(f"  {line}")
 
     if DRY_RUN:
         print(f"\nDry run: would post settlement {latest}. State not saved.")
