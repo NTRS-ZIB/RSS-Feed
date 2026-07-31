@@ -92,6 +92,18 @@ WEBHOOK = os.environ.get("WEBHOOK_URL_MARKET", "").strip()
 USER_AGENT = os.environ.get("SEC_USER_AGENT", "").strip()
 DRY_RUN = os.environ.get("DRY_RUN", "").lower() in ("1", "true", "yes")
 
+# FTD_REPLAY=<n> re-reads the newest n periods regardless of what has already
+# been posted, and is unconditionally read-only: it cannot post and cannot save
+# state. Its purpose is auditing history — exercising the rename and
+# reverse-split guards over real files without disturbing the live state, which
+# a normal run refuses to do because it exits at the dedupe check.
+try:
+    REPLAY = int(os.environ.get("FTD_REPLAY", "") or 0)
+except ValueError:
+    REPLAY = 0
+if REPLAY:
+    DRY_RUN = True
+
 CANON = {t: t for t in TICKERS}
 CANON.update(ALIASES)
 
@@ -367,16 +379,24 @@ def main():
     print(f"  {len(periods)} period(s) listed, newest {pretty(periods[0][0])}")
 
     newest = periods[0][0]
-    if newest <= state["last_period"]:
+    if REPLAY:
+        print(f"REPLAY: re-reading the newest {REPLAY} period(s). "
+              f"Read-only — will not post, will not save state.")
+    elif newest <= state["last_period"]:
         print(f"Already posted {pretty(newest)}. Nothing new.")
         return 0
 
     known = set(state["history"])
     cold = not known
-    wanted = periods[:BASELINE_PERIODS] if cold else [
-        (p, u) for p, u in periods[:BASELINE_PERIODS] if p > state["last_period"]
-    ]
-    if cold:
+    if REPLAY:
+        wanted = periods[:REPLAY]
+        state["history"] = {}          # baselines rebuilt from the replayed span
+    elif cold:
+        wanted = periods[:BASELINE_PERIODS]
+    else:
+        wanted = [(p, u) for p, u in periods[:BASELINE_PERIODS]
+                  if p > state["last_period"]]
+    if cold and not REPLAY:
         print(f"Cold start: pulling {len(wanted)} periods to build a baseline.")
 
     span, cusip_hist, overlapped = "", {}, set()
@@ -466,6 +486,9 @@ def main():
         for c, t in sorted(unpinned.items(), key=lambda kv: (kv[1], kv[0])):
             print(f'    "{c}": "{t}",')
 
+    if REPLAY:
+        print(f"\nReplay complete. Nothing posted, state untouched.")
+        return 0
     if DRY_RUN:
         print(f"\nDry run: would post {pretty(newest)}. State not saved.")
         return 0
