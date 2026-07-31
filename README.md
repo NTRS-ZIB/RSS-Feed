@@ -39,10 +39,10 @@ Two sources, two output channels.
 
 Sources:
 
-1. **SEC EDGAR** — ten form types (see `FORM_TYPES`). Press releases arrive as
-   EX-99 exhibits on 8-K/6-K; offerings, financials and stake disclosures come
-   through the other forms. Authoritative, but trails the newswire by minutes
-   to hours.
+1. **SEC EDGAR** — ten form types (see `FORM_TYPES`), read from the
+   submissions API (`data.sec.gov/submissions/CIK##########.json`). One
+   request per company returns every recent filing. Authoritative, but trails
+   the newswire by minutes to hours.
 2. **IR newsroom RSS** — the company's own feed. Faster than EDGAR, but not
    every company publishes one.
 
@@ -133,13 +133,31 @@ Form 4 is deliberately absent; it has its own channel. Note that earnings news
 arrives as an 8-K Item 2.02 press release, typically before the 10-Q, so the
 10-Q gets you the statements rather than the announcement.
 
-**`PRESS_RELEASE_EXHIBIT_ONLY`** — when true, a filing is only posted if it
-attaches an EX-99 exhibit, filtering out administrative 8-Ks. Costs one extra
-request per candidate filing.
+**`PRESS_RELEASE_EXHIBIT_ONLY`** — when true, an 8-K is only posted if its
+**item codes** indicate a press release: `2.02` results, `7.01` Reg FD, `8.01`
+other events (`PRESS_RELEASE_ITEMS`). Filters out administrative 8-Ks such as
+`5.02` officer changes.
 
-Applies **only** to the forms in `EXHIBIT_CHECK_FORMS` (`8-K`, `6-K`). A 10-Q or
-424 carries no EX-99, so applying the check to them would silently discard every
-one. If you add a press-release-bearing form, add it to that set too.
+Item codes ship inside the submissions payload, so this costs **no extra
+request**. The original implementation downloaded each filing's index page
+looking for an EX-99 exhibit — roughly 80 extra requests per run.
+
+That swap narrowed the definition slightly. An 8-K filed under, say, `1.01`
+(material agreement) with a press release attached would have been caught by
+the old exhibit check and is skipped now. Widen `PRESS_RELEASE_ITEMS` if you
+notice gaps.
+
+Applies **only** to the forms in `EXHIBIT_CHECK_FORMS` (`8-K`, `6-K`). 6-K has
+no item numbers and is never filtered.
+
+**Filing titles** are generated, not taken from SEC. The submissions payload
+only supplies a document label, usually just `8-K`, which is redundant beside
+the form type already in the embed footer. `ITEM_LABELS` translates item codes
+into plain English — an earnings 8-K reads *Results of operations* — and
+`FORM_LABELS` does the same for other forms, so a `424B5` reads *Prospectus
+supplement — offering* and an `NT 10-Q` shouts *LATE FILING NOTICE*. Item
+`9.01` is suppressed unless it is the only one listed, since it appears on
+almost every 8-K with an attachment.
 
 **`KEYWORDS`** — optional title filter. Empty means post everything.
 
@@ -203,20 +221,25 @@ fully covered by EDGAR for anything material.
 
 ## Scaling
 
-Calibrated against a real run: 11 companies, 10 forms, 8 IR feeds and the
-insider channel produced **129 requests and 1,631 item IDs** per run.
+**Requests per run: 19** — one submissions call per company (11) plus one per
+IR feed (8). Both channels are served from the same payload, so the insider
+check costs nothing extra.
 
-Per company that's ~11 requests and ~140 item IDs (~112 from the press forms,
-~29 from Form 4).
+This replaced the legacy `cgi-bin/browse-edgar` endpoint, which needed one call
+per company *per form type* plus an index fetch per candidate filing — about
+**201 requests**. That endpoint is slow and times out under load: on 2026-07-30
+a run reached only 4 of 11 companies before hitting the step timeout. Worst
+case with every request stalling fell from roughly 600 minutes to 10.
 
-Note that several companies return exactly 40 Form 4 filings — the `count=40`
-ceiling in `EDGAR_ATOM`. Lowering it to 15 costs nothing at a 15-minute cadence
-and cuts insider IDs per run from ~315 to ~120.
+> **Item-ID counts need recalibrating.** The pre-migration figure was 1,631 IDs
+> per run. The submissions endpoint returns roughly the last 1,000 filings of
+> *all* types per company, rather than 40 per form, so the tracked total will
+> differ. Read `State: N ids retained` from a run and update this.
 
 | Limit | Binds at | Failure mode |
 |---|---|---|
 | `state.json` retention | ~60 companies | Items age out of state, reappear as new, get re-posted. Silent. |
-| 10-min step timeout | ~90 companies | Run killed mid-way; state never saved. |
+| 15-min step timeout | not binding at current scale | Run killed mid-way; state never saved. This was the binding limit under the old endpoint. |
 | `MAX_POSTS_PER_RUN` | any size | Overflow beyond the cap is marked seen and **discarded**, not queued. Posts that *fail* are retried. |
 | SEC rate limit | not binding | Requests are sequential with a 0.15s gap, well under 10/sec. |
 
@@ -228,14 +251,12 @@ committed up to 48 times a day.
 
 To go beyond ~60 companies, in order of effect:
 
-1. **Trim `FORM_TYPES`.** A straight multiplier on requests, runtime and state
-   size. Ten forms down to four (`8-K`, `6-K`, `424`, `10-Q`) nearly triples the
-   ceiling in one edit. `NT 10-K`/`NT 10-Q` cost a request per company per run
-   to catch a once-a-year event.
-2. **Lower `count=40` in `EDGAR_ATOM`.** Only the newest items ever post, so
-   pulling 40 historical filings per form is waste. Dropping to 15 cuts
-   items-seen by ~60%.
-3. **Raise `MAX_POSTS_PER_RUN`** so a busy morning can't silently overflow it.
+1. **Trim `FORM_TYPES`.** No longer a multiplier on *requests* — one call
+   returns everything regardless — but still a multiplier on tracked item IDs,
+   and therefore on state size. `NT 10-K`/`NT 10-Q` are near-zero volume.
+2. **Raise `MAX_POSTS_PER_RUN`** so a busy morning can't silently overflow it.
+3. **Drop the insider channel** if Form 4 dominates the ID count. It is
+   typically the largest share of filings per company.
 
 Past that, the right redesign is storing a per-company high-water timestamp
 instead of a list of every ID seen. That stays constant-size regardless of
@@ -280,20 +301,20 @@ baseline so a backlog can't flood the channel.
 ```
   VIP: pinned to CIK 0001844971 (Vulcan Infrastructure and Power)
 Checking EDGAR for 11 companies...
-  MARA (CIK 0001507605)...
+  MARA: 847 filing(s) -> 6 tracked, 40 insider
 Checking 8 IR feeds...
   MARA: 10 items
-Checking insider filings (Form 4)...
-  MARA: 4 insider filing(s)
-1316 items seen, 2 new, 1 new insider.
+Insider channel: 312 Form 4 filing(s).
+4102 items seen, 2 new, 1 new insider.
 2 candidate(s) checked, 2 to post.
 Posted 2 press item(s).
 Posted 1 insider item(s).
-State: 1634 ids retained (cap 4893).
+State: 4105 ids retained (cap 12306).
 ```
 
-Each ticker and feed name prints *before* it is attempted, so if a run stalls,
-the last line names the culprit.
+Each company and feed name prints *before* it is attempted, so if a run stalls,
+the last line names the culprit. The per-company line reads
+`total filings -> forms we track, Form 4 count`.
 
 A normal run reports `0 new` and posts nothing. That is success.
 
@@ -400,7 +421,7 @@ height instead. At 20 tickers it still renders 1092×1255.
 ## End-of-day volume flagging
 
 Tickers closing above `VOLUME_FLAG_TIER` (1.5x) of their 30-day average get a
-`*` on the `x30d` column and a summary line beneath the table. A quiet day
+`*` on the `Vol` column and a summary line beneath the table. A quiet day
 prints `No unusual volume.` rather than nothing, so you can tell the check ran.
 
 Two guards:
