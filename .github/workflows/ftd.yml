@@ -15,6 +15,10 @@ on:
         description: "Fetch and log without posting or saving state"
         type: boolean
         default: true
+      replay:
+        description: "Audit: re-read the newest N periods. Read-only; ignores what has already been posted. Leave blank for a normal run."
+        type: string
+        default: ""
 
 permissions:
   contents: write   # commits ftd_state.json
@@ -44,6 +48,7 @@ jobs:
           WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
           DRY_RUN: ${{ inputs.dry_run }}
+          FTD_REPLAY: ${{ inputs.replay }}
           PYTHONUNBUFFERED: "1"
         run: python -u ftd_monitor.py
 
