@@ -292,6 +292,23 @@ def build_embed(rows, changed, splits):
         lines.append(f"`split` in the trailing year, growth not comparable: "
                      f"{', '.join(suppressed)}")
 
+    # The column says `1yr`; the spans are whatever each company's filing dates
+    # allow. Observed on the first live run: NUAI 365d, SLNH 418d, DGXX 500d —
+    # DGXX covering 37% more time than NUAI while sitting in the same column.
+    # The log shows each span, but a reader of the post cannot, so say it here.
+    spans = [(r["ticker"], (r["m"]["date"] - r["m"]["year_base"][0]).days)
+             for r in rows if r["m"]["year_base"]]
+    if spans:
+        lo, hi = min(d for _, d in spans), max(d for _, d in spans)
+        stretched = [f"{t} {d}d" for t, d in sorted(spans, key=lambda x: -x[1])
+                     if d > YEAR_DAYS + 20]
+        note = (f"_`1yr` spans {lo}–{hi} days, not a uniform year: each figure is "
+                f"measured against that company's closest reported count at least "
+                f"{YEAR_DAYS} days old, and filing dates differ._")
+        if stretched:
+            note = note[:-1] + f" Longer than the label implies: {', '.join(stretched)}._"
+        lines.append(note)
+
     lines.append(
         "_Cover-page shares outstanding, as of each filing's own date — not a "
         "float, and excluding unexercised warrants, options and convertibles. "
