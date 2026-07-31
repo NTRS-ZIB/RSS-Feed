@@ -15,10 +15,18 @@ maintain.
 | [`daily_recap.py`](docs/recap.md) | `recap.yml` | `WEBHOOK_URL_MARKET` | 21:30 UTC, weekdays |
 | [`short_interest.py`](docs/short-interest.md) | `shortinterest.yml` | `WEBHOOK_URL_MARKET` | Daily check, posts ~2x/month |
 | [`regsho_volume.py`](docs/regsho-volume.md) | `regsho.yml` | `WEBHOOK_URL_MARKET` | 23:00 UTC, weekdays |
+| [`ftd_monitor.py`](docs/fails-to-deliver.md) | `ftd.yml` | `WEBHOOK_URL_MARKET` | Daily check, posts ~2x/month |
 
 They are deliberately separate workflows: a failure in one data provider must
 not take down the others. The context posts 15 minutes before the recap so it
 lands above the performance table in the channel.
+
+**They do not share a sense of "now."** Latency runs from minutes for the press
+monitor to two-to-six weeks for
+[fails to deliver](docs/fails-to-deliver.md), whose data the SEC publishes
+twice a month well after the fact. Each post carries its own timing in the
+footer, because a stale figure read as a live one is the easiest mistake this
+channel invites.
 
 ## Output width
 
@@ -38,6 +46,7 @@ earnings_calendar.py              projected reporting dates
 volume_spike.py                   intraday unusual-volume alerts
 short_interest.py                 twice-monthly FINRA short interest
 regsho_volume.py                  daily FINRA short sale volume
+ftd_monitor.py                    SEC fails-to-deliver
 .github/workflows/monitor.yml     monitor schedule and runner setup
 .github/workflows/recap.yml       recap schedule and runner setup
 .github/workflows/btc.yml         context schedule and runner setup
@@ -45,9 +54,11 @@ regsho_volume.py                  daily FINRA short sale volume
 .github/workflows/spikes.yml      spike schedule and runner setup
 .github/workflows/shortinterest.yml  short interest schedule and runner setup
 .github/workflows/regsho.yml      short volume schedule and runner setup
+.github/workflows/ftd.yml         FTD schedule and runner setup
 spike_state.json                  auto-generated; per-day alert tiers
 shortinterest_state.json          auto-generated; last posted settlement date
 regsho_state.json                 auto-generated; last posted trade date
+ftd_state.json                    auto-generated; last posted period, learned CUSIPs
 state.json                        auto-generated; do not hand-edit except to reset
 docs/                             per-component documentation
 ```
@@ -71,3 +82,7 @@ under repository settings is not enough — it has to be listed in the `env:`
 block of the run step in that workflow's YAML, or the script never sees it. An
 unmapped secret reads as an empty string, which most of these scripts treat as
 "feature disabled" rather than an error, so the failure is silent.
+
+Any component that reads sec.gov needs `SEC_USER_AGENT` in its own workflow's
+`env:` block — mapping it once does not cover the others. `ftd.yml` includes
+it.
