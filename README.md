@@ -56,6 +56,7 @@ volume_spike.py                   intraday unusual-volume alerts
 short_interest.py                 twice-monthly FINRA short interest
 regsho_volume.py                  daily FINRA short sale volume
 watchlist.py                      the roster: one record per company
+audit_identifiers.py              maintenance: what each company trades as
 ftd_monitor.py                    SEC fails-to-deliver
 threshold_list.py                 Reg SHO threshold list (exception report)
 comment_letters.py                SEC review correspondence
@@ -71,6 +72,7 @@ dilution.py                       shares outstanding / ATM issuance
 .github/workflows/threshold.yml   threshold schedule and runner setup
 .github/workflows/letters.yml     comment letter schedule and runner setup
 .github/workflows/dilution.yml    dilution schedule and runner setup
+.github/workflows/audit.yml       identifier audit, manual only
 spike_state.json                  auto-generated; per-day alert tiers
 shortinterest_state.json          auto-generated; last posted settlement date
 regsho_state.json                 auto-generated; last posted trade date
