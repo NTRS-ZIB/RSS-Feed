@@ -23,51 +23,23 @@ from urllib.parse import urljoin
 import feedparser
 import requests
 
+import watchlist
 # ------------------------------------------------------------------ CONFIG
 
-# Just list tickers. CIKs are resolved automatically from SEC's lookup file.
-TICKERS = []  # Ticker lookup is fragile across renames; see EXTRA_CIKS below.
-
-# Every company pinned by CIK. CIKs never change, even when a company renames
-# or switches ticker — which this sector does constantly. BGDE renamed in Apr
-# 2026, VIP in Jul 2026, and ANY has a pending change to DarkHorse (DRK).
-# Format: "LABEL": ("zero-padded CIK", "Display name")
-EXTRA_CIKS = {
-    "BGDE": ("0001218683", "Big Digital Energy"),
-    "ANY":  ("0001591956", "Sphere 3D"),
-    "NUAI": ("0002028336", "New Era Energy & Digital"),
-    "SLNH": ("0000064463", "Soluna Holdings"),
-    "DGXX": ("0001854368", "Digi Power X"),
-    "BKKT": ("0001820302", "Bakkt Holdings"),
-    "MARA": ("0001507605", "MARA Holdings"),
-    "WYFI": ("0002042022", "WhiteFiber"),
-    "IREN": ("0001878848", "IREN Limited"),
-    "CLSK": ("0000827876", "CleanSpark"),
-    "VIP":  ("0001844971", "Vulcan Infrastructure and Power"),
-}
-
-# Company IR feeds. Key is the label shown in the message.
-# Leave empty to run EDGAR-only until you've collected these.
-IR_FEEDS = {
-    # Equisolve platform
-    "MARA": "https://ir.mara.com/news-events/press-releases/rss",
-
-    # Q4 Inc platform  (/rss/pressrelease.aspx)
-    "CleanSpark": "https://investors.cleanspark.com/rss/pressrelease.aspx",
-    "New Era Energy & Digital": "https://investors.newerainfra.ai/rss/pressrelease.aspx",
-
-    # Notified / gcs-web platform  (/rss/news-releases.xml)
-    "IREN": "https://irisenergy.gcs-web.com/rss/news-releases.xml",
-    "Vulcan Infrastructure and Power": "https://ir.vulcanip.com/rss/news-releases.xml",
-    "Sphere 3D": "https://sphere3d.gcs-web.com/rss/news-releases.xml",
-    # Migrated off Q4 to gcs-web; the old /rss/pressrelease.aspx path now 404s.
-    "Bakkt": "https://investors.bakkt.com/rss/news-releases.xml",
-
-    # WordPress. The site-wide /feed/ is a near-dormant blog feed (3 items);
-    # the press releases live in the /news/ archive, so target its feed directly.
-    # If this 404s, autodiscovery can't help and Soluna is EDGAR-only.
-    "Soluna": "https://www.solunacomputing.com/news/feed/",
-}
+# The watchlist lives in watchlist.py — one record per company, one edit to add
+# one.
+#
+# EXTRA_CIKS is keyed by CIK because CIKs are permanent and tickers are not.
+# This sector renames constantly and SEC's ticker lookup file lags renames by
+# weeks, so pinning by CIK sidesteps that entirely.
+#
+# IR_FEEDS is keyed by TICKER. It was previously keyed by display label — a mix
+# of tickers and company names — so nothing joined a feed to its company, and a
+# company could be dropped from the watchlist while its feed kept being polled.
+# Feed URLs are unchanged; only the log labels differ.
+TICKERS = []  # Ticker lookup is fragile across renames; see EXTRA_CIKS above.
+EXTRA_CIKS = watchlist.ciks()          # {ticker: (cik, name)}
+IR_FEEDS = watchlist.ir_feeds()        # {ticker: url}, companies that have one
 
 # Confirmed to have NO usable feed. Their newsrooms render client-side, so the
 # headlines aren't in the HTML and neither autodiscovery nor a plain scraper
