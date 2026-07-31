@@ -69,6 +69,15 @@ NOTABLE_YEAR_PCT = 25.0
 SPLIT_DROP_PCT = 35.0
 
 YEAR_DAYS = 365
+
+# The `1yr` column compares against the closest observation AT LEAST a year
+# old — but it must also be bounded above, or a company with sparse reporting
+# gets a multi-year change printed in a column labelled one year.
+#
+# Observed: BKKT has three observations, two of them 2021-11-30 and 2026-03-11.
+# Unbounded, its "1yr" figure would span four and a half years. Anything older
+# than this is treated as no usable base, which is the honest answer.
+MAX_BASE_AGE_DAYS = 550
 STATE_FILE = Path(os.environ.get("DILUTION_STATE", "dilution_state.json"))
 REQUEST_GAP = 0.2
 
@@ -183,7 +192,8 @@ def summarise(series):
         year_reason = "split"
     else:
         target = latest_date - timedelta(days=YEAR_DAYS)
-        older = [(d, v) for d, v, _ in series if d <= target]
+        floor = latest_date - timedelta(days=MAX_BASE_AGE_DAYS)
+        older = [(d, v) for d, v, _ in series if floor <= d <= target]
         if not older:
             # No observation a year back. Distinct from a split: this company
             # has not been reporting long enough, which is information about
@@ -346,8 +356,11 @@ def main():
             ratio = f"{d['ratio']:.1f}:1" if d["ratio"] else "?"
             print(f"      drop {d0} {v0:,} ({f0 or '?'})  ->  "
                   f"{d1} {v1:,} ({f1 or '?'})  ratio {ratio}")
-            print(f"      near a round ratio = reverse split; "
-                  f"arbitrary = possible tagging change")
+            gap = (d1 - d0).days
+            print(f"      {gap}d apart. The ratio is a FLOOR on any split: "
+                  f"dilution between the two")
+            print(f"      observations pulls it down (SLNH reads 22.2:1 for a "
+                  f"1-for-25 split).")
         time.sleep(REQUEST_GAP)
 
     if failed:
