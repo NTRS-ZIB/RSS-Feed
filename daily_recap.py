@@ -72,6 +72,16 @@ CHART_DAYS = 60        # trading days shown per sparkline in "daily" mode
 VOL_AVG_DAYS = 30      # baseline for the volume comparison
 GRID_COLS = 2
 
+# Panel size in inches, and a ceiling on the overall shape.
+#
+# Discord caps the HEIGHT of an embedded image, so a tall portrait image is
+# displayed narrower — the height limit binds before the width one. Keeping
+# the figure near square makes it render at full width in the channel.
+# MAX_ASPECT also stops the image degrading if tickers are added later.
+PANEL_W = 4.2
+PANEL_H = 1.55
+MAX_ASPECT = 1.15      # height : width
+
 # ------------------------------------------------------------------ RUNTIME
 
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL_MARKET", "").strip()
@@ -370,8 +380,9 @@ def build_chart(stats):
     """
     n = len(stats)
     rows = (n + GRID_COLS - 1) // GRID_COLS
-    fig, axes = plt.subplots(rows, GRID_COLS,
-                             figsize=(GRID_COLS * 3.4, rows * 1.9))
+    width = GRID_COLS * PANEL_W
+    height = min(rows * PANEL_H, width * MAX_ASPECT)
+    fig, axes = plt.subplots(rows, GRID_COLS, figsize=(width, height))
     fig.patch.set_facecolor("#0D1117")
     axes = axes.flatten() if n > 1 else [axes]
 
@@ -403,7 +414,7 @@ def build_chart(stats):
             ax.set_ylim(lo - pad, hi + pad)
 
         ax.set_title(f"{s['label']}  {s['pct']:+.1f}%",
-                     color="#E6EDF3", fontsize=10, pad=4)
+                     color="#E6EDF3", fontsize=11, pad=4)
         ax.set_facecolor("#0D1117")
         for spine in ax.spines.values():
             spine.set_visible(False)
@@ -420,7 +431,7 @@ def build_chart(stats):
         caption = f"today's session ({intraday_used}/{n}); rest {CHART_DAYS}-day close"
     else:
         caption = f"{CHART_DAYS}-day close"
-    fig.suptitle(caption, color=FLAT, fontsize=9, y=0.99)
+    fig.suptitle(caption, color=FLAT, fontsize=10, y=0.995)
 
     fig.tight_layout()
     buf = io.BytesIO()
