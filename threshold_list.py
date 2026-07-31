@@ -291,6 +291,20 @@ def main():
 
     if not (added or removed):
         print("No change. Nothing to post.")
+        # A dry run saves nothing, so show what a post would look like. This
+        # component is silent by design — without this its only output is
+        # unpreviewable until the day it actually fires.
+        if DRY_RUN:
+            if current:
+                runs = {sym: 0 for sym in current}
+                print("\nDry run: nothing changed, but this is the shape of a "
+                      "post.\n")
+                print(build_embed(day, set(), set(), current, found, runs)
+                      ["fields"][0]["value"])
+            else:
+                print("\nDry run: no watchlist company is listed, so a post "
+                      "would have nothing to show. The embed is only "
+                      "previewable when at least one is on the list.")
         if not DRY_RUN and state.get("last_date") != day.isoformat():
             state["last_date"] = day.isoformat()
             save_state(state)

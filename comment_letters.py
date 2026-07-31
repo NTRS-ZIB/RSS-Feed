@@ -281,7 +281,19 @@ def main():
 
     if not new:
         print("No change. Nothing to post.")
-        if not DRY_RUN:
+        # A dry run saves nothing, so there is no reason to withhold the
+        # output. Without this the embed is unpreviewable once state exists,
+        # and for a component that posts only on new correspondence that could
+        # be months.
+        if DRY_RUN:
+            if rows:
+                print("\nDry run: nothing changed, but this is what a post "
+                      "would look like.\n")
+                print(build_embed(rows, 0, cutoff)["description"])
+            else:
+                print("\nDry run: no correspondence in the window, so a post "
+                      "would have nothing to show.")
+        else:
             save_state(state, all_accessions)
         return 0
 
