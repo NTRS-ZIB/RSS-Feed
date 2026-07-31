@@ -1,0 +1,57 @@
+name: Shares outstanding
+
+on:
+  schedule:
+    # 15:00 UTC weekdays. Share counts change when a company files, so this
+    # checks daily and posts only when a reported figure moves. In practice
+    # that is roughly quarterly per company, clustered around reporting season.
+    - cron: "0 15 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Fetch and log without posting or saving state"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write   # commits dilution_state.json
+
+concurrency:
+  group: dilution
+  cancel-in-progress: false
+
+jobs:
+  dilution:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Check shares outstanding
+        # One companyconcept request per company, plus a retry per fallback
+        # concept for any filer that does not tag the first one.
+        timeout-minutes: 5
+        env:
+          WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u dilution.py
+
+      - name: Persist state
+        run: |
+          if [[ -n "$(git status --porcelain dilution_state.json)" ]]; then
+            git config user.name "dilution"
+            git config user.email "actions@github.com"
+            git add dilution_state.json
+            git commit -m "Update dilution state [skip ci]"
+            git push
+          else
+            echo "No state change."
+          fi
