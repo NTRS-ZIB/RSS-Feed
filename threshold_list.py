@@ -126,10 +126,15 @@ def fetch_file(day):
         print(f"  {day}: HTTP {r.status_code}")
         return None
     text = r.text
-    # A valid file starts with the pipe-delimited header row. Anything else
-    # (an error page, a redirect) must not be parsed as data.
+    # A valid file starts with the pipe-delimited header row. Nasdaq serves a
+    # placeholder page rather than a 404 for a date that has not published
+    # yet, so the status code alone cannot be trusted — same shape as Stooq's
+    # HTTP 200 error body.
     if "Symbol" not in text.split("\n", 1)[0]:
-        print(f"  {day}: unexpected content, not a threshold file")
+        if day >= date.today():
+            print(f"  {day}: not published yet, falling back")
+        else:
+            print(f"  {day}: unexpected content, not a threshold file")
         return None
     return text
 
