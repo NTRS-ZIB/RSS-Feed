@@ -1,0 +1,58 @@
+name: SEC comment letters
+
+on:
+  schedule:
+    # 13:30 UTC weekdays. EDGAR publishes correspondence on business days, and
+    # nothing here is urgent — the SEC releases it at least 20 business days
+    # after a review completes, so a letter is already weeks old when it
+    # appears. Daily is generous.
+    - cron: "30 13 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Fetch and log without posting or saving state"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write   # commits letters_state.json
+
+concurrency:
+  group: comment-letters
+  cancel-in-progress: false
+
+jobs:
+  letters:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Check comment letters
+        # One submissions request per company, eleven in total.
+        timeout-minutes: 5
+        env:
+          # Filings channel: these are SEC filings, not market data.
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u comment_letters.py
+
+      - name: Persist state
+        run: |
+          if [[ -n "$(git status --porcelain letters_state.json)" ]]; then
+            git config user.name "comment-letters"
+            git config user.email "actions@github.com"
+            git add letters_state.json
+            git commit -m "Update comment letter state [skip ci]"
+            git push
+          else
+            echo "No state change."
+          fi
