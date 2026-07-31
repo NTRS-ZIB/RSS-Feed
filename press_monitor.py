@@ -109,6 +109,20 @@ PRESS_RELEASE_EXHIBIT_ONLY = True
 # e.g. ["acquisition", "dividend", "guidance"]
 KEYWORDS = []
 
+# Hard age floor. A filing older than this is marked seen but NEVER posted,
+# whatever the state file says.
+#
+# The cap alone is not enough. state.json answers "have I seen this?", which
+# silently becomes "no" for thousands of old filings whenever the state is
+# reset or the data source starts returning deeper history. Migrating from
+# browse-edgar (40 filings per form) to the submissions API (~1,000 filings of
+# all types) did exactly that: 1,471 historical filings looked new at once and
+# the channel got 65 messages of old news.
+#
+# An age floor is independent of state, so backfill can never be mistaken for
+# news. Keep it comfortably above the run interval.
+MAX_AGE_DAYS = 7
+
 # Safety valve: never post more than this in one run, per channel.
 # Sized for earnings season: ~10 companies x (8-K + 10-Q + IR item) landing in
 # one window. Overflow is discarded, not queued, so leave headroom.
@@ -130,6 +144,10 @@ socket.setdefaulttimeout(25)
 
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "").strip()
 INSIDER_WEBHOOK_URL = os.environ.get("WEBHOOK_URL_INSIDER", "").strip()
+# Dry run: fetch, evaluate, print what WOULD post — but post nothing and,
+# critically, do NOT save state. Saving would mark everything seen and the
+# next real run would then post nothing at all.
+DRY_RUN = os.environ.get("DRY_RUN", "").strip().lower() in ("1", "true", "yes")
 # SEC requires a descriptive User-Agent with a contact address.
 SEC_USER_AGENT = os.environ.get("SEC_USER_AGENT", "").strip()
 STATE_FILE = Path(os.environ.get("STATE_FILE", "state.json"))
@@ -588,7 +606,9 @@ def post(item, webhook, color=0x1F6FEB):
 
 
 def main():
-    if not WEBHOOK_URL:
+    if DRY_RUN:
+        print("DRY RUN — nothing posted, state not saved.\n")
+    elif not WEBHOOK_URL:
         sys.exit("WEBHOOK_URL is not set.")
     if not SEC_USER_AGENT:
         sys.exit("SEC_USER_AGENT is not set. Use: 'Your Name your@email.com'")
@@ -634,6 +654,10 @@ def main():
     if not state.get("initialized"):
         state["seen"] = [i["uid"] for i in all_items if i["uid"]]
         state["initialized"] = True
+        if DRY_RUN:
+            print(f"First run: would baseline {len(state['seen'])} id(s). "
+                  f"State not saved.")
+            return
         save_state(state, len(all_items))
         print("First run complete — baseline recorded, nothing posted.")
         return
@@ -644,9 +668,20 @@ def main():
         seen.add(item["uid"])
         state["seen"].append(item["uid"])
 
-    # Only the newest candidates get the expensive exhibit check. Without this
-    # cap, a state reset would trigger one SEC fetch per backlog item.
-    candidates = [i for i in fresh if passes_keywords(i)]
+    # Age floor first: old filings are already marked seen, and are dropped
+    # here regardless of how many there are.
+    cutoff = time.time() - MAX_AGE_DAYS * 86400
+
+    def recent(items):
+        return [i for i in items if (i.get("published") or 0) >= cutoff]
+
+    fresh_recent = recent(fresh)
+    insider_recent = recent(insider_fresh)
+    aged = (len(fresh) - len(fresh_recent)) + (len(insider_fresh) - len(insider_recent))
+    if aged:
+        print(f"{aged} item(s) older than {MAX_AGE_DAYS}d — recorded, not posted.")
+
+    candidates = [i for i in fresh_recent if passes_keywords(i)]
     candidates.sort(key=lambda i: i.get("published") or 0, reverse=True)
     candidates = candidates[: MAX_POSTS_PER_RUN * 2]
 
@@ -660,6 +695,18 @@ def main():
         to_post.append(item)
 
     print(f"{len(candidates)} candidate(s) checked, {len(to_post)} to post.")
+
+    if DRY_RUN:
+        for item in to_post:
+            print(f"  [press]   {item['source']} — {item['title'][:60]}")
+        for item in sorted(insider_recent,
+                           key=lambda i: i.get("published") or 0,
+                           reverse=True)[:MAX_INSIDER_POSTS_PER_RUN]:
+            print(f"  [insider] {item['source']} — {item['title'][:60]}")
+        n_ins = min(len(insider_recent), MAX_INSIDER_POSTS_PER_RUN)
+        print(f"\nDry run: would post {len(to_post)} press "
+              f"and {n_ins} insider item(s). State not saved.")
+        return
     failed = []
     sent = 0
     for item in to_post:
@@ -670,9 +717,9 @@ def main():
     print(f"Posted {sent} press item(s).")
 
     # Insider channel: no exhibit check, separate cap, separate webhook.
-    if insider_fresh:
-        insider_fresh.sort(key=lambda i: i.get("published") or 0, reverse=True)
-        batch = insider_fresh[:MAX_INSIDER_POSTS_PER_RUN]
+    if insider_recent:
+        insider_recent.sort(key=lambda i: i.get("published") or 0, reverse=True)
+        batch = insider_recent[:MAX_INSIDER_POSTS_PER_RUN]
         sent_i = 0
         for item in batch:
             if post(item, INSIDER_WEBHOOK_URL, color=0xD29922):
