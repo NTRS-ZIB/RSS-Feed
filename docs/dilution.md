@@ -71,6 +71,25 @@ not only a split in the most recent step. A company that split six months ago
 and has diluted since would otherwise report growth measured against
 pre-split units.
 
+### Reading the ratio in the log
+
+When a drop is found, the log names both observations, their form types, the
+gap between them and the implied ratio:
+
+```
+drop 2023-08-09 35,694,430 (10-Q)  ->  2023-11-09 1,609,788 (10-Q)  ratio 22.2:1
+```
+
+**The ratio is a floor on the split, not a match for it.** Dilution between the
+two observations pulls it down — that example is SLNH's 1-for-25 reverse split
+reading 22.2:1, because the company issued stock in the same quarter. Observed
+ratios across this watchlist run 1.9:1 to 9.6:1 for splits of various sizes.
+
+The gap is the other thing to read. A drop straddling two filings a quarter
+apart is a corporate action. A drop straddling observations years apart, as
+BKKT's does, is a reporting gap with an action somewhere inside it — the
+component cannot say when, and the dates make that visible.
+
 Genuine buybacks are not the competing explanation. None of these companies has
 the balance sheet for one, and a 35% reduction would be extraordinary even for
 a company that did.
@@ -100,8 +119,15 @@ differently:**
 
 | Shown | Cause | Means |
 |---|---|---|
-| `-~` | Fewer than a year of reported observations | The company has not been reporting long enough. Says nothing about dilution. |
-| `split` | A reverse split inside the trailing year | The comparison is invalid, not unavailable. Growth may be large and is unknown. |
+| `-~` | No observation between `YEAR_DAYS` (365) and `MAX_BASE_AGE_DAYS` (550) old | Nothing to compare against. Either the company is young, or it reports too sparsely. |
+| `split` | A reverse split between that base and now | The comparison is invalid, not unavailable. Growth may be large and is unknown. |
+
+**The base is bounded at both ends, and the upper bound matters.** Taking the
+closest observation *at least* a year old sounds sufficient and is not: BKKT
+has three observations in total, two of them dated 2021-11-30 and 2026-03-11.
+Unbounded, its `1yr` figure would have spanned four and a half years in a
+column labelled one year. `MAX_BASE_AGE_DAYS` rejects a base that old and
+reports `-~` instead, which is the honest answer.
 
 Both are also named in prose beneath the table. On the first live run these
 split cleanly: BKKT and IREN had three observations each and WYFI four —
