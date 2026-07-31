@@ -34,28 +34,16 @@ from pathlib import Path
 
 import requests
 
+import watchlist
 # ------------------------------------------------------------------ CONFIG
 
-TICKERS = {
-    "BGDE": "Big Digital Energy",
-    "ANY":  "Sphere 3D",
-    "NUAI": "New Era Energy & Digital",
-    "SLNH": "Soluna Holdings",
-    "DGXX": "Digi Power X",
-    "BKKT": "Bakkt",
-    "MARA": "MARA Holdings",
-    "WYFI": "WhiteFiber",
-    "IREN": "IREN Limited",
-    "CLSK": "CleanSpark",
-    "VIP":  "Vulcan Infrastructure and Power",
-}
-
-# Former or pending symbols. FINRA files by the symbol in force on the trade
-# date, so a rename splits history. Add here rather than editing TICKERS.
-ALIASES = {
-    "VIP": ["GREE"],          # renamed from Greenidge, 2026-07-24
-    "ANY": ["DRK"],           # pending change to DarkHorse Technologies
-}
+# The watchlist lives in watchlist.py — one record per company, one edit to add
+# one. These two names are DERIVED, not restated: these three components need
+# canonical -> [former symbols], while ftd_monitor.py needs the exact inverse.
+# Hand-maintaining both directions is how GREE was once mapped to Soluna,
+# merging two companies' data under a plausible number with no error anywhere.
+TICKERS = watchlist.names()            # {ticker: display name}
+ALIASES = watchlist.alt_by_ticker()    # {ticker: [former or pending symbols]}
 
 # Calendar days of history to pull. Needs to comfortably cover BASELINE_DAYS
 # of trading sessions plus weekends and holidays.

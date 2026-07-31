@@ -54,35 +54,16 @@ from pathlib import Path
 
 import requests
 
+import watchlist
 # ------------------------------------------------------------------ CONFIG
 
-# Ticker -> display name. MUST be kept in sync by hand when a company renames;
-# FINRA has no CIK to pin to. Sphere 3D has a pending change to DarkHorse/DRK.
-TICKERS = {
-    "BGDE": "Big Digital Energy",
-    "ANY":  "Sphere 3D",
-    "NUAI": "New Era Energy & Digital",
-    "SLNH": "Soluna Holdings",
-    "DGXX": "Digi Power X",
-    "BKKT": "Bakkt",
-    "MARA": "MARA Holdings",
-    "WYFI": "WhiteFiber",
-    "IREN": "IREN Limited",
-    "CLSK": "CleanSpark",
-    "VIP":  "Vulcan Infrastructure and Power",
-}
-
-# Former or pending symbols, queried alongside the canonical ticker and mapped
-# back to it. FINRA files by the symbol in force ON THE SETTLEMENT DATE, so a
-# rename splits a company's history across two symbols — the 2026-07-15
-# settlement predates GREE -> VIP (2026-07-24) and is filed under GREE.
-#
-# Add to this rather than editing TICKERS when a company renames: keeping both
-# preserves continuity across the changeover.
-ALIASES = {
-    "VIP": ["GREE"],          # renamed from Greenidge, 2026-07-24
-    "ANY": ["DRK"],           # pending change to DarkHorse Technologies
-}
+# The watchlist lives in watchlist.py — one record per company, one edit to add
+# one. These two names are DERIVED, not restated: these three components need
+# canonical -> [former symbols], while ftd_monitor.py needs the exact inverse.
+# Hand-maintaining both directions is how GREE was once mapped to Soluna,
+# merging two companies' data under a plausible number with no error anywhere.
+TICKERS = watchlist.names()            # {ticker: display name}
+ALIASES = watchlist.alt_by_ticker()    # {ticker: [former or pending symbols]}
 
 
 def query_symbols():

@@ -31,29 +31,16 @@ from pathlib import Path
 
 import requests
 
+import watchlist
 # ------------------------------------------------------------------ CONFIG
 
-TICKERS = {
-    "BGDE": "Big Digital Energy",
-    "ANY":  "Sphere 3D",
-    "NUAI": "New Era Energy & Digital",
-    "SLNH": "Soluna Holdings",
-    "DGXX": "Digi Power X",
-    "BKKT": "Bakkt",
-    "MARA": "MARA Holdings",
-    "WYFI": "WhiteFiber",
-    "IREN": "IREN Limited",
-    "CLSK": "CleanSpark",
-    "VIP":  "Vulcan Infrastructure and Power",
-}
-
-# Former or pending symbols. The list is published per settlement day under
-# the symbol in force that day, so a rename splits history. Keep in sync with
-# short_interest.py and regsho_volume.py.
-ALIASES = {
-    "VIP": ["GREE"],          # renamed from Greenidge, 2026-07-24
-    "ANY": ["DRK"],           # pending change to DarkHorse Technologies
-}
+# The watchlist lives in watchlist.py — one record per company, one edit to add
+# one. These two names are DERIVED, not restated: these three components need
+# canonical -> [former symbols], while ftd_monitor.py needs the exact inverse.
+# Hand-maintaining both directions is how GREE was once mapped to Soluna,
+# merging two companies' data under a plausible number with no error anywhere.
+TICKERS = watchlist.names()            # {ticker: display name}
+ALIASES = watchlist.alt_by_ticker()    # {ticker: [former or pending symbols]}
 
 # Settlement days have files; weekends and holidays do not. Walk back until a
 # file is found. Six covers a long weekend plus a couple of holidays.
