@@ -69,7 +69,7 @@ its amendments:
 | `424` | Prospectus supplements — offerings being priced. Dilution. |
 | `10-Q` / `10-K` | Quarterly and annual financials |
 | `20-F` / `40-F` | Annual reports, foreign and Canadian MJDS filers |
-| `SC 13D` | Activist / >5% stake disclosures |
+| `SC 13D` + `SCHEDULE 13D` | Activist / >5% stake disclosures. **Both spellings are required** — see below |
 | `NT 10-K` / `NT 10-Q` | Late filing notices — rare, high signal |
 
 Form 4 is deliberately absent; it has its own channel. Note that earnings news
@@ -101,6 +101,33 @@ into plain English — an earnings 8-K reads *Results of operations* — and
 supplement — offering* and an `NT 10-Q` shouts *LATE FILING NOTICE*. Item
 `9.01` is suppressed unless it is the only one listed, since it appears on
 almost every 8-K with an attachment.
+
+### Critical: `SC 13D` and `SCHEDULE 13D` are different form types
+
+The SEC moved Schedule 13D/G to structured XML filings, and the EDGAR
+form-type string changed from `SC 13D` to `SCHEDULE 13D`.
+
+Prefix matching does not bridge them. `"SCHEDULE 13D".startswith("SC 13D")` is
+**False** — the fourth character is `H`, not a space. A `FORM_TYPES` list
+containing only `SC 13D` therefore matched nothing from the changeover onward.
+
+It was found only because a real filing went unposted: Endeavor Blockchain
+disclosing 6.5% of Sphere 3D on 2026-07-31, with stated intent to engage with
+the board. Nothing in the logs indicated a problem, because **a form type that
+matches no filings is indistinguishable from one whose filings never occur.**
+
+Both spellings are now listed; `SC 13D` still matches filings made before the
+change.
+
+The general lesson: an entry in `FORM_TYPES` is an assumption until a filing of
+that type has actually been posted. The others were confirmed by observing real
+posts. This one never had been.
+
+`SCHEDULE 13G` — the passive counterpart, filed by index funds and most
+institutions — is deliberately **not** listed. A 13D signals intent; a 13G
+signals that someone owns a lot and files an amendment each February. If it is
+ever wanted, the insider channel is the better home, on the same reasoning that
+put Form 4 there.
 
 **`KEYWORDS`** — optional title filter. Empty means post everything.
 
