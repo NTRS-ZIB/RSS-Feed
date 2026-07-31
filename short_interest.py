@@ -12,18 +12,28 @@ Data: FINRA Query API, group `otcMarket`, dataset
 DATASET SELECTION — this cost several debugging rounds, so read this before
 changing it.
 
-The `otcMarket` group contains SEVERAL short interest datasets and only one of
-them covers exchange-listed securities:
+"OTC" means TWO DIFFERENT THINGS in FINRA's data and the `otcMarket` group
+contains both, which is why the group name is no help:
 
-  consolidatedShortInterest         <- CORRECT. "Consolidated" = all exchanges.
-  equityShortInterest               OTC only; deprecated 2021-04-30.
-  equityShortInterestStandardized   OTC only, despite the name.
+  OTC-LISTED        issuers not listed on an exchange
+  OFF-EXCHANGE      TRF/ADF trading venues, for exchange-LISTED securities
 
-Both `equityShortInterest*` datasets return HTTP 200 with well-formed rows —
-they simply contain no exchange-listed names. The symptom is a plausible
-response whose newest settlement date is years old. A Nasdaq-listed company
-that was once OTC (CleanSpark, for instance) appears with records that stop
-dead on the date it uplisted, which is a good way to recognise this mistake.
+Every company on this watchlist is a Nasdaq-listed SEC reporting issuer, so any
+dataset scoped by LISTING VENUE to OTC cannot contain them and is disqualified
+before it is queried. Scope is the test, not the dataset name.
+
+  consolidatedShortInterest         <- CORRECT. Scoped to all exchanges.
+  regShoDaily                       Off-exchange TRADING of listed names. Fine;
+                                    used by regsho_volume.py, which says so.
+  equityShortInterest               OTC LISTING. Also deprecated 2021-04-30.
+  equityShortInterestStandardized   OTC LISTING, despite the name.
+
+The empirical backstop is kept because a scope claim can be wrong and the
+failure is silent. Both `equityShortInterest*` datasets return HTTP 200 with
+well-formed rows — they simply contain no exchange-listed names. The symptom is
+a plausible response whose newest settlement date is years old. A Nasdaq-listed
+company that was once OTC (CleanSpark, for instance) appears with records that
+stop dead on the date it uplisted, which is how to recognise this mistake.
 
 Credentials do not fix it: authenticating changed nothing, because the
 limitation is dataset content, not permission. STALE_WARN_DAYS below is the
