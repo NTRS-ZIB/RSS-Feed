@@ -1,0 +1,295 @@
+#!/usr/bin/env python3
+"""
+Nasdaq Reg SHO threshold list -> Discord.
+
+A security joins the threshold list after five consecutive settlement days of
+fails-to-deliver above 10,000 shares and at least 0.5% of shares outstanding.
+Appearing triggers mandatory close-out obligations for broker-dealers.
+
+WHY NASDAQ AND NOT FINRA
+Each SRO publishes its own list, covering the securities for which it is the
+primary market. FINRA's `thresholdList` dataset is the OTC list — FINRA Rule
+4320 defines threshold securities as those of issuers that are NOT SEC
+reporting securities. Every company on this watchlist is a Nasdaq-listed
+reporting issuer, so a FINRA-based version would run indefinitely and never
+fire. Cboe and NYSE publish their own lists for their own listings.
+
+Source: https://www.nasdaqtrader.com/dynamic/symdir/regsho/nasdaqth{yyyymmdd}.txt
+Pipe-delimited, no authentication, one file per SETTLEMENT day, published
+before midnight Eastern.
+
+This is an EXCEPTION REPORT. It posts only when a watchlist company is added
+to or removed from the list, and is silent otherwise — which will be almost
+every day. Silence means the check ran and found nothing.
+"""
+
+import json
+import os
+import sys
+from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
+
+import requests
+
+# ------------------------------------------------------------------ CONFIG
+
+TICKERS = {
+    "BGDE": "Big Digital Energy",
+    "ANY":  "Sphere 3D",
+    "NUAI": "New Era Energy & Digital",
+    "SLNH": "Soluna Holdings",
+    "DGXX": "Digi Power X",
+    "BKKT": "Bakkt",
+    "MARA": "MARA Holdings",
+    "WYFI": "WhiteFiber",
+    "IREN": "IREN Limited",
+    "CLSK": "CleanSpark",
+    "VIP":  "Vulcan Infrastructure and Power",
+}
+
+# Former or pending symbols. The list is published per settlement day under
+# the symbol in force that day, so a rename splits history. Keep in sync with
+# short_interest.py and regsho_volume.py.
+ALIASES = {
+    "VIP": ["GREE"],          # renamed from Greenidge, 2026-07-24
+    "ANY": ["DRK"],           # pending change to DarkHorse Technologies
+}
+
+# Settlement days have files; weekends and holidays do not. Walk back until a
+# file is found. Six covers a long weekend plus a couple of holidays.
+MAX_DAYS_BACK = 6
+
+# How many prior files to read when counting how long a security has been
+# listed. Costs one request each, so kept modest and only done on a change.
+RUN_LOOKBACK_FILES = 15
+
+# ------------------------------------------------------------------ RUNTIME
+
+WEBHOOK_URL = (os.environ.get("WEBHOOK_URL_ALERTS", "").strip()
+               or os.environ.get("WEBHOOK_URL_MARKET", "").strip())
+DRY_RUN = os.environ.get("DRY_RUN", "").strip().lower() in ("1", "true", "yes")
+STATE_FILE = Path(os.environ.get("THRESHOLD_STATE", "threshold_state.json"))
+
+FILE_URL = ("https://www.nasdaqtrader.com/dynamic/symdir/regsho/"
+            "nasdaqth{stamp}.txt")
+# nasdaqtrader.com is a plain web host, not an API; send browser-like headers.
+HEADERS = {
+    "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                   "AppleWebKit/537.36 (KHTML, like Gecko) "
+                   "Chrome/126.0.0.0 Safari/537.36"),
+    "Accept": "text/plain,*/*;q=0.8",
+}
+
+MARKET_CATEGORIES = {
+    "Q": "Nasdaq Global Select",
+    "G": "Nasdaq Global",
+    "S": "Nasdaq Capital Market",
+}
+
+RED, GREEN, AMBER = 0xF85149, 0x3FB950, 0xD29922
+
+
+def load_state():
+    if STATE_FILE.exists():
+        try:
+            return json.loads(STATE_FILE.read_text())
+        except json.JSONDecodeError:
+            pass
+    return {"on_list": [], "last_date": ""}
+
+
+def save_state(state):
+    STATE_FILE.write_text(json.dumps(state, indent=1))
+
+
+def canonical(symbol):
+    symbol = (symbol or "").upper().strip()
+    if symbol in TICKERS:
+        return symbol
+    for ticker, alts in ALIASES.items():
+        if symbol in (a.upper() for a in alts):
+            return ticker
+    return None
+
+
+def fetch_file(day):
+    """Raw text for a settlement day, or None if there is no file."""
+    url = FILE_URL.format(stamp=day.strftime("%Y%m%d"))
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=(10, 30))
+    except requests.RequestException as e:
+        print(f"  {day}: {type(e).__name__}")
+        return None
+    if r.status_code == 404:
+        return None                      # non-settlement day, expected
+    if r.status_code != 200:
+        print(f"  {day}: HTTP {r.status_code}")
+        return None
+    text = r.text
+    # A valid file starts with the pipe-delimited header row. Anything else
+    # (an error page, a redirect) must not be parsed as data.
+    if "Symbol" not in text.split("\n", 1)[0]:
+        print(f"  {day}: unexpected content, not a threshold file")
+        return None
+    return text
+
+
+def parse_file(text):
+    """{canonical ticker: (security name, market category)} for our watchlist.
+
+    Format: Symbol|Security Name|Market Category|Threshold Flag|Rule 3210|Filler
+    The trailing Filler field means rows end with a pipe.
+    """
+    found = {}
+    for line in text.split("\n")[1:]:
+        line = line.strip()
+        if not line or "|" not in line:
+            continue
+        parts = line.split("|")
+        if len(parts) < 4:
+            continue
+        sym = canonical(parts[0])
+        if not sym:
+            continue
+        if parts[3].strip().upper() != "Y":     # Reg SHO Threshold Flag
+            continue
+        found[sym] = (parts[1].strip(), parts[2].strip())
+    return found
+
+
+def latest_file():
+    """Most recent available file. Returns (date, parsed) or (None, None)."""
+    for back in range(MAX_DAYS_BACK + 1):
+        day = date.today() - timedelta(days=back)
+        text = fetch_file(day)
+        if text is not None:
+            return day, parse_file(text)
+    return None, None
+
+
+def count_run(symbol, latest_day):
+    """Consecutive published files, ending at latest_day, listing this security.
+
+    A missing file is a weekend or holiday, not a break in the run.
+    """
+    run, checked, back = 1, 0, 1
+    while checked < RUN_LOOKBACK_FILES and back < RUN_LOOKBACK_FILES * 2:
+        day = latest_day - timedelta(days=back)
+        back += 1
+        text = fetch_file(day)
+        if text is None:
+            continue
+        checked += 1
+        if symbol in parse_file(text):
+            run += 1
+        else:
+            break
+    return run
+
+
+def build_embed(day, added, removed, current, details, runs):
+    if added:
+        colour, title = RED, "Added to Reg SHO threshold list"
+    elif removed:
+        colour, title = GREEN, "Removed from Reg SHO threshold list"
+    else:
+        colour, title = AMBER, "Reg SHO threshold list"
+
+    lines = []
+    for sym in sorted(added):
+        cat = MARKET_CATEGORIES.get((details.get(sym) or ("", ""))[1], "")
+        lines.append(f"ADDED    {sym:<6}{cat}")
+    for sym in sorted(removed):
+        lines.append(f"REMOVED  {sym:<6}{TICKERS.get(sym, '')[:17]}")
+    for sym in sorted(set(current) - set(added)):
+        lines.append(f"still on {sym:<6}day {runs.get(sym, '?')}")
+
+    desc = (f"Nasdaq settlement date {day:%Y-%m-%d}. A security joins after "
+            f"five consecutive settlement days of fails-to-deliver above "
+            f"10,000 shares and 0.5% of shares outstanding, which triggers "
+            f"mandatory close-out obligations.\n\n"
+            f"Rare and worth attention — but a listing reflects settlement "
+            f"failures, which are not the same thing as short-seller pressure.")
+
+    return {
+        "title": title,
+        "description": desc,
+        "color": colour,
+        "fields": [{"name": "\u200b",
+                    "value": "```\n" + "\n".join(lines) + "\n```"}],
+        "footer": {"text": "Nasdaq Reg SHO threshold list"},
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def post(embed):
+    try:
+        r = requests.post(WEBHOOK_URL, json={"embeds": [embed]}, timeout=25)
+    except requests.RequestException as e:
+        print(f"webhook failed: {type(e).__name__}")
+        return False
+    if r.status_code >= 300:
+        print(f"webhook returned {r.status_code}: {r.text[:200]}")
+        return False
+    return True
+
+
+def main():
+    if DRY_RUN:
+        print("DRY RUN — nothing posted, state not saved.\n")
+    elif not WEBHOOK_URL:
+        sys.exit("No webhook set (WEBHOOK_URL_ALERTS or WEBHOOK_URL_MARKET).")
+
+    print("Fetching Nasdaq threshold list...")
+    day, found = latest_file()
+    if day is None:
+        sys.exit(f"No threshold file found in the last {MAX_DAYS_BACK} days. "
+                 f"Check the URL pattern is still current.")
+
+    print(f"Settlement date {day:%Y-%m-%d}")
+    current = set(found)
+    if current:
+        for sym in sorted(current):
+            name, cat = found[sym]
+            print(f"  ON LIST: {sym} — {name} "
+                  f"({MARKET_CATEGORIES.get(cat, cat)})")
+    else:
+        print("  no watchlist company on the list")
+
+    state = load_state()
+    previous = set(state.get("on_list") or [])
+    added = current - previous
+    removed = previous - current
+    print(f"previously: {sorted(previous) or 'none'}")
+
+    if not (added or removed):
+        print("No change. Nothing to post.")
+        if not DRY_RUN and state.get("last_date") != day.isoformat():
+            state["last_date"] = day.isoformat()
+            save_state(state)
+        return
+
+    # Runs cost one request per prior file, so only count them on a change.
+    runs = {sym: count_run(sym, day) for sym in current - added}
+
+    embed = build_embed(day, added, removed, current, found, runs)
+    print()
+    print(embed["fields"][0]["value"])
+
+    if DRY_RUN:
+        print(f"\nDry run: would post — added {sorted(added) or 'none'}, "
+              f"removed {sorted(removed) or 'none'}. State not saved.")
+        return
+
+    if post(embed):
+        state["on_list"] = sorted(current)
+        state["last_date"] = day.isoformat()
+        save_state(state)
+        print(f"Posted. Added {sorted(added) or 'none'}, "
+              f"removed {sorted(removed) or 'none'}.")
+    else:
+        sys.exit("Post failed; state not saved so it retries next run.")
+
+
+if __name__ == "__main__":
+    main()
