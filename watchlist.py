@@ -60,7 +60,20 @@ WATCHLIST = [
         "ticker": "BKKT",
         "name": "Bakkt Holdings",
         "cik": "0001820302",
-        "cusips": ["05759B305"],
+        # [1] UNCONFIRMED BY DATA. Taken from the 8-K12B of 3 Nov 2025, which
+        # states this CUSIP at the point New Bakkt became successor issuer.
+        # But a 12-month sweep of the SEC fails files (2025-07 to 2026-07)
+        # shows BKKT under 05759B305 throughout and never under this one — so
+        # either it predates the sweep window or the filing refers to another
+        # security. The issue number `10` suggests original common stock,
+        # which would place it before the April 2024 reverse split.
+        #
+        # Kept because a stale pin is inert while a missing one loses data,
+        # but it is not trusted until observed. probe_cusips.py with
+        # SWEEP_PERIODS=48 would settle it: if it appears in 2024 files it is
+        # the pre-split common and correct; if it never appears, remove it
+        # rather than risk matching a different Bakkt security.
+        "cusips": ["05759B305", "05759B107"],
         "alt_symbols": [],
         "ir_feed": "https://investors.bakkt.com/rss/news-releases.xml",
     },
@@ -69,7 +82,7 @@ WATCHLIST = [
         "name": "New Era Energy & Digital",
         "cik": "0002028336",
         "cusips": ["64428N109"],
-        "alt_symbols": [],
+        "alt_symbols": ["NEHC"],          # New Era Helium, until 2025-08-13
         "ir_feed": "https://investors.newerainfra.ai/rss/pressrelease.aspx",
     },
     {
@@ -110,7 +123,11 @@ WATCHLIST = [
         "ticker": "BGDE",
         "name": "Big Digital Energy",
         "cik": "0001218683",
-        "cusips": ["57778N406"],
+        # [1] retired 2025-11 (seen to 17 Nov, replaced by 24 Nov). Confirmed
+        # by sweeping the SEC fails files, and corroborated independently: the
+        # dilution tracker found the share count dropping 4.2:1 across the
+        # same window.
+        "cusips": ["57778N406", "57778N307"],
         "alt_symbols": ["MIGI"],          # Mawson Infrastructure, until 2026-04-30
         "ir_feed": None,                  # renders client-side; EDGAR only
     },
