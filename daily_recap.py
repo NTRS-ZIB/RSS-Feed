@@ -70,7 +70,7 @@ CHART_EXTENDED = False   # True to include 04:00-20:00 ET rather than 09:30-16:0
 
 CHART_DAYS = 60        # trading days shown per sparkline in "daily" mode
 VOL_AVG_DAYS = 30      # baseline for the volume comparison
-GRID_COLS = 3
+GRID_COLS = 2
 
 # ------------------------------------------------------------------ RUNTIME
 
@@ -371,7 +371,7 @@ def build_chart(stats):
     n = len(stats)
     rows = (n + GRID_COLS - 1) // GRID_COLS
     fig, axes = plt.subplots(rows, GRID_COLS,
-                             figsize=(GRID_COLS * 3.2, rows * 2.0))
+                             figsize=(GRID_COLS * 3.4, rows * 1.9))
     fig.patch.set_facecolor("#0D1117")
     axes = axes.flatten() if n > 1 else [axes]
 
