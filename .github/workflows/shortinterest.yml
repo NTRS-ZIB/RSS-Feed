@@ -13,10 +13,6 @@ on:
         description: "Fetch and log without posting or saving state"
         type: boolean
         default: true
-      anonymous:
-        description: "Ignore FINRA credentials (tests whether they are needed)"
-        type: boolean
-        default: false
 
 permissions:
   contents: write   # commits shortinterest_state.json
@@ -42,9 +38,11 @@ jobs:
         timeout-minutes: 5
         env:
           WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
+          # This dataset serves full results anonymously, so no secrets are
+          # set and these render empty. Left mapped so that if FINRA ever
+          # requires auth, adding the two secrets is the only change needed.
           FINRA_CLIENT_ID: ${{ secrets.FINRA_CLIENT_ID }}
           FINRA_CLIENT_SECRET: ${{ secrets.FINRA_CLIENT_SECRET }}
-          FINRA_ANONYMOUS: ${{ inputs.anonymous }}
           # Empty on scheduled runs, so those always post.
           DRY_RUN: ${{ inputs.dry_run }}
           PYTHONUNBUFFERED: "1"
