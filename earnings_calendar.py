@@ -22,22 +22,12 @@ from datetime import date, datetime, timedelta, timezone
 
 import requests
 
+import watchlist
 # ------------------------------------------------------------------ CONFIG
 
-# Same watchlist as press_monitor.py, pinned by CIK.
-COMPANIES = {
-    "BGDE": ("0001218683", "Big Digital Energy"),
-    "ANY":  ("0001591956", "Sphere 3D"),
-    "NUAI": ("0002028336", "New Era Energy & Digital"),
-    "SLNH": ("0000064463", "Soluna Holdings"),
-    "DGXX": ("0001854368", "Digi Power X"),
-    "BKKT": ("0001820302", "Bakkt Holdings"),
-    "MARA": ("0001507605", "MARA Holdings"),
-    "WYFI": ("0002042022", "WhiteFiber"),
-    "IREN": ("0001878848", "IREN Limited"),
-    "CLSK": ("0000827876", "CleanSpark"),
-    "VIP":  ("0001844971", "Vulcan Infrastructure and Power"),
-}
+# The watchlist lives in watchlist.py — one record per company, one edit to add
+# one. Keyed by CIK, which is permanent; tickers are not.
+COMPANIES = watchlist.ciks()           # {ticker: (cik, name)}
 
 # Annual and quarterly lags differ by 20-50 days, so they must never be pooled.
 # Doing so yields a median fitting neither and a spread spanning the gap.
