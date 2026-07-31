@@ -250,6 +250,38 @@ Do not rescale the old peaks by the split ratio. That ratio is not in this
 dataset, and a wrong guess produces a plausible number rather than an obvious
 error.
 
+## xMed is a property of the window, not the ticker
+
+`BASELINE_PERIODS` is 6, so `xMed` divides by the median of up to five prior
+periods — roughly three months. That choice materially changes the output, and
+the first live period is the evidence. Same file, same peaks, baseline widened
+from 6 periods to 12:
+
+| | 6 periods | 12 periods |
+|---|---|---|
+| NUAI | **27.0x** | 4.3x |
+| DGXX | 0.4x | **3.4x** |
+| SLNH | 0.5x | 1.4x |
+| WYFI | 5.8x | 6.3x |
+
+NUAI falls sixfold; DGXX crosses the flag threshold from below. Both readings
+are correct — NUAI genuinely is 27x its last three months and 4.3x its last
+six. Neither is the "true" number.
+
+The footer therefore names the window on every post. Without it the ratio reads
+as a fact about the company rather than a comparison against a specific span.
+
+**Six was kept deliberately**, for two reasons. A three-month window answers the
+more useful question for a twice-monthly signal — is this period out of line
+with the recent norm — and, more importantly, a longer window is more likely to
+span a corporate action. ANY's reverse split sits between the 6-period and
+12-period windows: at 6 its baseline is clean, at 12 it is contaminated and
+would need clearing. Length is not free.
+
+When a number looks surprising, `FTD_REPLAY=12` shows the longer view without
+touching state. Treat a large gap between the two as information about the
+baseline, not about the company.
+
 ## Cold start
 
 With no `ftd_state.json`, the first run downloads `BASELINE_PERIODS` (6, i.e.
