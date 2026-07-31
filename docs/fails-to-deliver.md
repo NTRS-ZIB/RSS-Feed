@@ -177,21 +177,45 @@ A wrong alias is far worse than a missing one. A missing alias loses a
 company's data; a wrong one **merges one company's fails into another's**, and
 both the source and the destination end up misreported with no error anywhere.
 
-So when a canonical ticker matches under two different symbols in the same
-period, the log says so:
+Two symbols mapping to one canonical ticker within a single period has two very
+different causes, and the count alone cannot tell them apart:
+
+| | Cause | Verdict |
+|---|---|---|
+| Symbols trade on **different** days | A rename mid-period | Benign — merging them is correct |
+| Symbols trade on the **same** days | Two live companies merged by a bad alias | Corrupting |
+
+CUSIP is not the discriminator either. Renames in this sector frequently arrive
+alongside a reverse split, which changes the CUSIP too, so "two CUSIPs" would
+condemn a perfectly good rename.
+
+**Time is the discriminator.** A rename means the old symbol stops and the new
+one starts, so the date sets are disjoint. Two live companies trade on the same
+settlement days. The log reflects that distinction:
 
 ```
-2026-07a ... 9/11, zero: VIP ANY
-  WARNING: SLNH matched GREE/SLNH — check ALIASES, these may be different companies
+note: VIP spans a rename — GREE 07-16..07-23, VIP 07-24..07-31
+
+WARNING: SLNH matched 2 symbols on 11 shared settlement date(s):
+         GREE 07-01..07-11, SLNH 07-01..07-11
+  Same-day overlap means these are different securities. Check ALIASES.
 ```
 
-That is a real example. An early version of this file mapped `GREE` to Soluna
-rather than Vulcan, on the assumption that GREE was a Soluna legacy symbol. The
-result: Vulcan's fails were attributed to Soluna, Soluna's series was inflated,
-and `VIP` reported a clean sheet in every period. The two visible tells were a
-`Dys` count higher than the number of settlement days in a period, and one
-ticker reporting zero balance every single period — which is why the per-period
-absentee list prints at all.
+The warning case is real. An early version mapped `GREE` to Soluna rather than
+Vulcan, on the assumption that GREE was a Soluna legacy symbol. Vulcan's fails
+were attributed to Soluna, Soluna's series was inflated, and `VIP` reported a
+clean sheet in every period. The two visible tells were a `Dys` count higher
+than the number of settlement days in a period, and one ticker reporting zero
+balance every single period — which is why the per-period absentee list prints
+at all.
+
+The note case is real too, and predictable: 2026-07b covers 16–31 July and
+straddles the 24 July ticker change, so Vulcan appears under both symbols in
+one file. That merges correctly and the peak is right.
+
+A ticker flagged for same-day overlap is skipped by the reverse-split check
+below, since two merged securities also produce two CUSIPs and clearing the
+history would be the wrong remedy for it.
 
 ## Reverse splits break the baseline
 
