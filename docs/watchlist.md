@@ -49,9 +49,16 @@ not every rename in a company's history. The longest routine window is 180 days
 less, and the two EDGAR components are pinned by CIK and immune to renames
 entirely. An older rename is invisible to all of them.
 
-EDGAR records more history than this file does. NUAI, for instance, was New Era
-Helium until 2025-07-29 and Roth CH V Holdings before that — neither is listed
-here, because neither falls inside any window.
+EDGAR records more history than this file does. NUAI was New Era Helium until
+2025-07-29 and Roth CH V Holdings before that; only the first is listed here,
+as `NEHC`, because only that one has been observed in data a component reads.
+
+**What is recorded has been measured, not assumed.** `probe_cusips.py` swept
+twelve months of SEC fails files and reported every CUSIP and every symbol each
+company appears under. It found two things nobody had recorded — BGDE's retired
+CUSIP `57778N307` and NUAI's former ticker `NEHC` — and confirmed the rest.
+Re-run it with a larger `SWEEP_PERIODS` if a replay ever needs to reach further
+back than a year.
 
 **The exception is `FTD_REPLAY`, which is unbounded.** `FTD_REPLAY=24` reads a
 year back, past renames this file does not record, and an unrecognised symbol
@@ -104,6 +111,22 @@ those.
 Two entries are **CINS** rather than CUSIP: `Q4982L109` (IREN) and `G96115103`
 (WYFI). The `Q` and `G` prefixes mark non-US issuers. The same check digit
 applies.
+
+## Identifiers are added from data, not from filings
+
+One entry in this file was added from a document rather than from observation:
+BKKT's `05759B107`, taken from an 8-K12B. The twelve-month sweep never saw it,
+and it is marked unconfirmed in the source.
+
+The distinction matters because the two failure modes are not symmetric. A
+missing identifier loses a company's rows and shows up as an unexplained gap.
+A *wrong* identifier silently attributes another security's rows to a company
+that never had them — the same class of error as a backwards alias, and just
+as quiet.
+
+So: prefer an identifier observed in the data a component actually reads. Where
+one comes from a filing instead, say so next to it and verify before relying on
+it.
 
 ## Validation
 
