@@ -163,6 +163,34 @@ Three defences, in order of durability:
    The script prints every CUSIP it learns that is not already pinned, so the
    block goes quiet once all of them are in — and speaks up again the moment a
    ticker turns up under a new one, which is itself the signal worth having.
+
+   **Twelve entries for eleven tickers is correct.** ANY appears twice:
+   `84841L407` is its pre-reverse-split identifier and `84841L506` the current
+   one. Both share the issuer prefix `84841L`, so they are the same company
+   either side of a corporate action rather than two issuers. The retired one
+   is kept because it still appears in older files, which `FTD_REPLAY` reads.
+
+   Two entries are CINS rather than CUSIP — `Q4982L109` (IREN) and
+   `G96115103` (WYFI). The `Q` and `G` prefixes mark non-US issuers. The same
+   check digit applies.
+
+### Pins are check-digit validated at startup
+
+A mistyped pin raises no error. It simply never matches a row, so the ticker
+falls back to symbol matching and the pin does nothing for as long as it sits
+there — a silent, permanent no-op.
+
+Pins are added by hand immediately after a rename, which is exactly the moment
+a transcription error is likely and least likely to be noticed. CUSIPs carry a
+modulus-10 check digit, so `validate_pins()` catches it for free on every run:
+
+```
+WARNING: CUSIP_PINS entry '84841L400' (ANY) fails its check digit — likely a
+typo. It will never match anything.
+```
+
+It warns rather than exits: a bad pin degrades to symbol matching, which still
+works, so it is not worth failing a run over.
 2. **`ALIASES`** — old and pending symbols mapped to the canonical one. Shared
    in spirit with the two FINRA components; keep the three in sync. Only works
    for renames someone has noticed.
