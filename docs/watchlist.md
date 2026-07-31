@@ -53,7 +53,7 @@ EDGAR records more history than this file does. NUAI was New Era Helium until
 2025-07-29 and Roth CH V Holdings before that; only the first is listed here,
 as `NEHC`, because only that one has been observed in data a component reads.
 
-**What is recorded has been measured, not assumed.** `probe_cusips.py` swept
+**What is recorded has been measured, not assumed.** `audit_identifiers.py` swept
 twelve months of SEC fails files and reported every CUSIP and every symbol each
 company appears under. It found two things nobody had recorded — BGDE's retired
 CUSIP `57778N307` and NUAI's former ticker `NEHC` — and confirmed the rest.
