@@ -165,6 +165,18 @@ def summarise(series):
 
     split = step is not None and step <= -SPLIT_DROP_PCT
 
+    # Which two observations straddle the drop, and the implied ratio. A
+    # reverse split lands near a round ratio (1-for-25 -> ~25). A tagging
+    # change — a filer switching from reporting all share classes to reporting
+    # one — lands on an arbitrary one. The component cannot tell them apart,
+    # but the numbers can, so it prints them rather than only its verdict.
+    drop = None
+    for (d0, v0, f0), (d1, v1, f1) in zip(series, series[1:]):
+        p = pct(v1, v0)
+        if p is not None and p <= -SPLIT_DROP_PCT:
+            drop = {"from": (d0, v0, f0), "to": (d1, v1, f1),
+                    "ratio": (v0 / v1) if v1 else None}
+
     year = None
     year_reason = None          # why year is absent: "split" or "thin"
     if split:
@@ -190,7 +202,7 @@ def summarise(series):
 
     return {"date": latest_date, "shares": latest, "form": form,
             "step": step, "prior": prior, "year": year, "split": split,
-            "year_reason": year_reason, "obs": len(series)}
+            "year_reason": year_reason, "obs": len(series), "drop": drop}
 
 
 # ------------------------------------------------------------------ FORMAT
@@ -328,6 +340,14 @@ def main():
             splits += 1
         print(f"  {ticker}: {fmt_shares(m['shares'])} as of {m['date']} "
               f"({m['form'] or '?'}, {len(series)} obs, {concept})")
+        if m["drop"]:
+            d = m["drop"]
+            (d0, v0, f0), (d1, v1, f1) = d["from"], d["to"]
+            ratio = f"{d['ratio']:.1f}:1" if d["ratio"] else "?"
+            print(f"      drop {d0} {v0:,} ({f0 or '?'})  ->  "
+                  f"{d1} {v1:,} ({f1 or '?'})  ratio {ratio}")
+            print(f"      near a round ratio = reverse split; "
+                  f"arbitrary = possible tagging change")
         time.sleep(REQUEST_GAP)
 
     if failed:
