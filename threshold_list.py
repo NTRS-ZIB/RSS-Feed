@@ -200,14 +200,18 @@ def build_embed(day, added, removed, current, details, runs):
     else:
         colour, title = AMBER, "Reg SHO threshold list"
 
+    # The block carries status and ticker ONLY. Company names and market tier
+    # go in the description, where prose wraps harmlessly. An earlier version
+    # appended the market category here and reached 36 characters against the
+    # repo's 28-character limit — and this component is an exception report, so
+    # the wrapped line would have been the only output it ever produced.
     lines = []
     for sym in sorted(added):
-        cat = MARKET_CATEGORIES.get((details.get(sym) or ("", ""))[1], "")
-        lines.append(f"ADDED    {sym:<6}{cat}")
+        lines.append(f"ADDED    {sym}")
     for sym in sorted(removed):
-        lines.append(f"REMOVED  {sym:<6}{TICKERS.get(sym, '')[:17]}")
+        lines.append(f"REMOVED  {sym}")
     for sym in sorted(set(current) - set(added)):
-        lines.append(f"still on {sym:<6}day {runs.get(sym, '?')}")
+        lines.append(f"on list  {sym:<6}day {runs.get(sym, '?')}")
 
     desc = (f"Nasdaq settlement date {day:%Y-%m-%d}. A security joins after "
             f"five consecutive settlement days of fails-to-deliver above "
@@ -215,6 +219,16 @@ def build_embed(day, added, removed, current, details, runs):
             f"mandatory close-out obligations.\n\n"
             f"Rare and worth attention — but a listing reflects settlement "
             f"failures, which are not the same thing as short-seller pressure.")
+
+    named = []
+    for sym in sorted(added):
+        cat = MARKET_CATEGORIES.get((details.get(sym) or ("", ""))[1], "")
+        name = (details.get(sym) or (TICKERS.get(sym, ""), ""))[0]
+        named.append(f"**{sym}** {name}" + (f" · {cat}" if cat else ""))
+    for sym in sorted(removed):
+        named.append(f"**{sym}** {TICKERS.get(sym, '')} — no longer listed")
+    if named:
+        desc += "\n\n" + "\n".join(named)
 
     return {
         "title": title,

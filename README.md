@@ -16,6 +16,7 @@ maintain.
 | [`short_interest.py`](docs/short-interest.md) | `shortinterest.yml` | `WEBHOOK_URL_MARKET` | Daily check, posts ~2x/month |
 | [`regsho_volume.py`](docs/regsho-volume.md) | `regsho.yml` | `WEBHOOK_URL_MARKET` | 23:00 UTC, weekdays |
 | [`ftd_monitor.py`](docs/fails-to-deliver.md) | `ftd.yml` | `WEBHOOK_URL_MARKET` | Daily check, posts ~2x/month |
+| [`threshold_list.py`](docs/threshold-list.md) | `threshold.yml` | `WEBHOOK_URL_ALERTS` | 05:15 UTC Tue–Sat, posts only on a change |
 
 They are deliberately separate workflows: a failure in one data provider must
 not take down the others. The context posts 15 minutes before the recap so it
@@ -47,6 +48,7 @@ volume_spike.py                   intraday unusual-volume alerts
 short_interest.py                 twice-monthly FINRA short interest
 regsho_volume.py                  daily FINRA short sale volume
 ftd_monitor.py                    SEC fails-to-deliver
+threshold_list.py                 Reg SHO threshold list (exception report)
 .github/workflows/monitor.yml     monitor schedule and runner setup
 .github/workflows/recap.yml       recap schedule and runner setup
 .github/workflows/btc.yml         context schedule and runner setup
@@ -55,10 +57,12 @@ ftd_monitor.py                    SEC fails-to-deliver
 .github/workflows/shortinterest.yml  short interest schedule and runner setup
 .github/workflows/regsho.yml      short volume schedule and runner setup
 .github/workflows/ftd.yml         FTD schedule and runner setup
+.github/workflows/threshold.yml   threshold schedule and runner setup
 spike_state.json                  auto-generated; per-day alert tiers
 shortinterest_state.json          auto-generated; last posted settlement date
 regsho_state.json                 auto-generated; last posted trade date
 ftd_state.json                    auto-generated; last posted period, learned CUSIPs
+threshold_state.json              auto-generated; companies currently listed
 state.json                        auto-generated; do not hand-edit except to reset
 docs/                             per-component documentation
 ```
