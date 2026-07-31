@@ -32,7 +32,7 @@ jobs:
         run: pip install feedparser requests
 
       - name: Run monitor
-        timeout-minutes: 10
+        timeout-minutes: 15
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           WEBHOOK_URL_INSIDER: ${{ secrets.WEBHOOK_URL_INSIDER }}
