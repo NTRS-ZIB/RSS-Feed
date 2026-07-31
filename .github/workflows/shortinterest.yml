@@ -1,0 +1,56 @@
+name: Short interest
+
+on:
+  schedule:
+    # Daily at 22:00 UTC on weekdays. FINRA publishes twice a month, roughly
+    # eight business days after each settlement date, and the exact release
+    # time varies — so this checks daily and posts only when the settlement
+    # date is newer than the last one recorded. Expect ~2 posts a month.
+    - cron: "0 22 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Fetch and log without posting or saving state"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write   # commits shortinterest_state.json
+
+concurrency:
+  group: short-interest
+  cancel-in-progress: false
+
+jobs:
+  shortinterest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Fetch and post
+        timeout-minutes: 5
+        env:
+          WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
+          # Empty on scheduled runs, so those always post.
+          DRY_RUN: ${{ inputs.dry_run }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u short_interest.py
+
+      - name: Persist state
+        run: |
+          if [[ -n "$(git status --porcelain shortinterest_state.json)" ]]; then
+            git config user.name "short-interest"
+            git config user.email "actions@github.com"
+            git add shortinterest_state.json
+            git commit -m "Update short interest state [skip ci]"
+            git push
+          else
+            echo "No state change."
+          fi
