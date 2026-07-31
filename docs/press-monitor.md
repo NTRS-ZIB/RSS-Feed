@@ -193,8 +193,14 @@ per company *per form type* plus an index fetch per candidate filing — about
 a run reached only 4 of 11 companies before hitting the step timeout. Worst
 case with every request stalling fell from roughly 600 minutes to 10.
 
-**Item IDs per run: ~330**, of which ~250 are EDGAR filings within
-`RETAIN_DAYS` and ~80 are IR feed entries. `state.json` sits around 20KB.
+**Item IDs per run: 128** — 48 EDGAR filings within `RETAIN_DAYS` plus 80 IR
+feed entries. `state.json` settles around 56KB.
+
+Retention is `max(1000, items × 3)`. The multiplier is the real protection: the
+retained list must stay longer than one run's visibility or items age out,
+reappear as unseen, and get re-posted. The constant is only a sane minimum, and
+it was lowered from 4,000 once `RETAIN_DAYS` cut a run's visibility to ~130 —
+at the old value the file would have been pinned at ~250KB of dead history.
 
 That figure has moved twice and the history is instructive:
 
@@ -202,7 +208,7 @@ That figure has moved twice and the history is instructive:
 |---|---|---|
 | browse-edgar, 40 per form | 1,631 | ~100KB |
 | submissions, unfiltered | 4,275 | ~265KB |
-| submissions + `RETAIN_DAYS` | ~330 | ~20KB |
+| submissions + `RETAIN_DAYS` | 128 | ~56KB |
 
 The middle row is what caused the 2026-08-06 flood. The bloat was a symptom of
 the same mistake: remembering filings that could never be posted anyway.
