@@ -73,8 +73,15 @@ FORM_TYPES = [
     # for filings made before the changeover.
     "SC 13D",
     "SCHEDULE 13D",  # activist / >5% stake disclosures
-    "NT 10-K", # late filing notice — low volume, high signal
-    "NT 10-Q",
+    # "NT " covers the whole late-filing family under Rule 12b-25: NT 10-K,
+    # NT 10-Q, NT 20-F, NT 40-F and any future sibling. Listing two of them
+    # individually meant NT 20-F was missing entirely — found by the drift
+    # detector on its first run, and it is precisely the form IREN or DGXX
+    # would file if an annual report ran late.
+    #
+    # Low volume, high signal: a company telling the SEC it cannot file on time
+    # is worth knowing about whichever annual form it files.
+    "NT ",
 ]
 
 # The EX-99 exhibit check only makes sense for press-release-bearing forms.
@@ -324,6 +331,15 @@ def form_core(form):
     return re.sub(r"[^A-Z0-9]", "", form.upper().split("/")[0])
 
 
+# Obsolete forms that will never be filed again but still sit in old filing
+# histories. Flagging them every run would turn the warning into noise, and a
+# warning that always fires is one nobody reads.
+DRIFT_IGNORE = {
+    "10KSB", "10QSB", "10KSB/A", "10QSB/A",   # small-business forms, ended 2009
+    "10-KSB", "10-QSB", "10-K405",
+}
+
+
 def drift_candidates(seen_forms):
     """Forms that resemble something tracked but do not match it.
 
@@ -344,6 +360,8 @@ def drift_candidates(seen_forms):
     stems = {p: re.sub(r"^(SC|SCHEDULE|NT|FORM)", "", form_core(p)) for p in tracked}
     out = []
     for form in sorted(seen_forms):
+        if form in DRIFT_IGNORE:
+            continue
         if form_matches(form, tracked) or form in INSIDER_ALLOWED_FORMS:
             continue
         core = form_core(form)
