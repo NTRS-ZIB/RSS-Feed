@@ -78,11 +78,11 @@ STALE_WARN_DAYS = 60
 # schema from the /metadata endpoint, so a single run diagnoses any future
 # rename rather than needing a guessing round-trip.
 SYMBOL_FIELDS = [
+    # Confirmed against the live /metadata endpoint, 2026-08.
+    "securitiesInformationProcessorSymbolIdentifier",
+    # Legacy / plausible alternates, kept only as future-proofing.
     "symbolCode",
     "issueSymbolIdentifier",
-    "securitySymbol",
-    "issueSymbol",
-    "symbol",
 ]
 METADATA = f"https://api.finra.org/metadata/group/otcMarket/name/{DATASET}"
 HEADERS = {"Content-Type": "application/json", "Accept": "application/json"}
@@ -211,20 +211,20 @@ def parse(rows):
         settled = row.get("settlementDate") or ""
         if sym not in TICKERS or not settled:
             continue
-        current = num(row, "currentShortPositionQuantity",
-                      "currentShortShareNumber")
-        previous = num(row, "previousShortPositionQuantity",
-                       "previousShortShareNumber")
+        current = num(row, "currentShortPositionQuantity")
+        previous = num(row, "previousShortPositionQuantity")
         if current is None:
             continue
         by_date.setdefault(settled[:10], {})[sym] = {
             "current": current,
             "previous": previous,
-            "change_pct": num(row, "changePercent",
-                              "percentageChangefromPreviousShort"),
-            "days_to_cover": num(row, "daysToCoverQuantity",
-                                 "averageDailyVolumeQuantity"),
+            "change_pct": num(row, "changePercent"),
+            "change_abs": num(row, "changePreviousNumber"),
+            # Distinct columns — never fall back from one to the other.
+            "days_to_cover": num(row, "daysToCoverQuantity"),
             "avg_volume": num(row, "averageDailyVolumeQuantity"),
+            "revised": str(row.get("revisionFlag") or "").strip().upper()
+                       in ("Y", "TRUE", "1"),
         }
     return by_date
 
@@ -268,6 +268,9 @@ def build_embed(settled, data, missing):
     if missing:
         desc += (f"\n\n**Not found: {', '.join(missing)}** — FINRA keys on "
                  f"ticker, so this usually means a symbol change.")
+    revised = sorted(s for s, m in data.items() if m.get("revised"))
+    if revised:
+        desc += f"\n\nRevised by FINRA: {', '.join(revised)}."
 
     return {
         "title": "Short interest",
