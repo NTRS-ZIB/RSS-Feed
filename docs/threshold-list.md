@@ -104,6 +104,25 @@ changed, bounded by `RUN_LOOKBACK_FILES` (15).
 
 Embed colour: red on an addition, green on a removal, amber otherwise.
 
+## Silence must be provable
+
+The normal output is nothing at all, which means a broken parse and a quiet day
+look identical — and a layout change would fail that way silently and forever.
+
+Every run therefore states the **file-wide** count, not just watchlist hits:
+
+```
+Settlement date 2026-07-30 — 412 securities flagged in the file (e.g. AACG, ABVC, ACON, ADTX)
+```
+
+A plausible total is proof the file was fetched, the header check passed, and
+the pipe layout parsed. Zero flagged securities in an otherwise valid file
+exits with an error rather than reporting a quiet day.
+
+The sample symbols are also the easiest way to exercise the full add path: drop
+one into `TICKERS` temporarily and the next run will produce a real addition
+embed. Remove it afterwards.
+
 ## State and silence
 
 `threshold_state.json` holds the set of watchlist companies on the list as of
