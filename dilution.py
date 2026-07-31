@@ -415,6 +415,13 @@ def main():
 
     if not changed:
         print("No change. Nothing to post.")
+        # A dry run saves nothing, so there is no reason to withhold the
+        # output. Without this the embed is unpreviewable once state exists —
+        # and for a component that posts only on a filing, that could be weeks.
+        if DRY_RUN:
+            print("\nDry run: nothing changed, but this is what a post would "
+                  "look like.\n")
+            print(build_embed(rows, 0, splits)["description"])
         return 0
 
     embed = build_embed(rows, changed, splits)
