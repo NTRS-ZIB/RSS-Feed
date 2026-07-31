@@ -38,8 +38,26 @@ the `GREE → SLNH` incident in [fails to deliver](fails-to-deliver.md#the-alias
 | `name` | Display name. One spelling — BKKT was previously written three ways across the repo. |
 | `cik` | Permanent. Ten digits, zero-padded. What EDGAR is keyed on. |
 | `cusips` | `[0]` is current; later entries are retired. See below. |
-| `alt_symbols` | Former **and** pending tickers. |
+| `alt_symbols` | Former **and** pending tickers — see the scope note below. |
 | `ir_feed` | `None` for companies whose newsroom renders client-side. |
+
+### `alt_symbols` is scoped, not exhaustive
+
+It covers renames recent enough to fall inside a component's lookback window,
+not every rename in a company's history. The longest routine window is 180 days
+([comment letters](comment-letters.md)); everything else is three months or
+less, and the two EDGAR components are pinned by CIK and immune to renames
+entirely. An older rename is invisible to all of them.
+
+EDGAR records more history than this file does. NUAI, for instance, was New Era
+Helium until 2025-07-29 and Roth CH V Holdings before that — neither is listed
+here, because neither falls inside any window.
+
+**The exception is `FTD_REPLAY`, which is unbounded.** `FTD_REPLAY=24` reads a
+year back, past renames this file does not record, and an unrecognised symbol
+simply fails to match — the company under-reports with no error. If a replay
+reaches further back than about six months, check `formerNames` in that
+company's EDGAR submissions payload before trusting the result.
 
 ## Derived views
 
