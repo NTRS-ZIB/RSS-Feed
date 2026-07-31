@@ -64,8 +64,12 @@ LOOKBACK_DAYS = 45
 # Trading sessions used for each ticker's trailing average ratio.
 BASELINE_DAYS = 20
 
-# Flag a ticker whose ratio is this many percentage points above its own
-# trailing average. Points, not percent — a move from 45% to 60% is 15 points.
+# Flag a ticker whose ratio deviates this far from its own trailing average,
+# IN EITHER DIRECTION. Points, not percent — 45% to 60% is 15 points.
+#
+# Falls matter as much as rises. A sharp drop in the short volume ratio after
+# a run-up can mean shorts have stopped pressing, which is information; only
+# flagging rises would hide half the signal.
 NOTABLE_DELTA_POINTS = 12.0
 
 # Ignore sessions thinner than this; tiny volume makes meaningless ratios.
@@ -284,11 +288,14 @@ def build_table(data):
     """<=28 chars: Discord mobile wraps code blocks past that."""
     lines = [f"{'':5}{'Short':>6}{'Avg':>6}{'':1}{'Vol':>7}"]
     lines.append("-" * 26)
+    # Sort by absolute deviation: the biggest movers surface first whichever
+    # way they went.
     for sym, m in sorted(data.items(),
-                         key=lambda kv: -(kv[1]["delta"] or -999)):
+                         key=lambda kv: -abs(kv[1]["delta"] or 0)):
         avg = f"{m['avg']:.0f}%" if m["avg"] is not None else "n/a"
-        mark = ("*" if m["delta"] is not None
-                and m["delta"] >= NOTABLE_DELTA_POINTS else " ")
+        mark = " "
+        if m["delta"] is not None and abs(m["delta"]) >= NOTABLE_DELTA_POINTS:
+            mark = "+" if m["delta"] > 0 else "-"
         lines.append(f"{sym:<5}{m['ratio']:>5.0f}%{avg:>6}{mark}"
                      f"{human(m['volume']):>7}")
     return "\n".join(lines)
@@ -296,14 +303,15 @@ def build_table(data):
 
 def build_embed(day, data, missing):
     movers = [s for s, m in data.items()
-              if m["delta"] is not None and m["delta"] >= NOTABLE_DELTA_POINTS]
+              if m["delta"] is not None
+              and abs(m["delta"]) >= NOTABLE_DELTA_POINTS]
 
     desc = (f"Trade date {day}. Short **volume** as a share of reported "
             f"volume, against each ticker's own {BASELINE_DAYS}-session "
             f"average.\n\n"
             f"This is a flow, not a position — much of it is market-maker "
             f"hedging, and 40-60% is ordinary. Only the deviation from a "
-            f"ticker's own average carries information.")
+            f"ticker's own average carries information, in either direction.")
     if missing:
         desc += f"\n\nNo data: {', '.join(missing)}"
 
@@ -313,8 +321,9 @@ def build_embed(day, data, missing):
         "color": DOWN if movers else FLAT,
         "fields": [{"name": "\u200b",
                     "value": f"```\n{build_table(data)}\n```"}],
-        "footer": {"text": "FINRA Reg SHO daily"
-                           + (f" · * >{NOTABLE_DELTA_POINTS:.0f}pts above "
+        "footer": {"text": "FINRA Reg SHO · Vol = off-exchange (TRF/ADF) "
+                           "only, not consolidated"
+                           + (f" · +/- = >{NOTABLE_DELTA_POINTS:.0f}pts from "
                               f"average" if movers else "")},
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
