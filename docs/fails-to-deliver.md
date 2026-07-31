@@ -182,24 +182,44 @@ different causes, and the count alone cannot tell them apart:
 
 | | Cause | Verdict |
 |---|---|---|
-| Symbols trade on **different** days | A rename mid-period | Benign — merging them is correct |
-| Symbols trade on the **same** days | Two live companies merged by a bad alias | Corrupting |
+| One symbol's range ends **before** the other begins | A rename mid-period | Benign — merging them is correct |
+| The ranges **overlap or interleave** | Two live companies merged by a bad alias | Corrupting |
 
 CUSIP is not the discriminator either. Renames in this sector frequently arrive
 alongside a reverse split, which changes the CUSIP too, so "two CUSIPs" would
 condemn a perfectly good rename.
 
-**Time is the discriminator.** A rename means the old symbol stops and the new
-one starts, so the date sets are disjoint. Two live companies trade on the same
-settlement days. The log reflects that distinction:
+**Time is the discriminator, but test intervals, not exact dates.** The first
+version of this check looked for settlement dates appearing under both symbols
+and found none in a case that was obviously wrong:
+
+```
+MARA 07-01..07-13, CLSK 07-10..07-10
+```
+
+Two unrelated companies, plainly interleaved, sharing no exact date — because
+MARA's five fail days happened not to include the 10th. **This dataset is
+sparse.** Only days with a non-zero balance appear, so two live tickers
+routinely miss each other's dates by coincidence, and exact-date intersection
+produces false negatives on precisely the merge this guard exists to catch.
+
+A rename is the strict case: one symbol's entire range ends before the other's
+begins. Anything else is concurrent trading. The log reflects that:
 
 ```
 note: VIP spans a rename — GREE 07-16..07-23, VIP 07-24..07-31
 
-WARNING: SLNH matched 2 symbols on 11 shared settlement date(s):
-         GREE 07-01..07-11, SLNH 07-01..07-11
-  Same-day overlap means these are different securities. Check ALIASES.
+WARNING: CLSK matched 2 symbols, 6 shared settlement date(s):
+         MARA 06-16..06-26, CLSK 06-16..06-26
+  Concurrent trading means these are different securities. Check ALIASES.
+
+WARNING: CLSK matched 2 symbols, ranges interleave:
+         MARA 07-01..07-13, CLSK 07-10..07-10
+  Concurrent trading means these are different securities. Check ALIASES.
 ```
+
+Both warning forms were produced against real SEC files by temporarily
+mis-aliasing MARA onto CLSK, which reproduces the original bug deliberately.
 
 The warning case is real. An early version mapped `GREE` to Soluna rather than
 Vulcan, on the assumption that GREE was a Soluna legacy symbol. Vulcan's fails
@@ -306,6 +326,11 @@ here: one period is one post.
 - **Rows are parsed defensively.** Header, trailer and any malformed line are
   skipped, and the count of unparsable rows prints when non-zero. The files
   have historically contained scanning artefacts.
+- **The half-month boundary is approximate.** The SEC describes the files as
+  first half and second half, but a `b` file has been observed carrying a
+  settlement date of the 15th. Nothing depends on the boundary — dedupe is on
+  the period identifier, not on dates — but do not assume 1-15 and 16-end when
+  reading a span.
 - **Absence of a period is not an error.** If the SEC is late, the run simply
   finds nothing newer and exits quietly.
 - **The index lists every period back to 2004** — around 400 links. Only the
