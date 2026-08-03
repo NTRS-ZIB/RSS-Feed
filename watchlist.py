@@ -154,6 +154,46 @@ WATCHLIST = [
         "alt_symbols": ["DGHI", "DGHIZZZZ"],
         "ir_feed": None,                  # renders client-side; EDGAR only
     },
+    {
+        "ticker": "WULF",
+        "name": "TeraWulf",
+        # A 1999-era CIK on a company incorporated in Delaware in February
+        # 2021. TeraWulf came public by merging into IKONICS Corporation in
+        # December 2021 rather than through an IPO, so it continues that
+        # registrant. The low number is correct, not the wrong entity.
+        "cik": "0001083301",
+        "cusips": [],                     # pending the first audit sweep
+        # IKONICS traded as IKNX. That predates every lookback window, so it
+        # is not listed.
+        "alt_symbols": [],
+        "ir_feed": None,                  # not established yet
+    },
+    {
+        "ticker": "HUT",
+        "name": "Hut 8 Corp",
+        # NOT 0001731805. That is Hut 8 Mining Corp, a British Columbia
+        # company that filed 6-Ks as a foreign private issuer, and it is now
+        # dormant. In November 2023 it combined with US Bitcoin Corp under a
+        # newly formed Delaware parent, Hut 8 Corp, which files 10-Ks under
+        # this CIK. The ticker did not change — both entities traded as HUT —
+        # so nothing in alt_symbols catches this, and pinning the old CIK
+        # returns no filings and no error. See docs/watchlist.md.
+        "cik": "0001964789",
+        "cusips": [],                     # pending the first audit sweep
+        "alt_symbols": [],
+        "ir_feed": None,                  # not established yet
+    },
+    {
+        "ticker": "CIFR",
+        "name": "Cipher Mining",
+        "cik": "0001819989",
+        "cusips": [],                     # pending the first audit sweep
+        # Formerly Good Works Acquisition Corp, a SPAC trading as GWAC until
+        # the August 2021 business combination. That predates every lookback
+        # window, so GWAC is not listed.
+        "alt_symbols": [],
+        "ir_feed": None,                  # not established yet
+    },
 ]
 
 # ------------------------------------------------------------------ VIEWS ---
@@ -290,7 +330,10 @@ def main():
     print(f"{'':6}{'CIK':12}{'CUSIP':11}{'alt':8}{'feed':5} name")
     print("-" * 70)
     for c in rows:
-        print(f"{c['ticker']:6}{c['cik']:12}{c['cusips'][0]:11}"
+        # 'pending' rather than cusips[0]: a company added before its first
+        # audit sweep has none, and indexing crashed the roster's own display.
+        print(f"{c['ticker']:6}{c['cik']:12}"
+              f"{(c['cusips'][0] if c['cusips'] else 'pending'):11}"
               f"{','.join(c['alt_symbols']) or '-':8}"
               f"{'yes' if c['ir_feed'] else '-':5} {c['name']}")
 

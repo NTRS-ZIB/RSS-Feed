@@ -56,6 +56,46 @@ Every one confirmed from data by `audit_identifiers.py`, not from a filing:
 symbol change is processing, so it occupies a single settlement day between the
 old symbol and the new one. It is listed because it occurs in the data.
 
+### Critical: a ticker that did not change, over a CIK that did
+
+Every row above is a ticker change over a stable CIK. HUT is the inverse, and
+it is the harder case because nothing in this file can catch it.
+
+`0001731805` is **Hut 8 Mining Corp**, a British Columbia company that filed
+6-Ks as a foreign private issuer. It is now dormant. In November 2023 it
+combined with US Bitcoin Corp under a newly formed Delaware parent, **Hut 8
+Corp**, which files 10-Ks under `0001964789`. That is the CIK recorded here.
+
+**The ticker did not change.** Both entities traded as `HUT`, so there is no
+former symbol to record and `alt_symbols` is empty. The mechanism this file
+uses to track corporate identity does not fire, because from a symbol's point
+of view nothing happened.
+
+Pinning the old CIK fails **silently**. EDGAR returns an empty filing list for
+a dormant registrant, not an error — so the press monitor and the earnings
+calendar would report nothing for HUT indefinitely, and read as a company that
+simply never files. That is the same failure shape as a missing identifier:
+an unexplained gap rather than a raised exception.
+
+The general rule:
+
+| Event | CIK survives |
+|---|---|
+| Name change | yes |
+| Ticker change | yes |
+| Reverse split | yes — a CUSIP does not, but a CIK does |
+| Rule 12g-3 succession (holdco reorganisation) | yes — the successor continues the registrant |
+| **Combination creating a new registrant** | **no** |
+
+The last row is the exception, and BKKT sits on the row above it: its November
+2025 reorganisation was a 12g-3 succession and changed no identifier at all.
+A combination that forms a genuinely new parent is a different event, and HUT
+is the one on this roster that took that path.
+
+When a company's structure changes, check the CIK against a recent **10-K or
+10-Q accession**, not against the ticker. A ticker that stayed put proves
+nothing.
+
 ### `alt_symbols` is scoped, not exhaustive
 
 It covers renames recent enough to fall inside a component's lookback window,
@@ -199,6 +239,33 @@ each other:
    pinned CUSIP resolves, and any earlier ticker appears.
 
 An established company already carries both, so one run is enough.
+
+#### A new company sits with `"cusips": []` until the sweep returns
+
+That is the intended state, not an omission. `validate()` will report:
+
+```
+WULF: no CUSIP
+HUT: no CUSIP
+CIFR: no CUSIP
+```
+
+**That warning is correct and should be left alone.** It means an identifier has
+not been established yet — which is a true statement about what this repo
+knows. Components warn rather than exit, and all seven derived views handle an
+empty list, so a pending company is carried safely: `cusip_pins()` simply has
+no entry for it, and the FTD component under-reports that one name until the
+sweep fills it in.
+
+**It is not a licence to copy a CUSIP out of a filing.** That is exactly the
+move the [BKKT case](#identifiers-are-added-from-data-not-from-filings) argues
+against, and the failure it invites is the asymmetric one: a wrong identifier
+attributes another security's rows to this company, quietly and permanently.
+An empty list loses rows visibly. A wrong one gains rows invisibly. Wait for
+the sweep.
+
+**WULF, HUT and CIFR were added on 2026-08-03 in this state** and carry three
+`no CUSIP` warnings between them until the first `audit_identifiers.py` run.
 
 Also watch for the `COLLISIONS` section. A row whose symbol names one company
 while its CUSIP names another means the roster is wrong somewhere, and nothing
