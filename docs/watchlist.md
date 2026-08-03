@@ -314,11 +314,11 @@ else in the output should be trusted until that is resolved.
 
 ## Grid operators and sites
 
-A sweep read the most recent annual report of all eleven companies then on the
-roster for the grid operators and the states each one actually names. It lives
-here rather than in `watchlist.py` on purpose: no component reads site data, and
-a field nothing reads goes stale with nothing to notice. This is reference for
-deciding what to build, not input to anything running.
+A sweep read the most recent annual report of every company on the roster for
+the grid operators and the states each one actually names. It lives here rather
+than in `watchlist.py` on purpose: no component reads site data, and a field
+nothing reads goes stale with nothing to notice. This is reference for deciding
+what to build, not input to anything running.
 
 **The basis column is the point.** *Stated* means the filing says it plainly.
 *Inferred* means it was read off keyword frequency and has not been verified.
@@ -336,9 +336,25 @@ deciding what to build, not input to anything running.
 | NUAI | unclear | New Mexico 50x, above Texas 44x | **inferred**; contradicts its Midland, Texas dateline |
 | ANY | MISO? | Iowa | **inferred**; hosted capacity |
 | BKKT | n/a | New York | not a miner |
+| WULF | NYISO; SPP | New York: Lake Mariner (Barker), Cayuga; Texas: Abernathy | stated: Lake Mariner sits "within the single-state NYISO market", on NYISO Zone A |
+| HUT | ERCOT; AESO; NYISO | Texas: Vega, Salt Creek, King Mountain; Alberta: Medicine Hat, Drumheller; New York: Niagara Falls | stated, in a labelled asset table with each site's grid footnoted |
+| CIFR | ERCOT; PJM from 2027 | Texas: Barber Lake, Black Pearl, Stingray, Reveille; Ohio: Ulysses | stated: "agreements necessary to participate in the ERCOT market" |
 
-**WULF, HUT and CIFR are absent because they were added after the sweep ran and
-have never been checked.** Their rows are missing, not empty.
+WULF, HUT and CIFR were swept separately, on 2026-08-03, having been added to
+the roster after the first sweep ran. All three name their operators outright,
+so no row here is inferred.
+
+Two of their rows contradict what a state name would have implied, which is the
+whole reason the excerpts are read rather than the counts:
+
+- **WULF's Texas site is not on ERCOT.** Abernathy is in the Panhandle and the
+  10-K places it in the Southwest Power Pool. Texas is not a synonym for ERCOT.
+- **CIFR's New York count is an office**, not a site. Item 2 lists leased office
+  space in New York, Charleston and Denver; every data centre it describes is in
+  Texas or Ohio.
+
+HUT's single `Duke Energy` hit is a third instance: it appears in a list of the
+companies its executives previously worked at, not as a power supplier.
 
 NUAI's row is the one to distrust most. New Mexico outranking Texas contradicts
 the Midland, Texas dateline that put ERCOT into `grid_context.py` in the first
@@ -348,6 +364,24 @@ it.
 
 Ignore Delaware and California in any keyword count. They are incorporation and
 counsel addresses, not sites.
+
+### How many companies sit on each grid
+
+Counted from the table above, so a region choice can be made against the roster
+rather than against habit. A company appears under every grid its filing names.
+
+| Grid | Stated | Also claimed, unverified |
+|---|---|---|
+| NYISO | VIP, DGXX, WULF, HUT — **4** | SLNH has a New York site, grid unnamed |
+| ERCOT | IREN, CIFR, HUT — **3** | SLNH, NUAI, and MARA's Texas sites |
+| PJM | BGDE — **1** operating | CIFR's Ulysses site energizes Q4 2027; MARA has Ohio sites |
+| SPP | WULF — **1** | |
+| AESO | HUT — **1** | Alberta; outside any US data source |
+| MISO | none | ANY, inferred |
+| No RTO | WYFI, CLSK — **2** | vertically integrated utilities |
+
+`grid_context.py` reads ERCOT and PJM. That pair was chosen when the roster was
+eleven and this table did not exist; it has not been reviewed against it.
 
 ### Critical: VIP's exposure runs the opposite way
 
@@ -365,7 +399,7 @@ VIP backwards — not approximately, but in sign. See the caveat in
 The ISO price plan was closed on this table, and it is recorded so nobody
 reopens it from scratch.
 
-**Three of the eleven have no ISO node at all.** WYFI buys from Duke Energy
+**Three of the fourteen have no ISO node at all.** WYFI buys from Duke Energy
 Carolinas and CLSK from Georgia Power — vertically integrated Southeast
 utilities outside any RTO. They pay a tariff. There is no locational marginal
 price to look up, because there is no market. BKKT is the third, and simply has

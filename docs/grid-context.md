@@ -42,8 +42,8 @@ caveat is on every post.
 
 ### The cost framing has one exception
 
-This component is framed throughout as pressure on cost, and for ten of the
-eleven companies swept that is right. **VIP is on the other side of it.** It
+This component is framed throughout as pressure on cost, and for thirteen of
+the fourteen companies swept that is right. **VIP is on the other side of it.** It
 owns and operates a 106 MW generation facility connected to NYISO and sells
 into the market, so a rising power price is revenue for VIP and cost for
 everybody else.
@@ -70,7 +70,7 @@ rather than done:
 1. **A separate key and API shape per ISO.** No single source covers both.
 2. **Which pricing node?** An LMP is location-specific, and picking a zone means
    choosing on a company's behalf. `docs/watchlist.md` now carries the states
-   and operators each filing names, but four of eleven rows are inferred from
+   and operators each filing names, but four of fourteen rows are inferred from
    keyword frequency and two companies sit outside any RTO entirely.
 
 If a real cost signal matters more than a proxy, that is the direction — but
@@ -119,10 +119,10 @@ companies are headquartered in a town called Midland, in different states, on
 different grids.
 
 **This is not a complete mapping.** These are the two regions most likely to
-matter, not coverage of the watchlist — NYISO is named outright by two
-companies and is not read here at all. Treating the table as "the grids our
-companies are on" would be wrong. `docs/watchlist.md` has what the filings
-actually name, with the stated rows marked off from the inferred ones.
+matter, not coverage of the watchlist — **NYISO is named outright by four
+companies and is not read here at all**, more than name PJM. Treating the table
+as "the grids our companies are on" would be wrong. `docs/watchlist.md` counts
+the roster by grid, with the stated rows marked off from the inferred ones.
 
 ## Critical: the horizon is hours, not a day
 
