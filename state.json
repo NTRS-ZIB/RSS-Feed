@@ -1,18 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001753926-22-001136",
-  "urn:tag:sec.gov,2008:accession-number=0001753926-22-001128",
-  "urn:tag:sec.gov,2008:accession-number=0001753926-22-001126",
-  "urn:tag:sec.gov,2008:accession-number=0001753926-22-001118",
-  "urn:tag:sec.gov,2008:accession-number=0001753926-22-001116",
-  "urn:tag:sec.gov,2008:accession-number=0001753926-22-001114",
-  "urn:tag:sec.gov,2008:accession-number=0001753926-22-001112",
-  "urn:tag:sec.gov,2008:accession-number=0001753926-22-001110",
-  "urn:tag:sec.gov,2008:accession-number=0001753926-22-001108",
-  "urn:tag:sec.gov,2008:accession-number=0001753926-22-001106",
-  "urn:tag:sec.gov,2008:accession-number=0001753926-22-001104",
-  "urn:tag:sec.gov,2008:accession-number=0001753926-22-000547",
-  "urn:tag:sec.gov,2008:accession-number=0001753926-22-000368",
   "urn:tag:sec.gov,2008:accession-number=0001753926-22-000364",
   "urn:tag:sec.gov,2008:accession-number=0001753926-22-000343",
   "urn:tag:sec.gov,2008:accession-number=0001753926-22-000341",
@@ -999,7 +986,20 @@
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-298548",
   "urn:tag:sec.gov,2008:accession-number=0000912282-26-001018",
   "urn:tag:sec.gov,2008:accession-number=0000912282-26-000965",
-  "urn:tag:sec.gov,2008:accession-number=0000912282-26-000917"
+  "urn:tag:sec.gov,2008:accession-number=0000912282-26-000917",
+  "urn:tag:sec.gov,2008:accession-number=0001104659-26-084631",
+  "urn:tag:sec.gov,2008:accession-number=0000009631-26-000023",
+  "urn:tag:sec.gov,2008:accession-number=0000354204-26-000787",
+  "urn:tag:sec.gov,2008:accession-number=0002012383-26-002199",
+  "urn:tag:sec.gov,2008:accession-number=0002012383-26-003194",
+  "urn:tag:sec.gov,2008:accession-number=0000895345-26-000329",
+  "urn:tag:sec.gov,2008:accession-number=0001062993-26-003723",
+  "urn:tag:sec.gov,2008:accession-number=0001062993-26-003562",
+  "urn:tag:sec.gov,2008:accession-number=0002012383-26-003142",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-079673",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-079177",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-076485",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-034093"
  ],
  "initialized": true
 }
