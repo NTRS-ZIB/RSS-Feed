@@ -162,13 +162,15 @@ WATCHLIST = [
         # December 2021 rather than through an IPO, so it continues that
         # registrant. The low number is correct, not the wrong entity.
         "cik": "0001083301",
-        # Observed 2024-07-15 to 2026-07-13, the full 48-period sweep window,
-        # with no break and no earlier identifier alongside it. The IKONICS
-        # era is outside that window rather than absent from it — reaching it
-        # would need roughly 120 periods.
+        # Observed 2021-12-16 to 2026-07-13 by a 120-period sweep, unbroken.
+        # It starts AT the IKONICS merger rather than before it — nothing
+        # under this company trades earlier — so there is no retired
+        # identifier to carry, and this is a measured absence rather than an
+        # unexamined one.
         "cusips": ["88080T104"],
-        # IKONICS traded as IKNX. That predates every lookback window, so it
-        # is not listed.
+        # IKONICS traded as IKNX. The 120-period sweep reaches 2021-07, past
+        # the December 2021 merger, and never saw it against this company. It
+        # predates every lookback window in any case.
         "alt_symbols": [],
         "ir_feed": None,                  # not established yet
     },
@@ -183,25 +185,35 @@ WATCHLIST = [
         # so nothing in alt_symbols catches this, and pinning the old CIK
         # returns no filings and no error. See docs/watchlist.md.
         "cik": "0001964789",
-        # Observed 2024-07-15 to 2026-07-14, the full sweep window, unbroken.
-        # Note what this does NOT establish: the November 2023 combination
-        # predates the window, so the sweep says nothing about whether an
-        # identifier changed at it. The CIK above is the evidence there.
-        "cusips": ["44812J104"],
-        "alt_symbols": [],
+        # [1] the Hut 8 Mining Corp identifier, in use to 2023-12-04 and
+        # replaced by [0] the same day. Note the ISSUER prefix changes —
+        # 44812T to 44812J — not just the issue number, so this is an
+        # issuer-level reassignment rather than a split. That is the
+        # combination above, visible in the data: a new registrant, not a
+        # renamed one. Found by a 120-period sweep; a 48-period one reached
+        # only 2024-07 and saw a single unbroken identifier.
+        "cusips": ["44812J104", "44812T102"],
+        # HUTZZZZ is not a ticker. NSCC uses a ZZZZ suffix while a symbol
+        # change processes; it appears for the single settlement day of the
+        # changeover, 2023-12-04. Same placeholder as DGXX's DGHIZZZZ. Listed
+        # because it occurs in the data — and it is the only symbol-side trace
+        # of the combination, since HUT itself never changed.
+        "alt_symbols": ["HUTZZZZ"],
         "ir_feed": None,                  # not established yet
     },
     {
         "ticker": "CIFR",
         "name": "Cipher Mining",
         "cik": "0001819989",
-        # Observed 2024-07-15 to 2026-07-10, the full sweep window, unbroken.
-        # The GWAC era predates it, so no SPAC-era identifier could have
-        # surfaced here either way.
+        # Observed 2021-08-30 to 2026-07-10 by a 120-period sweep, unbroken.
+        # It starts days after the August 2021 combination and nothing under
+        # this company trades earlier, so there is no SPAC-era identifier to
+        # carry. A measured absence, not an unexamined one.
         "cusips": ["17253J106"],
         # Formerly Good Works Acquisition Corp, a SPAC trading as GWAC until
-        # the August 2021 business combination. That predates every lookback
-        # window, so GWAC is not listed.
+        # the August 2021 business combination. The 120-period sweep reaches
+        # 2021-07 and never saw GWAC against this company; it predates every
+        # lookback window in any case.
         "alt_symbols": [],
         "ir_feed": None,                  # not established yet
     },

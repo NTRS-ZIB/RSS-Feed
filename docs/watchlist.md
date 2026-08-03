@@ -96,6 +96,19 @@ When a company's structure changes, check the CIK against a recent **10-K or
 10-Q accession**, not against the ticker. A ticker that stayed put proves
 nothing.
 
+**The data corroborates this independently.** A 120-period sweep found HUT
+trading under `44812T102` until 2023-12-04 and `44812J104` from that same day,
+with `HUTZZZZ` — the NSCC placeholder for a symbol change in progress —
+occupying that single settlement date. The issuer prefix moves `44812T` →
+`44812J`, an issuer-level reassignment rather than a new issue number, which
+is what a *new registrant* looks like in CUSIP space. Compare DGXX, whose
+`25381D` → `25380B` change was read the same way.
+
+So three independent records agree — a new CIK, a new CUSIP issuer prefix, and
+a changeover placeholder — while the ticker alone reports nothing happened.
+`HUTZZZZ` is the only symbol-side trace of the event and is listed for that
+reason.
+
 ### `alt_symbols` is scoped, not exhaustive
 
 It covers renames recent enough to fall inside a component's lookback window,
@@ -264,18 +277,36 @@ attributes another security's rows to this company, quietly and permanently.
 An empty list loses rows visibly. A wrong one gains rows invisibly. Wait for
 the sweep.
 
-**WULF, HUT and CIFR were added on 2026-08-03 in this state.** A 48-period
-sweep the same day established one CUSIP each — `88080T104`, `44812J104` and
-`17253J106` — all check-digit valid and observed unbroken across the full
-window, so all three warnings cleared on the first pass.
+**WULF, HUT and CIFR were added on 2026-08-03 in this state**, and both
+sweeps that cleared them ran the same day. The pair is worth reading together,
+because the shallower one was confidently wrong.
 
-**That window reaches 2024-07, not to their beginnings.** WULF came public
-through IKONICS in December 2021 and CIFR through the GWAC SPAC in August
-2021, both roughly five years back — about 120 periods. Neither a pre-2024
-identifier nor a former symbol for those two could have surfaced at this
-depth, so their absence here is a statement about the window and not about
-the companies. Compare BKKT, where a 12-month sweep was similarly
-uninformative and only a 36-month one settled the question.
+A **48-period** sweep (2024-07 onward) found exactly one CUSIP per company,
+each unbroken across the whole window. Read alone, that says three companies
+with stable single identifiers.
+
+A **120-period** sweep (2021-07 onward) said something different:
+
+| | 48 periods | 120 periods |
+|---|---|---|
+| WULF | `88080T104` throughout | `88080T104` from **2021-12-16** — starts at the IKONICS merger |
+| CIFR | `17253J106` throughout | `17253J106` from **2021-08-30** — starts days after the GWAC combination |
+| HUT | `44812J104` throughout | **`44812T102` until 2023-12-04**, then `44812J104` |
+
+**The 48-period sweep missed a retired identifier entirely.** Not ambiguously —
+it showed an unbroken series that was not unbroken. HUT's earlier CUSIP ended
+seven months before that window opened.
+
+This is the BKKT lesson a second time. There, a 12-month sweep saw nothing and
+a 36-month sweep found `05759B107` in continuous use. Here a 24-month sweep saw
+nothing and a 60-month sweep found `44812T102`. **An identifier absent from a
+window has not been shown to be absent — only unswept.** Match the depth to
+the company's history, not to habit.
+
+For WULF and CIFR the deeper sweep converts an unexamined absence into a
+measured one: nothing trades under either company before its combination date,
+so there is no retired identifier to carry, and `IKNX` and `GWAC` were never
+seen against them at a depth that reached both events.
 
 Also watch for the `COLLISIONS` section. A row whose symbol names one company
 while its CUSIP names another means the roster is wrong somewhere, and nothing
