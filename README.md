@@ -89,6 +89,7 @@ dilution_state.json               auto-generated; last reported share count
 crossings_state.json              auto-generated; armed flags per ticker
 state.json                        auto-generated; do not hand-edit except to reset
 docs/                             per-component documentation
+docs/local-workflow.md            working from a clone; state-file merges
 ```
 
 ## Secrets
