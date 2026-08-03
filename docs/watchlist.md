@@ -39,7 +39,7 @@ the `GREE → SLNH` incident in [fails to deliver](fails-to-deliver.md#the-alias
 | `cik` | Permanent. Ten digits, zero-padded. What EDGAR is keyed on. |
 | `cusips` | `[0]` is current; later entries are retired. See below. |
 | `alt_symbols` | Former **and** pending tickers — see the scope note below. |
-| `ir_feed` | `None` for companies whose newsroom renders client-side. |
+| `ir_feed` | `None` where no usable feed exists — a client-side newsroom, or a site that publishes none. See [press monitor](press-monitor.md#coverage). |
 
 ### Renames on the current watchlist
 
@@ -195,7 +195,7 @@ So the value was right and my reasoning was wrong, and the filing was quoting a
 long-stale number. Neither the filing nor the inference established anything;
 the sweep did.
 
-The two failure modes are not symmetric, which is why this matters. the two failure modes are not symmetric. A
+The two failure modes are not symmetric, which is why this matters. A
 missing identifier loses a company's rows and shows up as an unexplained gap.
 A *wrong* identifier silently attributes another security's rows to a company
 that never had them — the same class of error as a backwards alias, and just
