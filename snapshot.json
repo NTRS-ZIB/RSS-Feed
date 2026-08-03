@@ -1,0 +1,1334 @@
+{
+  "generated": "2026-08-03T03:09:32+00:00",
+  "issuers": {
+    "ANY": {
+      "cik": "0001591956",
+      "filing_count": 804,
+      "filings": {
+        "10-K": {
+          "accession": "0001591956-26-000004",
+          "count": 8,
+          "filed": "2026-03-27",
+          "form": "10-K",
+          "period": "2025-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000159195626000004/any-20251231.htm"
+        },
+        "10-Q": {
+          "accession": "0001591956-26-000011",
+          "count": 19,
+          "filed": "2026-05-15",
+          "form": "10-Q",
+          "period": "2026-03-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000159195626000011/any-20260331.htm"
+        },
+        "20-F": {
+          "accession": "0001591956-22-000004",
+          "count": 3,
+          "filed": "2022-03-31",
+          "form": "20-F",
+          "period": "2021-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000159195622000004/any-20211231.htm"
+        },
+        "3": {
+          "accession": "0001185185-26-002272",
+          "count": 27,
+          "filed": "2026-06-01",
+          "form": "3",
+          "period": "2026-06-01",
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000118518526002272/xslF345X06/ownership.xml"
+        },
+        "4": {
+          "accession": "0001062993-26-003139",
+          "count": 120,
+          "filed": "2026-06-10",
+          "form": "4",
+          "period": "2026-06-08",
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000106299326003139/xslF345X06/form4.xml"
+        },
+        "40-F": {
+          "accession": "0001591956-17-000003",
+          "count": 3,
+          "filed": "2017-02-10",
+          "form": "40-F/A",
+          "period": "2015-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000159195617000003/form40-facover.htm"
+        },
+        "424": {
+          "accession": "0001062993-26-003958",
+          "count": 21,
+          "filed": "2026-07-31",
+          "form": "424B5",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000106299326003958/form424b5.htm"
+        },
+        "6-K": {
+          "accession": "0001591956-22-000025",
+          "count": 154,
+          "filed": "2022-12-21",
+          "form": "6-K",
+          "period": "2022-12-20",
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000159195622000025/a6-kresultsofshareholdersm.htm"
+        },
+        "8-K": {
+          "accession": "0001062993-26-003959",
+          "count": 140,
+          "filed": "2026-07-31",
+          "form": "8-K",
+          "period": "2026-07-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000106299326003959/form8k.htm"
+        },
+        "DEF 14A": {
+          "accession": "0001591956-26-000017",
+          "count": 12,
+          "filed": "2026-07-13",
+          "form": "DEF 14A",
+          "period": "2026-08-24",
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000159195626000017/specialmeetingproxy2026.htm"
+        },
+        "NT 10-K": null,
+        "NT 10-Q": null,
+        "NT 20-F": null,
+        "NT 40-F": null,
+        "S-1": {
+          "accession": "0001213900-20-015839",
+          "count": 2,
+          "filed": "2020-06-25",
+          "form": "S-1/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000121390020015839/ea123400-s1a1_sphere3dcorp.htm"
+        },
+        "S-3": {
+          "accession": "0001062993-25-016980",
+          "count": 9,
+          "filed": "2025-11-21",
+          "form": "S-3",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000106299325016980/forms3.htm"
+        },
+        "SC 13D": {
+          "accession": "0001554795-20-000224",
+          "count": 36,
+          "filed": "2020-08-18",
+          "form": "SC 13D/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000155479520000224/rok0818sch13da.htm"
+        },
+        "SC 13G": {
+          "accession": "0001062993-24-002916",
+          "count": 23,
+          "filed": "2024-02-13",
+          "form": "SC 13G/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000106299324002916/formsc13ga.htm"
+        }
+      },
+      "former_names": [
+        "Sphere 3D Corp"
+      ],
+      "latest_filing_date": "2026-07-31",
+      "name": "Sphere 3D Corp.",
+      "projection": {
+        "confidence": "normal",
+        "expected": "2026-08-13",
+        "fiscal_year_end_month": 12,
+        "kind": "quarterly",
+        "median_lag_days": 44,
+        "period_end": "2026-06-30",
+        "sample": 8,
+        "spread_days": 5
+      }
+    },
+    "BGDE": {
+      "cik": "0001218683",
+      "filing_count": 725,
+      "filings": {
+        "10-K": {
+          "accession": "0001213900-26-037417",
+          "count": 20,
+          "filed": "2026-03-31",
+          "form": "10-K",
+          "period": "2025-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026037417/ea0281617-10k_mawson.htm"
+        },
+        "10-Q": {
+          "accession": "0001213900-26-056680",
+          "count": 57,
+          "filed": "2026-05-14",
+          "form": "10-Q",
+          "period": "2026-03-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026056680/ea0289951-10q_bigdigital.htm"
+        },
+        "20-F": null,
+        "3": {
+          "accession": "0001213900-26-045631",
+          "count": 47,
+          "filed": "2026-04-20",
+          "form": "3",
+          "period": "2026-04-06",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026045631/xslF345X06/ownership.xml"
+        },
+        "4": {
+          "accession": "0000912282-26-000968",
+          "count": 131,
+          "filed": "2026-07-10",
+          "form": "4/A",
+          "period": "2026-06-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000091228226000968/xslF345X06/form4a.xml"
+        },
+        "40-F": null,
+        "424": {
+          "accession": "0001213900-25-120625",
+          "count": 16,
+          "filed": "2025-12-11",
+          "form": "424B5",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390025120625/ea0269338-424b5_mawson.htm"
+        },
+        "6-K": null,
+        "8-K": {
+          "accession": "0001213900-26-079426",
+          "count": 276,
+          "filed": "2026-07-20",
+          "form": "8-K",
+          "period": "2026-07-14",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026079426/ea0298493-8k_bigdigital.htm"
+        },
+        "DEF 14A": {
+          "accession": "0001213900-25-084502",
+          "count": 11,
+          "filed": "2025-09-04",
+          "form": "DEF 14A",
+          "period": "2025-10-15",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390025084502/ea0254396-04.htm"
+        },
+        "NT 10-K": null,
+        "NT 10-Q": {
+          "accession": "0001213900-24-069079",
+          "count": 6,
+          "filed": "2024-08-14",
+          "form": "NT 10-Q",
+          "period": "2024-06-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390024069079/ea0211440-nt10q_mawsoninfra.htm"
+        },
+        "NT 20-F": null,
+        "NT 40-F": null,
+        "S-1": {
+          "accession": "0001213900-21-038875",
+          "count": 9,
+          "filed": "2021-07-27",
+          "form": "S-1/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390021038875/ea144806-s1a2_mawsoninfra.htm"
+        },
+        "S-3": {
+          "accession": "0001213900-26-079673",
+          "count": 7,
+          "filed": "2026-07-20",
+          "form": "S-3",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026079673/ea0298190-s3_bigdigital.htm"
+        },
+        "SC 13D": {
+          "accession": "0001213900-24-094137",
+          "count": 19,
+          "filed": "2024-11-04",
+          "form": "SC 13D/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390024094137/ea0219912-13da2mewa_mawson.htm"
+        },
+        "SC 13G": {
+          "accession": "0001213900-21-009599",
+          "count": 13,
+          "filed": "2021-02-16",
+          "form": "SC 13G/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390021009599/ea135724-13ga2rubini_wize.htm"
+        }
+      },
+      "former_names": [
+        "Mawson Infrastructure Group Inc.",
+        "Wize Pharma, Inc.",
+        "OphthaliX, Inc.",
+        "DENALI CONCRETE MANAGEMENT INC"
+      ],
+      "latest_filing_date": "2026-07-20",
+      "name": "Big Digital Energy, Inc.",
+      "projection": {
+        "confidence": "normal",
+        "expected": "2026-08-14",
+        "fiscal_year_end_month": 12,
+        "kind": "quarterly",
+        "median_lag_days": 45,
+        "period_end": "2026-06-30",
+        "sample": 8,
+        "spread_days": 3
+      }
+    },
+    "BKKT": {
+      "cik": "0001820302",
+      "filing_count": 752,
+      "filings": {
+        "10-K": {
+          "accession": "0001628280-26-019870",
+          "count": 8,
+          "filed": "2026-03-19",
+          "form": "10-K",
+          "period": "2025-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026019870/bakkt-20251231.htm"
+        },
+        "10-Q": {
+          "accession": "0001628280-26-033576",
+          "count": 21,
+          "filed": "2026-05-11",
+          "form": "10-Q",
+          "period": "2026-03-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026033576/bakkt-20260331.htm"
+        },
+        "20-F": null,
+        "3": {
+          "accession": "0002099500-25-000001",
+          "count": 41,
+          "filed": "2025-12-05",
+          "form": "3",
+          "period": "2025-11-08",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000209950025000001/xslF345X02/primary_doc.xml"
+        },
+        "4": {
+          "accession": "0001628280-26-048610",
+          "count": 237,
+          "filed": "2026-07-17",
+          "form": "4",
+          "period": "2026-07-15",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026048610/xslF345X06/wk-form4_1784309188.xml"
+        },
+        "40-F": null,
+        "424": {
+          "accession": "0001193125-26-242046",
+          "count": 26,
+          "filed": "2026-05-27",
+          "form": "424B3",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000119312526242046/d103371d424b3.htm"
+        },
+        "6-K": null,
+        "8-K": {
+          "accession": "0001628280-26-048523",
+          "count": 120,
+          "filed": "2026-07-16",
+          "form": "8-K/A",
+          "period": "2026-07-16",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026048523/bakkt-20260716.htm"
+        },
+        "DEF 14A": {
+          "accession": "0001628280-26-029018",
+          "count": 8,
+          "filed": "2026-04-30",
+          "form": "DEF 14A",
+          "period": "2025-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026029018/bakkt-20260430.htm"
+        },
+        "NT 10-K": {
+          "accession": "0001628280-26-018406",
+          "count": 2,
+          "filed": "2026-03-17",
+          "form": "NT 10-K",
+          "period": "2026-03-17",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026018406/bakkt-form12bx25xnt10xkmar.htm"
+        },
+        "NT 10-Q": {
+          "accession": "0001193125-25-274965",
+          "count": 2,
+          "filed": "2025-11-12",
+          "form": "NT 10-Q",
+          "period": "2025-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000119312525274965/d24585dnt10q.htm"
+        },
+        "NT 20-F": null,
+        "NT 40-F": null,
+        "S-1": {
+          "accession": "0001193125-21-351448",
+          "count": 5,
+          "filed": "2021-12-08",
+          "form": "S-1/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000119312521351448/d226097ds1a.htm"
+        },
+        "S-3": {
+          "accession": "0001193125-26-220226",
+          "count": 13,
+          "filed": "2026-05-13",
+          "form": "S-3",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000119312526220226/d103371ds3.htm"
+        },
+        "SC 13D": {
+          "accession": "0000947871-24-000598",
+          "count": 7,
+          "filed": "2024-07-09",
+          "form": "SC 13D/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000094787124000598/ss3598051_sc13da.htm"
+        },
+        "SC 13G": {
+          "accession": "0000902664-24-006542",
+          "count": 33,
+          "filed": "2024-11-14",
+          "form": "SC 13G",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000090266424006542/p24-3248sc13g.htm"
+        }
+      },
+      "former_names": [
+        "Bakkt Holdings, Inc.",
+        "VPC Impact Acquisition Holdings"
+      ],
+      "latest_filing_date": "2026-07-27",
+      "name": "Bakkt, Inc.",
+      "projection": {
+        "confidence": "normal",
+        "expected": "2026-08-13",
+        "fiscal_year_end_month": 12,
+        "kind": "quarterly",
+        "median_lag_days": 44,
+        "period_end": "2026-06-30",
+        "sample": 8,
+        "spread_days": 2
+      }
+    },
+    "CLSK": {
+      "cik": "0000827876",
+      "filing_count": 750,
+      "filings": {
+        "10-K": {
+          "accession": "0001193125-25-297510",
+          "count": 18,
+          "filed": "2025-11-25",
+          "form": "10-K",
+          "period": "2025-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312525297510/clsk-20250930.htm"
+        },
+        "10-Q": {
+          "accession": "0001193125-26-217036",
+          "count": 56,
+          "filed": "2026-05-11",
+          "form": "10-Q",
+          "period": "2026-03-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526217036/clsk-20260331.htm"
+        },
+        "20-F": null,
+        "3": {
+          "accession": "0000950170-24-113822",
+          "count": 20,
+          "filed": "2024-10-09",
+          "form": "3",
+          "period": "2024-10-01",
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000095017024113822/xslF345X02/ownership.xml"
+        },
+        "4": {
+          "accession": "0001193125-26-224808",
+          "count": 231,
+          "filed": "2026-05-14",
+          "form": "4",
+          "period": "2026-05-13",
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526224808/xslF345X06/ownership.xml"
+        },
+        "40-F": null,
+        "424": {
+          "accession": "0001193125-25-256344",
+          "count": 13,
+          "filed": "2025-10-29",
+          "form": "424B7",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312525256344/d44759d424b7.htm"
+        },
+        "6-K": null,
+        "8-K": {
+          "accession": "0001193125-26-302448",
+          "count": 213,
+          "filed": "2026-07-14",
+          "form": "8-K",
+          "period": "2026-07-10",
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526302448/clsk-20260710.htm"
+        },
+        "DEF 14A": {
+          "accession": "0001193125-26-019447",
+          "count": 7,
+          "filed": "2026-01-22",
+          "form": "DEF 14A",
+          "period": "2026-01-22",
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526019447/clsk-20260122.htm"
+        },
+        "NT 10-K": {
+          "accession": "0000950170-24-132288",
+          "count": 6,
+          "filed": "2024-12-02",
+          "form": "NT 10-K",
+          "period": "2024-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000095017024132288/24.12.02_-_plan_b_-_nt_1.htm"
+        },
+        "NT 10-Q": {
+          "accession": "0000950170-22-016235",
+          "count": 11,
+          "filed": "2022-08-10",
+          "form": "NT 10-Q",
+          "period": "2022-06-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000095017022016235/clsk_q3_nt_10-q_8-10-202.htm"
+        },
+        "NT 20-F": null,
+        "NT 40-F": null,
+        "S-1": null,
+        "S-3": {
+          "accession": "0001193125-24-003460",
+          "count": 5,
+          "filed": "2024-01-05",
+          "form": "S-3ASR",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312524003460/d83199ds3asr.htm"
+        },
+        "SC 13D": {
+          "accession": "0001663577-16-000231",
+          "count": 9,
+          "filed": "2016-07-19",
+          "form": "SC 13D",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000166357716000231/mainbody.htm"
+        },
+        "SC 13G": {
+          "accession": "0000932471-24-000982",
+          "count": 11,
+          "filed": "2024-11-12",
+          "form": "SC 13G/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000093247124000982/UnitedStates_13G__Cleanspark.txt"
+        }
+      },
+      "former_names": [
+        "STRATEAN INC.",
+        "SMARTDATA CORP"
+      ],
+      "latest_filing_date": "2026-07-17",
+      "name": "CLEANSPARK, INC.",
+      "projection": {
+        "confidence": "normal",
+        "expected": "2026-08-07",
+        "fiscal_year_end_month": 9,
+        "kind": "quarterly",
+        "median_lag_days": 38,
+        "period_end": "2026-06-30",
+        "sample": 8,
+        "spread_days": 2
+      }
+    },
+    "DGXX": {
+      "cik": "0001854368",
+      "filing_count": 241,
+      "filings": {
+        "10-K": {
+          "accession": "0001213900-26-050340",
+          "count": 2,
+          "filed": "2026-04-30",
+          "form": "10-K/A",
+          "period": "2025-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026050340/ea0288276-10ka1_digipower.htm"
+        },
+        "10-Q": {
+          "accession": "0001213900-26-057115",
+          "count": 1,
+          "filed": "2026-05-15",
+          "form": "10-Q",
+          "period": "2026-03-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026057115/ea0290525-10q_digipower.htm"
+        },
+        "20-F": {
+          "accession": "0001213900-25-025829",
+          "count": 4,
+          "filed": "2025-03-31",
+          "form": "20-F",
+          "period": "2024-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390025025829/ea0236201-20f_digipower.htm"
+        },
+        "3": {
+          "accession": "0001213900-26-003391",
+          "count": 7,
+          "filed": "2026-01-12",
+          "form": "3",
+          "period": "2025-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026003391/xslF345X02/ownership.xml"
+        },
+        "4": {
+          "accession": "0001213900-26-052462",
+          "count": 13,
+          "filed": "2026-05-05",
+          "form": "4",
+          "period": "2026-05-01",
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026052462/xslF345X06/ownership.xml"
+        },
+        "40-F": {
+          "accession": "0001213900-22-015327",
+          "count": 1,
+          "filed": "2022-03-28",
+          "form": "40-F",
+          "period": "2021-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390022015327/f40f2021_digihosttech.htm"
+        },
+        "424": {
+          "accession": "0001213900-26-053876",
+          "count": 1,
+          "filed": "2026-05-08",
+          "form": "424B5",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026053876/ea0289587-424b5_digipower.htm"
+        },
+        "6-K": {
+          "accession": "0001213900-25-125569",
+          "count": 134,
+          "filed": "2025-12-29",
+          "form": "6-K",
+          "period": "2025-12-29",
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390025125569/ea0270929-6k_digi.htm"
+        },
+        "8-K": {
+          "accession": "0001213900-26-075755",
+          "count": 20,
+          "filed": "2026-07-07",
+          "form": "8-K",
+          "period": "2026-07-07",
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026075755/ea0297203-8k_digi.htm"
+        },
+        "DEF 14A": null,
+        "NT 10-K": null,
+        "NT 10-Q": null,
+        "NT 20-F": {
+          "accession": "0001213900-24-038508",
+          "count": 2,
+          "filed": "2024-05-01",
+          "form": "NT 20-F",
+          "period": "2023-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390024038508/ea0205113-nt20f_digihost.htm"
+        },
+        "NT 40-F": null,
+        "S-1": null,
+        "S-3": {
+          "accession": "0001213900-26-079177",
+          "count": 2,
+          "filed": "2026-07-17",
+          "form": "S-3",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026079177/ea0297919-s3_digi.htm"
+        },
+        "SC 13D": null,
+        "SC 13G": {
+          "accession": "0001213900-24-098391",
+          "count": 7,
+          "filed": "2024-11-14",
+          "form": "SC 13G/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390024098391/ea0221099-13ga2amar_digi.htm"
+        }
+      },
+      "former_names": [
+        "Digihost Technology Inc."
+      ],
+      "latest_filing_date": "2026-07-17",
+      "name": "Digi Power X Inc.",
+      "projection": {
+        "confidence": "low",
+        "expected": "2026-08-14",
+        "fiscal_year_end_month": 12,
+        "kind": "quarterly",
+        "median_lag_days": 45,
+        "period_end": "2026-06-30",
+        "sample": 1,
+        "spread_days": null
+      }
+    },
+    "IREN": {
+      "cik": "0001878848",
+      "filing_count": 309,
+      "filings": {
+        "10-K": {
+          "accession": "0001878848-25-000063",
+          "count": 1,
+          "filed": "2025-08-28",
+          "form": "10-K",
+          "period": "2025-06-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000187884825000063/iren-20250630.htm"
+        },
+        "10-Q": {
+          "accession": "0001878848-26-000026",
+          "count": 3,
+          "filed": "2026-05-08",
+          "form": "10-Q",
+          "period": "2026-03-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000026/iren-20260331.htm"
+        },
+        "20-F": {
+          "accession": "0001878848-25-000020",
+          "count": 4,
+          "filed": "2025-03-20",
+          "form": "20-F/A",
+          "period": "2024-06-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000187884825000020/iren-20240630.htm"
+        },
+        "3": {
+          "accession": "0000950103-25-011864",
+          "count": 8,
+          "filed": "2025-09-18",
+          "form": "3",
+          "period": "2025-09-08",
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000095010325011864/xslF345X02/dp234565_3-lewis.xml"
+        },
+        "4": {
+          "accession": "0000950103-26-009969",
+          "count": 18,
+          "filed": "2026-07-01",
+          "form": "4",
+          "period": "2026-07-01",
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000095010326009969/xslF345X06/ownership.xml"
+        },
+        "40-F": null,
+        "424": {
+          "accession": "0001140361-26-007918",
+          "count": 15,
+          "filed": "2026-03-04",
+          "form": "424B5",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000114036126007918/ny20064909x1_424b5.htm"
+        },
+        "6-K": {
+          "accession": "0001878848-25-000047",
+          "count": 125,
+          "filed": "2025-06-30",
+          "form": "6-K",
+          "period": "2025-06-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000187884825000047/irenlimited-6kbusinessupda.htm"
+        },
+        "8-K": {
+          "accession": "0001140361-26-028871",
+          "count": 28,
+          "filed": "2026-07-20",
+          "form": "8-K",
+          "period": "2026-07-20",
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000114036126028871/ef20078253_8k.htm"
+        },
+        "DEF 14A": {
+          "accession": "0001140361-25-037383",
+          "count": 1,
+          "filed": "2025-10-06",
+          "form": "DEF 14A",
+          "period": "2025-11-19",
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000114036125037383/ny20053824x2_def14a.htm"
+        },
+        "NT 10-K": null,
+        "NT 10-Q": null,
+        "NT 20-F": null,
+        "NT 40-F": null,
+        "S-1": null,
+        "S-3": null,
+        "SC 13D": {
+          "accession": "0001062993-23-018254",
+          "count": 2,
+          "filed": "2023-09-19",
+          "form": "SC 13D/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000106299323018254/formsc13da.htm"
+        },
+        "SC 13G": {
+          "accession": "0001140361-24-007726",
+          "count": 4,
+          "filed": "2024-02-14",
+          "form": "SC 13G/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000114036124007726/ef20021660_sc13ga.htm"
+        }
+      },
+      "former_names": [
+        "Iris Energy Ltd",
+        "Iris Energy Pty Ltd"
+      ],
+      "latest_filing_date": "2026-07-20",
+      "name": "IREN Ltd",
+      "projection": {
+        "confidence": "normal",
+        "expected": "2026-09-07",
+        "fiscal_year_end_month": 6,
+        "kind": "annual",
+        "median_lag_days": 67,
+        "period_end": "2026-06-30",
+        "sample": 3,
+        "spread_days": 8
+      }
+    },
+    "MARA": {
+      "cik": "0001507605",
+      "filing_count": 1089,
+      "filings": {
+        "10-K": {
+          "accession": "0001507605-26-000007",
+          "count": 21,
+          "filed": "2026-03-02",
+          "form": "10-K",
+          "period": "2025-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000150760526000007/mara-20251231.htm"
+        },
+        "10-Q": {
+          "accession": "0001507605-26-000016",
+          "count": 52,
+          "filed": "2026-05-11",
+          "form": "10-Q",
+          "period": "2026-03-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000150760526000016/mara-20260331.htm"
+        },
+        "20-F": null,
+        "3": {
+          "accession": "0001493152-24-035348",
+          "count": 43,
+          "filed": "2024-09-06",
+          "form": "3",
+          "period": "2024-09-01",
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000149315224035348/xslF345X02/ownership.xml"
+        },
+        "4": {
+          "accession": "0001493152-26-033955",
+          "count": 292,
+          "filed": "2026-07-20",
+          "form": "4",
+          "period": "2026-07-17",
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000149315226033955/xslF345X06/ownership.xml"
+        },
+        "40-F": null,
+        "424": {
+          "accession": "0001641172-25-001325",
+          "count": 23,
+          "filed": "2025-03-28",
+          "form": "424B5",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000164117225001325/form424b5.htm"
+        },
+        "6-K": null,
+        "8-K": {
+          "accession": "0000950142-26-002012",
+          "count": 288,
+          "filed": "2026-07-09",
+          "form": "8-K",
+          "period": "2026-07-02",
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000095014226002012/eh260804074_8k.htm"
+        },
+        "DEF 14A": {
+          "accession": "0001507605-26-000010",
+          "count": 21,
+          "filed": "2026-04-30",
+          "form": "DEF 14A",
+          "period": "2026-06-18",
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000150760526000010/mara-20260430.htm"
+        },
+        "NT 10-K": {
+          "accession": "0001493152-23-006171",
+          "count": 4,
+          "filed": "2023-02-28",
+          "form": "NT 10-K",
+          "period": "2022-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000149315223006171/formnt-10k.htm"
+        },
+        "NT 10-Q": {
+          "accession": "0001493152-22-031046",
+          "count": 4,
+          "filed": "2022-11-09",
+          "form": "NT 10-Q",
+          "period": "2022-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000149315222031046/formnt10-q.htm"
+        },
+        "NT 20-F": null,
+        "NT 40-F": null,
+        "S-1": {
+          "accession": "0001493152-20-013911",
+          "count": 17,
+          "filed": "2020-07-23",
+          "form": "S-1MEF",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000149315220013911/forms-1mef.htm"
+        },
+        "S-3": {
+          "accession": "0001493152-24-008242",
+          "count": 21,
+          "filed": "2024-02-29",
+          "form": "S-3ASR",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000149315224008242/forms-3asr.htm"
+        },
+        "SC 13D": {
+          "accession": "0001104659-21-046746",
+          "count": 7,
+          "filed": "2021-04-06",
+          "form": "SC 13D/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000110465921046746/tm2112057d1_sc13da.htm"
+        },
+        "SC 13G": {
+          "accession": "0001595888-24-000058",
+          "count": 45,
+          "filed": "2024-11-14",
+          "form": "SC 13G/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000159588824000058/MARA2.txt"
+        }
+      },
+      "former_names": [
+        "MARATHON DIGITAL HOLDINGS, INC.",
+        "Marathon Patent Group, Inc.",
+        "American Strategic Minerals Corp",
+        "VERVE VENTURES INC"
+      ],
+      "latest_filing_date": "2026-07-20",
+      "name": "MARA Holdings, Inc.",
+      "projection": {
+        "confidence": "normal",
+        "expected": "2026-08-07",
+        "fiscal_year_end_month": 12,
+        "kind": "quarterly",
+        "median_lag_days": 38,
+        "period_end": "2026-06-30",
+        "sample": 8,
+        "spread_days": 7
+      }
+    },
+    "NUAI": {
+      "cik": "0002028336",
+      "filing_count": 175,
+      "filings": {
+        "10-K": {
+          "accession": "0001213900-26-027143",
+          "count": 3,
+          "filed": "2026-03-13",
+          "form": "10-K/A",
+          "period": "2025-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026027143/ea0281493-10ka1_newera.htm"
+        },
+        "10-Q": {
+          "accession": "0001213900-26-057022",
+          "count": 4,
+          "filed": "2026-05-15",
+          "form": "10-Q",
+          "period": "2026-03-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026057022/ea0289727-10q_newera.htm"
+        },
+        "20-F": null,
+        "3": {
+          "accession": "0001213900-26-076485",
+          "count": 9,
+          "filed": "2026-07-08",
+          "form": "3",
+          "period": "2026-04-28",
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026076485/xslF345X06/ownership.xml"
+        },
+        "4": {
+          "accession": "0001213900-26-076486",
+          "count": 2,
+          "filed": "2026-07-08",
+          "form": "4",
+          "period": "2026-04-28",
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026076486/xslF345X06/ownership.xml"
+        },
+        "40-F": null,
+        "424": {
+          "accession": "0001213900-26-060628",
+          "count": 25,
+          "filed": "2026-05-22",
+          "form": "424B3",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026060628/ea0292071-424b3_newera.htm"
+        },
+        "6-K": null,
+        "8-K": {
+          "accession": "0001213900-26-083411",
+          "count": 52,
+          "filed": "2026-07-30",
+          "form": "8-K",
+          "period": "2026-07-24",
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026083411/ea0299918-8k_newera.htm"
+        },
+        "DEF 14A": {
+          "accession": "0001213900-26-028314",
+          "count": 2,
+          "filed": "2026-03-16",
+          "form": "DEF 14A",
+          "period": "2026-04-15",
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026028314/ea0279924-02.htm"
+        },
+        "NT 10-K": null,
+        "NT 10-Q": null,
+        "NT 20-F": null,
+        "NT 40-F": null,
+        "S-1": {
+          "accession": "0001213900-25-100507",
+          "count": 5,
+          "filed": "2025-10-21",
+          "form": "S-1/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390025100507/ea0261579-s1a2_newera.htm"
+        },
+        "S-3": {
+          "accession": "0001213900-26-058412",
+          "count": 6,
+          "filed": "2026-05-18",
+          "form": "S-3/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026058412/ea0291173-s3a1_newera.htm"
+        },
+        "SC 13D": null,
+        "SC 13G": null
+      },
+      "former_names": [
+        "NEW ERA HELIUM INC.",
+        "Roth CH V Holdings, Inc."
+      ],
+      "latest_filing_date": "2026-07-30",
+      "name": "New ERA Energy & Digital, Inc.",
+      "projection": {
+        "confidence": "normal",
+        "expected": "2026-08-14",
+        "fiscal_year_end_month": 12,
+        "kind": "quarterly",
+        "median_lag_days": 45,
+        "period_end": "2026-06-30",
+        "sample": 4,
+        "spread_days": 0
+      }
+    },
+    "SLNH": {
+      "cik": "0000064463",
+      "filing_count": 1546,
+      "filings": {
+        "10-K": {
+          "accession": "0001628280-26-021847",
+          "count": 47,
+          "filed": "2026-03-30",
+          "form": "10-K",
+          "period": "2025-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000162828026021847/slnh-20251231.htm"
+        },
+        "10-Q": {
+          "accession": "0001628280-26-035538",
+          "count": 90,
+          "filed": "2026-05-15",
+          "form": "10-Q",
+          "period": "2026-03-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000162828026035538/slnh-20260331.htm"
+        },
+        "20-F": null,
+        "3": {
+          "accession": "0001493152-26-034093",
+          "count": 45,
+          "filed": "2026-07-21",
+          "form": "3",
+          "period": "2026-07-13",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226034093/xslF345X06/ownership.xml"
+        },
+        "4": {
+          "accession": "0001493152-26-029596",
+          "count": 601,
+          "filed": "2026-06-22",
+          "form": "4",
+          "period": "2026-06-17",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226029596/xslF345X06/ownership.xml"
+        },
+        "40-F": null,
+        "424": {
+          "accession": "0001493152-26-022277",
+          "count": 34,
+          "filed": "2026-05-11",
+          "form": "424B3",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226022277/form424b3.htm"
+        },
+        "6-K": null,
+        "8-K": {
+          "accession": "0001493152-26-035326",
+          "count": 350,
+          "filed": "2026-07-30",
+          "form": "8-K",
+          "period": "2026-07-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226035326/form8-k.htm"
+        },
+        "DEF 14A": {
+          "accession": "0001493152-25-018023",
+          "count": 32,
+          "filed": "2025-10-14",
+          "form": "DEF 14A",
+          "period": "2025-10-14",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315225018023/formdef14a.htm"
+        },
+        "NT 10-K": {
+          "accession": "0000064463-01-500012",
+          "count": 3,
+          "filed": "2001-03-27",
+          "form": "NT 10-K/A",
+          "period": "2000-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000006446301500012/form12b25.htm"
+        },
+        "NT 10-Q": null,
+        "NT 20-F": null,
+        "NT 40-F": null,
+        "S-1": {
+          "accession": "0001493152-26-016626",
+          "count": 31,
+          "filed": "2026-04-15",
+          "form": "S-1",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226016626/forms-1.htm"
+        },
+        "S-3": {
+          "accession": "0001493152-26-019672",
+          "count": 20,
+          "filed": "2026-04-29",
+          "form": "S-3",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226019672/forms-3.htm"
+        },
+        "SC 13D": {
+          "accession": "0001235126-24-000026",
+          "count": 37,
+          "filed": "2024-04-26",
+          "form": "SC 13D/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000123512624000026/13dasoluna041224.txt"
+        },
+        "SC 13G": {
+          "accession": "0001493152-24-006737",
+          "count": 33,
+          "filed": "2024-02-14",
+          "form": "SC 13G/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315224006737/formsc13ga.htm"
+        }
+      },
+      "former_names": [
+        "MECHANICAL TECHNOLOGY INC"
+      ],
+      "latest_filing_date": "2026-07-30",
+      "name": "Soluna Holdings, Inc",
+      "projection": {
+        "confidence": "normal",
+        "expected": "2026-08-14",
+        "fiscal_year_end_month": 12,
+        "kind": "quarterly",
+        "median_lag_days": 45,
+        "period_end": "2026-06-30",
+        "sample": 8,
+        "spread_days": 0
+      }
+    },
+    "VIP": {
+      "cik": "0001844971",
+      "filing_count": 420,
+      "filings": {
+        "10-K": {
+          "accession": "0001844971-26-000011",
+          "count": 8,
+          "filed": "2026-03-31",
+          "form": "10-K",
+          "period": "2025-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000184497126000011/gree-20251231.htm"
+        },
+        "10-Q": {
+          "accession": "0001628280-26-035547",
+          "count": 15,
+          "filed": "2026-05-15",
+          "form": "10-Q",
+          "period": "2026-03-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828026035547/gree-20260331.htm"
+        },
+        "20-F": null,
+        "3": {
+          "accession": "0001628280-25-040941",
+          "count": 20,
+          "filed": "2025-08-20",
+          "form": "3",
+          "period": "2025-08-11",
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828025040941/xslF345X02/wk-form3_1755737282.xml"
+        },
+        "4": {
+          "accession": "0001628280-26-049591",
+          "count": 80,
+          "filed": "2026-07-24",
+          "form": "4",
+          "period": "2026-07-24",
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828026049591/xslF345X06/wk-form4_1784923537.xml"
+        },
+        "40-F": null,
+        "424": {
+          "accession": "0000921895-26-001786",
+          "count": 33,
+          "filed": "2026-07-09",
+          "form": "424B3",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000092189526001786/form424b314132011_07092026.htm"
+        },
+        "6-K": null,
+        "8-K": {
+          "accession": "0001628280-26-049385",
+          "count": 111,
+          "filed": "2026-07-23",
+          "form": "8-K",
+          "period": "2026-07-20",
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828026049385/gree-20260720.htm"
+        },
+        "DEF 14A": {
+          "accession": "0001193805-26-000547",
+          "count": 5,
+          "filed": "2026-04-30",
+          "form": "DEF 14A",
+          "period": "2026-06-24",
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000119380526000547/e665412_def14a-greenidge.htm"
+        },
+        "NT 10-K": {
+          "accession": "0001628280-24-013292",
+          "count": 1,
+          "filed": "2024-03-27",
+          "form": "NT 10-K",
+          "period": "2023-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828024013292/formnt-xform12bx25xfy2023.htm"
+        },
+        "NT 10-Q": null,
+        "NT 20-F": null,
+        "NT 40-F": null,
+        "S-1": {
+          "accession": "0001628280-24-040225",
+          "count": 12,
+          "filed": "2024-09-12",
+          "form": "S-1/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828024040225/greenidges-1apostxeffectiv.htm"
+        },
+        "S-3": {
+          "accession": "0001193805-26-000804",
+          "count": 5,
+          "filed": "2026-06-12",
+          "form": "S-3/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000119380526000804/e665535_s3a-gghi.htm"
+        },
+        "SC 13D": {
+          "accession": "0001193125-23-030130",
+          "count": 3,
+          "filed": "2023-02-09",
+          "form": "SC 13D",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000119312523030130/d583180dsc13d.htm"
+        },
+        "SC 13G": {
+          "accession": "0000947871-22-000243",
+          "count": 2,
+          "filed": "2022-02-14",
+          "form": "SC 13G",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000094787122000243/ss798306_sc13g.htm"
+        }
+      },
+      "former_names": [
+        "Greenidge Generation Holdings Inc."
+      ],
+      "latest_filing_date": "2026-07-24",
+      "name": "Vulcan Infrastructure & Power Inc.",
+      "projection": {
+        "confidence": "normal",
+        "expected": "2026-08-14",
+        "fiscal_year_end_month": 12,
+        "kind": "quarterly",
+        "median_lag_days": 45,
+        "period_end": "2026-06-30",
+        "sample": 8,
+        "spread_days": 3
+      }
+    },
+    "WYFI": {
+      "cik": "0002042022",
+      "filing_count": 72,
+      "filings": {
+        "10-K": {
+          "accession": "0001213900-26-034341",
+          "count": 1,
+          "filed": "2026-03-26",
+          "form": "10-K",
+          "period": "2025-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026034341/ea0278305-10k_white.htm"
+        },
+        "10-Q": {
+          "accession": "0001213900-26-056212",
+          "count": 3,
+          "filed": "2026-05-14",
+          "form": "10-Q",
+          "period": "2026-03-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026056212/ea0288695-10q_whitefiber.htm"
+        },
+        "20-F": null,
+        "3": {
+          "accession": "0001213900-25-072663",
+          "count": 9,
+          "filed": "2025-08-06",
+          "form": "3",
+          "period": "2025-08-06",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390025072663/xslF345X02/ownership.xml"
+        },
+        "4": {
+          "accession": "0001213900-26-082388",
+          "count": 19,
+          "filed": "2026-07-28",
+          "form": "4",
+          "period": "2026-07-24",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026082388/xslF345X06/ownership.xml"
+        },
+        "40-F": null,
+        "424": {
+          "accession": "0001213900-25-073279",
+          "count": 1,
+          "filed": "2025-08-08",
+          "form": "424B4",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390025073279/ea0249945-07.htm"
+        },
+        "6-K": null,
+        "8-K": {
+          "accession": "0001213900-26-067329",
+          "count": 11,
+          "filed": "2026-06-10",
+          "form": "8-K",
+          "period": "2026-06-10",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026067329/ea0294306-8k_whitefiber.htm"
+        },
+        "DEF 14A": null,
+        "NT 10-K": null,
+        "NT 10-Q": null,
+        "NT 20-F": null,
+        "NT 40-F": null,
+        "S-1": {
+          "accession": "0001213900-25-072607",
+          "count": 5,
+          "filed": "2025-08-06",
+          "form": "S-1MEF",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390025072607/ea0251986-01.htm"
+        },
+        "S-3": null,
+        "SC 13D": null,
+        "SC 13G": null
+      },
+      "former_names": [
+        "White Fiber, Inc."
+      ],
+      "latest_filing_date": "2026-07-28",
+      "name": "WhiteFiber, Inc.",
+      "projection": {
+        "confidence": "normal",
+        "expected": "2026-08-13",
+        "fiscal_year_end_month": 12,
+        "kind": "quarterly",
+        "median_lag_days": 44,
+        "period_end": "2026-06-30",
+        "sample": 3,
+        "spread_days": 17
+      }
+    }
+  },
+  "note": "Restatement of what the EDGAR submissions index holds. The filing is the source; this is an index to it. Fields under 'filings' are FILED and cite an accession number that must be opened before use. Fields under 'projection' are ESTIMATE, derived from this issuer's own filing lags, and carry their sample and spread."
+}
