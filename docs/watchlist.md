@@ -264,8 +264,18 @@ attributes another security's rows to this company, quietly and permanently.
 An empty list loses rows visibly. A wrong one gains rows invisibly. Wait for
 the sweep.
 
-**WULF, HUT and CIFR were added on 2026-08-03 in this state** and carry three
-`no CUSIP` warnings between them until the first `audit_identifiers.py` run.
+**WULF, HUT and CIFR were added on 2026-08-03 in this state.** A 48-period
+sweep the same day established one CUSIP each — `88080T104`, `44812J104` and
+`17253J106` — all check-digit valid and observed unbroken across the full
+window, so all three warnings cleared on the first pass.
+
+**That window reaches 2024-07, not to their beginnings.** WULF came public
+through IKONICS in December 2021 and CIFR through the GWAC SPAC in August
+2021, both roughly five years back — about 120 periods. Neither a pre-2024
+identifier nor a former symbol for those two could have surfaced at this
+depth, so their absence here is a statement about the window and not about
+the companies. Compare BKKT, where a 12-month sweep was similarly
+uninformative and only a 36-month one settled the question.
 
 Also watch for the `COLLISIONS` section. A row whose symbol names one company
 while its CUSIP names another means the roster is wrong somewhere, and nothing

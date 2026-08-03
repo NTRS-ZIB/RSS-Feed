@@ -162,7 +162,11 @@ WATCHLIST = [
         # December 2021 rather than through an IPO, so it continues that
         # registrant. The low number is correct, not the wrong entity.
         "cik": "0001083301",
-        "cusips": [],                     # pending the first audit sweep
+        # Observed 2024-07-15 to 2026-07-13, the full 48-period sweep window,
+        # with no break and no earlier identifier alongside it. The IKONICS
+        # era is outside that window rather than absent from it — reaching it
+        # would need roughly 120 periods.
+        "cusips": ["88080T104"],
         # IKONICS traded as IKNX. That predates every lookback window, so it
         # is not listed.
         "alt_symbols": [],
@@ -179,7 +183,11 @@ WATCHLIST = [
         # so nothing in alt_symbols catches this, and pinning the old CIK
         # returns no filings and no error. See docs/watchlist.md.
         "cik": "0001964789",
-        "cusips": [],                     # pending the first audit sweep
+        # Observed 2024-07-15 to 2026-07-14, the full sweep window, unbroken.
+        # Note what this does NOT establish: the November 2023 combination
+        # predates the window, so the sweep says nothing about whether an
+        # identifier changed at it. The CIK above is the evidence there.
+        "cusips": ["44812J104"],
         "alt_symbols": [],
         "ir_feed": None,                  # not established yet
     },
@@ -187,7 +195,10 @@ WATCHLIST = [
         "ticker": "CIFR",
         "name": "Cipher Mining",
         "cik": "0001819989",
-        "cusips": [],                     # pending the first audit sweep
+        # Observed 2024-07-15 to 2026-07-10, the full sweep window, unbroken.
+        # The GWAC era predates it, so no SPAC-era identifier could have
+        # surfaced here either way.
+        "cusips": ["17253J106"],
         # Formerly Good Works Acquisition Corp, a SPAC trading as GWAC until
         # the August 2021 business combination. That predates every lookback
         # window, so GWAC is not listed.
@@ -326,15 +337,24 @@ def validate():
 def main():
     problems = validate()
     rows = sorted(WATCHLIST, key=lambda c: c["ticker"])
+
+    # The alt column sizes to its contents. A fixed :8 field silently ran into
+    # the feed column once DGXX carried DGHI,DGHIZZZZ at 13 characters, and any
+    # fixed width just moves that break to the next company that earns a third
+    # alternate. +2 keeps a visible gap; the rule separator follows suit.
+    alts = {c["ticker"]: ",".join(c["alt_symbols"]) or "-" for c in rows}
+    alt_w = max(len("alt"), max(len(a) for a in alts.values())) + 2
+    width = 6 + 12 + 11 + alt_w + 5 + 1 + max(len(c["name"]) for c in rows)
+
     print(f"{len(rows)} companies\n")
-    print(f"{'':6}{'CIK':12}{'CUSIP':11}{'alt':8}{'feed':5} name")
-    print("-" * 70)
+    print(f"{'':6}{'CIK':12}{'CUSIP':11}{'alt':{alt_w}}{'feed':5} name")
+    print("-" * width)
     for c in rows:
         # 'pending' rather than cusips[0]: a company added before its first
         # audit sweep has none, and indexing crashed the roster's own display.
         print(f"{c['ticker']:6}{c['cik']:12}"
               f"{(c['cusips'][0] if c['cusips'] else 'pending'):11}"
-              f"{','.join(c['alt_symbols']) or '-':8}"
+              f"{alts[c['ticker']]:{alt_w}}"
               f"{'yes' if c['ir_feed'] else '-':5} {c['name']}")
 
     print(f"\nderived: {len(cusip_pins())} CUSIP pins, "
