@@ -203,11 +203,13 @@ WATCHLIST = [
         "alt_symbols": ["HUTZZZZ"],
         # No feed anywhere on hut8.com: none linked from the press releases
         # page, and no RSS entry under investor resources — unlike WULF and
-        # CIFR, which both publish one. NOT the BGDE/WYFI/DGXX case. Those
-        # render client-side; Hut 8's releases render server-side and came
-        # back complete in a plain HTTP fetch, so a scraper here would not
-        # need a headless browser. The cheapest of the four to solve.
-        "ir_feed": None,                  # no feed published; server-side HTML
+        # CIFR, which both publish one. NOT the BGDE/WYFI/DGXX case: those
+        # render client-side, whereas Hut 8's releases render server-side and
+        # come back complete in a plain HTTP fetch. So this None means "no
+        # feed to poll", not "not covered" — press_monitor.py scrapes the page
+        # instead, in scrape_hut8(), and the items rejoin the same path the
+        # feeds use. HUT is the only company covered that way.
+        "ir_feed": None,                  # no feed; scraped, see scrape_hut8()
     },
     {
         "ticker": "CIFR",

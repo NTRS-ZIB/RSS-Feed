@@ -238,7 +238,7 @@ Two different outcomes, easily confused:
 | WhiteFiber | 0002042022 | none — EDGAR only |
 | Digi Power X | 0001854368 | none — EDGAR only |
 | TeraWulf | 0001083301 | Equisolve |
-| Hut 8 Corp | 0001964789 | none — EDGAR only |
+| Hut 8 Corp | 0001964789 | none — **scraped**, see below |
 | Cipher Digital | 0001819989 | gcs-web |
 
 The three IR platforms use different feed conventions:
@@ -256,27 +256,76 @@ Soluna is plain WordPress. Its press releases live in the `/news/` archive
 feed. Autodiscovery finds the latter, because the archive's own feed isn't
 declared in the page HTML — so the correct URL had to be set explicitly.
 
-Four companies have no feed, and they are not all the same problem.
+Four companies publish no feed. Three of them are the same problem; Hut 8 is
+not, and is now scraped.
 
-Big Digital Energy, WhiteFiber and Digi Power X render their newsrooms
-client-side (QuoteMedia widget, Webflow, and Next.js respectively), so the
-headlines aren't in the delivered HTML. Neither autodiscovery nor a plain HTML
-scraper can see them; a headless browser or Google Alerts RSS would be needed.
+**Big Digital Energy, WhiteFiber and Digi Power X render their newsrooms
+client-side** (QuoteMedia widget, Webflow, and Next.js respectively), so the
+headlines aren't in the delivered HTML at all. Neither autodiscovery nor a plain
+HTML scraper can see them — covering them needs a headless browser, which this
+component deliberately does not carry. They remain EDGAR-only, and fully covered
+there for anything material.
 
-Hut 8 is different. `hut8.com` is a custom site that simply publishes no feed —
-none linked from the press releases page, and no RSS entry under its investor
-resources, unlike TeraWulf and Cipher Digital which both list one. But its press
-releases render **server-side** and come back complete in a plain HTTP fetch, so
-a scraper for it would not need a headless browser. That makes Hut 8 the
-cheapest of the four to solve if a scraper is ever built.
+### Hut 8 is scraped
 
-All four remain fully covered by EDGAR for anything material.
+`hut8.com` publishes no feed either — none linked from the press releases page,
+no RSS entry under investor resources — but its releases render **server-side**
+and come back complete in a plain fetch. `scrape_hut8()` reads
+`/news-insights/press-releases` and yields items in exactly the shape
+`collect_ir()` produces, so they rejoin the same dedupe and posting path and
+nothing downstream knows the difference.
+
+This closes a **latency gap, not a blind spot**. Everything material reaches
+EDGAR as an 8-K eventually; the scraper gets it hours earlier.
+
+Three properties of that page shape the code, and each would be a bug if
+assumed away:
+
+| Property | Consequence |
+|---|---|
+| Two overlapping lists — "Featured" and "All" — with the same release in both | Deduplicate by URL. 11 anchors currently yield 9 unique items. |
+| Document order is not date order; the featured block mixes recent with old | Parse `Jul 20, 2026` and sort. Never trust position. |
+| Hrefs are **relative** despite looking absolute in a browser | `urljoin` before using the URL as a dedupe key. |
+
+Both blocks label their parts `class="date"` and `class="title"`, but the
+featured block wraps them in `<p>` and the "All" block in `<div>`, so the tag is
+deliberately not matched. Extracting by structure also avoids splitting the
+concatenated link text, which carries a `press release` category label in one
+block and not the other.
+
+The "All" list is truncated behind a "Show All" control and only five of its
+items are in the delivered HTML. **That truncation is not worked around.** If
+"Show All" loads more via JavaScript it is the client-side case this scraper
+exists to avoid, and nine items against a fifteen-minute schedule is already
+comparable to the ten an RSS feed returns.
+
+### Critical: a scraper fails differently from a feed
+
+A feed that breaks usually errors. A scraper whose selectors stop matching
+returns zero items and looks exactly like a quiet week — and HUT publishes only
+two to four releases a month, so a silent failure could sit for a long time.
+
+What separates the two states here is that **the page lists roughly nine
+historical releases and never empties**. A genuinely quiet month still returns
+nine. So zero items from an HTTP 200 cannot mean "no news"; it can only mean the
+markup moved. The log says so in those words rather than reporting `0 items`,
+because the two states need different responses from a reader:
+
+```
+  HUT: 9 items (scraped)
+  HUT: HTTP 503
+  HUT: PARSE FAILURE — HTTP 200 but 0 items. This page lists ~9 historical
+       releases and never empties, so this is the markup moving, not a quiet week.
+```
+
+It never raises. One scraper must not take down thirteen feeds and the EDGAR
+sweep with it, which is the isolation the whole repo is built on.
 
 ## Scaling
 
-**Requests per run: 24** — one submissions call per company (14) plus one per
-IR feed (10). Both channels are served from the same payload, so the insider
-check costs nothing extra.
+**Requests per run: 25** — one submissions call per company (14), one per IR
+feed (10), and one for the Hut 8 scrape. Both channels are served from the same
+payload, so the insider check costs nothing extra.
 
 This replaced the legacy `cgi-bin/browse-edgar` endpoint, which needed one call
 per company *per form type* plus an index fetch per candidate filing — about

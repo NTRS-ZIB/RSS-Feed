@@ -9,6 +9,7 @@ Watches two sources per company:
 Dedupes against state.json so each item is posted exactly once.
 """
 
+import html
 import json
 import os
 import re
@@ -41,21 +42,20 @@ TICKERS = []  # Ticker lookup is fragile across renames; see EXTRA_CIKS above.
 EXTRA_CIKS = watchlist.ciks()          # {ticker: (cik, name)}
 IR_FEEDS = watchlist.ir_feeds()        # {ticker: url}, companies that have one
 
-# Confirmed to have NO usable feed. Covered by EDGAR 8-K only. Two distinct
-# reasons, which matter if a scraper is ever written:
-#
-# Newsroom renders CLIENT-SIDE — the headlines aren't in the delivered HTML,
-# so neither autodiscovery nor a plain scraper can see them. Needs a headless
-# browser.
+# Confirmed to have NO usable feed. Their newsrooms render CLIENT-SIDE — the
+# headlines aren't in the delivered HTML, so neither autodiscovery nor a plain
+# scraper can see them. Covering them needs a headless browser, which this
+# component deliberately does not carry. EDGAR 8-K only.
 #   Big Digital Energy  https://www.bigdigital.energy/news-media/press-releases/
 #                       (QuoteMedia widget)
 #   WhiteFiber          https://www.whitefiber.com/investors-news  (Webflow)
 #   Digi Power X        https://www.digipowerx.com/press-releases  (Next.js)
 #
-# Publishes no feed, but renders SERVER-SIDE — the releases come back complete
-# in a plain HTTP fetch. The cheapest of the four to scrape.
-#   Hut 8 Corp          https://www.hut8.com/news-insights/press-releases
-#                       (custom site)
+# HUT also publishes no feed, but is NOT one of those: its releases render
+# server-side and come back complete in a plain fetch, so it is scraped instead
+# — see scrape_hut8(). That closes a latency gap rather than a blind spot;
+# everything material reaches EDGAR as an 8-K eventually, just hours later.
+HUT_PAGE = "https://www.hut8.com/news-insights/press-releases"
 
 
 # EDGAR form types to watch. 8-K = US material events. 6-K = foreign issuers.
@@ -602,6 +602,92 @@ def parse_feed(url):
         return []
 
 
+def scrape_hut8():
+    """HUT's press releases, scraped. Returns items shaped like collect_ir()'s.
+
+    HOW IT FAILS IS THE POINT. A feed that breaks usually errors; a scraper whose
+    selectors stop matching returns nothing and looks exactly like a quiet week.
+    HUT publishes two to four releases a month, so that could sit for a long time.
+
+    What makes the two states separable here: this page lists roughly nine
+    HISTORICAL releases and never empties. A genuinely quiet month still returns
+    nine. So zero items from an HTTP 200 cannot mean "no news" — it can only mean
+    the markup moved, and it is logged as a parse failure rather than as a count.
+
+    Never raises. One scraper must not take down thirteen feeds and the EDGAR
+    sweep with it.
+    """
+    try:
+        r = requests.get(HUT_PAGE, headers=IR_HEADERS, timeout=(10, 30))
+    except requests.RequestException as e:
+        print(f"  HUT: fetch failed: {type(e).__name__}")
+        return []
+    if r.status_code != 200:
+        print(f"  HUT: HTTP {r.status_code}")
+        return []
+
+    # The page carries two overlapping lists — "Featured Press Releases" and
+    # "All Press Releases" — and the same release appears in both. Anchors are
+    # collected across the whole document and deduplicated by URL below.
+    #
+    # Both blocks label their parts with class="date" and class="title", but the
+    # featured block wraps them in <p> and the all block in <div>, so the tag is
+    # deliberately not matched. Extracting by structure beats splitting the
+    # concatenated link text, which also carries a "press release" category
+    # label in one block and not the other.
+    items, seen = [], set()
+    for m in re.finditer(
+            r'<a[^>]+href="([^"]*/news-insights/press-releases/[^"]+)"[^>]*>',
+            r.text):
+        end = r.text.find("</a>", m.start())
+        if end < 0:
+            continue
+        inner = r.text[m.end():end]
+
+        def part(name):
+            g = re.search(rf'class="{name}"[^>]*>(.*?)</', inner, re.S)
+            if not g:
+                return None
+            return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", g.group(1))).strip()
+
+        title, when = part("title"), part("date")
+        if not title:
+            continue
+        # Hrefs are relative — "/news-insights/..." — despite looking absolute
+        # in a browser. Joining is what makes the URL usable as a uid.
+        link = urljoin(HUT_PAGE, m.group(1))
+        if link in seen:
+            continue
+        seen.add(link)
+
+        published = 0
+        if when:
+            try:
+                published = timegm(time.strptime(when, "%b %d, %Y"))
+            except ValueError:
+                pass
+        items.append({
+            "uid": link,
+            "source": "HUT · IR newsroom",
+            "title": html.unescape(title),
+            "link": link,
+            "published": published,
+            "is_edgar": False,
+        })
+
+    if not items:
+        print("  HUT: PARSE FAILURE — HTTP 200 but 0 items. This page lists ~9 "
+              "historical releases and never empties, so this is the markup "
+              "moving, not a quiet week.")
+        return []
+
+    # Document order is not date order: the featured block mixes recent items
+    # with older ones. Sort rather than trusting position.
+    items.sort(key=lambda i: i["published"], reverse=True)
+    print(f"  HUT: {len(items)} items (scraped)")
+    return items
+
+
 def collect_ir():
     items = []
     for label, url in IR_FEEDS.items():
@@ -632,6 +718,10 @@ def collect_ir():
                 "published": entry_time(entry),
                 "is_edgar": False,
             })
+
+    # HUT has no feed but renders server-side, so it is scraped into the same
+    # shape and rejoins the same dedupe and posting path here.
+    items += scrape_hut8()
     return items
 
 
