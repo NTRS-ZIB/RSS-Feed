@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-03T03:40:01+00:00",
+  "generated": "2026-08-03T13:33:17+00:00",
   "issuers": {
     "ANY": {
       "cik": "0001591956",
@@ -1354,7 +1354,7 @@
     },
     "WYFI": {
       "cik": "0002042022",
-      "filing_count": 72,
+      "filing_count": 73,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-034341",
@@ -1400,12 +1400,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001213900-26-067329",
-          "count": 11,
-          "filed": "2026-06-10",
+          "accession": "0001213900-26-084223",
+          "count": 12,
+          "filed": "2026-08-03",
           "form": "8-K",
-          "period": "2026-06-10",
-          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026067329/ea0294306-8k_whitefiber.htm"
+          "period": "2026-07-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026084223/ea0299775-8k_whitefiber.htm"
         },
         "DEF 14A": null,
         "NT 10-K": null,
@@ -1436,7 +1436,7 @@
       "former_names": [
         "White Fiber, Inc."
       ],
-      "latest_filing_date": "2026-07-28",
+      "latest_filing_date": "2026-08-03",
       "name": "WhiteFiber, Inc.",
       "projection": {
         "confidence": "normal",
