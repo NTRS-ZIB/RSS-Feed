@@ -41,13 +41,21 @@ TICKERS = []  # Ticker lookup is fragile across renames; see EXTRA_CIKS above.
 EXTRA_CIKS = watchlist.ciks()          # {ticker: (cik, name)}
 IR_FEEDS = watchlist.ir_feeds()        # {ticker: url}, companies that have one
 
-# Confirmed to have NO usable feed. Their newsrooms render client-side, so the
-# headlines aren't in the HTML and neither autodiscovery nor a plain scraper
-# can see them. These companies are covered by EDGAR 8-K only.
+# Confirmed to have NO usable feed. Covered by EDGAR 8-K only. Two distinct
+# reasons, which matter if a scraper is ever written:
+#
+# Newsroom renders CLIENT-SIDE — the headlines aren't in the delivered HTML,
+# so neither autodiscovery nor a plain scraper can see them. Needs a headless
+# browser.
 #   Big Digital Energy  https://www.bigdigital.energy/news-media/press-releases/
 #                       (QuoteMedia widget)
 #   WhiteFiber          https://www.whitefiber.com/investors-news  (Webflow)
 #   Digi Power X        https://www.digipowerx.com/press-releases  (Next.js)
+#
+# Publishes no feed, but renders SERVER-SIDE — the releases come back complete
+# in a plain HTTP fetch. The cheapest of the four to scrape.
+#   Hut 8 Corp          https://www.hut8.com/news-insights/press-releases
+#                       (custom site)
 
 
 # EDGAR form types to watch. 8-K = US material events. 6-K = foreign issuers.

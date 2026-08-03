@@ -237,6 +237,9 @@ Two different outcomes, easily confused:
 | Big Digital Energy | 0001218683 | none — EDGAR only |
 | WhiteFiber | 0002042022 | none — EDGAR only |
 | Digi Power X | 0001854368 | none — EDGAR only |
+| TeraWulf | 0001083301 | Equisolve |
+| Hut 8 Corp | 0001964789 | none — EDGAR only |
+| Cipher Digital | 0001819989 | gcs-web |
 
 The three IR platforms use different feed conventions:
 
@@ -253,16 +256,26 @@ Soluna is plain WordPress. Its press releases live in the `/news/` archive
 feed. Autodiscovery finds the latter, because the archive's own feed isn't
 declared in the page HTML — so the correct URL had to be set explicitly.
 
-The three companies without feeds render their newsrooms client-side
-(QuoteMedia widget, Webflow, and Next.js respectively), so the headlines aren't
-in the delivered HTML. Neither autodiscovery nor a plain HTML scraper can see
-them; a headless browser or Google Alerts RSS would be needed. They remain
-fully covered by EDGAR for anything material.
+Four companies have no feed, and they are not all the same problem.
+
+Big Digital Energy, WhiteFiber and Digi Power X render their newsrooms
+client-side (QuoteMedia widget, Webflow, and Next.js respectively), so the
+headlines aren't in the delivered HTML. Neither autodiscovery nor a plain HTML
+scraper can see them; a headless browser or Google Alerts RSS would be needed.
+
+Hut 8 is different. `hut8.com` is a custom site that simply publishes no feed —
+none linked from the press releases page, and no RSS entry under its investor
+resources, unlike TeraWulf and Cipher Digital which both list one. But its press
+releases render **server-side** and come back complete in a plain HTTP fetch, so
+a scraper for it would not need a headless browser. That makes Hut 8 the
+cheapest of the four to solve if a scraper is ever built.
+
+All four remain fully covered by EDGAR for anything material.
 
 ## Scaling
 
-**Requests per run: 19** — one submissions call per company (11) plus one per
-IR feed (8). Both channels are served from the same payload, so the insider
+**Requests per run: 24** — one submissions call per company (14) plus one per
+IR feed (10). Both channels are served from the same payload, so the insider
 check costs nothing extra.
 
 This replaced the legacy `cgi-bin/browse-edgar` endpoint, which needed one call

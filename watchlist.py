@@ -172,7 +172,9 @@ WATCHLIST = [
         # the December 2021 merger, and never saw it against this company. It
         # predates every lookback window in any case.
         "alt_symbols": [],
-        "ir_feed": None,                  # not established yet
+        # Linked as "News RSS" at the foot of the press releases page. Same
+        # /news-events/press-releases/rss pattern as MARA.
+        "ir_feed": "https://investors.terawulf.com/news-events/press-releases/rss",
     },
     {
         "ticker": "HUT",
@@ -199,11 +201,22 @@ WATCHLIST = [
         # because it occurs in the data — and it is the only symbol-side trace
         # of the combination, since HUT itself never changed.
         "alt_symbols": ["HUTZZZZ"],
-        "ir_feed": None,                  # not established yet
+        # No feed anywhere on hut8.com: none linked from the press releases
+        # page, and no RSS entry under investor resources — unlike WULF and
+        # CIFR, which both publish one. NOT the BGDE/WYFI/DGXX case. Those
+        # render client-side; Hut 8's releases render server-side and came
+        # back complete in a plain HTTP fetch, so a scraper here would not
+        # need a headless browser. The cheapest of the four to solve.
+        "ir_feed": None,                  # no feed published; server-side HTML
     },
     {
         "ticker": "CIFR",
-        "name": "Cipher Mining",
+        # Cipher Mining -> Cipher Digital Inc. Name change effective
+        # 2026-02-24, announced in the Q4 2025 business update alongside the
+        # divestment of 49% of the Alborz, Bear and Chief mining sites. The
+        # ticker did not change, so nothing goes in alt_symbols; the IR domain
+        # moved from ciphermining.com to cipherdigital.com.
+        "name": "Cipher Digital",
         "cik": "0001819989",
         # Observed 2021-08-30 to 2026-07-10 by a 120-period sweep, unbroken.
         # It starts days after the August 2021 combination and nothing under
@@ -215,7 +228,9 @@ WATCHLIST = [
         # 2021-07 and never saw GWAC against this company; it predates every
         # lookback window in any case.
         "alt_symbols": [],
-        "ir_feed": None,                  # not established yet
+        # Listed on the RSS Feeds page under Investor Resources. Same
+        # /rss/news-releases.xml pattern as VIP.
+        "ir_feed": "https://investors.cipherdigital.com/rss/news-releases.xml",
     },
 ]
 
