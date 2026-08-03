@@ -33,8 +33,13 @@ CIKS = {
 }
 
 # Form families a sweep opens with. Prefix matched, so 8-K covers 8-K/A.
+# EDGAR emits both spellings. Filings from the 2023 13D/G modernisation onward carry
+# SCHEDULE 13D and SCHEDULE 13G; older ones carry SC 13D and SC 13G. "SCHEDULE 13D"
+# does not start with "SC 13D", so the legacy prefix alone silently misses every
+# recent one. Keep both.
 FORMS = ["8-K", "6-K", "10-Q", "10-K", "20-F", "40-F", "S-1", "S-3", "424",
-         "SC 13D", "SC 13G", "NT 10-K", "NT 10-Q", "NT 20-F", "NT 40-F",
+         "SC 13D", "SCHEDULE 13D", "SC 13G", "SCHEDULE 13G",
+         "NT 10-K", "NT 10-Q", "NT 20-F", "NT 40-F",
          "3", "4", "DEF 14A"]
 
 ANNUAL = {"10-K", "20-F", "40-F"}
