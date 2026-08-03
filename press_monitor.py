@@ -58,7 +58,16 @@ IR_FEEDS = watchlist.ir_feeds()        # {ticker: url}, companies that have one
 FORM_TYPES = [
     "8-K",     # US material events; press releases attach as EX-99
     "6-K",     # same, foreign private issuers
-    "424",     # prospectus supplements — offerings being priced. Dilution.
+    "424",     # prospectus supplements. An offering being priced.
+    # Registration statements. 424 catches the prospectus that FOLLOWS one,
+    # but the registration itself is filed weeks earlier and is the first
+    # public signal that a raise is coming. S-1 is a first-time or ineligible
+    # registrant; S-3 is a shelf, which is how most secondaries and ATM
+    # programmes here are actually run. Prefix matching covers S-1/A and S-3/A,
+    # and amendments matter: a company can sit on a shelf for months and the
+    # amendment is often the sign it is about to be used.
+    "S-1",
+    "S-3",     # shelf registration
     "10-Q",    # quarterly financials
     "10-K",    # annual financials
     "20-F",    # annual, foreign private issuers
@@ -73,6 +82,16 @@ FORM_TYPES = [
     # for filings made before the changeover.
     "SC 13D",
     "SCHEDULE 13D",  # activist / >5% stake disclosures
+    # 13G is the PASSIVE counterpart to 13D: same >5% threshold, but filed by
+    # holders with no intent to influence control, which in practice means
+    # index funds and most institutions. Expect routine February amendments
+    # rather than events. Both spellings for the same reason as 13D above.
+    #
+    # If this proves too noisy in the filings channel, move it to the insider
+    # channel rather than dropping it. Ownership changes are a different kind
+    # of news from company announcements, which is why Form 4 lives there.
+    "SC 13G",
+    "SCHEDULE 13G",  # passive / >5% stake disclosures
     # "NT " covers the whole late-filing family under Rule 12b-25: NT 10-K,
     # NT 10-Q, NT 20-F, NT 40-F and any future sibling. Listing two of them
     # individually meant NT 20-F was missing entirely — found by the drift
@@ -134,7 +153,16 @@ MAX_INSIDER_POSTS_PER_RUN = 25
 # returns 40-F and 424B*. Entries are therefore filtered against
 # INSIDER_ALLOWED_FORMS using the form type EDGAR reports on each entry.
 INSIDER_QUERY_FORM = "4"
-INSIDER_ALLOWED_FORMS = {"4", "4/A"}
+# Form 3 is an insider's INITIAL statement of ownership, filed within 10 days
+# of becoming an officer, director or >10% holder. It reports no transaction,
+# so it is not a trade — but it is the first appearance of a new insider, and
+# on a watchlist where boards turn over it is worth seeing. Form 4 is the
+# ongoing transaction report.
+#
+# Form 5 is deliberately excluded: an annual catch-up of small or exempt
+# transactions that should have been reported already, filed in bulk after
+# year end. High volume, low signal.
+INSIDER_ALLOWED_FORMS = {"3", "3/A", "4", "4/A"}
 
 # ------------------------------------------------------------------ RUNTIME
 
