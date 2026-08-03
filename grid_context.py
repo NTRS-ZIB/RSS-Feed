@@ -56,14 +56,29 @@ import requests
 
 # ------------------------------------------------------------------ CONFIG
 
-# Balancing authorities that matter for this watchlist. ERCOT covers NUAI
-# (Midland, Texas); PJM covers BGDE (Midland, Pennsylvania) and is where the
-# data-centre demand story is loudest.
+# Balancing authorities that matter for this watchlist, counted from the grid
+# table in docs/watchlist.md rather than from impressions:
 #
-# NOT a complete mapping of watchlist companies to grids — facility locations
-# come from filings and have not been audited. Treat these as the two regions
-# most likely to matter, not as coverage.
-REGIONS = {"ERCO": "ERCOT", "PJM": "PJM"}
+#   NYISO   4 companies name it — VIP, DGXX, WULF, HUT
+#   ERCOT   3 — IREN, CIFR, HUT — plus the rows that are only inferred
+#   PJM     1 operating — BGDE
+#
+# NYISO was added once that sweep covered the whole roster. The original
+# ERCOT/PJM pair rested on BGDE being in Midland, Pennsylvania and NUAI in
+# Midland, Texas, which was thin reasoning and understated NYISO badly.
+#
+# PJM stays despite the count of one: CIFR's Ulysses site energizes in Q4 2027
+# and MARA has Ohio sites with no operator named, so dropping it now would mean
+# adding it back inside eighteen months.
+#
+# NYIS is the ISO respondent, taken from the facet list of 83 rather than
+# assumed — "NYISO" is not a code at all. `NY` also exists and returns
+# identical values today, but it is a state aggregate; ERCO and PJM are RTO
+# respondents, so NYIS is the consistent choice.
+#
+# Still NOT a complete mapping. SPP (WULF's Abernathy site) and AESO (HUT, in
+# Alberta) have one company each and neither is read here.
+REGIONS = {"ERCO": "ERCOT", "PJM": "PJM", "NYIS": "NYISO"}
 
 # Trailing days of ACTUAL demand the forecast peak is measured against.
 BASELINE_DAYS = 7
@@ -209,6 +224,15 @@ def build_embed(grids, g):
             f"_`7d pk` is the highest actual demand of the last 7 days, in GW. "
             f"`Now` and `Fcst` are percentages of it — current demand, and the "
             f"peak of the next **{horizon}h** of forecast._")
+        # Attached to the table rather than to the caveat at the foot, because
+        # this is the row a reader meets every weekday. VIP is the one company
+        # on the watchlist whose exposure runs the other way — see
+        # docs/watchlist.md. Only shown when NYISO actually has a row.
+        if "NYIS" in grids:
+            lines.append(
+                "_**NYISO carries one inversion.** VIP owns a 106 MW plant "
+                "there and sells into the market, so a tight NYISO is revenue "
+                "for VIP and cost for everyone else._")
         for code, d in grids.items():
             delta = (d["forecast_peak"] - d["actual_peak"]) / d["actual_peak"] * 100
             if delta >= NOTABLE_PEAK_PCT:
@@ -227,9 +251,11 @@ def build_embed(grids, g):
 
     lines.append(
         "_Not a power price. EIA's open API carries none for any region, and "
-        "its retail series runs about three months stale. Gas is the marginal "
-        "fuel in both grids; demand is what drives curtailment. Read this as "
-        "pressure on cost, not cost._")
+        "its retail series runs about three months stale. Gas sets the "
+        "marginal price in ERCOT and PJM, which is why it is the fuel proxy "
+        "here; NYISO's watchlist zones run on Niagara hydro, so demand is the "
+        "line that carries the signal there. Read this as pressure on cost, "
+        "not cost._")
 
     hot = any((d["forecast_peak"] - d["actual_peak"]) / d["actual_peak"] * 100
               >= NOTABLE_PEAK_PCT for d in grids.values()) if grids else False

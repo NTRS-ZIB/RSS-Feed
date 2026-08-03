@@ -29,7 +29,7 @@ jobs:
       - name: Install dependencies
         run: pip install requests
       - name: Fetch and post
-        # Five requests: actual and forecast demand for two regions, plus gas.
+        # Seven requests: actual and forecast demand for three regions, plus gas.
         timeout-minutes: 5
         env:
           WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}

@@ -48,9 +48,12 @@ owns and operates a 106 MW generation facility connected to NYISO and sells
 into the market, so a rising power price is revenue for VIP and cost for
 everybody else.
 
-Nothing here needs to change — this component reports grid conditions, not
-per-company economics, and a hot grid is still a hot grid. But anything built
-later that turns a price into a per-company cost has VIP backwards in sign. See
+The component still reports grid conditions rather than per-company economics,
+and a hot grid is a hot grid whichever side of it you sit on. But NYISO is now
+a row someone reads every weekday, so the exception is stated in the embed
+beside the table rather than only here — a caveat at the foot of a page is not
+where a reader meets the number. Anything built later that turns a price into a
+per-company cost has VIP backwards in sign. See
 [the watchlist's grid section](watchlist.md#grid-operators-and-sites).
 
 ### EIA is not the ceiling
@@ -109,20 +112,30 @@ and the table labels which is which.
 
 ## Regions
 
-| Code | Grid | Why |
+| Code | Grid | Companies naming it |
 |---|---|---|
-| `ERCO` | ERCOT | Covers NUAI (Midland, **Texas**) and most of the sector's Texas capacity |
-| `PJM` | PJM | Covers BGDE (Midland, **Pennsylvania**); where the data-centre demand story is loudest |
+| `NYIS` | NYISO | **4** — VIP, DGXX, WULF, HUT |
+| `ERCO` | ERCOT | **3** — IREN, CIFR, HUT, plus the inferred rows |
+| `PJM` | PJM | **1** operating — BGDE |
 
-Note the coincidence, because it is genuinely confusing: two watchlist
-companies are headquartered in a town called Midland, in different states, on
-different grids.
+Those counts come from the grid table in
+[the watchlist](watchlist.md#how-many-companies-sit-on-each-grid), not from
+impressions. NYISO was added once that sweep covered the whole roster: the
+original ERCOT/PJM pair rested on BGDE being in Midland, **Pennsylvania** and
+NUAI in Midland, **Texas** — a coincidence of town names, and thin reasoning
+that understated NYISO badly.
 
-**This is not a complete mapping.** These are the two regions most likely to
-matter, not coverage of the watchlist — **NYISO is named outright by four
-companies and is not read here at all**, more than name PJM. Treating the table
-as "the grids our companies are on" would be wrong. `docs/watchlist.md` counts
-the roster by grid, with the stated rows marked off from the inferred ones.
+**PJM stays despite the count of one.** CIFR's Ulysses site energizes in Q4
+2027 and MARA has Ohio sites with no operator named, so dropping it now would
+mean adding it back inside eighteen months. Three regions cost one table row.
+
+`NYIS` is the ISO respondent, taken from the facet list of 83 rather than
+assumed — `NYISO` is not a code. `NY` also exists and returns identical values,
+but it is a state aggregate, and `ERCO` and `PJM` are RTO respondents.
+
+**This is still not a complete mapping.** SPP (WULF's Abernathy site) and AESO
+(HUT, in Alberta) have one company each and neither is read here. AESO is
+outside every US source in any case.
 
 ## Critical: the horizon is hours, not a day
 
@@ -140,8 +153,9 @@ had rather than implying a day.
 ```
         7d pk   Now  Fcst
 -------------------------
-ERCOT    90.1   84%  100%
-PJM     133.9   91%  100%
+ERCOT    90.1   92%   99%
+PJM     133.9   94%   95%
+NYISO    24.7   87%   93%
 ```
 
 | Column | Meaning |
