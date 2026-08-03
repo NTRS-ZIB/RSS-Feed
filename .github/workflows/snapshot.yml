@@ -1,0 +1,56 @@
+name: Build snapshot
+
+# Writes snapshot.json: a dated restatement of what each watched issuer's EDGAR
+# submissions index holds. Consumed by the equity research project as an index to
+# the filings, not as a substitute for reading them.
+
+on:
+  schedule:
+    - cron: "0 11 * * 1-5"   # 11:00 UTC weekdays, before the US open
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Build snapshot.json
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: python build_snapshot.py
+
+      - name: Confirm the file was written and is not empty of issuers
+        run: |
+          test -f snapshot.json || { echo "build_snapshot.py wrote no snapshot.json"; exit 1; }
+          python - <<'PY'
+          import json, sys
+          d = json.load(open("snapshot.json"))
+          n = len(d.get("issuers", {}))
+          bad = sum(1 for v in d["issuers"].values() if "error" in v)
+          print("issuers: %d, with errors: %d, generated %s" % (n, bad, d.get("generated")))
+          if n == 0 or bad == n:
+              sys.exit("Snapshot holds no usable issuer. Not committing.")
+          PY
+
+      - name: Commit if changed
+        run: |
+          git config user.name "snapshot-bot"
+          git config user.email "snapshot-bot@users.noreply.github.com"
+          # Stage first: git diff ignores untracked files, so testing before
+          # staging reports no change on a file never committed.
+          git add snapshot.json
+          if git diff --cached --quiet; then
+            echo "Snapshot unchanged, nothing to commit."
+          else
+            git commit -m "Rebuild snapshot"
+            git push
+            echo "Committed and pushed snapshot.json"
+          fi
