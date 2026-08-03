@@ -130,8 +130,15 @@ that understated NYISO badly.
 mean adding it back inside eighteen months. Three regions cost one table row.
 
 `NYIS` is the ISO respondent, taken from the facet list of 83 rather than
-assumed — `NYISO` is not a code. `NY` also exists and returns identical values,
-but it is a state aggregate, and `ERCO` and `PJM` are RTO respondents.
+assumed — `NYISO` is not a code at all.
+
+**Do not substitute `NY` for it.** That respondent also exists, and returns
+byte-identical values on the same clock: same demand, same forecast, no error.
+It is a **state aggregate**, while `ERCO` and `PJM` are RTO respondents, so
+swapping it in would make the three rows inconsistent in a way nothing
+downstream could detect — the numbers would simply keep matching. The two are
+distinguishable only in the facet list, which is why the probe queried the
+controls alongside the candidates rather than the candidates alone.
 
 **This is still not a complete mapping.** SPP (WULF's Abernathy site) and AESO
 (HUT, in Alberta) have one company each and neither is read here. AESO is
