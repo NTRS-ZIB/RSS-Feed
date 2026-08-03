@@ -1,17 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001243628-21-000002",
-  "urn:tag:sec.gov,2008:accession-number=0001687758-21-000002",
-  "urn:tag:sec.gov,2008:accession-number=0001311899-21-000004",
-  "urn:tag:sec.gov,2008:accession-number=0001183209-21-000003",
-  "urn:tag:sec.gov,2008:accession-number=0001312027-21-000004",
-  "urn:tag:sec.gov,2008:accession-number=0001687731-21-000001",
-  "urn:tag:sec.gov,2008:accession-number=0001850138-21-000002",
-  "urn:tag:sec.gov,2008:accession-number=0001848710-21-000003",
-  "urn:tag:sec.gov,2008:accession-number=0001833489-21-000001",
-  "urn:tag:sec.gov,2008:accession-number=0001311899-21-000002",
-  "urn:tag:sec.gov,2008:accession-number=0001311899-21-000001",
-  "urn:tag:sec.gov,2008:accession-number=0001183209-21-000001",
   "urn:tag:sec.gov,2008:accession-number=0001312027-21-000001",
   "urn:tag:sec.gov,2008:accession-number=0001003297-21-000006",
   "urn:tag:sec.gov,2008:accession-number=0001003297-18-000102",
@@ -999,7 +987,19 @@
   "11376",
   "11336",
   "11246",
-  "11161"
+  "11161",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-fully-commercializes-1-gw-beacon-point-ai-data-center-campus-with-second-352-mw-it-lease",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-schedules-second-quarter-2026-earnings-release-and-conference-call",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-names-e-stanley-o-neal-chair-of-the-board",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-closes-usd4-25-billion-of-investment-grade-senior-secured-notes-for-beacon-point-data",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-announces-pricing-of-usd4-25-billion-of-investment-grade-senior-secured-notes-for-beacon",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-reports-first-quarter-2026-results",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-commercializes-first-phase-of-1-gw-beacon-point-ai-data-center-campus-with-15-year-352-mw",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-signs-15-year-245-mw-ai-data-center-lease-at-river-bend-campus-with-total-contract-value",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-announces-ai-infrastructure-partnership-with-anthropic-and-fluidstack",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-035873",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-035872",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-035871"
  ],
  "initialized": true
 }
