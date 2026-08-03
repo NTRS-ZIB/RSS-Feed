@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-03T03:29:45+00:00",
+  "generated": "2026-08-03T03:35:11+00:00",
   "issuers": {
     "ANY": {
       "cik": "0001591956",
@@ -120,6 +120,22 @@
           "form": "SC 13G/A",
           "period": null,
           "url": "https://www.sec.gov/Archives/edgar/data/1591956/000106299324002916/formsc13ga.htm"
+        },
+        "SCHEDULE 13D": {
+          "accession": "0000912282-26-001018",
+          "count": 1,
+          "filed": "2026-07-31",
+          "form": "SCHEDULE 13D",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000091228226001018/xslSCHEDULE_13D_X02/primary_doc.xml"
+        },
+        "SCHEDULE 13G": {
+          "accession": "0001062993-26-003723",
+          "count": 6,
+          "filed": "2026-07-20",
+          "form": "SCHEDULE 13G",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000106299326003723/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
@@ -243,7 +259,16 @@
           "form": "SC 13G/A",
           "period": null,
           "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390021009599/ea135724-13ga2rubini_wize.htm"
-        }
+        },
+        "SCHEDULE 13D": {
+          "accession": "0000912282-26-000965",
+          "count": 15,
+          "filed": "2026-07-10",
+          "form": "SCHEDULE 13D/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000091228226000965/xslSCHEDULE_13D_X02/primary_doc.xml"
+        },
+        "SCHEDULE 13G": null
       },
       "former_names": [
         "Mawson Infrastructure Group Inc.",
@@ -376,6 +401,22 @@
           "form": "SC 13G",
           "period": null,
           "url": "https://www.sec.gov/Archives/edgar/data/1820302/000090266424006542/p24-3248sc13g.htm"
+        },
+        "SCHEDULE 13D": {
+          "accession": "0001193125-26-204650",
+          "count": 13,
+          "filed": "2026-05-04",
+          "form": "SCHEDULE 13D/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000119312526204650/xslSCHEDULE_13D_X02/primary_doc.xml"
+        },
+        "SCHEDULE 13G": {
+          "accession": "0002012383-26-002199",
+          "count": 15,
+          "filed": "2026-07-27",
+          "form": "SCHEDULE 13G",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000201238326002199/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
@@ -500,6 +541,15 @@
           "form": "SC 13G/A",
           "period": null,
           "url": "https://www.sec.gov/Archives/edgar/data/827876/000093247124000982/UnitedStates_13G__Cleanspark.txt"
+        },
+        "SCHEDULE 13D": null,
+        "SCHEDULE 13G": {
+          "accession": "0001104659-26-084631",
+          "count": 11,
+          "filed": "2026-07-17",
+          "form": "SCHEDULE 13G",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000110465926084631/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
@@ -624,6 +674,15 @@
           "form": "SC 13G/A",
           "period": null,
           "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390024098391/ea0221099-13ga2amar_digi.htm"
+        },
+        "SCHEDULE 13D": null,
+        "SCHEDULE 13G": {
+          "accession": "0001104659-26-059572",
+          "count": 5,
+          "filed": "2026-05-12",
+          "form": "SCHEDULE 13G",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000110465926059572/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
@@ -740,6 +799,15 @@
           "form": "SC 13G/A",
           "period": null,
           "url": "https://www.sec.gov/Archives/edgar/data/1878848/000114036124007726/ef20021660_sc13ga.htm"
+        },
+        "SCHEDULE 13D": null,
+        "SCHEDULE 13G": {
+          "accession": "0001446580-26-000036",
+          "count": 15,
+          "filed": "2026-02-13",
+          "form": "SCHEDULE 13G/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000144658026000036/xslSCHEDULE_13G_X01/primary_doc.xml"
         }
       },
       "former_names": [
@@ -871,6 +939,15 @@
           "form": "SC 13G/A",
           "period": null,
           "url": "https://www.sec.gov/Archives/edgar/data/1507605/000159588824000058/MARA2.txt"
+        },
+        "SCHEDULE 13D": null,
+        "SCHEDULE 13G": {
+          "accession": "0002100119-26-000749",
+          "count": 5,
+          "filed": "2026-04-30",
+          "form": "SCHEDULE 13G",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000210011926000749/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
@@ -976,7 +1053,23 @@
           "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026058412/ea0291173-s3a1_newera.htm"
         },
         "SC 13D": null,
-        "SC 13G": null
+        "SC 13G": null,
+        "SCHEDULE 13D": {
+          "accession": "0001104659-24-129080",
+          "count": 1,
+          "filed": "2024-12-16",
+          "form": "SCHEDULE 13D",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000110465924129080/xslSCHEDULE_13D_X01/primary_doc.xml"
+        },
+        "SCHEDULE 13G": {
+          "accession": "0002012383-26-003194",
+          "count": 16,
+          "filed": "2026-07-30",
+          "form": "SCHEDULE 13G",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000201238326003194/xslSCHEDULE_13G_X02/primary_doc.xml"
+        }
       },
       "former_names": [
         "NEW ERA HELIUM INC.",
@@ -1100,6 +1193,15 @@
           "form": "SC 13G/A",
           "period": null,
           "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315224006737/formsc13ga.htm"
+        },
+        "SCHEDULE 13D": null,
+        "SCHEDULE 13G": {
+          "accession": "0002012383-26-003142",
+          "count": 8,
+          "filed": "2026-07-30",
+          "form": "SCHEDULE 13G",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000201238326003142/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
@@ -1223,7 +1325,16 @@
           "form": "SC 13G",
           "period": null,
           "url": "https://www.sec.gov/Archives/edgar/data/1844971/000094787122000243/ss798306_sc13g.htm"
-        }
+        },
+        "SCHEDULE 13D": {
+          "accession": "0001193125-26-309174",
+          "count": 5,
+          "filed": "2026-07-20",
+          "form": "SCHEDULE 13D/A",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000119312526309174/xslSCHEDULE_13D_X02/primary_doc.xml"
+        },
+        "SCHEDULE 13G": null
       },
       "former_names": [
         "Greenidge Generation Holdings Inc."
@@ -1311,7 +1422,16 @@
         },
         "S-3": null,
         "SC 13D": null,
-        "SC 13G": null
+        "SC 13G": null,
+        "SCHEDULE 13D": {
+          "accession": "0001213900-25-073673",
+          "count": 1,
+          "filed": "2025-08-08",
+          "form": "SCHEDULE 13D",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390025073673/xslSCHEDULE_13D_X01/primary_doc.xml"
+        },
+        "SCHEDULE 13G": null
       },
       "former_names": [
         "White Fiber, Inc."
