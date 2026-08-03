@@ -312,6 +312,78 @@ Also watch for the `COLLISIONS` section. A row whose symbol names one company
 while its CUSIP names another means the roster is wrong somewhere, and nothing
 else in the output should be trusted until that is resolved.
 
+## Grid operators and sites
+
+A sweep read the most recent annual report of all eleven companies then on the
+roster for the grid operators and the states each one actually names. It lives
+here rather than in `watchlist.py` on purpose: no component reads site data, and
+a field nothing reads goes stale with nothing to notice. This is reference for
+deciding what to build, not input to anything running.
+
+**The basis column is the point.** *Stated* means the filing says it plainly.
+*Inferred* means it was read off keyword frequency and has not been verified.
+
+| | Grid | Where | Basis |
+|---|---|---|---|
+| VIP | NYISO | New York | stated — and it **sells** |
+| IREN | ERCOT | Texas: Childress, Sweetwater | stated; expects to participate in the ERCOT wholesale spot market |
+| BGDE | PJM | Pennsylvania, Ohio | stated: "all strategically located in locations served by the PJM Energy Market" |
+| DGXX | NYISO | New York, two sites; Alabama | stated |
+| WYFI | none — Duke Energy Carolinas | North Carolina, Greensboro | stated; a capacity agreement, not a market |
+| CLSK | none — Georgia Power | Georgia, Wyoming, Mississippi, Tennessee | stated; an electrical services agreement |
+| MARA | unclear, spans several | Texas, Nevada, Nebraska, Ohio, North Dakota | **inferred**; no operator named in the 10-K |
+| SLNH | ERCOT? | Texas, New York, Kentucky | **inferred**; ERCOT appears 19 times, but in glossary definitions |
+| NUAI | unclear | New Mexico 50x, above Texas 44x | **inferred**; contradicts its Midland, Texas dateline |
+| ANY | MISO? | Iowa | **inferred**; hosted capacity |
+| BKKT | n/a | New York | not a miner |
+
+**WULF, HUT and CIFR are absent because they were added after the sweep ran and
+have never been checked.** Their rows are missing, not empty.
+
+NUAI's row is the one to distrust most. New Mexico outranking Texas contradicts
+the Midland, Texas dateline that put ERCOT into `grid_context.py` in the first
+place, and nothing has been done to resolve which is right. Four rows rest on
+keyword frequency alone; none of them should be quoted as though a filing said
+it.
+
+Ignore Delaware and California in any keyword count. They are incorporation and
+counsel addresses, not sites.
+
+### Critical: VIP's exposure runs the opposite way
+
+Vulcan owns and operates a **106 MW generation facility** connected to NYISO and
+sells electricity into it at prevailing wholesale prices, varying its output
+with demand. Its 10-K names NYISO 36 times.
+
+So a rising power price is **revenue** for VIP and **cost** for everyone else on
+this roster. Any future component that treats power price as a cost input has
+VIP backwards — not approximately, but in sign. See the caveat in
+[grid context](grid-context.md#the-cost-framing-has-one-exception).
+
+### Why there is no per-company power price
+
+The ISO price plan was closed on this table, and it is recorded so nobody
+reopens it from scratch.
+
+**Three of the eleven have no ISO node at all.** WYFI buys from Duke Energy
+Carolinas and CLSK from Georgia Power — vertically integrated Southeast
+utilities outside any RTO. They pay a tariff. There is no locational marginal
+price to look up, because there is no market. BKKT is the third, and simply has
+no mining load to price.
+
+Of the remainder only IREN states wholesale spot exposure, MARA spans several
+grids under one ticker, and one company sells rather than buys.
+
+The blocker is not access. PJM Data Miner 2 and the ERCOT public API both offer
+free keys and both publish LMPs; the data exists. The problem is that an LMP is
+priced **at a node**, so choosing one means deciding where a company draws its
+power — and this table does not support that decision for most of the roster.
+Two API registrations to serve three companies, while getting a fourth
+backwards, is not worth it.
+
+`grid_context.py` uses gas and grid demand instead. That is a proxy, but it is
+wrong in the same direction for everybody, which a mis-chosen node would not be.
+
 ## What does not belong here
 
 Anything derivable. `daily_recap.py` previously carried a ticker → Stooq symbol

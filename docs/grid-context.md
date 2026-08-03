@@ -40,6 +40,19 @@ their cost of power moves.
 **So this reports a fuel proxy and a curtailment proxy, not a power bill.** The
 caveat is on every post.
 
+### The cost framing has one exception
+
+This component is framed throughout as pressure on cost, and for ten of the
+eleven companies swept that is right. **VIP is on the other side of it.** It
+owns and operates a 106 MW generation facility connected to NYISO and sells
+into the market, so a rising power price is revenue for VIP and cost for
+everybody else.
+
+Nothing here needs to change — this component reports grid conditions, not
+per-company economics, and a hot grid is still a hot grid. But anything built
+later that turns a price into a per-company cost has VIP backwards in sign. See
+[the watchlist's grid section](watchlist.md#grid-operators-and-sites).
+
 ### EIA is not the ceiling
 
 **The ISOs publish their own prices, and their APIs are free.** This component
@@ -55,12 +68,14 @@ Two things make that a bigger job than it sounds, which is why it is recorded
 rather than done:
 
 1. **A separate key and API shape per ISO.** No single source covers both.
-2. **Which pricing node?** An LMP is location-specific, and this repo records
-   no facility locations for any company — see the caveat above. Picking a zone
-   would mean choosing on a company's behalf without evidence.
+2. **Which pricing node?** An LMP is location-specific, and picking a zone means
+   choosing on a company's behalf. `docs/watchlist.md` now carries the states
+   and operators each filing names, but four of eleven rows are inferred from
+   keyword frequency and two companies sit outside any RTO entirely.
 
-If a real cost signal matters more than a proxy, that is the direction. It
-needs facility locations from the filings first.
+If a real cost signal matters more than a proxy, that is the direction — but
+read [why the plan was closed](watchlist.md#why-there-is-no-per-company-power-price)
+first. The obstacle was never API access.
 
 ## Why grid demand
 
@@ -103,11 +118,11 @@ Note the coincidence, because it is genuinely confusing: two watchlist
 companies are headquartered in a town called Midland, in different states, on
 different grids.
 
-**This is not a complete mapping.** Facility locations come from filings and
-have not been audited — `docs/watchlist.md` records no grid or site data at
-all. These are the two regions most likely to matter, not coverage of the
-watchlist. Treating the table as "the grids our companies are on" would be
-wrong.
+**This is not a complete mapping.** These are the two regions most likely to
+matter, not coverage of the watchlist — NYISO is named outright by two
+companies and is not read here at all. Treating the table as "the grids our
+companies are on" would be wrong. `docs/watchlist.md` has what the filings
+actually name, with the stated rows marked off from the inferred ones.
 
 ## Critical: the horizon is hours, not a day
 
