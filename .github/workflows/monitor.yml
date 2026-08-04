@@ -73,12 +73,25 @@ jobs:
           # Explicit `|| return 1` on every line: these functions are called
           # from `if !`, which suspends `set -e` for everything they run.
           refresh_state() {
+            local before after
+            before=$(sha1sum state.json | cut -d" " -f1) || return 1
             git fetch -q origin "$GITHUB_REF_NAME" || return 1
             # Via a temp file — a redirect truncates first, so a failed show
             # would leave an empty state file and repost everything.
             git show "origin/$GITHUB_REF_NAME:state.json" \
               > "$RUNNER_TEMP/origin_state.json" || return 1
             mv "$RUNNER_TEMP/origin_state.json" state.json || return 1
+            after=$(sha1sum state.json | cut -d" " -f1) || return 1
+            # Reported every pass, either way. "Already current" on every
+            # run for weeks would mean this guard has never once been
+            # exercised in the case it exists for, which is worth knowing.
+            # On pass 1 a difference means the checkout was behind; on
+            # later passes it means another run pushed mid-loop.
+            if [[ "$before" == "$after" ]]; then
+              echo "State was already current."
+            else
+              echo "Refreshed state.json from origin; what was on disk was behind."
+            fi
           }
 
           persist_state() {
