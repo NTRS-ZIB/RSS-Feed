@@ -166,18 +166,31 @@ git checkout -- <file>
 - **Never round-trip a file through PowerShell `Get-Content`/`Set-Content`.**
   `Set-Content -Encoding utf8` re-encodes content that was read as ANSI, which
   on this repo means a UTF-8 BOM prepended and every em-dash mangled. It
-  happened once to `docs/press-monitor.md`: **67 em-dashes corrupted** and the
-  diff inflated from 67 lines to 191, from what was meant to be a two-line
-  edit. Nothing errors, and the damage is invisible in a terminal that renders
-  the mojibake back.
+  happened once to `docs/press-monitor.md`: **67 lines corrupted** and the diff
+  inflated to 191 lines, from what was meant to be a two-line edit. Nothing
+  errors, and the damage is invisible in a terminal that renders the mojibake
+  back.
 
   Use an editor that preserves encoding. To check a file after any bulk
   rewrite:
 
   ```bash
-  head -c 3 docs/press-monitor.md | od -An -tx1   # ef bb bf means a BOM
-  grep -c 'â€' docs/press-monitor.md              # non-zero means mojibake
+  head -c 3 docs/press-monitor.md | od -An -tx1        # ef bb bf means a BOM
+  grep -c $'\xc3\xa2\xe2\x82\xac' docs/press-monitor.md   # non-zero = mojibake
   ```
+
+  The second command searches for the bytes an em-dash becomes when UTF-8 is
+  decoded as cp1252 and re-encoded. **The pattern is written as byte escapes
+  deliberately**, so this file does not contain the sequence it searches for —
+  the literal form matched itself here and returned a hit on a clean file,
+  which is exactly the ambiguity the check exists to remove.
+
+  Both commands were verified against a genuinely corrupted copy, reproduced by
+  replaying the same transformation: 84 lines flagged and `ef bb bf` present on
+  the damaged file, zero and absent on every clean one. A more general
+  search for the Unicode replacement character (U+FFFD) was tried and
+  **rejected**: it found nothing on the same damaged file, because a cp1252
+  decode mostly succeeds into wrong-but-valid characters rather than failing.
 - **`watchlist.py` has no workflow.** It is the shared roster imported by the
   others, not a scheduled job, which is why there are fifteen workflows for
   sixteen root scripts.
