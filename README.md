@@ -39,6 +39,11 @@ twice a month well after the fact. Each post carries its own timing in the
 footer, because a stale figure read as a live one is the easiest mistake this
 channel invites.
 
+**What was tried and rejected is recorded too.**
+[`docs/rejected.md`](docs/rejected.md) carries the ideas that were measured and
+closed, with the numbers that closed them. Check it before probing something —
+it exists to stop a re-probe six months later.
+
 ## Output width
 
 Every monospace block is kept to **≤28 characters**. Discord mobile wraps code
@@ -60,6 +65,7 @@ regsho_volume.py                  daily FINRA short sale volume
 watchlist.py                      the roster: one record per company
 audit_identifiers.py              maintenance: what each company trades as
 calibrate_staleness.py            maintenance: publication cadence per source
+audit_8k_items.py                 maintenance: 8-K item distribution
 ftd_monitor.py                    SEC fails-to-deliver
 threshold_list.py                 Reg SHO threshold list (exception report)
 comment_letters.py                SEC review correspondence
@@ -81,6 +87,7 @@ grid_context.py                   grid demand and natural gas
 .github/workflows/grid.yml        grid context schedule and runner setup
 .github/workflows/audit.yml       identifier audit, manual only
 .github/workflows/calibrate.yml   staleness calibration, manual only
+.github/workflows/items.yml       8-K item audit, manual only
 spike_state.json                  auto-generated; per-day alert tiers
 shortinterest_state.json          auto-generated; last posted settlement date
 regsho_state.json                 auto-generated; last posted trade date
