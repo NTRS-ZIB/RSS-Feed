@@ -346,6 +346,123 @@ def main():
                  "are DISJOINT -> the spread is real at this window"))
         print("    ordered: " + "  ".join("%s %+.2f" % (s, r) for s, r in vals))
 
+    print("\n" + "=" * 78)
+    print("5. IS THE SPREAD REAL, OR IS IT ONE OUTLIER AND ONE OUTLIER TICKER?")
+    print("=" * 78)
+
+    # ANY is the low extreme at every window, and ANY also carries a real
+    # +112% single day inside the 60/90/180 windows. A move that size against
+    # 60 observations dominates the covariance on its own, so the question is
+    # whether ANY is decoupled or merely disfigured. Rank correlation answers
+    # it: Spearman is indifferent to how large the largest move was.
+    def spearman(xs, ys):
+        pairs = [(a, b) for a, b in zip(xs, ys)
+                 if a is not None and b is not None]
+        if len(pairs) < 5:
+            return None, len(pairs)
+
+        def rank(vals):
+            order = sorted(range(len(vals)), key=lambda i: vals[i])
+            rk = [0.0] * len(vals)
+            i = 0
+            while i < len(order):
+                j = i
+                while j + 1 < len(order) and vals[order[j + 1]] == vals[order[i]]:
+                    j += 1
+                avg = (i + j) / 2.0 + 1
+                for k in range(i, j + 1):
+                    rk[order[k]] = avg
+                i = j + 1
+            return rk
+        rx = rank([a for a, _ in pairs])
+        ry = rank([b for _, b in pairs])
+        return pearson(rx, ry)
+
+    print("\n  Pearson vs Spearman, 90-day window. A large gap means the")
+    print("  Pearson number is being set by a handful of outsized days.\n")
+    print("    %-6s %10s %10s %8s" % ("", "pearson", "spearman", "diff"))
+    for s in symbols:
+        if s not in eq:
+            continue
+        days = sorted(set(eq[s]) & set(btc))[-91:]
+        er, br = returns_on(days, eq[s]), returns_on(days, btc)
+        p, _ = pearson(er, br)
+        sp, _ = spearman(er, br)
+        if p is None or sp is None:
+            continue
+        print("    %-6s %10s %10s %8s" %
+              (s, "%+.2f" % p, "%+.2f" % sp, "%+.2f" % (sp - p)))
+
+    # Drop each ticker's single largest absolute move and recompute. If a
+    # correlation swings, it was one day's story, not a repricing.
+    print("\n  90-day Pearson with each ticker's single largest |return| removed:\n")
+    print("    %-6s %10s %10s %8s  %s" %
+          ("", "with", "without", "shift", "day dropped"))
+    for s in symbols:
+        if s not in eq:
+            continue
+        days = sorted(set(eq[s]) & set(btc))[-91:]
+        er, br = returns_on(days, eq[s]), returns_on(days, btc)
+        base, _ = pearson(er, br)
+        if base is None:
+            continue
+        idx = max((i for i in range(len(er)) if er[i] is not None),
+                  key=lambda i: abs(er[i]))
+        er2 = list(er)
+        er2[idx] = None
+        alt, _ = pearson(er2, br)
+        print("    %-6s %10s %10s %8s  %s (%+.0f%%)" %
+              (s, "%+.2f" % base, "%+.2f" % alt, "%+.2f" % (alt - base),
+               days[idx + 1], er[idx] * 100))
+
+    print("\n" + "=" * 78)
+    print("6. THE THESIS COMPARISON, AND WHETHER THE LEVEL OR THE CHANGE CARRIES IT")
+    print("=" * 78)
+    # Grouping the roster the way the thesis states it, rather than by the
+    # extremes the spread happens to land on. Correlating an equal-weight
+    # group return against BTC is stronger than averaging the members'
+    # correlations: it is one estimate on n observations, not a mean of
+    # fourteen noisy ones.
+    GROUPS = {
+        "BTC proxies (MARA CLSK BKKT)": ["MARA", "CLSK", "BKKT"],
+        "AI/HPC pivots (WULF HUT CIFR IREN)": ["WULF", "HUT", "CIFR", "IREN"],
+    }
+    for w in WINDOWS:
+        print("\n  %d-day window" % w)
+        for label, members in GROUPS.items():
+            days = sorted(set(btc).intersection(*[set(eq[m]) for m in members
+                                                  if m in eq]))[-(w + 1):]
+            if len(days) < 6:
+                continue
+            br = returns_on(days, btc)
+            per = [returns_on(days, eq[m]) for m in members if m in eq]
+            idx_ret = []
+            for i in range(len(br)):
+                vals = [p[i] for p in per if p[i] is not None]
+                idx_ret.append(sum(vals) / len(vals) if vals else None)
+            r, n = pearson(idx_ret, br)
+            lo, hi = fisher_ci(r, n)
+            print("    %-38s %+.2f  [%+.2f..%+.2f]  n=%d" %
+                  (label, r, lo, hi, n))
+
+    print("\n  Recent 90 days vs the 90 before that — is anything actually moving?\n")
+    print("    %-6s %10s %10s %8s" % ("", "prior 90", "recent 90", "change"))
+    for s in symbols:
+        if s not in eq:
+            continue
+        days = sorted(set(eq[s]) & set(btc))
+        if len(days) < 185:
+            print("    %-6s %10s" % (s, "insufficient history"))
+            continue
+        recent = days[-91:]
+        prior = days[-182:-90]
+        rr, _ = pearson(returns_on(recent, eq[s]), returns_on(recent, btc))
+        pr, _ = pearson(returns_on(prior, eq[s]), returns_on(prior, btc))
+        if rr is None or pr is None:
+            continue
+        print("    %-6s %10s %10s %8s" %
+              (s, "%+.2f" % pr, "%+.2f" % rr, "%+.2f" % (rr - pr)))
+
 
 if __name__ == "__main__":
     main()
