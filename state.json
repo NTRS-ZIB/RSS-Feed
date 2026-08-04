@@ -1,6 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001003297-13-000275",
   "urn:tag:sec.gov,2008:accession-number=0001003297-13-000271",
   "urn:tag:sec.gov,2008:accession-number=0001003297-13-000269",
   "urn:tag:sec.gov,2008:accession-number=0001003297-13-000262",
@@ -999,7 +998,8 @@
   "dgxx:c3jyrrdlxvd30uw7d9dehasb",
   "dgxx:ker0nyaxk93ohm55dldyibeb",
   "dgxx:s3khjnidh2kxfuusnjy2htbv",
-  "urn:tag:sec.gov,2008:accession-number=0001819989-26-000041"
+  "urn:tag:sec.gov,2008:accession-number=0001819989-26-000041",
+  "https://whitefiber.investorroom.com/2026-08-04-WhiteFiber-Announces-Second-Quarter-2026-Earnings-Conference-Call"
  ],
  "initialized": true
 }
