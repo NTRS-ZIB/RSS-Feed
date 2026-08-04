@@ -35,7 +35,7 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 70
+    timeout-minutes: 85
     steps:
       - uses: actions/checkout@v5
 
@@ -60,7 +60,8 @@ jobs:
         #
         # A dispatch runs a single pass. Looping for an hour on a manual dry
         # run holds a runner and shows nothing the first pass did not.
-        timeout-minutes: 62
+        # BUDGET_MIN + the per-pass timeout below + slack.
+        timeout-minutes: 75
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           WEBHOOK_URL_INSIDER: ${{ secrets.WEBHOOK_URL_INSIDER }}
@@ -128,12 +129,33 @@ jobs:
             return 1
           }
 
-          # Stop before the next hour's fire. The concurrency group is the
-          # backstop if a pass overruns anyway.
-          deadline=$(( ($(date -u +%s) / 3600 + 1) * 3600 ))
+          # The budget is elapsed time from THIS job's start, not the top of
+          # the next hour. Measured on this repo: every scheduled run is 51 to
+          # 173 minutes late, so a fire nominally at :07 arrives near :59 —
+          # and a wall-clock-hour deadline then granted it seconds of budget
+          # instead of an hour. On 2026-08-04 six seconds of job-start jitter
+          # was the difference between four passes and one, and the one-pass
+          # run would have printed "1 pass(es), 0 failed" and read as success.
+          # Elapsed budget is immune to where in the hour the job starts.
+          #
+          # 55m sits just under the 61m mean arrival gap in the afternoon
+          # regime. Mornings run 83-173m late, so a gap is expected there; the
+          # budget VALUE is a separate question from the budget FRAME, and
+          # only the frame is being fixed here.
+          BUDGET_MIN=55
+          # A boundary this close is the same check twice — skip to the next.
+          MIN_GAP=180
+          started=$(date -u +%s)
+          deadline=$(( started + BUDGET_MIN * 60 ))
           passes=0
           failed=0
           fatal=0
+
+          # Stated up front so a short run is self-explaining. A run that does
+          # one pass because it started at :50 and a run that does one pass
+          # because the arithmetic is wrong must be told apart without reading
+          # the code.
+          echo "Poll plan: start $(date -u -d "@$started" +%H:%M:%S)Z, budget ${BUDGET_MIN}m, deadline $(date -u -d "@$deadline" +%H:%M:%S)Z, one pass now and one on each 15-minute boundary before it."
 
           while :; do
             passes=$((passes + 1))
@@ -167,13 +189,16 @@ jobs:
             fi
             now=$(date -u +%s)
             next=$(( (now / 900 + 1) * 900 ))
-            if (( next >= deadline )); then
-              echo "The next boundary belongs to the next hour's run. Done."
+            if (( next - now < MIN_GAP )); then
+              next=$(( next + 900 ))
+            fi
+            if (( next > deadline )); then
+              echo "Next boundary $(date -u -d "@$next" +%H:%M:%S)Z is past the deadline $(date -u -d "@$deadline" +%H:%M:%S)Z. Stopping after $passes pass(es)."
               break
             fi
-            echo "Sleeping until $(date -u -d "@$next" +%H:%M)Z."
+            echo "Sleeping until $(date -u -d "@$next" +%H:%M:%S)Z."
             sleep $(( next - now ))
           done
 
-          echo "$passes pass(es), $failed failed."
+          echo "$passes pass(es), $failed failed, ${BUDGET_MIN}m budget, ran $(( ($(date -u +%s) - started) / 60 ))m."
           (( failed == 0 ))
