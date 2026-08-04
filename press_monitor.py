@@ -294,7 +294,8 @@ PRESS_RELEASE_ITEMS = {"2.02", "7.01", "8.01"}
 # restating its financials is the case LEAST likely to issue a press release
 # about it, so the filter that keys on "is there a press release" removes it
 # every time. Measured across all fourteen companies' full histories — 1,986
-# 8-K filings:
+# 8-K filings as of 2026-08-03. Re-derive with audit_8k_items.py; the totals
+# drift upward as filings accumulate, so it is the RATIOS that are the argument:
 #
 #   4.02  10 appearances, ALL TEN dropped        (a restatement, never announced)
 #   4.01  32 appearances, 94% dropped            (auditor change)
@@ -317,8 +318,8 @@ PRESS_RELEASE_ITEMS = {"2.02", "7.01", "8.01"}
 # also considered and left out.
 #
 # NEVER ADD 9.01. It is an attachment marker appearing on 1,530 of 1,986
-# filings and means nothing on its own; including it would post essentially
-# every 8-K and silently undo the exhibit filter entirely.
+# filings (2026-08-03) and means nothing on its own; including it would post
+# essentially every 8-K and silently undo the exhibit filter entirely.
 ALWAYS_POST_ITEMS = {
     "1.03",   # Bankruptcy or receivership
     "2.04",   # Obligation accelerated
@@ -559,11 +560,12 @@ def carries_press_release(form, items):
         # Fail open rather than drop it — the right default, since an 8-K with
         # no item codes is unclassifiable rather than uninteresting.
         #
-        # UNTESTED PATH. All 1,986 8-K filings across the fourteen companies'
-        # full histories carry item codes, so this branch has never once
-        # executed. Same class as count_run() in the threshold list: correct by
-        # construction, never exercised by real data. Left as is deliberately;
-        # do not "simplify" it away on the grounds that it never fires.
+        # UNTESTED PATH. Every 8-K across the fourteen companies' full
+        # histories carries item codes — 1,986 of 1,986 at 2026-08-03, and
+        # audit_8k_items.py reports the current count — so this branch has never
+        # once executed. Same class as count_run() in the threshold list:
+        # correct by construction, never exercised by real data. Left as is
+        # deliberately; do not "simplify" it away because it never fires.
         return True
     listed = {i.strip() for i in items.split(",") if i.strip()}
     return bool(listed & PRESS_RELEASE_ITEMS)

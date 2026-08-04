@@ -1,0 +1,33 @@
+name: Audit 8-K items
+
+# Maintenance tool, not a component. Read-only: reads the same EDGAR
+# submissions endpoint the press monitor already uses, prints the item
+# distribution behind ALWAYS_POST_ITEMS, exits. No webhook, no state, no
+# commit, no schedule — it runs only when started by hand.
+#
+# Run it after adding or removing a company, when someone disagrees with the
+# seven always-post items, or before widening the exhibit filter any other way.
+# See audit_8k_items.py and docs/press-monitor.md.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install feedparser requests
+      - name: Audit
+        timeout-minutes: 15
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u audit_8k_items.py

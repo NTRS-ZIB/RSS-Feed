@@ -102,7 +102,7 @@ The filter above is sound for its stated purpose, but it has an inverted failure
 mode: **a company restating its financials is the case least likely to announce
 it.** Keying on "is there a press release" therefore removes exactly the filings
 worth seeing. Measured across all fourteen companies' full histories — **1,986
-8-K filings**:
+8-K filings as of 2026-08-03**:
 
 | item | label | appearances | dropped |
 |---|---|---|---|
@@ -149,6 +149,24 @@ were also considered and left out.
 It appears on **1,530 of 1,986** filings as an attachment marker and means
 nothing alone. Adding it would post essentially every 8-K and silently undo the
 exhibit filter.
+
+#### Re-deriving these numbers
+
+`audit_8k_items.py` prints the whole distribution from live EDGAR data,
+reading `ALWAYS_POST_ITEMS` and `PRESS_RELEASE_ITEMS` from `press_monitor` at
+runtime so it stays honest if the sets change:
+
+```bash
+gh workflow run "Audit 8-K items"
+```
+
+**The absolute totals drift upward** as filings accumulate — a run the day after
+these figures were taken returned 1,991 rather than 1,986. **The ratios are the
+argument, not the counts**: 4.02 at 100% dropped, 4.01 at 94%, 3.01 at 75%, and
+5.02's concentration in a handful of companies. Those have been stable.
+
+Run it after adding or removing a company, when someone disagrees with the seven,
+or before widening the exhibit filter any other way.
 
 #### These render amber
 
