@@ -35,6 +35,26 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
+      - name: Refresh state from origin
+        # A run queued behind another run of this workflow checks out the SHA
+        # fixed when the run was CREATED, not when its job started, so spike_state.json
+        # on disk can already be a push behind before the component reads it.
+        # That stale read is what reposts items to Discord; the retry loop in
+        # Persist state only fixes the write. See the trap table in CLAUDE.md.
+        # Only the state file is refreshed — the code stays at the checked-out
+        # ref, so a dispatch still tests the ref it was dispatched against.
+        run: |
+          git fetch -q origin "$GITHUB_REF_NAME"
+          # Via a temp file: a redirect truncates first, so a failed show
+          # would leave an empty state file and repost everything.
+          git show "origin/$GITHUB_REF_NAME:spike_state.json" > "$RUNNER_TEMP/origin_state.json"
+          mv "$RUNNER_TEMP/origin_state.json" spike_state.json
+          if git diff --quiet HEAD -- spike_state.json; then
+            echo "State was already current."
+          else
+            echo "Refreshed spike_state.json from origin; the checkout was behind."
+          fi
+
       - name: Check volumes
         timeout-minutes: 5
         env:
