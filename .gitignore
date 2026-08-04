@@ -1,0 +1,23 @@
+# Committed deliberately, as belt and braces.
+#
+# The same patterns are in .git/info/exclude, which is LOCAL ONLY and does not
+# survive a re-clone — the same weakness as the merge driver and the pre-commit
+# hook (see docs/local-workflow.md). For those two a fresh clone loses a safety
+# net. For this one it loses nothing until the first `git add .`, which would
+# then commit a bytecode cache.
+#
+# That is a live risk rather than a theoretical one: watchlist.py is the one
+# script this repo explicitly encourages running locally, and every run creates
+# __pycache__/.
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Claude Code session files
+.claude/
+
+# Local virtualenvs. Nothing here needs one, but the local-run instructions
+# invite creating one, and a committed venv is 15MB of someone else's platform.
+venv/
+.venv/

@@ -143,9 +143,14 @@ git checkout -- <file>
 - **Identity is set per-repo**, in `.git/config`, with the same values as a
   global fallback. Commits use `96786524+NTRS-ZIB@users.noreply.github.com`;
   the numeric prefix is what makes GitHub attribute them to the account.
-- **`.claude/` is excluded locally**, via `.git/info/exclude` rather than
-  `.gitignore`, so tooling artefacts stay out of the repo without committing a
-  rule about them.
+- **`.claude/` and `__pycache__/` are excluded twice, deliberately.** A
+  committed `.gitignore` carries them, and `.git/info/exclude` still lists them
+  too. The duplication is intentional: `.git/info/exclude` is local only and
+  shares the re-clone weakness of the merge driver and the pre-commit hook, but
+  unlike those two the cost of losing it is immediate rather than latent — the
+  first `git add .` in a fresh clone would commit a bytecode cache.
+  `watchlist.py` is the one script this repo tells you to run locally, and every
+  run creates `__pycache__/`. Belt and braces costs nothing here.
 - **The clone lives under a OneDrive-synced path.** OneDrive syncing `.git`
   can occasionally produce lock or corruption errors during git operations. It
   has not so far, but an unexplained git error is worth checking against this
