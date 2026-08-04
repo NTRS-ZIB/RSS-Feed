@@ -234,7 +234,7 @@ Two different outcomes, easily confused:
 | Vulcan Infrastructure and Power | 0001844971 | gcs-web |
 | Sphere 3D | 0001591956 | gcs-web |
 | Soluna Holdings | 0000064463 | WordPress (`/news/feed/`) |
-| Big Digital Energy | 0001218683 | none — EDGAR only |
+| Big Digital Energy | 0001218683 | **GlobeNewswire** (the wire, not the newsroom) |
 | WhiteFiber | 0002042022 | none — EDGAR only |
 | Digi Power X | 0001854368 | none — EDGAR only |
 | TeraWulf | 0001083301 | Equisolve |
@@ -256,15 +256,73 @@ Soluna is plain WordPress. Its press releases live in the `/news/` archive
 feed. Autodiscovery finds the latter, because the archive's own feed isn't
 declared in the page HTML — so the correct URL had to be set explicitly.
 
-Four companies publish no feed. Three of them are the same problem; Hut 8 is
-not, and is now scraped.
+### Where a company's own newsroom has no feed
 
-**Big Digital Energy, WhiteFiber and Digi Power X render their newsrooms
-client-side** (QuoteMedia widget, Webflow, and Next.js respectively), so the
-headlines aren't in the delivered HTML at all. Neither autodiscovery nor a plain
-HTML scraper can see them — covering them needs a headless browser, which this
-component deliberately does not carry. They remain EDGAR-only, and fully covered
+Four companies publish no newsroom feed. They are now covered three different
+ways, and the differences are the useful part.
+
+**WhiteFiber and Digi Power X are the two still uncovered, and they are stuck
+for different reasons.** Both newsrooms render client-side — Webflow and Next.js
+— so neither autodiscovery nor a plain scraper can read the company's own page.
+What separates them is their wire:
+
+- **WYFI distributes via PR Newswire**, which publishes no per-organization feed
+  a plain fetch can reach. Its RSS index renders its own feed list client-side,
+  so even enumerating what PR Newswire offers needs a browser.
+- **DGXX distributes via ACCESS Newswire**, whose release pages render
+  **server-side** — a headless browser is *not* the obstacle here. The obstacle
+  is that ACCESS exposes no per-company index page, so a scraper would have
+  nothing to iterate over. Its only advertised feed is a marketing blog: 144
+  entries about writing earnings-call scripts, and no press releases at all.
+
+That distinction matters if anyone revisits this. DGXX is blocked on a missing
+index; WYFI is blocked on rendering. Both remain EDGAR-only, and fully covered
 there for anything material.
+
+**Hut 8 renders server-side and is scraped** — see below.
+
+**Big Digital Energy is read from the newswire instead of the newsroom.** Its
+own page is a QuoteMedia widget and unreadable, but it distributes through
+GlobeNewswire, which publishes a per-organization feed. That is better than
+scraping the mirror would have been: the wire publishes first and the newsroom
+mirrors it, so the feed is the earlier source as well as a structured contract
+rather than markup that can move.
+
+### Reading a newswire feed instead of a newsroom
+
+BGDE is the only entry of this kind, and it does not behave like the other ten.
+
+- **The token is opaque.** `/rssfeed/organization/z9WJvxXYqqA-t7lWEcsvqw==` is
+  not derivable from the company name. It has to be read off an individual
+  release page, where GlobeNewswire embeds a "Subscribe via RSS" control.
+  Organization pages carry no feed link and no autodiscovery, and `/RssFeed` is
+  the global firehose of every publisher — mostly law-firm and paid promotional
+  items, and useless here.
+- **One token spanned the rename.** The same organization holds the Mawson
+  Infrastructure releases and the Big Digital Energy ones.
+- **It was checked for third-party content.** All 20 items are BGDE's own
+  releases, so nothing needs filtering. A wire feed carrying paid or syndicated
+  items would have changed the calculation.
+
+**Check the newest item date before trusting any wire feed, and check which
+wire the company uses now.** DGXX is the case that proves both. Its
+GlobeNewswire feed is alive, parses cleanly and returns 20 items, none newer
+than **2025-12-24** — the company moved to ACCESS Newswire around January 2026.
+Adding that feed would have produced one that looks healthy in every log line
+and reports nothing new forever: the same failure class as the `SC 13D` prefix,
+and harder to spot, because the feed itself is not broken.
+
+**A company can change wire the way it changes IR platform — but this failure is
+silent where the platform one is loud.** Bakkt's move from Q4 to gcs-web broke
+its feed URL with a 404, which announced itself. A wire migration leaves the old
+organization feed serving its old items indefinitely: HTTP 200, valid XML, a
+resolvable uid and a parseable timestamp on every entry. Nothing in a log
+distinguishes it from a company that has simply stopped issuing releases.
+
+Wire items are **not** deduplicated against the matching EDGAR filing, and that
+is deliberate. A wire release and its 8-K are two different things about the
+same event; the wire arrives hours earlier, and collapsing them would discard
+the latency that makes the feed worth having.
 
 ### Hut 8 is scraped
 
@@ -323,8 +381,8 @@ sweep with it, which is the isolation the whole repo is built on.
 
 ## Scaling
 
-**Requests per run: 25** — one submissions call per company (14), one per IR
-feed (10), and one for the Hut 8 scrape. Both channels are served from the same
+**Requests per run: 26** — one submissions call per company (14), one per IR
+feed (11), and one for the Hut 8 scrape. Both channels are served from the same
 payload, so the insider check costs nothing extra.
 
 This replaced the legacy `cgi-bin/browse-edgar` endpoint, which needed one call

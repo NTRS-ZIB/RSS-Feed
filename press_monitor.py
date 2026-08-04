@@ -46,10 +46,20 @@ IR_FEEDS = watchlist.ir_feeds()        # {ticker: url}, companies that have one
 # headlines aren't in the delivered HTML, so neither autodiscovery nor a plain
 # scraper can see them. Covering them needs a headless browser, which this
 # component deliberately does not carry. EDGAR 8-K only.
-#   Big Digital Energy  https://www.bigdigital.energy/news-media/press-releases/
-#                       (QuoteMedia widget)
 #   WhiteFiber          https://www.whitefiber.com/investors-news  (Webflow)
+#                       Distributes via PR Newswire, which publishes no
+#                       per-organization feed a plain fetch can reach.
 #   Digi Power X        https://www.digipowerx.com/press-releases  (Next.js)
+#                       Moved from GlobeNewswire to ACCESS Newswire around
+#                       2026-01. ACCESS publishes no per-organization feed —
+#                       its only advertised feed is a marketing blog carrying
+#                       no press releases at all. Note the GlobeNewswire feed
+#                       still parses and still returns 20 items, none newer
+#                       than 2025-12-24, so it must NOT be added.
+#
+# BGDE was in this group until its wire feed was found. Its newsroom still
+# renders client-side; the roster now reads GlobeNewswire's organization feed
+# instead. See watchlist.py.
 #
 # HUT also publishes no feed, but is NOT one of those: its releases render
 # server-side and come back complete in a plain fetch, so it is scraped instead

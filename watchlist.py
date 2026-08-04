@@ -126,7 +126,25 @@ WATCHLIST = [
         # same window.
         "cusips": ["57778N406", "57778N307"],
         "alt_symbols": ["MIGI"],          # Mawson Infrastructure, until 2026-04-30
-        "ir_feed": None,                  # renders client-side; EDGAR only
+        # THE NEWSWIRE'S feed, not the company's newsroom — the first of its
+        # kind in this roster. BGDE's own newsroom renders client-side and
+        # cannot be read, but it distributes through GlobeNewswire, which
+        # publishes a per-organization feed. The wire also publishes first and
+        # the newsroom mirrors it, so this is the earlier source, not a
+        # substitute for a missing one.
+        #
+        # The token is opaque and cannot be derived from the company name. It
+        # has to be read off an individual release page, where GlobeNewswire
+        # embeds a "Subscribe via RSS" control — organization pages carry no
+        # feed link and no autodiscovery at all.
+        #
+        # One token spans both eras: the same organization holds the Mawson
+        # Infrastructure releases and the Big Digital Energy ones, so the
+        # rename did not split the history.
+        #
+        # Verified first-party: all 20 items are BGDE's own releases, with no
+        # third-party or paid content mixed in, so nothing needs filtering.
+        "ir_feed": "https://www.globenewswire.com/rssfeed/organization/z9WJvxXYqqA-t7lWEcsvqw==",
     },
     {
         "ticker": "WYFI",
