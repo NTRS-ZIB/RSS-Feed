@@ -1,0 +1,35 @@
+name: BTC correlation probe
+
+# Research tool, not a component. Read-only: fetches price history, prints a
+# table, exits. No webhook, no state, no commit, no schedule — it runs only
+# when started by hand.
+#
+# It exists to decide whether a BTC-decoupling measure is worth building at
+# all: whether an Alpaca crypto series aligns with the equity trading days,
+# and whether the correlations actually spread out across the roster or all
+# sit in one narrow band. Delete this and btc_correlation_probe.py if the
+# answer is no.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install requests
+      - name: Probe
+        timeout-minutes: 10
+        env:
+          ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u btc_correlation_probe.py
