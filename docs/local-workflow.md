@@ -99,15 +99,34 @@ None of the above is committed. Merge drivers cannot be, in any case — the
 driver definition always lives in local config, so a committed `.gitattributes`
 would only carry half the setup and imply the other half was present.
 
-To rebuild it in a new clone:
+**The scripts themselves are committed**, in [`docs/hooks/`](hooks/):
+
+| file | goes to | what it is |
+|---|---|---|
+| `state-merge.sh` | `.git/state-merge.sh` | the merge driver |
+| `pre-commit` | `.git/hooks/pre-commit` | the hook |
+| `test-merge-driver.sh` | run from anywhere | the sandbox proof, below |
+
+**Those are reference copies, not the live files.** Editing
+`docs/hooks/pre-commit` changes nothing — git only reads `.git/hooks/pre-commit`.
+Change the live one, then copy it back here so the two do not drift.
+
+Rebuild in a new clone, start to finish:
 
 ```bash
+# 1. put the scripts in place and make them executable
+cp docs/hooks/state-merge.sh .git/state-merge.sh
+cp docs/hooks/pre-commit     .git/hooks/pre-commit
+chmod +x .git/state-merge.sh .git/hooks/pre-commit
+
+# 2. tell git which files the driver applies to
 STATES="state.json crossings_state.json dilution_state.json ftd_state.json \
 letters_state.json regsho_state.json shortinterest_state.json \
 spike_state.json threshold_state.json snapshot.json"
 
 for f in $STATES; do echo "/$f merge=stateremote"; done > .git/info/attributes
 
+# 3. register the driver and the pull behaviour it assumes
 git config merge.stateremote.name "bot-written state files: remote wins"
 git config merge.stateremote.driver "sh '$PWD/.git/state-merge.sh' %O %A %B"
 git config merge.stateremote.recursive binary
@@ -115,8 +134,31 @@ git config pull.rebase true
 git config rebase.autoStash true
 ```
 
-Then recreate `.git/state-merge.sh` and `.git/hooks/pre-commit`, and
-`chmod +x` both.
+Verify it took:
+
+```bash
+git check-attr merge -- state.json        # -> state.json: merge: stateremote
+ls -l .git/hooks/pre-commit               # -> executable
+```
+
+### Re-running the proof
+
+`docs/hooks/test-merge-driver.sh` is the experiment the design rests on. It
+builds a throwaway origin, a "bot" clone and a working clone in a temp
+directory, has the bot and the working copy edit the same state file, and
+checks that the remote value survives under **both** `git pull` and
+`git pull --rebase` while an unrelated local edit is preserved. It touches
+nothing in the real repo.
+
+```bash
+sh docs/hooks/test-merge-driver.sh /tmp/merge-sandbox "$PWD/.git/state-merge.sh"
+```
+
+Expect `RESULT: ALL CHECKS PASSED`. It is committed because
+[the evidence above](#critical-mergeours-means-the-opposite-of-what-it-looks-like)
+cites its result — that the naive `merge=ours` configuration fails the merge
+case — and a cited experiment nobody can rerun is worth no more than an
+assertion.
 
 ## If a state file conflict happens anyway
 
@@ -168,6 +210,19 @@ git checkout -- <file>
   the script locally, merge, then dispatch to close the gap. `calibrate.yml` was
   handled that way; every probe before it went straight to `main`, which is why
   this had not surfaced.
+- **Never name a scratch file after a DOS device.** `prn`, `con`, `aux`, `nul`,
+  `com1`–`com9` and `lpt1`–`lpt9` are reserved on Windows *with any extension*,
+  so `prn.txt` is reserved too. Such a file can be created, and then
+  `Get-ChildItem` lists it while `Remove-Item` reports it does not exist —
+  ordinary path APIs cannot address it. Removing one needs an extended-length
+  path:
+
+  ```powershell
+  [System.IO.File]::Delete("\\?\$path\prn.txt")
+  ```
+
+  The practical version is simply not to name a file that way. It happened here
+  by abbreviating "PR Newswire" to `prn.txt`.
 - **Never round-trip a file through PowerShell `Get-Content`/`Set-Content`.**
   `Set-Content -Encoding utf8` re-encodes content that was read as ANSI, which
   on this repo means a UTF-8 BOM prepended and every em-dash mangled. It

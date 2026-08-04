@@ -1,0 +1,22 @@
+#!/bin/sh
+# Bot-written state files are OUTPUTS of GitHub Actions, never inputs from this clone.
+# The merge driver makes the remote win on conflict, but it only runs when BOTH sides
+# changed a file. This hook covers the other case: a local-only change that would
+# otherwise push cleanly and clobber whatever the bot writes next.
+
+PATTERN='^(state|crossings_state|dilution_state|ftd_state|letters_state|regsho_state|shortinterest_state|spike_state|threshold_state|snapshot)\.json$'
+
+blocked=$(git diff --cached --name-only --diff-filter=ACMR | grep -E "$PATTERN")
+
+if [ -n "$blocked" ]; then
+    echo "pre-commit: refusing to commit bot-written state files." >&2
+    echo "$blocked" | sed 's/^/    /' >&2
+    echo "" >&2
+    echo "These are written by GitHub Actions. Nothing in this clone should author them." >&2
+    echo "  unstage, keep the file:   git restore --staged <file>" >&2
+    echo "  throw the local change away: git checkout -- <file>" >&2
+    echo "  deliberate override:      git commit --no-verify" >&2
+    exit 1
+fi
+
+exit 0
