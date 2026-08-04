@@ -2,12 +2,18 @@ name: Volume spikes
 
 on:
   schedule:
-    # Every 15 min, weekdays, 11:00-22:59 UTC. Covers premarket through the
-    # close in both DST states:
-    #   EDT (summer, UTC-4): 7am - 6pm ET
-    #   EST (winter, UTC-5): 6am - 5pm ET
+    # Once an hour, weekdays, 10:00-22:59 UTC; the job itself then checks on
+    # each fifteen-minute boundary until its hour is out. See the poll step for
+    # why the granularity moved off the cron and onto the job.
+    #
+    # Covers premarket through the close in both DST states:
+    #   EDT (summer, UTC-4): 6am - 6pm ET
+    #   EST (winter, UTC-5): 5am - 5pm ET
     # Alpaca's free tier includes extended hours, so premarket gaps are caught.
-    - cron: "*/15 11-22 * * 1-5"
+    # The extended session opens 4am ET, so a 10:00 UTC start is still inside
+    # it rather than ahead of it — this window could open earlier on its own
+    # merits, and does not here only because 10:00 was chosen for EDGAR.
+    - cron: "9 10-22 * * 1-5"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -25,6 +31,7 @@ concurrency:
 jobs:
   spikes:
     runs-on: ubuntu-latest
+    timeout-minutes: 70
     steps:
       - uses: actions/checkout@v5
 
@@ -35,68 +42,118 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Refresh state from origin
-        # A run queued behind another run of this workflow checks out the SHA
-        # fixed when the run was CREATED, not when its job started, so spike_state.json
-        # on disk can already be a push behind before the component reads it.
-        # That stale read is what reposts items to Discord; the retry loop in
-        # Persist state only fixes the write. See the trap table in CLAUDE.md.
-        # Only the state file is refreshed — the code stays at the checked-out
-        # ref, so a dispatch still tests the ref it was dispatched against.
-        run: |
-          git fetch -q origin "$GITHUB_REF_NAME"
-          # Via a temp file: a redirect truncates first, so a failed show
-          # would leave an empty state file and repost everything.
-          git show "origin/$GITHUB_REF_NAME:spike_state.json" > "$RUNNER_TEMP/origin_state.json"
-          mv "$RUNNER_TEMP/origin_state.json" spike_state.json
-          if git diff --quiet HEAD -- spike_state.json; then
-            echo "State was already current."
-          else
-            echo "Refreshed spike_state.json from origin; the checkout was behind."
-          fi
-
-      - name: Check volumes
-        timeout-minutes: 5
+      - name: Poll on each fifteen-minute boundary until the hour is out
+        # One scheduled fire an hour, not four. GitHub drops scheduled runs
+        # under load and, by its own documentation, drops them hardest at the
+        # top of the hour; of the */15 fires this workflow asked for, roughly
+        # 5% actually ran. So ask once and supply the fifteen-minute
+        # granularity here, where GitHub cannot drop it. The fire is at :07
+        # rather than :00 for the same reason.
+        #
+        # State is re-read and pushed once per pass, not once per job. A job
+        # that loaded state at startup and looped would be as stale by pass
+        # eight as a queued run is at job start — the same bug, smaller.
+        #
+        # A dispatch runs a single pass. Looping for an hour on a manual dry
+        # run holds a runner and shows nothing the first pass did not.
+        timeout-minutes: 62
         env:
           ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
           ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
           WEBHOOK_URL_ALERTS: ${{ secrets.WEBHOOK_URL_ALERTS }}
           WEBHOOK_URL_MARKET: ${{ secrets.WEBHOOK_URL_MARKET }}
           DRY_RUN: ${{ inputs.dry_run }}
+          # True only on the cron. A dispatch does one pass and exits.
+          POLL: ${{ github.event_name == 'schedule' }}
           PYTHONUNBUFFERED: "1"
-        run: python -u volume_spike.py
-
-      - name: Persist state
-        # Re-fetch before pushing. A run that was queued behind another checks
-        # out the SHA pinned when it was CREATED, so it can hold a state file
-        # that is already stale by the time it pushes — see the trap table in CLAUDE.md.
-        # Last writer wins, which is correct: each run recomputes state as
-        # everything-seen-before plus whatever it just saw, so the later file is
-        # a superset.
         run: |
-          if [[ -z "$(git status --porcelain spike_state.json)" ]]; then
-            echo "No state change."
-            exit 0
-          fi
           git config user.name "volume-spikes"
           git config user.email "actions@github.com"
-          cp spike_state.json "$RUNNER_TEMP/spike_state.json"
-          for attempt in 1 2 3 4 5; do
-            git fetch -q origin "$GITHUB_REF_NAME"
-            git reset -q --hard "origin/$GITHUB_REF_NAME"
-            cp "$RUNNER_TEMP/spike_state.json" spike_state.json
+
+          # Explicit `|| return 1` on every line: these functions are called
+          # from `if !`, which suspends `set -e` for everything they run.
+          refresh_state() {
+            git fetch -q origin "$GITHUB_REF_NAME" || return 1
+            # Via a temp file — a redirect truncates first, so a failed show
+            # would leave an empty state file and repost everything.
+            git show "origin/$GITHUB_REF_NAME:spike_state.json" \
+              > "$RUNNER_TEMP/origin_state.json" || return 1
+            mv "$RUNNER_TEMP/origin_state.json" spike_state.json || return 1
+          }
+
+          persist_state() {
             if [[ -z "$(git status --porcelain spike_state.json)" ]]; then
-              echo "State already current on origin; nothing to push."
-              exit 0
+              echo "No state change."
+              return 0
             fi
-            git add spike_state.json
-            git commit -q -m "Update spike state [skip ci]"
-            if git push -q origin "HEAD:$GITHUB_REF_NAME"; then
-              echo "State pushed on attempt $attempt."
-              exit 0
+            cp spike_state.json "$RUNNER_TEMP/spike_state.json" || return 1
+            for attempt in 1 2 3 4 5; do
+              git fetch -q origin "$GITHUB_REF_NAME" || return 1
+              git reset -q --hard "origin/$GITHUB_REF_NAME" || return 1
+              cp "$RUNNER_TEMP/spike_state.json" spike_state.json || return 1
+              if [[ -z "$(git status --porcelain spike_state.json)" ]]; then
+                echo "State already current on origin; nothing to push."
+                return 0
+              fi
+              git add spike_state.json || return 1
+              git commit -q -m "Update spike state [skip ci]" || return 1
+              if git push -q origin "HEAD:$GITHUB_REF_NAME"; then
+                echo "State pushed on attempt $attempt."
+                return 0
+              fi
+              echo "Push rejected (attempt $attempt); another run pushed first. Retrying."
+              sleep $((attempt * 3))
+            done
+            echo "Could not persist spike_state.json after 5 attempts." >&2
+            return 1
+          }
+
+          # Stop before the next hour's fire. The concurrency group is the
+          # backstop if a pass overruns anyway.
+          deadline=$(( ($(date -u +%s) / 3600 + 1) * 3600 ))
+          passes=0
+          failed=0
+          fatal=0
+
+          while :; do
+            passes=$((passes + 1))
+            # Collapsed: a quiet pass is the common case, and eight passes of
+            # full output is not a log anyone reads. Warnings are emitted
+            # outside the group, so a bad pass is visible without expanding.
+            echo "::group::pass $passes — $(date -u +%H:%M:%S)Z"
+            ok=1
+            if ! refresh_state; then
+              ok=0
+              echo "::endgroup::"
+              echo "::warning::pass $passes could not read current state; skipped without running."
+            elif ! timeout 300 python -u volume_spike.py; then
+              ok=0
+              echo "::endgroup::"
+              echo "::warning::pass $passes exited non-zero or timed out; nothing persisted."
+            elif ! persist_state; then
+              ok=0
+              fatal=1
+              echo "::endgroup::"
+              echo "::error::pass $passes posted but could not persist state. Stopping, because another pass would read the old state and repost."
+            else
+              echo "::endgroup::"
             fi
-            echo "Push rejected (attempt $attempt); another run pushed first. Retrying."
-            sleep $((attempt * 3))
+            (( ok )) || failed=$((failed + 1))
+            if (( fatal )); then break; fi
+
+            if [[ "$POLL" != "true" ]]; then
+              echo "Not a scheduled run — single pass."
+              break
+            fi
+            now=$(date -u +%s)
+            next=$(( (now / 900 + 1) * 900 ))
+            if (( next >= deadline )); then
+              echo "The next boundary belongs to the next hour's run. Done."
+              break
+            fi
+            echo "Sleeping until $(date -u -d "@$next" +%H:%M)Z."
+            sleep $(( next - now ))
           done
-          echo "Could not persist spike_state.json after 5 attempts." >&2
-          exit 1
+
+          echo "$passes pass(es), $failed failed."
+          (( failed == 0 ))
