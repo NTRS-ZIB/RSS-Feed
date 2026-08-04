@@ -286,6 +286,57 @@ ARCHIVE = "https://www.sec.gov/Archives/edgar/data/{cik}/{acc_nodash}/{acc}-inde
 #   2.02 results   7.01 Reg FD   8.01 other events
 PRESS_RELEASE_ITEMS = {"2.02", "7.01", "8.01"}
 
+# Material events posted whether or not a press release accompanies them.
+# Checked BEFORE the exhibit filter, because the whole point is that these
+# usually arrive without one.
+#
+# The exhibit filter is best at removing the filings you most want. A company
+# restating its financials is the case LEAST likely to issue a press release
+# about it, so the filter that keys on "is there a press release" removes it
+# every time. Measured across all fourteen companies' full histories — 1,986
+# 8-K filings:
+#
+#   4.02  10 appearances, ALL TEN dropped        (a restatement, never announced)
+#   4.01  32 appearances, 94% dropped            (auditor change)
+#   3.01  65 appearances, 75% dropped            (delisting notice)
+#   1.03  never occurred on this roster          (which is the point of watching)
+#
+# The case that prompted this: NUAI filed `items=4.02` alone on 2026-07-30 — a
+# restatement with no other item code and no press release — and it was dropped.
+#
+# 5.02 director/officer change was CONSIDERED AND EXCLUDED. It is 75% dropped
+# across 300 filings, but adding it would post ~1.9/month against ~1.3/month for
+# all seven of these combined, and the concentration shows why: BKKT filed 5.02
+# six times between 2025-08-12 and 2025-11-14, MARA and SLNH 52 times each. That
+# is board churn, not officer departures, and the item code cannot separate "CFO
+# resigns abruptly" from "board appoints a fourth independent director". The
+# insider channel already covers the people-acting side.
+#
+# 1.02 (terminated agreement — more often an expiry than a rupture, 59% already
+# post with a release) and 2.01 (one dropped filing in nineteen months) were
+# also considered and left out.
+#
+# NEVER ADD 9.01. It is an attachment marker appearing on 1,530 of 1,986
+# filings and means nothing on its own; including it would post essentially
+# every 8-K and silently undo the exhibit filter entirely.
+ALWAYS_POST_ITEMS = {
+    "1.03",   # Bankruptcy or receivership
+    "2.04",   # Obligation accelerated
+    "2.06",   # Material impairment
+    "3.01",   # Delisting notice / listing rule
+    "4.01",   # Auditor change
+    "4.02",   # Non-reliance on prior financials
+    "5.01",   # Change in control
+}
+
+# Always-post items render amber rather than the default blue. A reader's prior
+# on a main-channel post is "the company announced something"; these are the
+# inverse — material filings the company chose NOT to announce — and that
+# inversion is worth a colour rather than another line of prose. The
+# ITEM_LABELS text in the title already carries the specifics. No collision
+# with the insider channel's amber: different webhook.
+UNANNOUNCED_COLOR = 0xD29922
+
 # 8-K item codes in plain English, for Discord titles. SEC only supplies a
 # document label (usually just "8-K"), which is redundant next to the form
 # type already shown in the footer.
@@ -481,6 +532,20 @@ def drift_candidates(seen_forms):
     return out
 
 
+def always_post_items(item):
+    """Whether this filing carries an item that posts regardless of a release.
+
+    Set intersection, so a filing listing several items works whatever the
+    order — an 8-K is routinely `4.02,9.01` or `3.01` alone, and both must
+    match. Never depends on a single item or on position.
+    """
+    if not str(item.get("form") or "").startswith("8-K"):
+        return False
+    raw = item.get("items") or ""
+    codes = {i.strip() for i in raw.split(",") if i.strip()}
+    return bool(codes & ALWAYS_POST_ITEMS)
+
+
 def carries_press_release(form, items):
     """Whether an 8-K's item numbers indicate a press release.
 
@@ -491,7 +556,15 @@ def carries_press_release(form, items):
     if not form.startswith("8-K"):
         return True
     if not items:
-        return True          # no items listed: fail open rather than drop it
+        # Fail open rather than drop it — the right default, since an 8-K with
+        # no item codes is unclassifiable rather than uninteresting.
+        #
+        # UNTESTED PATH. All 1,986 8-K filings across the fourteen companies'
+        # full histories carry item codes, so this branch has never once
+        # executed. Same class as count_run() in the threshold list: correct by
+        # construction, never exercised by real data. Left as is deliberately;
+        # do not "simplify" it away on the grounds that it never fires.
+        return True
     listed = {i.strip() for i in items.split(",") if i.strip()}
     return bool(listed & PRESS_RELEASE_ITEMS)
 
@@ -1123,16 +1196,25 @@ def main():
     for item in candidates:
         if len(to_post) >= MAX_POSTS_PER_RUN:
             break
-        if PRESS_RELEASE_EXHIBIT_ONLY and item.get("form") in EXHIBIT_CHECK_FORMS:
+        # BEFORE the exhibit filter, not inside it. These filings usually
+        # arrive without a press release, so running them through
+        # carries_press_release() first would defeat the whole change.
+        if always_post_items(item):
+            item["unannounced"] = True
+        elif PRESS_RELEASE_EXHIBIT_ONLY and item.get("form") in EXHIBIT_CHECK_FORMS:
             if not carries_press_release(item["form"], item.get("items", "")):
                 continue
         to_post.append(item)
 
-    print(f"{len(candidates)} candidate(s) checked, {len(to_post)} to post.")
+    n_unannounced = sum(1 for i in to_post if i.get("unannounced"))
+    print(f"{len(candidates)} candidate(s) checked, {len(to_post)} to post"
+          + (f" ({n_unannounced} unannounced material filing(s))"
+             if n_unannounced else "") + ".")
 
     if DRY_RUN:
         for item in to_post:
-            print(f"  [press]   {item['source']} — {item['title'][:60]}")
+            tag = "unannounced" if item.get("unannounced") else "press"
+            print(f"  [{tag:<11}] {item['source']} — {item['title'][:60]}")
         for item in sorted(insider_recent,
                            key=lambda i: i.get("published") or 0,
                            reverse=True)[:MAX_INSIDER_POSTS_PER_RUN]:
@@ -1144,7 +1226,8 @@ def main():
     failed = []
     sent = 0
     for item in to_post:
-        if post(item, WEBHOOK_URL):
+        colour = UNANNOUNCED_COLOR if item.get("unannounced") else 0x1F6FEB
+        if post(item, WEBHOOK_URL, color=colour):
             sent += 1
         else:
             failed.append(item["uid"])

@@ -93,6 +93,71 @@ notice gaps.
 Applies **only** to the forms in `EXHIBIT_CHECK_FORMS` (`8-K`, `6-K`). 6-K has
 no item numbers and is never filtered.
 
+### Critical: the exhibit filter removes the filings you most want
+
+**`ALWAYS_POST_ITEMS`** is checked *before* the exhibit filter and posts seven
+item codes whether or not a press release accompanies them.
+
+The filter above is sound for its stated purpose, but it has an inverted failure
+mode: **a company restating its financials is the case least likely to announce
+it.** Keying on "is there a press release" therefore removes exactly the filings
+worth seeing. Measured across all fourteen companies' full histories — **1,986
+8-K filings**:
+
+| item | label | appearances | dropped |
+|---|---|---|---|
+| `4.02` | Non-reliance on prior financials | 10 | **10 — all of them** |
+| `4.01` | Auditor change | 32 | 94% |
+| `3.01` | Delisting notice / listing rule | 65 | 75% |
+| `5.01` | Change in control | 23 | 65% |
+| `2.04` | Obligation accelerated | 4 | 50% |
+| `2.06` | Material impairment | 2 | 100% |
+| `1.03` | Bankruptcy or receivership | **0** | never occurred |
+
+Every 4.02 ever filed by these companies was suppressed. `1.03` has never
+occurred, which is the point of watching for it rather than an argument against.
+
+**The case that prompted the change:** NUAI filed `items=4.02` alone on
+2026-07-30 — a restatement, no other item code, no press release — five days
+before this was written, inside `MAX_AGE_DAYS`. It was dropped.
+
+Cost is small: about **1.3 extra posts a month** for all seven combined,
+measured over 2025–26.
+
+#### 5.02 was considered and excluded
+
+Director or officer change is 75% dropped across 300 filings, so it looks like
+an obvious inclusion. The concentration says otherwise:
+
+```
+MARA 52,  SLNH 52,  BGDE 31,  CLSK 23,  BKKT 23
+BKKT filed 5.02 six times between 2025-08-12 and 2025-11-14
+```
+
+Six officer-or-director filings from one company in four months is **board
+churn, not six CFO departures** — and the item code cannot separate the two. It
+would add ~1.9 posts a month on its own, more than twice all seven others
+combined, to catch something the insider channel already covers from the
+people-acting side.
+
+`1.02` (terminated agreement — more often an expiry than a rupture, and 59%
+already post with a release) and `2.01` (one dropped filing in nineteen months)
+were also considered and left out.
+
+#### Never add 9.01
+
+It appears on **1,530 of 1,986** filings as an attachment marker and means
+nothing alone. Adding it would post essentially every 8-K and silently undo the
+exhibit filter.
+
+#### These render amber
+
+A reader's prior on a main-channel post is "the company announced something".
+These are the inverse — material filings the company chose *not* to announce —
+so they post in amber rather than the default blue. The `ITEM_LABELS` text in
+the title already carries the specifics, so no extra prose is needed. No
+collision with the insider channel's amber: different webhook.
+
 **Filing titles** are generated, not taken from SEC. The submissions payload
 only supplies a document label, usually just `8-K`, which is redundant beside
 the form type already in the embed footer. `ITEM_LABELS` translates item codes
