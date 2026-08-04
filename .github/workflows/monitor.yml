@@ -20,6 +20,10 @@ on:
         description: "Evaluate and log without posting or saving state"
         type: boolean
         default: true
+      poll:
+        description: "Take the poll loop rather than a single pass. Pair with dry_run to exercise the loop against live data without posting."
+        type: boolean
+        default: false
 
 permissions:
   contents: write # needed to commit the updated state file
@@ -63,8 +67,11 @@ jobs:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
           # Empty on scheduled runs, so those always post.
           DRY_RUN: ${{ inputs.dry_run }}
-          # True only on the cron. A dispatch does one pass and exits.
-          POLL: ${{ github.event_name == 'schedule' }}
+          # True on the cron; a dispatch does one pass unless it asks for
+          # the loop. A dispatch cannot otherwise exercise the loop at all,
+          # and 'no pass reposts what the last one posted' is a multi-pass
+          # property that no single-pass run can demonstrate.
+          POLL: ${{ github.event_name == 'schedule' || inputs.poll }}
           PYTHONUNBUFFERED: "1"
         run: |
           git config user.name "press-monitor"
