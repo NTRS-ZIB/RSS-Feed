@@ -42,34 +42,52 @@ TICKERS = []  # Ticker lookup is fragile across renames; see EXTRA_CIKS above.
 EXTRA_CIKS = watchlist.ciks()          # {ticker: (cik, name)}
 IR_FEEDS = watchlist.ir_feeds()        # {ticker: url}, companies that have one
 
-# ONE company is still uncovered by anything but EDGAR.
-#   Digi Power X        https://www.digipowerx.com/press-releases  (Next.js)
-#                       The newsroom renders client-side and its payload holds
-#                       no titles, dates or slugs. It moved from GlobeNewswire
-#                       to ACCESS Newswire around 2026-01, and neither wire
-#                       exposes a usable per-organization feed.
+# EVERY COMPANY ON THE ROSTER IS NOW COVERED BY SOMETHING FASTER THAN EDGAR.
+# Four different ways, because four companies publish no feed on their own
+# newsroom, and each turned out to be a different problem:
 #
-#                       TWO TRAPS HERE, both of which parse cleanly while dead:
-#                       the old GlobeNewswire feed still returns 20 items, none
-#                       newer than 2025-12-24; and digipowerx.com/sitemap.xml
-#                       lists 100 release URLs whose lastmod values are all one
-#                       identical rebuild stamp, containing nothing since 2025.
-#                       Neither must be added.
+#   own IR feed          ten companies, IR_FEEDS
+#   newswire feed        BGDE — GlobeNewswire's organization feed
+#   separate IR host     WYFI — whitefiber.investorroom.com, found by
+#                        autodiscovery OUT of a Webflow shell that has no
+#                        headlines in it
+#   scrape               HUT — server-side HTML, scrape_hut8()
+#   CMS API              DGXX — public Strapi, read_dgxx()
 #
-#                       A public Strapi API does carry the real history — see
-#                       docs/press-monitor.md. Not wired up: it returns no slug
-#                       or URL, so a posted item would have nowhere to point.
+# The lesson that took four attempts: a newsroom with no readable HTML does not
+# mean no feed. Three of the four had a machine-readable source somewhere other
+# than the company's own domain, and checking that domain alone is what kept
+# concluding otherwise.
 #
-# BGDE and WYFI were both in this group. Their newsrooms still render
-# client-side; the roster now reads a feed hosted elsewhere for each — the
-# newswire's for BGDE, a separate IR platform host for WYFI. Checking the
-# company's own domain alone is what kept them here. See watchlist.py.
+# DGXX carries TWO TRAPS that both parse cleanly while being dead, and neither
+# must ever be wired up: the old GlobeNewswire organization feed still returns
+# 20 items, none newer than 2025-12-24; and digipowerx.com/sitemap.xml lists
+# 100 release URLs whose lastmod values are one identical rebuild stamp, with
+# nothing since 2025.
 #
 # HUT also publishes no feed, but is NOT one of those: its releases render
 # server-side and come back complete in a plain fetch, so it is scraped instead
 # — see scrape_hut8(). That closes a latency gap rather than a blind spot;
 # everything material reaches EDGAR as an 8-K eventually, just hours later.
 HUT_PAGE = "https://www.hut8.com/news-insights/press-releases"
+
+# DGXX publishes no feed anywhere — not on its own domain, and not on either
+# wire it has used. Its newsroom is a Next.js shell backed by a PUBLIC Strapi
+# CMS, which is read directly. A JSON contract, so more stable than the HUT
+# scrape, but on infrastructure with a weaker guarantee: see read_dgxx().
+DGXX_API = ("https://thankful-miracle-1ed8bdfdaf.strapiapp.com"
+            "/api/press-releases")
+DGXX_PAGE = "https://www.digipowerx.com/press-releases"
+
+# Warn when the newest release is older than this. Chosen from DGXX's own
+# history rather than intuition: across the last 24 months it published 75
+# releases with a MEDIAN gap of 8 days, a 90th-percentile gap of 20, and a
+# LONGEST gap of 34. Ninety days is about 2.6x that worst observed case.
+#
+# Deliberately generous, because a warning that cries wolf gets ignored — the
+# same reasoning that put the obsolete forms in DRIFT_IGNORE. This is set to
+# catch a source that has died, not a quiet quarter.
+DGXX_STALE_DAYS = 90
 
 
 # EDGAR form types to watch. 8-K = US material events. 6-K = foreign issuers.
@@ -702,6 +720,120 @@ def scrape_hut8():
     return items
 
 
+def read_dgxx():
+    """DGXX's releases, read from its CMS. Same item shape as collect_ir()'s.
+
+    TWO QUERY PARAMETERS ARE LOAD-BEARING, and neither announces itself:
+
+      sort=date:desc  The default order is NOT by date. An unsorted page 1
+                      returns a 2025 item first, so taking rows[0] as "newest"
+                      would be wrong and would look right. Same trap as
+                      document order on the Hut 8 page.
+      populate=*      `pdf_file` is absent from the default field set. Without
+                      it every item parses fine and has nothing to link to.
+
+    Linking is to the PDF because it is the only per-release URL that EXISTS in
+    the payload. There is no slug field (Strapi returns 400 Invalid key slug),
+    and reconstructing the web URL as slugify(title)+"-"+documentId resolves
+    only 6 of 8 — while digipowerx.com soft-404s, returning HTTP 200 with the
+    wrong content, so a wrong link would be indistinguishable from a right one.
+    A value that is present beats a rule that mostly works.
+
+    THREE DISTINCT FAILURES, three distinct log lines. DGXX's median gap between
+    releases is 8 days, so a silent failure would sit a long time before anyone
+    wondered. The hostname is a Strapi Cloud default rather than a contract on
+    the company's own domain, and a redeploy would move it without warning.
+
+    Never raises. Twelve feeds, a scraper and the EDGAR sweep must not go down
+    with one vendor hostname.
+    """
+    headers = dict(IR_HEADERS, Accept="application/json")
+    params = {"sort": "date:desc", "populate": "*",
+              "pagination[pageSize]": "25"}
+    try:
+        r = requests.get(DGXX_API, params=params, headers=headers,
+                         timeout=(10, 30))
+    except requests.RequestException as e:
+        # State 1: did not resolve. This is what a Strapi Cloud redeploy looks
+        # like — the hostname simply stops existing.
+        print(f"  DGXX: FETCH FAILED ({type(e).__name__}) — the CMS host did "
+              f"not respond. If this persists, the vendor hostname has moved; "
+              f"it is not a contract on digipowerx.com.")
+        return []
+    if r.status_code != 200:
+        print(f"  DGXX: HTTP {r.status_code} from the CMS API")
+        return []
+    try:
+        rows = (r.json() or {}).get("data") or []
+    except ValueError:
+        print("  DGXX: non-JSON response from the CMS API")
+        return []
+
+    if not rows:
+        # State 2: answered, but with nothing. Not a quiet month — this endpoint
+        # serves the whole history, 197 items reaching back to 2020.
+        print("  DGXX: EMPTY RESPONSE — HTTP 200 with 0 items. This endpoint "
+              "serves the full history, so zero means the schema or the "
+              "collection moved, not that nothing was published.")
+        return []
+
+    items, no_pdf = [], 0
+    for row in rows:
+        # Strapi v4 nests under "attributes"; v5 is flat. Handle both.
+        a = row.get("attributes") if isinstance(row.get("attributes"), dict) else row
+        title = str(a.get("title") or "").strip()
+        if not title:
+            continue
+        doc = str(row.get("documentId") or a.get("documentId") or "")
+
+        pdf = a.get("pdf_file") or row.get("pdf_file")
+        link = pdf.get("url") if isinstance(pdf, dict) else None
+        if not link:
+            no_pdf += 1
+            link = DGXX_PAGE          # nothing per-release to point at
+
+        published = 0
+        when = str(a.get("date") or "")[:10]
+        if when:
+            try:
+                published = timegm(time.strptime(when, "%Y-%m-%d"))
+            except ValueError:
+                pass
+
+        items.append({
+            "uid": f"dgxx:{doc}" if doc else link,
+            # The label says PDF because the link is one. Every other item in
+            # the channel opens a web page; a reader should know before
+            # clicking, not after.
+            "source": "DGXX · IR newsroom (PDF)",
+            "title": html.unescape(title),
+            "link": link,
+            "published": published,
+            "is_edgar": False,
+        })
+
+    if no_pdf:
+        # Not fatal, but it is how "populate=* stopped working" would surface.
+        print(f"  DGXX: {no_pdf} of {len(items)} item(s) carried no pdf_file "
+              f"and fall back to the newsroom index. If this is all of them, "
+              f"check that populate=* is still honoured.")
+
+    items.sort(key=lambda i: i["published"], reverse=True)
+    newest = items[0]["published"]
+    age = int((time.time() - newest) / 86400) if newest else None
+
+    if age is not None and age > DGXX_STALE_DAYS:
+        # State 3: the failure that caught both the dead GlobeNewswire feed and
+        # the abandoned sitemap. Everything parses; nothing is current.
+        print(f"  DGXX: STALE — {len(items)} items parsed but the newest is "
+              f"{age}d old (limit {DGXX_STALE_DAYS}d). DGXX's longest observed "
+              f"gap is 34d, so this is a source that has stopped being "
+              f"updated, not a quiet quarter.")
+    else:
+        print(f"  DGXX: {len(items)} items (CMS API), newest {age}d old")
+    return items
+
+
 def collect_ir():
     items = []
     for label, url in IR_FEEDS.items():
@@ -733,9 +865,10 @@ def collect_ir():
                 "is_edgar": False,
             })
 
-    # HUT has no feed but renders server-side, so it is scraped into the same
-    # shape and rejoins the same dedupe and posting path here.
-    items += scrape_hut8()
+    # Two companies publish no feed at all and are covered another way, both
+    # yielding the same item shape so nothing downstream knows the difference.
+    items += scrape_hut8()   # server-side HTML, scraped
+    items += read_dgxx()     # public CMS, read as JSON
     return items
 
 

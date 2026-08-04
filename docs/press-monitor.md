@@ -236,7 +236,7 @@ Two different outcomes, easily confused:
 | Soluna Holdings | 0000064463 | WordPress (`/news/feed/`) |
 | Big Digital Energy | 0001218683 | **GlobeNewswire** (the wire, not the newsroom) |
 | WhiteFiber | 0002042022 | **investorroom** (separate IR host) |
-| Digi Power X | 0001854368 | none — EDGAR only |
+| Digi Power X | 0001854368 | none — **CMS API**, see below |
 | TeraWulf | 0001083301 | Equisolve |
 | Hut 8 Corp | 0001964789 | none — **scraped**, see below |
 | Cipher Digital | 0001819989 | gcs-web |
@@ -256,31 +256,86 @@ Soluna is plain WordPress. Its press releases live in the `/news/` archive
 feed. Autodiscovery finds the latter, because the archive's own feed isn't
 declared in the page HTML — so the correct URL had to be set explicitly.
 
-### Where a company's own newsroom has no feed
+### Four ways a company is covered
 
-Four companies publish no feed on their own newsroom. Three are covered anyway,
-and the reason all three looked uncoverable is the same: **the feed was
-somewhere other than the company's own domain.**
+All fourteen are now read from something faster than EDGAR. Four companies
+publish no feed on their own newsroom, and each turned out to be a different
+problem, so there are four mechanisms rather than one:
 
-| Company | Newsroom | Where the feed actually is |
+| Mechanism | Companies | Source |
 |---|---|---|
-| BGDE | QuoteMedia widget | GlobeNewswire's organization feed |
-| WYFI | Webflow shell | `whitefiber.investorroom.com`, a separate IR platform |
-| HUT | custom, server-side | nowhere — scraped directly |
-| DGXX | Next.js | **nowhere found** |
+| **Own IR feed** | ten | the company's own newsroom RSS |
+| **Newswire feed** | BGDE | GlobeNewswire's organization feed |
+| **Separate IR host** | WYFI | `whitefiber.investorroom.com` |
+| **Scrape** | HUT | server-side HTML, `scrape_hut8()` |
+| **CMS API** | DGXX | public Strapi, `read_dgxx()` |
 
-**WhiteFiber's feed was found by autodiscovery out of the shell.** The Webflow
-page carries no headlines, but it references an IR platform host, and that host
-declares a feed in a `<link rel="alternate">`. Checking `whitefiber.com` alone
-concludes no feed exists — which is what was concluded here twice, before anyone
-followed the reference off-domain.
+**The lesson took four attempts to learn: a newsroom with no readable HTML does
+not mean there is no feed.** Three of those four had a machine-readable source
+somewhere other than the company's own domain — a newswire, an IR platform, a
+CMS backend — and checking the company domain alone is what kept concluding
+otherwise. BGDE and WYFI were both written off twice before anyone followed a
+reference off-domain.
 
-**Digi Power X is the one company still EDGAR-only.** Its newsroom renders
-client-side and its payload contains no titles, dates or slugs. It moved from
-GlobeNewswire to ACCESS Newswire around January 2026, and neither wire exposes a
-usable per-organization feed — ACCESS's only advertised feed is a marketing blog
-of 144 posts about writing earnings-call scripts. It remains fully covered by
-EDGAR for anything material.
+#### WhiteFiber — found by autodiscovery out of a shell
+
+The Webflow page carries no headlines, but it references an IR platform host,
+and that host declares a feed in a `<link rel="alternate">`. Nothing on
+`whitefiber.com` says a feed exists.
+
+#### Digi Power X — read from the CMS behind the newsroom
+
+DGXX is the only company with no feed anywhere: not on its own domain, and not
+on either wire it has used. It moved from GlobeNewswire to ACCESS Newswire
+around January 2026, and ACCESS's only advertised feed is a marketing blog of
+144 posts about writing earnings-call scripts.
+
+Its newsroom is a Next.js shell backed by a **public Strapi CMS**, which
+`read_dgxx()` reads directly — 197 releases reaching back to 2020. A JSON
+contract is more stable than scraped markup, but this one sits on weaker
+ground than any other source here, and the code says so.
+
+**Two query parameters are load-bearing.** Neither announces itself if dropped:
+
+| Parameter | If omitted |
+|---|---|
+| `sort=date:desc` | The default order is **not** by date — unsorted page 1 returns a 2025 item first. Taking the first row as newest would be wrong and would look right. |
+| `populate=*` | `pdf_file` is absent from the default field set, so every item parses fine and has nothing to link to. |
+
+**Items link to a PDF**, and the post label says so — `DGXX · IR newsroom
+(PDF)` — because every other item in the channel opens a web page and a reader
+should know before clicking.
+
+That is not a preference. There is no `slug` field (Strapi answers
+`400 Invalid key slug`), and reconstructing the web URL as
+`slugify(title) + "-" + documentId` resolves only **6 of 8** recent releases —
+the failures being titles containing double spaces. Worse,
+`digipowerx.com` **soft-404s**: a wrong release URL returns HTTP 200 with the
+wrong content, so a bad link would be indistinguishable from a good one in
+every log line. The PDF URL is *present in the payload* rather than
+reconstructed, covers 8 of 8, and can be checked per item.
+
+**Three distinct failures, three distinct log lines.** DGXX's median gap between
+releases is 8 days, so a silent failure would sit a long time before anyone
+wondered:
+
+```
+  DGXX: FETCH FAILED (ConnectionError) — the CMS host did not respond...
+  DGXX: EMPTY RESPONSE — HTTP 200 with 0 items...
+  DGXX: STALE — 25 items parsed but the newest is 141d old (limit 90d)...
+```
+
+The staleness limit is **90 days**, chosen from DGXX's own history rather than
+intuition: across the last 24 months it published 75 releases with a median gap
+of 8 days, a 90th-percentile gap of 20, and a longest gap of **34**. Ninety days
+is about 2.6x that worst observed case — deliberately generous, because a
+warning that cries wolf gets ignored, which is the same reasoning that put the
+obsolete forms in `DRIFT_IGNORE`.
+
+**The hostname is the weak point.** `thankful-miracle-1ed8bdfdaf.strapiapp.com`
+is a Strapi Cloud default, not a contract on the company's own domain. A
+redeploy would move it and nothing would announce that — the same silent shape
+as a wire migration. That is what the FETCH FAILED line exists to name.
 
 ### Two dead sources that parse perfectly — both DGXX
 
@@ -404,8 +459,8 @@ sweep with it, which is the isolation the whole repo is built on.
 
 ## Scaling
 
-**Requests per run: 27** — one submissions call per company (14), one per IR
-feed (12), and one for the Hut 8 scrape. Both channels are served from the same
+**Requests per run: 28** — one submissions call per company (14), one per IR
+feed (12), one for the Hut 8 scrape and one for the Digi Power X CMS. Both channels are served from the same
 payload, so the insider check costs nothing extra.
 
 This replaced the legacy `cgi-bin/browse-edgar` endpoint, which needed one call
