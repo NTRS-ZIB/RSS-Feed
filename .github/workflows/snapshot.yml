@@ -41,6 +41,11 @@ jobs:
           PY
 
       - name: Commit if changed
+        # Re-fetch before pushing. A run that was queued behind another checks
+        # out the SHA pinned when it was CREATED, so it can hold a file that is
+        # already stale by the time it pushes — see the trap table in CLAUDE.md.
+        # Last writer wins, which is correct: snapshot.json is rebuilt whole
+        # from EDGAR every run rather than accumulated.
         run: |
           git config user.name "snapshot-bot"
           git config user.email "snapshot-bot@users.noreply.github.com"
@@ -49,8 +54,25 @@ jobs:
           git add snapshot.json
           if git diff --cached --quiet; then
             echo "Snapshot unchanged, nothing to commit."
-          else
-            git commit -m "Rebuild snapshot"
-            git push
-            echo "Committed and pushed snapshot.json"
+            exit 0
           fi
+          cp snapshot.json "$RUNNER_TEMP/snapshot.json"
+          for attempt in 1 2 3 4 5; do
+            git fetch -q origin "$GITHUB_REF_NAME"
+            git reset -q --hard "origin/$GITHUB_REF_NAME"
+            cp "$RUNNER_TEMP/snapshot.json" snapshot.json
+            git add snapshot.json
+            if git diff --cached --quiet; then
+              echo "Snapshot already current on origin; nothing to push."
+              exit 0
+            fi
+            git commit -q -m "Rebuild snapshot"
+            if git push -q origin "HEAD:$GITHUB_REF_NAME"; then
+              echo "Committed and pushed snapshot.json on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt); another run pushed first. Retrying."
+            sleep $((attempt * 3))
+          done
+          echo "Could not persist snapshot.json after 5 attempts." >&2
+          exit 1

@@ -45,13 +45,36 @@ jobs:
         run: python -u dilution.py
 
       - name: Persist state
+        # Re-fetch before pushing. A run that was queued behind another checks
+        # out the SHA pinned when it was CREATED, so it can hold a state file
+        # that is already stale by the time it pushes — see the trap table in CLAUDE.md.
+        # Last writer wins, which is correct: each run recomputes state as
+        # everything-seen-before plus whatever it just saw, so the later file is
+        # a superset.
         run: |
-          if [[ -n "$(git status --porcelain dilution_state.json)" ]]; then
-            git config user.name "dilution"
-            git config user.email "actions@github.com"
-            git add dilution_state.json
-            git commit -m "Update dilution state [skip ci]"
-            git push
-          else
+          if [[ -z "$(git status --porcelain dilution_state.json)" ]]; then
             echo "No state change."
+            exit 0
           fi
+          git config user.name "dilution"
+          git config user.email "actions@github.com"
+          cp dilution_state.json "$RUNNER_TEMP/dilution_state.json"
+          for attempt in 1 2 3 4 5; do
+            git fetch -q origin "$GITHUB_REF_NAME"
+            git reset -q --hard "origin/$GITHUB_REF_NAME"
+            cp "$RUNNER_TEMP/dilution_state.json" dilution_state.json
+            if [[ -z "$(git status --porcelain dilution_state.json)" ]]; then
+              echo "State already current on origin; nothing to push."
+              exit 0
+            fi
+            git add dilution_state.json
+            git commit -q -m "Update dilution state [skip ci]"
+            if git push -q origin "HEAD:$GITHUB_REF_NAME"; then
+              echo "State pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt); another run pushed first. Retrying."
+            sleep $((attempt * 3))
+          done
+          echo "Could not persist dilution_state.json after 5 attempts." >&2
+          exit 1
