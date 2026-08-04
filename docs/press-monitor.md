@@ -337,6 +337,67 @@ is a Strapi Cloud default, not a contract on the company's own domain. A
 redeploy would move it and nothing would announce that — the same silent shape
 as a wire migration. That is what the FETCH FAILED line exists to name.
 
+### Critical: the staleness check
+
+The loud failures were always handled — a fetch error, a non-200 and a parse
+error each log distinctly. **The quiet one was not**: a source returning HTTP
+200 with valid content, correct timestamps, and nothing new for months.
+
+Two sources failed exactly that way in a single day, both below. A company
+changing IR platform, changing newswire, or having a feed quietly retired all
+produce the same shape, and none of it shows up in a log.
+
+**No fixed horizon works**, because cadences differ by an order of magnitude
+across the roster — measured, with same-day items collapsed:
+
+```
+NUAI  5d   IREN  6d   WYFI  6d   SLNH  7d   MARA  8d   DGXX  8d   WULF  9d
+BKKT 13d   BGDE 13d   CIFR 14d   VIP  15d   ANY  15d   CLSK 15d   HUT  18d
+```
+
+So every source is judged against **its own median gap** — the principle the
+rest of the repo uses for every metric. One check covers the feeds, the scraper
+and the CMS reader alike:
+
+```
+fire when age > max(6 x median_gap, 60 days, explicit override)
+```
+
+**The multiple and the floor do different jobs.** The multiple makes slow feeds
+wait longer than 60 days — CLSK, VIP and ANY fire at 90d, HUT at 111d — because
+a flat floor would fire on them during an ordinary lull. The floor stops fast
+feeds firing during a normal quiet spell: at 6x alone NUAI would fire after
+**30 days**, which is an unremarkable month for a company that usually publishes
+weekly.
+
+**Calibration.** 6x is the tightest multiple with no false positives across all
+fourteen live sources. The worst healthy source sits at 5.0x; the dead control
+at 31.8x.
+
+| multiple | false positives | catches the control |
+|---|---|---|
+| x4, x5 | NUAI | yes |
+| **x6** | **none** | **yes** |
+| x8 and above | none | yes |
+
+**Same-day items are collapsed before measuring**, and this is load-bearing
+rather than tidiness. Uncollapsed, HUT's median reads 5.5d instead of 18d and
+MARA's 4.4d instead of 8d — a single burst would drag the median down until an
+ordinary quiet spell looked like a failure.
+
+**Thin samples get their own state.** Below four distinct publication days the
+check reports `insufficient history to judge staleness` rather than passing
+silently. A median from two gaps is not evidence.
+
+**DGXX carries an explicit 90-day override.** The shared check would compute 60d
+from the 25 items it fetches; the override comes from the full 197-item history
+— 75 releases over 24 months, longest observed gap 34 days. Better evidence than
+the window, so the check takes the larger of the two.
+
+It logs and returns. It never raises and never suppresses items: a stale source
+may simply be quiet, its items still deduplicate normally, and one source going
+dark must not affect the other thirteen or the EDGAR sweep.
+
 ### Two dead sources that parse perfectly — both DGXX
 
 Recorded because each looked like a solution, and one check caught both.

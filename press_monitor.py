@@ -79,15 +79,56 @@ DGXX_API = ("https://thankful-miracle-1ed8bdfdaf.strapiapp.com"
             "/api/press-releases")
 DGXX_PAGE = "https://www.digipowerx.com/press-releases"
 
-# Warn when the newest release is older than this. Chosen from DGXX's own
-# history rather than intuition: across the last 24 months it published 75
-# releases with a MEDIAN gap of 8 days, a 90th-percentile gap of 20, and a
-# LONGEST gap of 34. Ninety days is about 2.6x that worst observed case.
-#
-# Deliberately generous, because a warning that cries wolf gets ignored — the
-# same reasoning that put the obsolete forms in DRIFT_IGNORE. This is set to
-# catch a source that has died, not a quiet quarter.
+# An explicit horizon for DGXX, passed to check_staleness() as a floor. The
+# shared check would compute 60d from the 25 items it fetches; this comes from
+# the full 197-item history instead — 75 releases over 24 months, median gap 8
+# days, LONGEST observed gap 34. Better evidence than a 25-item window, so the
+# shared check defers to it. See check_staleness().
 DGXX_STALE_DAYS = 90
+
+# ------------------------------------------------------- STALENESS CHECK ----
+#
+# The loud failures are already handled: a fetch error, a non-200 and a parse
+# error each log distinctly. This covers the QUIET one — a source returning
+# HTTP 200 with valid content, correct timestamps, and nothing new for months.
+#
+# That is not hypothetical. Two sources failed exactly this way in one day:
+# DGXX's old GlobeNewswire feed served 20 well-formed items with nothing newer
+# than 2025-12-24, and digipowerx.com/sitemap.xml listed 100 URLs sharing one
+# identical rebuild timestamp. Both would have looked healthy in every log line
+# indefinitely. A company changing IR platform, changing newswire, or having a
+# feed quietly retired all produce this shape.
+#
+# NO FIXED HORIZON WORKS, because cadences differ by an order of magnitude
+# across this roster — measured, collapsed to distinct publication days:
+#
+#   NUAI 5d    IREN 6d    WYFI 6d    SLNH 7d    MARA 8d    DGXX 8d
+#   WULF 9d    BKKT 13d   BGDE 13d   CIFR 14d   VIP 15d    ANY 15d
+#   CLSK 15d   HUT 18d
+#
+# So each source is judged against ITS OWN median gap, the same principle the
+# rest of the repo uses for every metric: never a bare absolute.
+#
+# THE MULTIPLE AND THE FLOOR DO DIFFERENT JOBS, and neither is redundant.
+# Calibrated against all fourteen live sources plus one known-dead control:
+#
+#   the multiple  makes SLOW feeds wait longer than the floor. CLSK, VIP and
+#                 ANY fire at 90d, HUT at 111d. A flat 60d would fire on them
+#                 during an ordinary lull.
+#   the floor     stops FAST feeds firing during an ordinary quiet spell. At
+#                 6x alone NUAI would fire after 30 days of silence, which is
+#                 a perfectly normal month for a company that usually
+#                 publishes weekly.
+#
+# 6x is the tightest multiple with no false positives across the fourteen: the
+# worst healthy source sits at 5.0x and the dead control at 31.8x.
+STALE_MULTIPLE = 6
+STALE_FLOOR_DAYS = 60
+
+# Distinct publication days needed before a median means anything. Below this,
+# "not enough history to judge" is reported as its own state rather than
+# passing silently — a median from two gaps is not evidence.
+STALE_MIN_DAYS = 4
 
 
 # EDGAR form types to watch. 8-K = US material events. 6-K = foreign issuers.
@@ -717,7 +758,61 @@ def scrape_hut8():
     # with older ones. Sort rather than trusting position.
     items.sort(key=lambda i: i["published"], reverse=True)
     print(f"  HUT: {len(items)} items (scraped)")
+    check_staleness("HUT", [i["published"] for i in items])
     return items
+
+
+def check_staleness(label, published, override_days=None):
+    """Warn when a source parses cleanly but has stopped producing anything new.
+
+    One check for all fourteen sources — feeds, the scraper and the CMS reader
+    alike. The strictest treatment had been built for the newest source and the
+    twelve oldest had none, which was backwards.
+
+    `override_days` raises the horizon where better evidence exists than the
+    fetched window. Only DGXX passes one; see DGXX_STALE_DAYS.
+
+    Logs and returns. Never raises, never suppresses items: a stale source may
+    simply be quiet, its items still deduplicate normally, and one source going
+    dark must not affect the other thirteen or the EDGAR sweep.
+    """
+    times = sorted((t for t in published if t), reverse=True)
+    if not times:
+        return
+    age = (time.time() - times[0]) / 86400
+
+    # Collapse to distinct UTC days before measuring. Three releases in one
+    # morning are one publication event, and their zero-day gaps drag the
+    # median down until a normal quiet spell looks like a failure. Measured:
+    # HUT's median reads 5.5d uncollapsed and 18d collapsed, MARA's 4.4d and
+    # 8d — so this is load-bearing, not tidiness.
+    days = sorted({int(t // 86400) for t in times}, reverse=True)
+
+    if len(days) < STALE_MIN_DAYS:
+        print(f"    {label}: insufficient history to judge staleness — "
+              f"{len(days)} publication day(s), newest {age:.0f}d old")
+        return
+
+    gaps = sorted(days[i] - days[i + 1] for i in range(len(days) - 1))
+    mid = len(gaps) // 2
+    median = gaps[mid] if len(gaps) % 2 else (gaps[mid - 1] + gaps[mid]) / 2
+
+    computed = STALE_MULTIPLE * median
+    horizon = max(computed, STALE_FLOOR_DAYS, override_days or 0)
+
+    # Name whichever term actually set the horizon, so the log explains itself.
+    if override_days and horizon == override_days:
+        basis = f"measured {override_days}d horizon for this source"
+    elif horizon == computed:
+        basis = f"{median:.0f}d median gap x{STALE_MULTIPLE}"
+    else:
+        basis = f"{STALE_FLOOR_DAYS}d floor, above its {median:.0f}d median gap"
+
+    if age > horizon:
+        print(f"    {label}: STALE — parses cleanly, but the newest item is "
+              f"{age:.0f}d old against a {horizon:.0f}d horizon ({basis}). "
+              f"A source that has stopped updating looks exactly like a quiet "
+              f"one in every other log line — check whether it moved.")
 
 
 def read_dgxx():
@@ -819,18 +914,12 @@ def read_dgxx():
               f"check that populate=* is still honoured.")
 
     items.sort(key=lambda i: i["published"], reverse=True)
-    newest = items[0]["published"]
-    age = int((time.time() - newest) / 86400) if newest else None
-
-    if age is not None and age > DGXX_STALE_DAYS:
-        # State 3: the failure that caught both the dead GlobeNewswire feed and
-        # the abandoned sitemap. Everything parses; nothing is current.
-        print(f"  DGXX: STALE — {len(items)} items parsed but the newest is "
-              f"{age}d old (limit {DGXX_STALE_DAYS}d). DGXX's longest observed "
-              f"gap is 34d, so this is a source that has stopped being "
-              f"updated, not a quiet quarter.")
-    else:
-        print(f"  DGXX: {len(items)} items (CMS API), newest {age}d old")
+    print(f"  DGXX: {len(items)} items (CMS API)")
+    # State 3 — the failure that caught both the dead GlobeNewswire feed and the
+    # abandoned sitemap — is now the shared check, with DGXX's measured horizon
+    # as a floor because it rests on more history than this window shows.
+    check_staleness("DGXX", [i["published"] for i in items],
+                    override_days=DGXX_STALE_DAYS)
     return items
 
 
@@ -855,6 +944,7 @@ def collect_ir():
             continue
 
         print(f"  {label}: {len(entries)} items")
+        check_staleness(label, [entry_time(e) for e in entries])
         for entry in entries:
             items.append({
                 "uid": entry.get("id") or entry.get("link"),
