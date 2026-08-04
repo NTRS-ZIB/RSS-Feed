@@ -235,7 +235,7 @@ Two different outcomes, easily confused:
 | Sphere 3D | 0001591956 | gcs-web |
 | Soluna Holdings | 0000064463 | WordPress (`/news/feed/`) |
 | Big Digital Energy | 0001218683 | **GlobeNewswire** (the wire, not the newsroom) |
-| WhiteFiber | 0002042022 | none — EDGAR only |
+| WhiteFiber | 0002042022 | **investorroom** (separate IR host) |
 | Digi Power X | 0001854368 | none — EDGAR only |
 | TeraWulf | 0001083301 | Equisolve |
 | Hut 8 Corp | 0001964789 | none — **scraped**, see below |
@@ -258,26 +258,49 @@ declared in the page HTML — so the correct URL had to be set explicitly.
 
 ### Where a company's own newsroom has no feed
 
-Four companies publish no newsroom feed. They are now covered three different
-ways, and the differences are the useful part.
+Four companies publish no feed on their own newsroom. Three are covered anyway,
+and the reason all three looked uncoverable is the same: **the feed was
+somewhere other than the company's own domain.**
 
-**WhiteFiber and Digi Power X are the two still uncovered, and they are stuck
-for different reasons.** Both newsrooms render client-side — Webflow and Next.js
-— so neither autodiscovery nor a plain scraper can read the company's own page.
-What separates them is their wire:
+| Company | Newsroom | Where the feed actually is |
+|---|---|---|
+| BGDE | QuoteMedia widget | GlobeNewswire's organization feed |
+| WYFI | Webflow shell | `whitefiber.investorroom.com`, a separate IR platform |
+| HUT | custom, server-side | nowhere — scraped directly |
+| DGXX | Next.js | **nowhere found** |
 
-- **WYFI distributes via PR Newswire**, which publishes no per-organization feed
-  a plain fetch can reach. Its RSS index renders its own feed list client-side,
-  so even enumerating what PR Newswire offers needs a browser.
-- **DGXX distributes via ACCESS Newswire**, whose release pages render
-  **server-side** — a headless browser is *not* the obstacle here. The obstacle
-  is that ACCESS exposes no per-company index page, so a scraper would have
-  nothing to iterate over. Its only advertised feed is a marketing blog: 144
-  entries about writing earnings-call scripts, and no press releases at all.
+**WhiteFiber's feed was found by autodiscovery out of the shell.** The Webflow
+page carries no headlines, but it references an IR platform host, and that host
+declares a feed in a `<link rel="alternate">`. Checking `whitefiber.com` alone
+concludes no feed exists — which is what was concluded here twice, before anyone
+followed the reference off-domain.
 
-That distinction matters if anyone revisits this. DGXX is blocked on a missing
-index; WYFI is blocked on rendering. Both remain EDGAR-only, and fully covered
-there for anything material.
+**Digi Power X is the one company still EDGAR-only.** Its newsroom renders
+client-side and its payload contains no titles, dates or slugs. It moved from
+GlobeNewswire to ACCESS Newswire around January 2026, and neither wire exposes a
+usable per-organization feed — ACCESS's only advertised feed is a marketing blog
+of 144 posts about writing earnings-call scripts. It remains fully covered by
+EDGAR for anything material.
+
+### Two dead sources that parse perfectly — both DGXX
+
+Recorded because each looked like a solution, and one check caught both.
+
+**The old GlobeNewswire organization feed.** Alive, valid XML, 20 items, every
+one with a resolvable uid and a parseable timestamp. Nothing newer than
+**2025-12-24**.
+
+**`digipowerx.com/sitemap.xml`.** Lists **100 individual release URLs** — which
+is exactly the per-company index ACCESS Newswire fails to provide, served as
+plain dated XML. But every `lastmod` is the identical value
+`2026-06-13T18:43:20`, a site-rebuild stamp rather than a per-release date; none
+of five probed releases from 2025-12 onward appears; and 70 of the 100 slugs
+predate the March 2025 rename from Digihost.
+
+**Check the newest entry date before anything else.** It is the single check
+that caught both, and neither would have announced itself any other way. A
+source returning 200 with well-formed, correctly-timestamped, entirely obsolete
+content is the hardest failure in this component to see.
 
 **Hut 8 renders server-side and is scraped** — see below.
 
@@ -381,8 +404,8 @@ sweep with it, which is the isolation the whole repo is built on.
 
 ## Scaling
 
-**Requests per run: 26** — one submissions call per company (14), one per IR
-feed (11), and one for the Hut 8 scrape. Both channels are served from the same
+**Requests per run: 27** — one submissions call per company (14), one per IR
+feed (12), and one for the Hut 8 scrape. Both channels are served from the same
 payload, so the insider check costs nothing extra.
 
 This replaced the legacy `cgi-bin/browse-edgar` endpoint, which needed one call

@@ -152,7 +152,22 @@ WATCHLIST = [
         "cik": "0002042022",
         "cusips": ["G96115103"],          # CINS: G prefix, non-US issuer
         "alt_symbols": [],
-        "ir_feed": None,                  # renders client-side; EDGAR only
+        # NOT on whitefiber.com. That newsroom is a Webflow shell that renders
+        # client-side and carries no headlines in its HTML, so anyone checking
+        # the company's own domain concludes no feed exists — which is what was
+        # concluded here twice. The feed lives on a SEPARATE IR PLATFORM HOST,
+        # whitefiber.investorroom.com, reachable only by following the
+        # autodiscovery <link> out of that shell.
+        #
+        # Shallow at five items, against ten or twenty elsewhere. That is the
+        # platform's window, not a fault, and it is ample against a 15-minute
+        # schedule and a 7-day age floor.
+        #
+        # Verified QUIET, not stale: newest item was 25 days old when added, and
+        # every WYFI filing since 2026-07-01 is a Form 4 or an 8-K with no EX-99
+        # exhibit, so no release has been missed. Check that before concluding a
+        # feed has died — see the DGXX case in docs/press-monitor.md.
+        "ir_feed": "https://whitefiber.investorroom.com/index.php?s=43&pagetemplate=rss",
     },
     {
         "ticker": "DGXX",

@@ -42,24 +42,28 @@ TICKERS = []  # Ticker lookup is fragile across renames; see EXTRA_CIKS above.
 EXTRA_CIKS = watchlist.ciks()          # {ticker: (cik, name)}
 IR_FEEDS = watchlist.ir_feeds()        # {ticker: url}, companies that have one
 
-# Confirmed to have NO usable feed. Their newsrooms render CLIENT-SIDE — the
-# headlines aren't in the delivered HTML, so neither autodiscovery nor a plain
-# scraper can see them. Covering them needs a headless browser, which this
-# component deliberately does not carry. EDGAR 8-K only.
-#   WhiteFiber          https://www.whitefiber.com/investors-news  (Webflow)
-#                       Distributes via PR Newswire, which publishes no
-#                       per-organization feed a plain fetch can reach.
+# ONE company is still uncovered by anything but EDGAR.
 #   Digi Power X        https://www.digipowerx.com/press-releases  (Next.js)
-#                       Moved from GlobeNewswire to ACCESS Newswire around
-#                       2026-01. ACCESS publishes no per-organization feed —
-#                       its only advertised feed is a marketing blog carrying
-#                       no press releases at all. Note the GlobeNewswire feed
-#                       still parses and still returns 20 items, none newer
-#                       than 2025-12-24, so it must NOT be added.
+#                       The newsroom renders client-side and its payload holds
+#                       no titles, dates or slugs. It moved from GlobeNewswire
+#                       to ACCESS Newswire around 2026-01, and neither wire
+#                       exposes a usable per-organization feed.
 #
-# BGDE was in this group until its wire feed was found. Its newsroom still
-# renders client-side; the roster now reads GlobeNewswire's organization feed
-# instead. See watchlist.py.
+#                       TWO TRAPS HERE, both of which parse cleanly while dead:
+#                       the old GlobeNewswire feed still returns 20 items, none
+#                       newer than 2025-12-24; and digipowerx.com/sitemap.xml
+#                       lists 100 release URLs whose lastmod values are all one
+#                       identical rebuild stamp, containing nothing since 2025.
+#                       Neither must be added.
+#
+#                       A public Strapi API does carry the real history — see
+#                       docs/press-monitor.md. Not wired up: it returns no slug
+#                       or URL, so a posted item would have nowhere to point.
+#
+# BGDE and WYFI were both in this group. Their newsrooms still render
+# client-side; the roster now reads a feed hosted elsewhere for each — the
+# newswire's for BGDE, a separate IR platform host for WYFI. Checking the
+# company's own domain alone is what kept them here. See watchlist.py.
 #
 # HUT also publishes no feed, but is NOT one of those: its releases render
 # server-side and come back complete in a plain fetch, so it is scraped instead
