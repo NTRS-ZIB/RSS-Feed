@@ -7,12 +7,24 @@ average, including premarket and after-hours.
 
 ## Schedule
 
-`*/15 11-22 * * 1-5` — every 15 minutes, weekdays, 11:00–22:59 UTC:
+`9 10-22 * * 1-5` — **once an hour**, weekdays, 10:00–22:59 UTC. The job then
+polls internally on each fifteen-minute boundary until its budget runs out:
 
-- EDT (summer, UTC-4): 7am – 6pm ET
-- EST (winter, UTC-5): 6am – 5pm ET
+- EDT (summer, UTC-4): 6am – 6pm ET
+- EST (winter, UTC-5): 5am – 5pm ET
 
 Covers premarket through the close year-round without seasonal edits.
+
+The mechanics, the measured scheduling behaviour behind them and the open
+questions are documented once, in
+[press-monitor.md → Schedule](press-monitor.md#schedule). This workflow runs the
+same shape for the same reasons; only the minute (`:09`, staggered) and the
+per-pass timeout differ.
+
+One difference worth noting: the 10:00 UTC start is inherited from the press
+monitor, where it is EDGAR's opening time. Alpaca's extended session opens 04:00
+Eastern — 08:00 UTC in EDT — so this window sits *inside* the session rather than
+ahead of it and could open earlier on its own merits.
 
 ## Alert tiers
 

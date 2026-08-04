@@ -27,15 +27,132 @@ New items are deduped against `state.json` and posted once each.
 
 ## Schedule
 
-`*/15 12-23 * * 1-5` — every 15 minutes, weekdays, 12:00–23:59 UTC.
+`7 10-23 * * 1-5` — **once an hour**, weekdays, 10:00–23:59 UTC. The job then
+polls internally on each fifteen-minute boundary until its budget runs out.
 
 GitHub cron is UTC with no DST awareness, so the window is set wide enough to
 cover the US pre/postmarket release windows year-round without seasonal edits:
 
-- EDT (Mar–Nov): 08:00–19:59 Eastern
-- EST (Nov–Mar): 07:00–18:59 Eastern
+- EDT (Mar–Nov): 06:00–19:59 Eastern
+- EST (Nov–Mar): 05:00–18:59 Eastern
 
-Change `12-23` to `11-23` to also catch 7:00am ET premarket releases in summer.
+10:00 UTC is 06:00 Eastern, EDGAR's own opening time — nothing can be filed
+before the window opens.
+
+### Why the granularity moved off the cron and into the job
+
+Asking GitHub for `*/15` did not produce a check every fifteen minutes. It
+produced two or three runs a day out of 48 requested. Asking once an hour and
+generating the fifteen-minute cadence inside the job puts the part that has to be
+reliable somewhere GitHub cannot drop it.
+
+`volume_spike.py` runs the same shape on the same reasoning — see
+[volume-spikes.md](volume-spikes.md).
+
+### Measured: scheduled runs on this repo are never on time
+
+Measured 2026-08-04 across all 30 scheduled runs the repo had produced, comparing
+each run's creation time against its own cron:
+
+```
+n=30   min=51m   median=70m   mean=95m   max=173m
+within GitHub's documented 15-25 min drift: 0 of 30
+```
+
+**The delay is bimodal by time of day**, and the split is not subtle:
+
+| regime | n | delay |
+|---|---|---|
+| 05:00–15:59 UTC (US morning) | 14 | 83–173 min, mean **134** |
+| 16:00–23:59 UTC (US afternoon/evening) | 16 | 51–71 min, mean **61** |
+
+Per workflow, delay of each run in minutes:
+
+| workflow | cron | delays |
+|---|---|---|
+| threshold | `15 5 * * 2-6` | 142, 152 |
+| snapshot | `0 11 * * 1-5` | 153, 113 |
+| earnings | `30 12 * * 1` | 173 |
+| ftd | `0 13 * * *` | 134, 83, 85, 159, 140 |
+| letters | `30 13 * * 1-5` | 154, 147 |
+| dilution | `0 15 * * 1-5` | 132, 116 |
+| monitor | `7 10-23 * * 1-5` | 52 |
+| spikes | `9 10-22 * * 1-5` | 51 |
+| btc | `15 21 * * 1-5` | 63, 60, 61 |
+| grid | `20 21 * * 1-5` | 66, 69 |
+| recap | `30 21 * * 1-5` | 64, 61, 62 |
+| crossings | `45 21 * * 1-5` | 55, 53 |
+| shortinterest | `0 22 * * 1-5` | 60, 61 |
+| regsho | `0 23 * * 1-5` | 63, 71 |
+
+Three consequences worth carrying:
+
+1. **A nominal time is not a real time.** `7 10-23` means the first check of the
+   day lands somewhere between 11:00 and 13:00 UTC, not 10:07. The intended
+   06:00 Eastern opening is really 07:00 Eastern at best.
+2. **The morning half of this window is the slow half**, which is also when
+   filings actually arrive.
+3. **The old `*/15` "hit rate" was probably never a hit rate.** If every fire is
+   delayed 50–170 minutes, pending fires coalesce and survivors emerge roughly
+   one an hour. "48 asked, 3 arrived" is what that looks like counted as a rate.
+
+### Registration lag when a cron changes
+
+A new or changed cron does not take effect immediately. Measured across all 17
+cron epochs in the repo's history: **55 minutes to 2h 53m**, with changed crons
+(1h 22m, 1h 51m, 1h 52m, 2h 22m) behaving no differently from new ones.
+
+A schedule that has not fired an hour after landing is normal and not evidence of
+anything. Wait before diagnosing.
+
+### The poll budget is elapsed time, not the top of the hour
+
+The loop runs one pass immediately and one on each fifteen-minute boundary until
+`BUDGET_MIN` minutes have elapsed **since the job started**.
+
+It was originally "run until the top of the next hour", which is wrong here for
+exactly the reason above: a fire nominally at `:07` arrives near `:59`, so a
+wall-clock-hour deadline granted it seconds rather than an hour. On 2026-08-04 a
+live run started its step at 17:00:04 and ran four passes; six seconds earlier it
+would have run one, and printed `1 pass(es), 0 failed` while doing it.
+
+Swept across every start position in an hour:
+
+| passes | wall-clock frame | elapsed frame |
+|---|---|---|
+| 1 | 30 | 0 |
+| 2 | 30 | 0 |
+| 3 | 30 | 0 |
+| 4 | 30 | 64 |
+| 5 | 0 | 56 |
+
+75% of start positions gave fewer than four passes, a quarter gave exactly one,
+and a fire landing on the half hour gave two.
+
+Every run states its plan up front and names both numbers when it stops, so a run
+that does one pass legitimately is distinguishable from one that does so through
+bad arithmetic:
+
+```
+Poll plan: start 17:00:04Z, budget 55m, deadline 17:55:04Z, one pass now and one on each 15-minute boundary before it.
+...
+Next boundary 18:00:00Z is past the deadline 17:55:04Z. Stopping after 4 pass(es).
+4 pass(es), 0 failed, 55m budget, ran 45m.
+```
+
+**`BUDGET_MIN` is 55 and is very likely wrong.** It was set from the only two
+observations available at the time — 51 and 52 minutes — and both came from
+16:07 and 17:09 fires, squarely in the fast regime. The morning half of the
+window runs 83–173 minutes late, so morning arrivals will be spaced far wider
+than 55 minutes and coverage will have gaps there. The budget *value* and the
+window *start* are both open, and both need morning delay data that did not exist
+when this was written.
+
+### Overlapping runs need no handling
+
+A ~60-minute arrival gap against a ~55-minute run means a fire can arrive while
+the previous one is still going. This is safe and needs nothing added — see the
+supersession trap in [`CLAUDE.md`](../CLAUDE.md).
 
 ## Configuration
 
