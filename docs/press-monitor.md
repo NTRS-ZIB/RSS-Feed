@@ -287,6 +287,34 @@ Two different outcomes, easily confused:
 - **Failed to post** — un-marked and retried on the next run. Also deliberate;
   see the rate limiting note below.
 
+### A filter change only ever applies forward
+
+Everything fresh is marked seen **up front**, before any filter runs. That is
+what stops a backlog re-flooding the channel, and it is correct. Its cost is
+invisible until it surprises someone:
+
+**A filing passed over by a filter is already in `state.json`, so widening that
+filter later can never reach it.** It will not reappear as a candidate on the
+next run, or any run.
+
+This is not a defect and needs no fix. It is a property worth knowing, because
+the natural expectation after relaxing a filter is that the newly-qualifying
+filings from the recent past will show up — and they will not, with nothing in
+the logs to say why.
+
+The case that established it: NUAI filed a `4.02` restatement on 2026-07-30. A
+scheduled run marked it seen, then dropped it at the exhibit filter. When
+`ALWAYS_POST_ITEMS` was added five days later — while the filing was still
+inside `MAX_AGE_DAYS` — it did not appear, because its uid was already in
+`state.json`. Establishing that took a full end-to-end trace; "it did not
+appear" was the symptom, not the explanation.
+
+So when a filter widens, expect the effect to start with the *next* qualifying
+filing. Recovering an earlier one means editing `state.json`, which is
+bot-written and guarded by the pre-commit hook — see
+[local workflow](local-workflow.md). Posting it by hand is usually the better
+answer.
+
 ## Coverage
 
 | Company | CIK | IR feed |
