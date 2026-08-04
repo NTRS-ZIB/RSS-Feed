@@ -59,6 +59,7 @@ short_interest.py                 twice-monthly FINRA short interest
 regsho_volume.py                  daily FINRA short sale volume
 watchlist.py                      the roster: one record per company
 audit_identifiers.py              maintenance: what each company trades as
+calibrate_staleness.py            maintenance: publication cadence per source
 ftd_monitor.py                    SEC fails-to-deliver
 threshold_list.py                 Reg SHO threshold list (exception report)
 comment_letters.py                SEC review correspondence
@@ -79,6 +80,7 @@ grid_context.py                   grid demand and natural gas
 .github/workflows/crossings.yml   crossings schedule and runner setup
 .github/workflows/grid.yml        grid context schedule and runner setup
 .github/workflows/audit.yml       identifier audit, manual only
+.github/workflows/calibrate.yml   staleness calibration, manual only
 spike_state.json                  auto-generated; per-day alert tiers
 shortinterest_state.json          auto-generated; last posted settlement date
 regsho_state.json                 auto-generated; last posted trade date

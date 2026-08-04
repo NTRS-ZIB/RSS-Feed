@@ -380,6 +380,20 @@ at 31.8x.
 | **x6** | **none** | **yes** |
 | x8 and above | none | yes |
 
+**These numbers are reproducible, not folklore.** `calibrate_staleness.py`
+measures every source's cadence and prints the table above from live data.
+Re-run it after adding or removing a source, when a source is found to have died
+quietly, or when a STALE warning turns out to be a false positive:
+
+```bash
+gh workflow run "Calibrate staleness"
+```
+
+It is read-only, dispatch-only and needs no secrets. It carries the dead
+GlobeNewswire feed as a permanent control in `KNOWN_DEAD` — a detector that
+stops firing on that is broken, and one control is thin, so a second dead source
+is worth adding there rather than only noting.
+
 **Same-day items are collapsed before measuring**, and this is load-bearing
 rather than tidiness. Uncollapsed, HUT's median reads 5.5d instead of 18d and
 MARA's 4.4d instead of 8d — a single burst would drag the median down until an

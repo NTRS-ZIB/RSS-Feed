@@ -1,0 +1,32 @@
+name: Calibrate staleness
+
+# Maintenance tool, not a component. Read-only: fetches the same feeds the
+# press monitor already fetches, prints each source's publication cadence and
+# what every candidate multiple would do, exits. No webhook, no state, no
+# commit, no schedule, no secrets — it runs only when started by hand.
+#
+# Run it after adding or removing a source, when a source is found to have died
+# quietly, or when a STALE warning turns out to be a false positive. See
+# calibrate_staleness.py and docs/press-monitor.md.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install feedparser requests
+      - name: Calibrate
+        timeout-minutes: 10
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: python -u calibrate_staleness.py
