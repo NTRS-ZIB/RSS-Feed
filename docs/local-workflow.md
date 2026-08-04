@@ -150,6 +150,34 @@ git checkout -- <file>
   can occasionally produce lock or corruption errors during git operations. It
   has not so far, but an unexplained git error is worth checking against this
   first.
+- **`workflow_dispatch` only registers on the default branch.** A workflow
+  committed to a branch cannot be triggered: `gh workflow run` returns *could
+  not find any workflows named*, and the workflow does not appear in the
+  registry at all.
+
+  The consequence is a real asymmetry. **The branch-then-dry-run pattern that
+  works for components does not work for workflows.** A component change can be
+  pushed to a branch and exercised with `gh workflow run --ref <branch>`,
+  because the workflow already exists on `main`. A *new* workflow, or a new tool
+  plus its workflow, is unverifiable in Actions until it is merged — so verify
+  the script locally, merge, then dispatch to close the gap. `calibrate.yml` was
+  handled that way; every probe before it went straight to `main`, which is why
+  this had not surfaced.
+- **Never round-trip a file through PowerShell `Get-Content`/`Set-Content`.**
+  `Set-Content -Encoding utf8` re-encodes content that was read as ANSI, which
+  on this repo means a UTF-8 BOM prepended and every em-dash mangled. It
+  happened once to `docs/press-monitor.md`: **67 em-dashes corrupted** and the
+  diff inflated from 67 lines to 191, from what was meant to be a two-line
+  edit. Nothing errors, and the damage is invisible in a terminal that renders
+  the mojibake back.
+
+  Use an editor that preserves encoding. To check a file after any bulk
+  rewrite:
+
+  ```bash
+  head -c 3 docs/press-monitor.md | od -An -tx1   # ef bb bf means a BOM
+  grep -c 'â€' docs/press-monitor.md              # non-zero means mojibake
+  ```
 - **`watchlist.py` has no workflow.** It is the shared roster imported by the
   others, not a scheduled job, which is why there are fifteen workflows for
   sixteen root scripts.
