@@ -481,37 +481,52 @@ WATCHLIST = [
         # 10-Q accession, 0001193125-26-329472, filed 2026-08-03 for the period
         # ended 2026-06-30.
         "cik": "0001755953",
-        # [1] retired 2026-07-06 and [0] begins the same day. Same issuer
-        # prefix 02462A, issue number 104 -> 203, and the descriptions read
-        # "AMERICAN BITCOIN CORP COM CL A" then "AMERICAN BITCOIN CORP CL A
-        # NEW" — a corporate action on one issuer, five weeks old at the time
-        # of writing, not a reassignment.
+        # FIVE identifiers across four issuer prefixes, and every one of them
+        # is this registrant. The longest chain on the roster, and the reason
+        # the two-pass note in docs/watchlist.md is a floor rather than a rule:
+        # a pinned CUSIP bridges ONE rename per pass, and this took four.
         #
-        # Both are American-Bitcoin-era. The sweep sees nothing under this
-        # company before 2025-09-04, the day after the rename, because the
-        # September 2025 combination reassigned at ISSUER level: Gryphon
-        # traded under 400510103 and Akerna under 00973W102/00973W300, neither
-        # of which shares this prefix. So a pinned CUSIP cannot bridge back to
-        # the earlier eras in one hop — see alt_symbols.
-        "cusips": ["02462A203", "02462A104"],
+        #   00973W102  AKERNA CORP COM          2021-07-15 to 2022-11-04
+        #   00973W300  AKERNA CORP COM NEW      2022-11-10 to 2024-02-08
+        #   400510103  GRYPHON DIGITAL MNG INC  2024-02-13 to 2025-09-02
+        #   02462A104  AMERICAN BITCOIN CORP    2025-09-04 to 2026-07-06
+        #   02462A203  AMERICAN BITCOIN CL A NEW  2026-07-06 onward
+        #
+        # The ranges abut with no overlap and no unexplained gap, each
+        # description names the company EDGAR's formerNames says held the CIK
+        # at that date, and the two 00973W and two 02462A pairs are ordinary
+        # corporate actions within one issuer. Note the prefix changes at both
+        # renames — 00973W -> 400510 -> 02462A — so nothing here could have
+        # been inferred from the identifiers alone.
+        #
+        # 2021-07-15 is where the 120-period window opens, not where Akerna
+        # begins. An earlier identifier may exist and has not been swept.
+        "cusips": ["02462A203", "02462A104", "400510103",
+                   "00973W300", "00973W102"],
         # ABTCZZZZ is not a ticker. NSCC uses a ZZZZ suffix while a symbol
         # change processes, and here it occupies the single settlement day of
         # the CUSIP changeover, 2026-07-06 — the same placeholder as DGXX's
         # DGHIZZZZ and HUT's HUTZZZZ. Listed because it occurs in the data.
         #
-        # GRYP and KERN are NOT here, and that is an UNDER-REPORT rather than a
-        # measured absence. Both exist in the fails files against this
-        # registrant's earlier names — "GRYPHON DIGITAL MNG INC COM" under
-        # 400510103, "AKERNA CORP COM" under 00973W102 — but establishing them
-        # means pinning those CUSIPs and re-sweeping, not copying them out of a
-        # probe. Until that is done, an FTD_REPLAY reaching past 2025-09-03
-        # loses this company's rows. A pinned CUSIP bridges one rename per
-        # pass, and this registrant has three.
+        # GRYP and KERN are this registrant's earlier symbols, and the dates
+        # abut with no overlap and no gap that matters:
+        #
+        #   KERN  AKERNA CORP COM            .. 2024-02-08
+        #   GRYP  GRYPHON DIGITAL MNG INC    2024-02-13 .. 2025-09-02
+        #   ABTC  AMERICAN BITCOIN CORP      2025-09-04 ..
+        #
+        # against EDGAR's formerNames on this CIK — Akerna to 2024-02-13,
+        # Gryphon to 2025-09-03. Two independent records agreeing, which is
+        # the standard HUT was established to.
+        #
+        # Checked in the other direction too, because that is the SPCX lesson
+        # reversed: neither symbol appears in 2026-06 or 2026-07, so neither
+        # has been recycled by another company since being released.
         #
         # MTEC, the 2018-19 SPAC symbol, sits outside a 120-period window
         # altogether and cannot be established from these files at any depth
-        # they reach.
-        "alt_symbols": ["ABTCZZZZ"],
+        # they reach. That absence is unswept, not measured.
+        "alt_symbols": ["ABTCZZZZ", "GRYP", "KERN"],
         "ir_feed": None,                  # NOT CHECKED YET — see below
     },
     # THE FIVE `ir_feed: None` VALUES ABOVE MEAN SOMETHING DIFFERENT from the
