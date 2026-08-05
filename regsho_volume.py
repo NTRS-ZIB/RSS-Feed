@@ -68,6 +68,11 @@ NOTABLE_DELTA_POINTS = 12.0
 # Ignore sessions thinner than this; tiny volume makes meaningless ratios.
 MIN_TOTAL_VOLUME = 25_000
 
+# Below this many sessions the average is too narrow to lean on, and the row
+# carries a `~`. Half the baseline window, which is where the log has drawn
+# the line since this component was written — it is now drawn in the post too.
+MIN_BASELINE_SESSIONS = BASELINE_DAYS // 2
+
 # Stop and complain rather than posting stale data as current.
 STALE_WARN_DAYS = 10
 
@@ -277,6 +282,18 @@ def human(v):
     return f"{v:.0f}"
 
 
+def thin_baseline(m):
+    """Is this ticker's average built on too few sessions to lean on?
+
+    Same judgement ftd_monitor.py makes with MIN_FLAG_PERIODS, and it was
+    already being made here — but AFTER build_embed() and only into the log,
+    so a ratio resting on a handful of sessions appeared in the posted table
+    with nothing to say so. The reader saw an average and had no way to know
+    it was three days wide.
+    """
+    return m["sessions"] < MIN_BASELINE_SESSIONS
+
+
 def build_table(data):
     """<=28 chars: Discord mobile wraps code blocks past that."""
     lines = [f"{'':5}{'Short':>6}{'Avg':>6}{'':1}{'Vol':>7}"]
@@ -289,12 +306,31 @@ def build_table(data):
         mark = " "
         if m["delta"] is not None and abs(m["delta"]) >= NOTABLE_DELTA_POINTS:
             mark = "+" if m["delta"] > 0 else "-"
+        # `~` marks the AVERAGE, which is the only figure a short baseline
+        # affects — today's ratio and volume are measured, not averaged.
+        # 26 characters with it, inside the 28 ceiling.
         lines.append(f"{sym:<5}{m['ratio']:>5.0f}%{avg:>6}{mark}"
-                     f"{human(m['volume']):>7}")
+                     f"{human(m['volume']):>7}{'~' if thin_baseline(m) else ''}")
     return "\n".join(lines)
 
 
-def build_embed(day, data, missing):
+def classify_absent(missing, by_ticker):
+    """Split absent tickers into ('unseen', 'dropped').
+
+    Same distinction short_interest.py draws, from the same kind of evidence.
+    `by_ticker` holds every session in the LOOKBACK_DAYS window, not only the
+    latest trade date, so a ticker with no rows at all in the window has never
+    reported here — a recent listing — while one with rows on earlier dates and
+    none on the latest has genuinely gone absent.
+
+    Both used to print as "No data", which reads as a fault for a company that
+    is simply new.
+    """
+    return (sorted(t for t in missing if not by_ticker.get(t)),
+            sorted(t for t in missing if by_ticker.get(t)))
+
+
+def build_embed(day, data, missing, unseen=(), dropped=()):
     movers = [s for s, m in data.items()
               if m["delta"] is not None
               and abs(m["delta"]) >= NOTABLE_DELTA_POINTS]
@@ -305,7 +341,20 @@ def build_embed(day, data, missing):
             f"This is a flow, not a position — much of it is market-maker "
             f"hedging, and 40-60% is ordinary. Only the deviation from a "
             f"ticker's own average carries information, in either direction.")
-    if missing:
+    thin = sorted(s for s, m in data.items() if thin_baseline(m))
+    if thin:
+        desc += (f"\n\n`~` average over fewer than {MIN_BASELINE_SESSIONS} "
+                 f"sessions, so the deviation is against a narrow baseline: "
+                 f"{', '.join(thin)}")
+    if unseen:
+        desc += (f"\n\nNo history in the {LOOKBACK_DAYS}-day window: "
+                 f"{', '.join(unseen)} — nothing reported under these symbols "
+                 f"rather than something missing. Expected for a recent "
+                 f"listing.")
+    if dropped:
+        desc += f"\n\nReported earlier in the window but not on {day}: " \
+                f"{', '.join(dropped)}"
+    if missing and not (unseen or dropped):
         desc += f"\n\nNo data: {', '.join(missing)}"
 
     return {
@@ -368,8 +417,12 @@ def main():
     missing = sorted(set(TICKERS) - set(data))
 
     print(f"Latest trade date: {latest} — {len(data)} of {len(TICKERS)} found")
-    if missing:
-        print(f"  no usable data: {', '.join(missing)}")
+    unseen, dropped = classify_absent(missing, by_ticker)
+    if unseen:
+        print(f"  no history in the {LOOKBACK_DAYS}-day window: "
+              f"{', '.join(unseen)}  (recent listing, or not carried)")
+    if dropped:
+        print(f"  reported earlier but not on {latest}: {', '.join(dropped)}")
 
     state = load_state()
     if state.get("last_trade_date") == latest and not DRY_RUN:
@@ -379,13 +432,13 @@ def main():
     if not data:
         sys.exit("Nothing to report.")
 
-    embed = build_embed(latest, data, missing)
+    embed = build_embed(latest, data, missing, unseen, dropped)
     print()
     print(embed["fields"][0]["value"])
-    thin = [s for s, m in data.items() if m["sessions"] < BASELINE_DAYS // 2]
+    thin = sorted(s for s, m in data.items() if thin_baseline(m))
     if thin:
-        print(f"  thin baseline (<{BASELINE_DAYS//2} sessions): "
-              f"{', '.join(sorted(thin))}")
+        print(f"  thin baseline (<{MIN_BASELINE_SESSIONS} sessions), "
+              f"marked `~` in the post: {', '.join(thin)}")
 
     if DRY_RUN:
         print(f"\nDry run: would post trade date {latest}. State not saved.")
