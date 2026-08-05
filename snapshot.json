@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-04T12:53:10+00:00",
+  "generated": "2026-08-05T12:47:45+00:00",
   "issuers": {
     "ANY": {
       "cik": "0001591956",
@@ -438,7 +438,7 @@
     },
     "CIFR": {
       "cik": "0001819989",
-      "filing_count": 607,
+      "filing_count": 608,
       "filings": {
         "10-K": {
           "accession": "0001819989-26-000009",
@@ -449,12 +449,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1819989/000181998926000009/cifr-20251231.htm"
         },
         "10-Q": {
-          "accession": "0001819989-26-000028",
-          "count": 20,
-          "filed": "2026-05-05",
+          "accession": "0001819989-26-000041",
+          "count": 21,
+          "filed": "2026-08-04",
           "form": "10-Q",
-          "period": "2026-03-31",
-          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000181998926000028/cifr-20260331.htm"
+          "period": "2026-06-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000181998926000041/cifr-20260630.htm"
         },
         "20-F": null,
         "3": {
@@ -560,11 +560,11 @@
       "name": "Cipher Digital Inc.",
       "projection": {
         "confidence": "normal",
-        "expected": "2026-08-05",
+        "expected": "2026-11-04",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
-        "median_lag_days": 36,
-        "period_end": "2026-06-30",
+        "median_lag_days": 35,
+        "period_end": "2026-09-30",
         "sample": 8,
         "spread_days": 6
       }
@@ -1085,7 +1085,7 @@
     },
     "MARA": {
       "cik": "0001507605",
-      "filing_count": 1093,
+      "filing_count": 1096,
       "filings": {
         "10-K": {
           "accession": "0001507605-26-000007",
@@ -1113,12 +1113,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1507605/000149315224035348/xslF345X02/ownership.xml"
         },
         "4": {
-          "accession": "0001493152-26-035873",
-          "count": 295,
-          "filed": "2026-08-03",
+          "accession": "0001493152-26-036065",
+          "count": 298,
+          "filed": "2026-08-04",
           "form": "4",
-          "period": "2026-07-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000149315226035873/xslF345X06/ownership.xml"
+          "period": "2026-07-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000149315226036065/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -1346,7 +1346,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1546,
+      "filing_count": 1549,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -1374,12 +1374,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226034093/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001493152-26-029596",
-          "count": 601,
-          "filed": "2026-06-22",
+          "accession": "0001493152-26-036036",
+          "count": 602,
+          "filed": "2026-08-04",
           "form": "4",
-          "period": "2026-06-17",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226029596/xslF345X06/ownership.xml"
+          "period": "2026-08-01",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226036036/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -1392,12 +1392,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001493152-26-035326",
-          "count": 350,
-          "filed": "2026-07-30",
+          "accession": "0001493152-26-036105",
+          "count": 351,
+          "filed": "2026-08-05",
           "form": "8-K",
-          "period": "2026-07-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226035326/form8-k.htm"
+          "period": "2026-08-05",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226036105/form8-k.htm"
         },
         "DEF 14A": {
           "accession": "0001493152-25-018023",
@@ -1452,18 +1452,18 @@
         },
         "SCHEDULE 13D": null,
         "SCHEDULE 13G": {
-          "accession": "0002012383-26-003142",
-          "count": 8,
-          "filed": "2026-07-30",
+          "accession": "0001088226-26-000005",
+          "count": 9,
+          "filed": "2026-08-05",
           "form": "SCHEDULE 13G",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000201238326003142/xslSCHEDULE_13G_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000108822626000005/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-07-30",
+      "latest_filing_date": "2026-08-05",
       "name": "Soluna Holdings, Inc",
       "projection": {
         "confidence": "normal",
@@ -1610,7 +1610,7 @@
     },
     "WULF": {
       "cik": "0001083301",
-      "filing_count": 1225,
+      "filing_count": 1226,
       "filings": {
         "10-K": {
           "accession": "0001083301-26-000031",
@@ -1656,12 +1656,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001104659-26-080583",
-          "count": 249,
-          "filed": "2026-07-06",
+          "accession": "0001083301-26-000162",
+          "count": 250,
+          "filed": "2026-08-05",
           "form": "8-K",
-          "period": "2026-07-06",
-          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000110465926080583/tm2619468d1_8k.htm"
+          "period": "2026-08-05",
+          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000108330126000162/wulf-20260805.htm"
         },
         "DEF 14A": {
           "accession": "0001083301-26-000077",
@@ -1728,7 +1728,7 @@
         "IKONICS CORP",
         "CHROMALINE CORP"
       ],
-      "latest_filing_date": "2026-08-03",
+      "latest_filing_date": "2026-08-05",
       "name": "TERAWULF INC.",
       "projection": {
         "confidence": "normal",
@@ -1743,7 +1743,7 @@
     },
     "WYFI": {
       "cik": "0002042022",
-      "filing_count": 73,
+      "filing_count": 77,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-034341",
@@ -1763,20 +1763,20 @@
         },
         "20-F": null,
         "3": {
-          "accession": "0001213900-25-072663",
-          "count": 9,
-          "filed": "2025-08-06",
+          "accession": "0001213900-26-085353",
+          "count": 11,
+          "filed": "2026-08-04",
           "form": "3",
-          "period": "2025-08-06",
-          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390025072663/xslF345X02/ownership.xml"
+          "period": "2026-08-01",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026085353/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001213900-26-082388",
-          "count": 19,
-          "filed": "2026-07-28",
+          "accession": "0001213900-26-085356",
+          "count": 21,
+          "filed": "2026-08-04",
           "form": "4",
-          "period": "2026-07-24",
-          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026082388/xslF345X06/ownership.xml"
+          "period": "2026-08-01",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026085356/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -1825,7 +1825,7 @@
       "former_names": [
         "White Fiber, Inc."
       ],
-      "latest_filing_date": "2026-08-03",
+      "latest_filing_date": "2026-08-04",
       "name": "WhiteFiber, Inc.",
       "projection": {
         "confidence": "normal",
