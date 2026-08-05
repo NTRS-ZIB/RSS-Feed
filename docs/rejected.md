@@ -198,7 +198,7 @@ Correlation is scale-invariant, so bitcoin moving less cannot reduce it
 directly. The mechanism runs through `r = beta x sigma_btc / sigma_ticker`,
 which makes **beta** — how far the stock moves per 1% of bitcoin — the
 discriminating quantity, and yields a falsifiable signature: a pure rescaling
-of bitcoin leaves `r` unchanged and raises beta by 1/0.63, or **+59%**.
+of bitcoin leaves `r` unchanged and raises beta by 1/ratio, or **+58%**.
 
 | | |
 |---|---|

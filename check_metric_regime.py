@@ -69,7 +69,7 @@ volatility fell 54% to 34% while the Nasdaq's rose 16% to 25% and the roster's
 own median barely moved at 1.05. Median correlation change was -0.20; median
 RELATIVE change in beta was +4%, and betas fell for seven of fourteen, a coin
 flip. The sigma-ratio term fell for all fourteen. A pure rescaling would have
-raised beta 59%. The measure was rejected — see docs/rejected.md.
+raised beta 58%. The measure was rejected — see docs/rejected.md.
 
 Read-only. Fetches price history, prints tables, exits. No webhook, no state,
 no commit, no schedule, no write permissions.
