@@ -470,6 +470,45 @@ WATCHLIST = [
     # covered. Do not read these as evidence that no feed exists.
 ]
 
+# --------------------------------------------------------------- REFUSALS ---
+
+# Identifiers that LOOK like they belong to a company on this roster and do
+# not. Every entry has been proposed by audit_identifiers.py and rejected
+# against the SEC's own description field.
+#
+# THIS LIST EXISTS BECAUSE THE PROPOSAL RECURS. The audit reads
+# date|cusip|symbol and nothing else, so it cannot see that a ticker changed
+# hands; it will re-propose every one of these on every future run, for as long
+# as the sweep window reaches them. A note in a comment would leave the roster
+# defended by whoever reads the verdict most carefully that day. This is the
+# decision recorded once: audit_identifiers.py prints these as `ref` rather
+# than `NEW`, and ftd_monitor.py refuses to learn them into ftd_state.json.
+#
+# `handover` is the LAST date the other security traded under `symbol`. It is
+# what lets a replay reaching further back find nothing rather than find
+# somebody else's rows — see symbol_handover().
+
+REFUSED = [
+    {
+        "cusip": "19423L672",
+        "symbol": "SPCX",
+        "belongs_to": "Collaborative Investment Series Trust",
+        "seen": ("2021-07-16", "2026-04-07"),
+        "handover": "2026-04-07",
+        "why": (
+            "A SPAC ETF held the ticker SPCX until 2026-04-07. Space "
+            "Exploration Technologies had no security of any kind before its "
+            "8-A12B on 2026-06-10 and IPO'd on 2026-06-12, so an identifier "
+            "trading from 2021 cannot be its. The SEC's own description "
+            "settles it without inference: this one reads COLLABORATIVE INVT "
+            "SER TR SPAC, while SPCX's real identifier 84615Q103 reads SPACE "
+            "EXPL TECHNOLOGIES CORP C. The ticker was RECYCLED, which looks "
+            "exactly like a rename in the three columns the audit reads."
+        ),
+    },
+]
+
+
 # ------------------------------------------------------------------ VIEWS ---
 
 
@@ -514,6 +553,39 @@ def symbol_to_ticker():
 def cusip_pins():
     """{'565788106': 'MARA', ...} — every CUSIP, current and retired."""
     return {cusip: c["ticker"] for c in WATCHLIST for cusip in c["cusips"]}
+
+
+def refused_cusips():
+    """{'19423L672': record} — identifiers rejected against SEC descriptions.
+
+    Consumers use this to tell "not seen before" from "seen, checked and
+    refused". The two are indistinguishable without it, which is how a
+    recycled ticker gets adopted on the third or fourth reading of a verdict.
+    """
+    return {r["cusip"]: r for r in REFUSED}
+
+
+def symbol_handover():
+    """{'SPCX': '20260407'} — the last date a symbol meant SOMEBODY ELSE.
+
+    A consumer filtering a bulk file by symbol must ignore rows dated at or
+    before this, or it attributes the previous holder's rows to the current
+    one. Compact YYYYMMDD, matching the SEC fails files' own date format, so a
+    plain string comparison orders correctly and no date parsing is needed —
+    this file imports `sys` and nothing else, deliberately.
+
+    A symbol absent from this map has no known handover, and `.get(sym, "")`
+    then compares less than every real date, so nothing is skipped.
+    """
+    out = {}
+    for r in REFUSED:
+        if not r.get("handover"):
+            continue
+        stamp = r["handover"].replace("-", "")
+        # If one symbol has changed hands more than once, the latest wins.
+        if stamp > out.get(r["symbol"], ""):
+            out[r["symbol"]] = stamp
+    return out
 
 
 def ir_feeds():
@@ -594,6 +666,21 @@ def validate():
                 f"{alt!r} is a live ticker AND an alternate of {owner} — "
                 f"one of the two is wrong")
 
+    # A refusal that contradicts the roster is worse than no refusal at all:
+    # one of the two says a CUSIP belongs to a company and the other says it
+    # belongs to somebody else, and nothing downstream can decide which.
+    for r in REFUSED:
+        for field in ("cusip", "symbol", "belongs_to", "handover", "why"):
+            if not r.get(field):
+                problems.append(f"REFUSED {r.get('cusip', '?')}: missing {field!r}")
+        cu = r.get("cusip", "")
+        if len(cu) != 9 or cusip_check_digit(cu) != cu[8]:
+            problems.append(f"REFUSED {cu!r} fails its check digit")
+        if cu in seen_cusips:
+            problems.append(
+                f"REFUSED {cu!r} is ALSO claimed by {seen_cusips[cu]} — a "
+                f"refused identifier cannot be a company's own")
+
     return problems
 
 
@@ -623,6 +710,16 @@ def main():
     print(f"\nderived: {len(cusip_pins())} CUSIP pins, "
           f"{len(alt_by_ticker())} companies with alternates, "
           f"{len(ir_feeds())} IR feeds")
+
+    # Printed rather than hidden: the whole point of the list is that the next
+    # reader sees a decision already taken instead of re-deriving it from an
+    # audit verdict.
+    if REFUSED:
+        print(f"\nrefused identifiers ({len(REFUSED)}) — proposed by the audit "
+              f"and rejected:")
+        for r in REFUSED:
+            print(f"  {r['cusip']}  traded as {r['symbol']} to "
+                  f"{r['handover']} — {r['belongs_to']}")
 
     if problems:
         print(f"\n{len(problems)} PROBLEM(S):")

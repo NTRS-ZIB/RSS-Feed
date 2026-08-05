@@ -18,6 +18,31 @@ Both were previously found by accident. The first sweep, over twelve months,
 turned up BGDE's retired CUSIP 57778N307 and NUAI's former ticker NEHC, and
 confirmed every other company.
 
+WHAT IT CANNOT ANSWER
+This reads three columns — settlement date, CUSIP, symbol — and a RECYCLED
+TICKER looks exactly like a rename in all three. A symbol released by one
+company and taken by another produces the same shape as a company that changed
+identifiers: rows under one ticker, two CUSIPs, one ending where the other
+begins. Nothing here can tell them apart.
+
+The COLLISIONS section below is the check meant to catch it, and it has a
+STRUCTURAL BLIND SPOT: it fires only when a row's symbol and CUSIP resolve to
+DIFFERENT companies, so it needs a pinned CUSIP to collide with. A newly added
+company sits at "cusips": [] by design, exactly as docs/watchlist.md instructs,
+so there is nothing to collide with — and a new listing is precisely where a
+recycled ticker is most likely, because a symbol only becomes available after
+its previous holder gives it up.
+
+SPCX established this. The ticker belonged to a SPAC ETF until 2026-04-07 and
+to Space Exploration Technologies from 2026-06-15, and the first sweep after
+SPCX was added proposed the ETF's CUSIP under this company with no collision
+reported and no other signal. What settled it was the DESCRIPTION column,
+which this tool does not parse: the files name the issuer outright.
+
+So: when a proposed CUSIP predates the company's own listing, read the
+description before accepting it, and record the refusal in watchlist.py's
+REFUSED list rather than in your memory of the verdict.
+
 WHEN TO RUN IT
 - After adding a company, to learn what it has traded as. See the two-pass
   note in docs/watchlist.md — a new company usually needs two runs.
@@ -96,9 +121,11 @@ def main():
 
     known_cusips = watchlist.cusip_pins()            # cusip -> ticker
     known_symbols = watchlist.symbol_to_ticker()     # symbol -> ticker
+    refused = watchlist.refused_cusips()             # cusip -> record
 
     print(f"Roster: {len(watchlist.tickers())} tickers, "
-          f"{len(known_cusips)} CUSIPs, {len(known_symbols)} symbols\n")
+          f"{len(known_cusips)} CUSIPs, {len(known_symbols)} symbols, "
+          f"{len(refused)} refused\n")
 
     sess = session()
     periods = fetch_index(sess)[:SWEEP_PERIODS]
@@ -148,6 +175,7 @@ def main():
     print("CUSIPs seen per company")
     print("=" * 72)
     new_cusips = defaultdict(list)
+    refused_hits = []
     for ticker in sorted(watchlist.tickers()):
         seen = cusips.get(ticker, {})
         if not seen:
@@ -156,6 +184,16 @@ def main():
         print(f"\n{ticker}:")
         for cu, v in sorted(seen.items(), key=lambda kv: kv[1][0]):
             known = known_cusips.get(cu) == ticker
+            # `ref` is a THIRD state, and the reason this loop is not a
+            # boolean. A refused identifier is not unknown — it has been seen,
+            # checked against the SEC's description and rejected — so
+            # reporting it as NEW would ask the reader to take the same
+            # decision again, and eventually somebody takes it differently.
+            if cu in refused:
+                refused_hits.append((ticker, cu, span(v)))
+                print(f"  ref {cu}   {span(v)}   <- REFUSED, "
+                      f"{refused[cu]['belongs_to']}")
+                continue
             if not known:
                 new_cusips[ticker].append(cu)
             print(f"  {'ok ' if known else 'NEW'} {cu}   {span(v)}")
@@ -186,6 +224,20 @@ def main():
         print(f"  ({len(collisions)} total)")
         print("  This means the roster is wrong somewhere. Investigate before")
         print("  trusting anything above.")
+
+    if refused_hits:
+        print("\n" + "=" * 72)
+        print("REFUSED — matched, and rejected by record in watchlist.py")
+        print("=" * 72)
+        for ticker, cu, when in refused_hits:
+            r = refused[cu]
+            print(f"\n  {ticker}: {cu}   {when}")
+            print(f"    belongs to : {r['belongs_to']}")
+            print(f"    handover   : traded as {r['symbol']} to {r['handover']}")
+            print(f"    why        : {r['why']}")
+        print("\n  These are NOT proposals. Do not add them. If you believe one")
+        print("  is wrong, change REFUSED in watchlist.py and say why there —")
+        print("  not here, and not by adding the identifier back.")
 
     print("\n" + "=" * 72)
     print("VERDICT")
