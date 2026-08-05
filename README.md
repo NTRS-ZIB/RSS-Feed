@@ -62,6 +62,7 @@ earnings_calendar.py              projected reporting dates
 volume_spike.py                   intraday unusual-volume alerts
 short_interest.py                 twice-monthly FINRA short interest
 regsho_volume.py                  daily FINRA short sale volume
+weekly_digest.py                  weekly digest: derivation and verdict record
 watchlist.py                      the roster: one record per company
 audit_identifiers.py              maintenance: what each company trades as
 calibrate_staleness.py            maintenance: publication cadence per source
@@ -86,6 +87,7 @@ grid_context.py                   grid demand and natural gas
 .github/workflows/dilution.yml    dilution schedule and runner setup
 .github/workflows/crossings.yml   crossings schedule and runner setup
 .github/workflows/grid.yml        grid context schedule and runner setup
+.github/workflows/digest.yml      weekly digest backfill, manual only
 .github/workflows/audit.yml       identifier audit, manual only
 .github/workflows/calibrate.yml   staleness calibration, manual only
 .github/workflows/items.yml       8-K item audit, manual only
