@@ -463,6 +463,245 @@ def main():
         print("    %-6s %10s %10s %8s" %
               (s, "%+.2f" % pr, "%+.2f" % rr, "%+.2f" % (rr - pr)))
 
+    # ------------------------------------------------------------------
+    # A second reference series. Thirteen of fourteen falling against BTC
+    # at once is equally consistent with "decoupled from bitcoin" and with
+    # "recoupled to something else, and the bitcoin number fell as a side
+    # effect". One series cannot tell those apart, and they are different
+    # claims about what this watchlist is looking at.
+    #
+    # QQQ and NVDA both: QQQ is the sector without single-name risk, NVDA is
+    # the purest AI/HPC proxy available but is one company's news. Keeping
+    # both separates "recoupled to tech broadly" from "recoupled to AI
+    # infrastructure specifically", and costs one symbol on a request that is
+    # already being made.
+    # ------------------------------------------------------------------
+    REFS = ["QQQ", "NVDA"]
+    print("\n" + "=" * 78)
+    print("7. A SECOND REFERENCE SERIES")
+    print("=" * 78)
+    ref_eq, _ = fetch_equities(REFS, LOOKBACK_DAYS)
+    if not ref_eq:
+        print("  could not fetch reference series")
+        return
+    refs = {"BTC": btc}
+    for rsym in REFS:
+        if rsym in ref_eq:
+            refs[rsym] = ref_eq[rsym]
+            print("  %-5s %4d bars  %s .. %s" %
+                  (rsym, len(ref_eq[rsym]), min(ref_eq[rsym]),
+                   max(ref_eq[rsym])))
+
+    def aligned(series_list, window):
+        """Return-vectors for several series on their common dates."""
+        common = sorted(set.intersection(*[set(s) for s in series_list]))
+        use = common[-(window + 1):]
+        if len(use) < 6:
+            return None
+        return [returns_on(use, s) for s in series_list], use
+
+    # The confound. If BTC and QQQ moved together over the window, then a
+    # fall against one and a rise against the other is a stronger finding
+    # than it looks. If they are near-identical, the second series adds
+    # nothing and it is better to know that now.
+    print("\n  Do the reference series themselves move together?\n")
+    names = list(refs)
+    print("    %-14s" % "pair" + "".join("%12s" % ("%dd" % w) for w in WINDOWS))
+    for i in range(len(names)):
+        for j in range(i + 1, len(names)):
+            a, b = names[i], names[j]
+            line = "    %-14s" % ("%s vs %s" % (a, b))
+            for w in WINDOWS:
+                got = aligned([refs[a], refs[b]], w)
+                if not got:
+                    line += "%12s" % "-"
+                    continue
+                (ra, rb), _ = got
+                r, n = pearson(ra, rb)
+                line += "%12s" % ("%+.2f" % r if r is not None else "-")
+            print(line)
+
+    print("\n  And over the two halves, the same split as the tickers:\n")
+    print("    %-14s %10s %10s %8s" % ("pair", "prior 90", "recent 90", "change"))
+    for i in range(len(names)):
+        for j in range(i + 1, len(names)):
+            a, b = names[i], names[j]
+            common = sorted(set(refs[a]) & set(refs[b]))
+            if len(common) < 185:
+                continue
+            rec, pri = common[-91:], common[-182:-90]
+            rr, _ = pearson(returns_on(rec, refs[a]), returns_on(rec, refs[b]))
+            pr, _ = pearson(returns_on(pri, refs[a]), returns_on(pri, refs[b]))
+            print("    %-14s %10s %10s %8s" %
+                  ("%s vs %s" % (a, b), "%+.2f" % pr, "%+.2f" % rr,
+                   "%+.2f" % (rr - pr)))
+
+    print("\n" + "=" * 78)
+    print("8. DECOUPLED, OR RECOUPLED? PRIOR 90 vs RECENT 90, EVERY REFERENCE")
+    print("=" * 78)
+    print("  A fall against BTC with a RISE against QQQ/NVDA is rotation.")
+    print("  A fall against everything is idiosyncratic risk taking over.\n")
+    hdr = "    %-6s" % ""
+    for rname in names:
+        hdr += "%22s" % rname
+    print(hdr)
+    print("    %-6s" % "" + "".join("%22s" % "prior  recent  chg"
+                                    for _ in names))
+    falls = {rname: [] for rname in names}
+    for s in symbols:
+        if s not in eq:
+            continue
+        line = "    %-6s" % s
+        for rname in names:
+            common = sorted(set(eq[s]) & set(refs[rname]))
+            if len(common) < 185:
+                line += "%22s" % "-"
+                continue
+            rec, pri = common[-91:], common[-182:-90]
+            rr, _ = pearson(returns_on(rec, eq[s]), returns_on(rec, refs[rname]))
+            pr, _ = pearson(returns_on(pri, eq[s]), returns_on(pri, refs[rname]))
+            if rr is None or pr is None:
+                line += "%22s" % "-"
+                continue
+            falls[rname].append((s, rr - pr))
+            line += "%22s" % ("%+.2f  %+.2f  %+.2f" % (pr, rr, rr - pr))
+        print(line)
+    print()
+    for rname in names:
+        ch = [c for _, c in falls[rname]]
+        if not ch:
+            continue
+        down = sum(1 for c in ch if c < 0)
+        print("    %-5s %2d of %2d fell   mean change %+.2f   median %+.2f"
+              % (rname, down, len(ch), sum(ch) / len(ch),
+                 sorted(ch)[len(ch) // 2]))
+
+    print("\n" + "=" * 78)
+    print("9. SPEARMAN THROUGHOUT? THE ANY PROBLEM AGAINST EVERY REFERENCE")
+    print("=" * 78)
+    print("  ANY's +112% day is a property of ANY, not of bitcoin, so it")
+    print("  recurs against every series. 90-day window.\n")
+    print("    %-6s" % "" + "".join("%26s" % rname for rname in names))
+    print("    %-6s" % "" + "".join("%26s" % "pears  spear   diff"
+                                    for _ in names))
+    worst = {rname: (None, 0.0) for rname in names}
+    for s in symbols:
+        if s not in eq:
+            continue
+        line = "    %-6s" % s
+        for rname in names:
+            got = aligned([eq[s], refs[rname]], 90)
+            if not got:
+                line += "%26s" % "-"
+                continue
+            (a, b), _ = got
+            p, _ = pearson(a, b)
+            sp, _ = spearman(a, b)
+            if p is None or sp is None:
+                line += "%26s" % "-"
+                continue
+            if abs(sp - p) > abs(worst[rname][1]):
+                worst[rname] = (s, sp - p)
+            line += "%26s" % ("%+.2f  %+.2f  %+.2f" % (p, sp, sp - p))
+        print(line)
+    print()
+    for rname in names:
+        s, d = worst[rname]
+        print("    %-5s largest Pearson/Spearman gap: %s %+.2f" % (rname, s, d))
+
+    print("\n" + "=" * 78)
+    print("10. DO THE EXTREMES SURVIVE LOSING THE OUTLIER TICKER?")
+    print("=" * 78)
+    for rname in names:
+        print("\n  vs %s" % rname)
+        for w in WINDOWS:
+            vals = []
+            for s in symbols:
+                if s not in eq:
+                    continue
+                got = aligned([eq[s], refs[rname]], w)
+                if not got:
+                    continue
+                (a, b), _ = got
+                r, n = pearson(a, b)
+                if r is None:
+                    continue
+                lo, hi = fisher_ci(r, n)
+                vals.append((s, r, lo, hi))
+            if len(vals) < 3:
+                continue
+            for label, subset in (("all", vals),
+                                  ("ex-ANY", [v for v in vals if v[0] != "ANY"])):
+                subset = sorted(subset, key=lambda x: -x[1])
+                top, bot = subset[0], subset[-1]
+                ov = top[2] <= bot[3]
+                print("    %4dd %-7s %s %+.2f [%+.2f..%+.2f]  vs  %s %+.2f "
+                      "[%+.2f..%+.2f]  %s"
+                      % (w, label, top[0], top[1], top[2], top[3],
+                         bot[0], bot[1], bot[2], bot[3],
+                         "OVERLAP" if ov else "disjoint"))
+
+    print("\n" + "=" * 78)
+    print("11. GROUP COMPARISON AGAINST EVERY REFERENCE")
+    print("=" * 78)
+    print("  If the pivots carry HIGHER tech correlation than the miners,")
+    print("  that is the thesis holding in a form BTC alone cannot show.\n")
+    for rname in names:
+        print("  vs %s" % rname)
+        for w in WINDOWS:
+            out = []
+            for label, members in GROUPS.items():
+                series = [eq[m] for m in members if m in eq] + [refs[rname]]
+                got = aligned(series, w)
+                if not got:
+                    continue
+                vecs, _ = got
+                br = vecs[-1]
+                per = vecs[:-1]
+                idx = []
+                for i in range(len(br)):
+                    v = [p[i] for p in per if p[i] is not None]
+                    idx.append(sum(v) / len(v) if v else None)
+                r, n = pearson(idx, br)
+                lo, hi = fisher_ci(r, n)
+                out.append((label, r, lo, hi))
+            if len(out) == 2:
+                (l1, r1, lo1, hi1), (l2, r2, lo2, hi2) = out
+                sep = hi2 < lo1 or hi1 < lo2
+                print("    %4dd  proxies %+.2f [%+.2f..%+.2f]   pivots %+.2f "
+                      "[%+.2f..%+.2f]   %s"
+                      % (w, r1, lo1, hi1, r2, lo2, hi2,
+                         "disjoint" if sep else "overlap"))
+
+    print("\n" + "=" * 78)
+    print("12. PARTIAL CORRELATION — IS THE BTC NUMBER JUST TECH BETA?")
+    print("=" * 78)
+    print("  r(ticker,BTC | QQQ) strips out whatever both share with the")
+    print("  Nasdaq. If a ticker's BTC correlation collapses once QQQ is")
+    print("  controlled for, it was never bitcoin exposure.  90-day window.\n")
+    print("    %-6s %9s %9s %11s %11s" %
+          ("", "r_BTC", "r_QQQ", "BTC|QQQ", "QQQ|BTC"))
+    if "QQQ" in refs:
+        for s in symbols:
+            if s not in eq:
+                continue
+            got = aligned([eq[s], refs["BTC"], refs["QQQ"]], 90)
+            if not got:
+                continue
+            (rt, rb, rq), _ = got
+            r_tb, _ = pearson(rt, rb)
+            r_tq, _ = pearson(rt, rq)
+            r_bq, _ = pearson(rb, rq)
+            if None in (r_tb, r_tq, r_bq):
+                continue
+            den1 = math.sqrt((1 - r_tq ** 2) * (1 - r_bq ** 2))
+            den2 = math.sqrt((1 - r_tb ** 2) * (1 - r_bq ** 2))
+            p_tb = (r_tb - r_tq * r_bq) / den1 if den1 > 0 else float("nan")
+            p_tq = (r_tq - r_tb * r_bq) / den2 if den2 > 0 else float("nan")
+            print("    %-6s %9s %9s %11s %11s" %
+                  (s, "%+.2f" % r_tb, "%+.2f" % r_tq,
+                   "%+.2f" % p_tb, "%+.2f" % p_tq))
+
 
 if __name__ == "__main__":
     main()
