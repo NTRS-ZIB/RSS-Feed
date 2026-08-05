@@ -36,8 +36,43 @@ cover the US pre/postmarket release windows year-round without seasonal edits:
 - EDT (Mar–Nov): 06:00–19:59 Eastern
 - EST (Nov–Mar): 05:00–18:59 Eastern
 
-10:00 UTC is 06:00 Eastern, EDGAR's own opening time — nothing can be filed
-before the window opens.
+10:00 UTC is 06:00 Eastern, EDGAR's own opening time.
+
+**That justification is weaker than it reads, and the window is very likely
+wrong.** It was chosen on the reasoning that EDGAR opens at 10:00 UTC and that
+pre-market releases cluster early — which came from a single morning's
+filings, 10:31 to 11:37 on 2026-08-04. Measured against the roster's whole
+history it is not what happens. See the distribution below.
+
+### When filings actually arrive
+
+Every `acceptanceDateTime` EDGAR reports for the roster: **7,886 weekday
+filings, 2003 to 2026**, measured 2026-08-05. Times are UTC — that field is
+UTC despite what the trap table used to say, see
+[`CLAUDE.md`](../CLAUDE.md).
+
+| UTC hour | filings | | UTC hour | filings |
+|---|---|---|---|---|
+| 10:00 | 218 | | 18:00 | 240 |
+| 11:00 | 331 | | 19:00 | 303 |
+| 12:00 | 445 | | **20:00** | **1442** |
+| 13:00 | 371 | | **21:00** | **1590** |
+| 14:00 | 217 | | **22:00** | **841** |
+| 15:00 | 170 | | 23:00 | 438 |
+| 16:00 | 208 | | 00:00 | 283 |
+| 17:00 | 210 | | 01:00 | 305 |
+
+- **20:00–23:00 UTC holds 4,311 filings — 55%.** That is 16:00–19:00 Eastern,
+  the after-close filing rush, and it is where the mass is.
+- **10:00–14:00 UTC holds 1,365 — 17%.** The pre-market morning the window was
+  built around is the thin part of the day.
+- **00:00–06:00 UTC holds about 1,090 — 14%** and sits outside the window
+  entirely.
+
+The lesson is not about the schedule. One morning's filings were treated as a
+distribution, and a distribution measured across 23 years says something close
+to the opposite. Anchoring on a single observation is how the window came to be
+aimed at the quietest hours.
 
 ### Why the granularity moved off the cron and into the job
 
