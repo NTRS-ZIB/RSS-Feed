@@ -141,7 +141,7 @@ reporting no new data.
 
 This is the only component that reads *backwards* through months of files, so
 renames bite here in a way they do not elsewhere: a period predating a rename
-carries the old symbol throughout. Four on the current watchlist — the full
+carries the old symbol throughout. Seven on the current watchlist — the full
 list, with dates, is in [the watchlist docs](watchlist.md#renames-on-the-current-watchlist).
 The two most recent:
 
@@ -165,6 +165,61 @@ Three defences, in order of durability. All three read from
    The script prints every CUSIP it finds in the data that is **not** in the
    roster, so the block stays silent once complete and speaks up the moment a
    ticker turns up under a new one — itself the signal worth having.
+
+### Critical: a recycled ticker, and the three guards against it
+
+A rename is one company under two symbols. The opposite also happens — **two
+companies under one symbol** — and this component is where it does damage,
+because it is the one that reads backwards past the handover.
+
+`SPCX` belonged to a SPAC ETF until 2026-04-07 and to Space Exploration
+Technologies from 2026-06-15. The full case is in
+[the watchlist docs](watchlist.md#critical-a-ticker-that-is-not-a-rename-at-all);
+what matters here is what `fetch_period()` did with it before this changed:
+
+```python
+ticker = CANON.get(symbol.upper()) or cusips.get(cusip)   # symbol wins
+...
+if cusip and cusip not in cusips:
+    learned[cusip] = ticker                               # and is remembered
+```
+
+Symbol matching comes first, so every pre-handover `SPCX` row was attributed to
+SpaceX. Then the learning step wrote the **ETF's CUSIP into `ftd_state.json` as
+SPCX**, after which CUSIP matching was poisoned too — permanently, and for
+every later run, including ones that never read a contaminated period.
+
+**The live path was safe by about three weeks of luck.** `BASELINE_PERIODS` is
+6, which reaches roughly 2026-05, and the ETF's last fail is 2026-04-07. An
+`FTD_REPLAY` of 8 or more crosses it, and `FTD_REPLAY` is unbounded by design.
+
+Three guards now stand in the way, and the order matters because they fail
+differently:
+
+| | Guard | Stops |
+|---|---|---|
+| 1 | A CUSIP in `watchlist.REFUSED` is never matched, whatever symbol it carries | The rows, and the learning |
+| 2 | A symbol matches only *after* its `symbol_handover()` date; CUSIP matching is unaffected | The rows, where the CUSIP is unrecorded |
+| 3 | An unrecorded CUSIP is learned only if it shares `STEM` leading characters with one already ours; otherwise it is **reported and not learned** | Only the learning |
+
+**Guard 3 alone is not enough, and that was measured rather than assumed.**
+Removing 1 and 2 while leaving 3 in place still attributed the ETF's 31 fails
+to SPCX for the 2026-03a period — it merely declined to remember the CUSIP.
+Guards 1 and 2 keep the rows out; guard 3 limits the blast radius when
+something new appears.
+
+`STEM` is 4 because DGXX's genuine `25381D` → `25380B` reassignment shares
+exactly four characters and must not be quarantined; HUT's `44812T` → `44812J`
+shares five. **It is a reporting heuristic, not a truth test**, and ABTC is the
+standing counter-example: its chain runs `00973W` → `400510` → `02462A`, three
+unrelated prefixes on one continuous registrant. Those are pinned in the
+roster, so guard 3 never sees them — which is the design. An identifier a human
+has checked is recorded; one that merely turned up is not adopted on its own
+say-so.
+
+The asymmetry is the point, and it is the same one the roster is built on: an
+unlearned CUSIP under-reports one company, visibly, in the log. A wrongly
+learned one gains another security's rows, invisibly, forever.
 
 ### The roster is validated at startup
 

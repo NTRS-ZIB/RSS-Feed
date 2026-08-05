@@ -49,12 +49,37 @@ Every one confirmed from data by `audit_identifiers.py`, not from a filing:
 |---|---|---|---|
 | `GREE` Greenidge Generation | `VIP` Vulcan Infrastructure and Power | 2026-07-24 | |
 | `MIGI` Mawson Infrastructure | `BGDE` Big Digital Energy | 2026-04-30 | CUSIP also changed 2025-11, separately |
+| `GRYP` Gryphon Digital Mining | `ABTC` American Bitcoin | 2025-09-03 | Third name on one registrant — `KERN` Akerna before it. New issuer prefix each time |
 | `NEHC` New Era Helium | `NUAI` New Era Energy & Digital | 2025-08-13 | |
 | `DGHI` Digihost Technology | `DGXX` Digi Power X | 2025-03-18 | `DGHIZZZZ` one day mid-change; CUSIP issuer prefix changed too |
+| `MKTY` Mechanical Technology | `SLNH` Soluna Holdings | 2021-11-04 | Oldest on the roster; outside every lookback window |
 
 `DGHIZZZZ` is not a ticker. NSCC uses a `ZZZZ` suffix as a placeholder while a
 symbol change is processing, so it occupies a single settlement day between the
 old symbol and the new one. It is listed because it occurs in the data.
+`ANYZZZZ`, `MIGIZZZZ`, `HUTZZZZ` and `ABTCZZZZ` are the same marker on four
+other changeovers.
+
+**`HUTXXXX` is a different marker and means something else.** It runs
+2023-12-05 to 2023-12-14 — ten days, not one — against the *retired* CUSIP
+`44812T102`, whose description still reads `HUT 8 MNG CORP (CANADA)`. So `ZZZZ`
+marks the transition itself while `XXXX` is the tail draining off the old line
+after the successor has taken over. They are not interchangeable, and a reader
+who assumes both are one-day placeholders will date the changeover wrongly.
+
+**The `D` suffix is a third thing, and this file does not claim to know what.**
+`HSSHD` (DGXX, 2021-10-28 to 2021-11-12) and `MIGID` (BGDE, 2021-08-17 to
+2021-09-13) both carry their company's own pinned CUSIP and description, so
+identity is not in question. Duration is: eleven and six rows over weeks,
+against the single day a `ZZZZ` occupies.
+
+The tempting reading is "an earlier symbol" — `HSSHD` does sit immediately
+before `DGHI` first appears. **That reading fails on the parallel case**:
+`MIGID` runs *while `MIGI` is trading*, so it cannot be a predecessor symbol.
+Whatever the suffix marks, it is a settlement line rather than a listing. Both
+are recorded because they occur in the data and an unrecognised symbol
+under-reports a company; neither is explained, because nothing here has
+explained it.
 
 ### Critical: a ticker that did not change, over a CIK that did
 
@@ -109,6 +134,56 @@ a changeover placeholder — while the ticker alone reports nothing happened.
 `HUTZZZZ` is the only symbol-side trace of the event and is listed for that
 reason.
 
+### Critical: a ticker that is not a rename at all
+
+HUT above is one company across two identifiers. `SPCX` is the inverse — **two
+companies across one ticker** — and it is the harder of the two to see, because
+every signal a rename produces, a recycled ticker produces identically.
+
+`SPCX` belonged to a SPAC ETF issued by Collaborative Investment Series Trust
+until **2026-04-07**. Space Exploration Technologies had no security of any
+kind until its `8-A12B` on 2026-06-10, and IPO'd on 2026-06-12. In the SEC
+fails files the two run consecutively under one symbol:
+
+| CUSIP | Description | Seen |
+|---|---|---|
+| `19423L672` | `COLLABORATIVE INVT SER TR SPAC` | 2021-07-16 to 2026-04-07 |
+| `84615Q103` | `SPACE EXPL TECHNOLOGIES CORP C` | 2026-06-15 onward |
+
+Read through the three columns `audit_identifiers.py` parses — date, CUSIP,
+symbol — that is **exactly** the shape of DGXX or HUT changing identifiers: one
+ticker, two CUSIPs, one ending where the other begins. The audit duly proposed
+`19423L672` as a retired CUSIP for SPCX.
+
+**Nothing in this repo flagged it, and the reason is structural.** The
+`COLLISIONS` check fires when a row's symbol and CUSIP resolve to *different*
+companies, so it needs a pinned CUSIP to collide with. A newly added company
+sits at `"cusips": []` by design — this file says so two sections down — so
+there is nothing to collide with. And a new listing is precisely where a
+recycled ticker is most likely, because a symbol only becomes available once
+its previous holder gives it up. **The check is blind in the one case that most
+needs it.**
+
+What settled it was the **`DESCRIPTION` column**, which the audit does not
+read. The files name the issuer outright.
+
+Two things follow, and both are now mechanical rather than advisory:
+
+1. **A proposed identifier that predates the company's own listing is suspect
+   until its description is read.** Not "probably a retired CUSIP" — the
+   BKKT case proves an identifier can legitimately predate the filing that
+   quotes it, so age alone decides nothing. The description does.
+2. **The refusal is recorded, not remembered.** `REFUSED` in `watchlist.py`
+   carries the CUSIP, whose security it really is, the handover date and why.
+   `audit_identifiers.py` prints it as `ref` rather than `NEW`, so the next
+   reader sees a decision already taken instead of a fresh proposal. Without
+   that, the roster is defended only by whoever reads the verdict most
+   carefully, on every future run, forever.
+
+`symbol_handover()` derives the date from the same record, and
+`ftd_monitor.py` uses it to refuse symbol matches on rows dated at or before
+it. See [fails to deliver](fails-to-deliver.md) for the three guards.
+
 ### `alt_symbols` is scoped, not exhaustive
 
 It covers renames recent enough to fall inside a component's lookback window,
@@ -127,6 +202,20 @@ company appears under. It found five things nobody had recorded — retired
 CUSIPs for BGDE, SLNH and DGXX, and former tickers `NEHC` and `DGHI` — and
 confirmed every remaining identifier. Re-run it with a larger `SWEEP_PERIODS`
 if a replay ever needs to reach further back than three years.
+
+**And a deeper sweep found more, on companies already thought settled.** The
+first sweep to run **120 periods across the whole roster** — 2026-08-05, when
+GLXY, APLD, BTDR, SPCX and ABTC were added — turned up four retired CUSIPs
+(`84841L308` for ANY, `57778N109` and `57778N208` for BGDE, `39531G100` for
+VIP) and five symbols (`MKTY`, `HSSHD`, `ANYZZZZ`, `MIGIZZZZ`, `HUTXXXX`) on
+companies that had been on the roster for months. None of them was new
+information about those companies; all of them were **outside the window that
+had been swept**. The 120-period run of 2026-08-03 covered only WULF, HUT and
+CIFR, so everyone else was still sitting on a three-year result.
+
+That is the same lesson as the table further down, arriving from a different
+direction: an identifier absent from a window has not been shown to be absent,
+and *a company already on the roster is not a company already swept deeply*.
 
 **The exception is `FTD_REPLAY`, which is unbounded.** `FTD_REPLAY=24` reads a
 year back, past renames this file does not record, and an unrecognised symbol
@@ -277,6 +366,13 @@ attributes another security's rows to this company, quietly and permanently.
 An empty list loses rows visibly. A wrong one gains rows invisibly. Wait for
 the sweep.
 
+**But know what the empty list costs while you wait.** It disables the
+`COLLISIONS` check for that company — the check needs a pinned CUSIP to
+collide with, and there isn't one. So the first sweep after adding a company
+is the one run where the roster's own cross-check is switched off, on the
+company most likely to need it. Read the descriptions on that pass; see
+[the SPCX case](#critical-a-ticker-that-is-not-a-rename-at-all).
+
 **WULF, HUT and CIFR were added on 2026-08-03 in this state**, and both
 sweeps that cleared them ran the same day. The pair is worth reading together,
 because the shallower one was confidently wrong.
@@ -319,6 +415,14 @@ the grid operators and the states each one actually names. It lives here rather
 than in `watchlist.py` on purpose: no component reads site data, and a field
 nothing reads goes stale with nothing to notice. This is reference for deciding
 what to build, not input to anything running.
+
+> **This table covers 14 of 19 companies.** GLXY, APLD, BTDR, SPCX and ABTC
+> were added on 2026-08-05 and have not been swept for sites or operators. The
+> counts below — including "three of the fourteen have no ISO node" and the
+> per-grid totals — are over the fourteen, not the roster. Two of the five are
+> not miners at all, so their rows may end up empty rather than merely
+> unfilled, but that has not been established either. **A missing row here
+> means unswept, not absent.**
 
 **The basis column is the point.** *Stated* means the filing says it plainly.
 *Inferred* means it was read off keyword frequency and has not been verified.

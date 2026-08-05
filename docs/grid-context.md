@@ -43,7 +43,8 @@ caveat is on every post.
 ### The cost framing has one exception
 
 This component is framed throughout as pressure on cost, and for thirteen of
-the fourteen companies swept that is right. **VIP is on the other side of it.** It
+the fourteen companies **swept** that is right — the roster is 19, and GLXY,
+APLD, BTDR, SPCX and ABTC have not been read for sites or operators. **VIP is on the other side of it.** It
 owns and operates a 106 MW generation facility connected to NYISO and sells
 into the market, so a rising power price is revenue for VIP and cost for
 everybody else.
@@ -74,7 +75,8 @@ rather than done:
 2. **Which pricing node?** An LMP is location-specific, and picking a zone means
    choosing on a company's behalf. `docs/watchlist.md` now carries the states
    and operators each filing names, but four of fourteen rows are inferred from
-   keyword frequency and two companies sit outside any RTO entirely.
+   keyword frequency, two companies sit outside any RTO entirely, and five of
+   the nineteen have no row at all.
 
 If a real cost signal matters more than a proxy, that is the direction — but
 read [why the plan was closed](watchlist.md#why-there-is-no-per-company-power-price)
