@@ -152,6 +152,97 @@ def observations(cik):
     return [], None
 
 
+# A period average, NEVER used as a share count. It is fetched only as a
+# REFERENCE for the two currency tests below, because it is tagged every
+# reporting period by companies that tag it at all, which makes its newest
+# observation a reliable answer to "when did this company last report".
+#
+# It is deliberately absent from CONCEPTS. A weighted average over a period is
+# a different quantity from a point-in-time count, and substituting one for the
+# other would corrupt both the step and the trailing-year arithmetic while
+# looking entirely plausible. GLXY's real figure sits in here at 390,482,653
+# and it still does not belong in the table.
+REFERENCE = ("us-gaap", "WeightedAverageNumberOfSharesOutstandingBasic")
+
+# How far behind the reference a count may sit before it is not a current
+# count. Expressed in the company's OWN reporting periods, derived from the
+# spacing of the reference series, so a quarterly filer and an annual one are
+# both judged against their own cadence rather than a shared number of days.
+STALE_PERIODS = 1.5
+
+# The count and the period average describe the same company in the same
+# period, so they cannot differ by orders of magnitude. Ten is loose on
+# purpose: a large mid-period issuance can move the two apart legitimately,
+# and this is meant to catch a shell artefact, not to police a discrepancy.
+IMPLAUSIBLE_RATIO = 10.0
+
+
+def reference_series(cik):
+    """[(as_of, value)] for REFERENCE, oldest first. Empty when not tagged."""
+    payload = sec_get(CONCEPT_URL.format(cik=cik, taxonomy=REFERENCE[0],
+                                         tag=REFERENCE[1]))
+    if not payload:
+        return []
+    best = {}
+    for r in payload.get("units", {}).get("shares", []):
+        end, val, filed = r.get("end"), r.get("val"), r.get("filed", "")
+        if not end or val is None:
+            continue
+        if end not in best or filed > best[end][1]:
+            best[end] = (val, filed)
+    return [(date.fromisoformat(e), int(v)) for e, (v, _) in sorted(best.items())]
+
+
+def check_currency(series, ref):
+    """Is the newest count a current count? Returns (reason, detail) or None.
+
+    THE RULE, before the implementation. A share count is current only if its
+    as-of date falls within one reporting period of the company's own most
+    recent reporting period. Not within a fixed number of days: a 20-F filer
+    reports annually and a 10-Q filer quarterly, and both are entitled to be
+    judged against their own cadence.
+
+    GLXY is why this exists. Its first probe misses, its second hits
+    `us-gaap:CommonStockSharesOutstanding` and returns 100 shares as of
+    2025-03-31, the pre-listing Delaware holdco's nominal count, tagged once in
+    the first 10-Q and never superseded because later filings do not carry that
+    concept. The value is real, correctly parsed and correctly attributed, and
+    wrong by six orders of magnitude against a company with about 390 million
+    shares. It is exactly the failure this repo treats as the serious one: a
+    number that reads as valid.
+
+    It went unpublished only because SPCX's honest absence stopped the post.
+    That is luck, not a defence, which is why the test is here.
+
+    Two independent tests, and either one is enough to withhold the row. The
+    reference series carries both, so they cost one request between them.
+    """
+    if not ref or not series:
+        return None                       # no reference: the test cannot run
+    count_at, count_val = series[-1][0], series[-1][1]
+    ref_at, ref_val = ref[-1][0], ref[-1][1]
+
+    # The company's own reporting period, from the spacing of its own filings.
+    gaps = [(b[0] - a[0]).days for a, b in zip(ref, ref[1:]) if (b[0] - a[0]).days > 0]
+    if gaps:
+        gaps.sort()
+        period = gaps[len(gaps) // 2]
+        behind = (ref_at - count_at).days
+        if period > 0 and behind > STALE_PERIODS * period:
+            return ("stale",
+                    f"count as of {count_at} is {behind}d behind this company's "
+                    f"most recent reported period {ref_at}, which is "
+                    f"{behind / period:.1f} of its own {period}d reporting cycle")
+
+    if ref_val > 0 and count_val > 0:
+        ratio = max(count_val / ref_val, ref_val / count_val)
+        if ratio > IMPLAUSIBLE_RATIO:
+            return ("implausible",
+                    f"count {count_val:,} differs from the same company's "
+                    f"period average {ref_val:,} by {ratio:,.0f}x")
+    return None
+
+
 # --------------------------------------------------------------- ANALYSIS
 
 
@@ -352,7 +443,7 @@ def main():
 
     state = load_state()
     first_run = not STATE_FILE.exists()
-    rows, failed, changed, splits = [], [], 0, 0
+    rows, failed, withheld, changed, splits = [], [], [], 0, 0
     any_drop = False
 
     for ticker, (cik, name) in sorted(watchlist.ciks().items()):
@@ -366,6 +457,21 @@ def main():
             print(f"  {ticker}: no share-count concept tagged "
                   f"({', '.join(f'{t}:{g}' for t, g in CONCEPTS)})")
             failed.append(ticker)
+            continue
+
+        # A count that is present but not current is worse than one that is
+        # absent: it reads as valid. Withheld with its own reason, never
+        # replaced by the reference, which measures a different quantity.
+        try:
+            verdict = check_currency(series, reference_series(cik))
+        except Exception as e:
+            print(f"  {ticker}: currency test unavailable "
+                  f"({type(e).__name__}); reporting the count unchecked")
+            verdict = None
+        if verdict:
+            reason, detail = verdict
+            print(f"  {ticker}: share count WITHHELD, {reason} — {detail}")
+            withheld.append((ticker, reason))
             continue
 
         m = summarise(series)
@@ -398,8 +504,9 @@ def main():
         print("  drop straddling filings a quarter apart is a corporate action;")
         print("  one straddling years is a reporting gap with an action inside.")
 
-    if failed:
-        print(f"\n{len(failed)} company/companies unavailable: {', '.join(failed)}")
+    if failed or withheld:
+        print(f"\n{len(failed) + len(withheld)} company/companies unavailable: "
+              f"{', '.join(failed + [t for t, _ in withheld])}")
         print("Not posting a partial picture — a company missing from the table")
         print("would read as 'no dilution', which is the opposite of unknown.")
         return 1
