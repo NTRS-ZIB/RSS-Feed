@@ -90,7 +90,11 @@ WATCHLIST = [
         "ticker": "VIP",
         "name": "Vulcan Infrastructure and Power",
         "cik": "0001844971",
-        "cusips": ["39531G308"],
+        # [1] is pre-reverse-split, in use 2021-09-15 to 2023-05-12 and found
+        # only by a 120-period sweep. Same issuer prefix 39531G, and the
+        # description reads "GREENIDGE GENERATION HLDGS INC" — the pre-rename
+        # name against an identifier this company still owns.
+        "cusips": ["39531G308", "39531G100"],
         "alt_symbols": ["GREE"],          # Greenidge Generation, until 2026-07-24
         "ir_feed": "https://ir.vulcanip.com/rss/news-releases.xml",
     },
@@ -98,8 +102,18 @@ WATCHLIST = [
         "ticker": "ANY",
         "name": "Sphere 3D",
         "cik": "0001591956",
-        "cusips": ["84841L506", "84841L407"],   # [1] is pre-reverse-split
-        "alt_symbols": ["DRK"],           # pending change to DarkHorse
+        # [1] and [2] are both pre-reverse-split, and [2] was found only by a
+        # 120-period sweep — a 72-period one reached 2023-08 and saw an
+        # unbroken pair. All three share the issuer prefix 84841L, so this is
+        # one company across two corporate actions rather than two issuers.
+        # Confirmed by description: 84841L308 reads "SPHERE 3D CORP NEW COM
+        # SHS (CD", in use 2021-07-15 to 2023-06-29.
+        "cusips": ["84841L506", "84841L407", "84841L308"],
+        # ANYZZZZ is not a ticker — the NSCC placeholder for a symbol change in
+        # progress, occupying the single settlement day of the 84841L308 ->
+        # 84841L407 changeover, 2023-06-29. Same placeholder as DGXX's
+        # DGHIZZZZ. Listed because it occurs in the data.
+        "alt_symbols": ["DRK", "ANYZZZZ"],   # DRK pending, ANYZZZZ historical
         "ir_feed": "https://sphere3d.gcs-web.com/rss/news-releases.xml",
     },
     {
@@ -111,7 +125,14 @@ WATCHLIST = [
         # dropping 22.2:1 across the same window from XBRL — a different
         # dataset reaching the same conclusion.
         "cusips": ["583543301", "583543103"],
-        "alt_symbols": [],
+        # Mechanical Technology Inc, until 2021-11-04. Found by a 120-period
+        # sweep via the pinned pre-split CUSIP 583543103, whose description
+        # reads "MECHANICAL TECHNOLOGY INC COM" over 2021-07-19 to 2021-11-04
+        # and "SOLUNA" after — a rename against an unchanged identifier, which
+        # is the textbook case. This is the OLDEST rename on the roster and
+        # sits outside every component's lookback window; it matters only to
+        # an unbounded FTD_REPLAY.
+        "alt_symbols": ["MKTY"],
         # WordPress. The /news/ archive feed, not the site-root blog feed that
         # autodiscovery finds — see docs/press-monitor.md.
         "ir_feed": "https://www.solunacomputing.com/news/feed/",
@@ -124,8 +145,21 @@ WATCHLIST = [
         # by sweeping the SEC fails files, and corroborated independently: the
         # dilution tracker found the share count dropping 4.2:1 across the
         # same window.
-        "cusips": ["57778N406", "57778N307"],
-        "alt_symbols": ["MIGI"],          # Mawson Infrastructure, until 2026-04-30
+        # [2] and [3] were found only by a 120-period sweep. All four share the
+        # issuer prefix 57778N — one company across three corporate actions,
+        # not four issuers — and both new entries read "MAWSON INFRASTRUCTURE
+        # GROUP" in the SEC's description field: 57778N109 in use 2021-07-16
+        # to 2021-07-28, 57778N208 to 2023-02-06.
+        "cusips": ["57778N406", "57778N307", "57778N208", "57778N109"],
+        # Three settlement-line markers, none of them a ticker, all reading
+        # "MAWSON INFRASTRUCTURE GROUP" in the description:
+        #   MIGIZZZZ  2023-02-09, on the NEW CUSIP 57778N307 — the changeover
+        #   MIGIXXXX  2023-02-10, on the OLD CUSIP 57778N208 — the tail
+        #   MIGID     2021-08-17 to 2021-09-13, on 57778N208, alongside MIGI
+        # MIGID and MIGIXXXX surfaced only after 57778N109 and 57778N208 were
+        # pinned — the two-pass bootstrap firing a second time on a company
+        # that had been on the roster for months.
+        "alt_symbols": ["MIGI", "MIGIZZZZ", "MIGIXXXX", "MIGID"],
         # THE NEWSWIRE'S feed, not the company's newsroom — the first of its
         # kind in this roster. BGDE's own newsroom renders client-side and
         # cannot be read, but it distributes through GlobeNewswire, which
@@ -184,7 +218,19 @@ WATCHLIST = [
         # not a ticker: NSCC uses a ZZZZ suffix as a placeholder while a symbol
         # change processes, and it appears for exactly one settlement day
         # between the two. Listed because it occurs in the data.
-        "alt_symbols": ["DGHI", "DGHIZZZZ"],
+        # HSSHD carries the already-pinned CUSIP 25381D206 and the description
+        # "DIGIHOST TECHNOLOGY INC", so it is certainly this company. It runs
+        # 2021-10-28 to 2021-11-12, eleven rows, immediately before DGHI first
+        # appears on 2021-11-16.
+        #
+        # WHAT THE `D` SUFFIX MEANS IS NOT ESTABLISHED. The obvious reading —
+        # a pre-Nasdaq line replaced by DGHI — does not survive the parallel
+        # case: BGDE carries MIGID over 2021-08-17 to 2021-09-13 *while MIGI
+        # is trading*, so the suffix is not a predecessor symbol there. It is
+        # a settlement-line marker of some kind, lasting weeks rather than the
+        # single day a ZZZZ placeholder occupies. Recorded because it occurs
+        # in the data; not explained, because nothing here has explained it.
+        "alt_symbols": ["DGHI", "DGHIZZZZ", "HSSHD"],
         "ir_feed": None,                  # renders client-side; EDGAR only
     },
     {
@@ -233,7 +279,14 @@ WATCHLIST = [
         # changeover, 2023-12-04. Same placeholder as DGXX's DGHIZZZZ. Listed
         # because it occurs in the data — and it is the only symbol-side trace
         # of the combination, since HUT itself never changed.
-        "alt_symbols": ["HUTZZZZ"],
+        # HUTXXXX is the other half of the same changeover and was missed until
+        # a 120-period sweep. HUTZZZZ marks the switch on 2023-12-04; HUTXXXX
+        # then runs 2023-12-05 to 2023-12-14 against the OLD CUSIP 44812T102,
+        # whose description still reads "HUT 8 MNG CORP (CANADA)" — the
+        # predecessor's rows draining after the successor had taken over. So
+        # the two markers are not interchangeable: ZZZZ is the transition,
+        # XXXX is the tail on the retired line.
+        "alt_symbols": ["HUTZZZZ", "HUTXXXX"],
         # No feed anywhere on hut8.com: none linked from the press releases
         # page, and no RSS entry under investor resources — unlike WULF and
         # CIFR, which both publish one. NOT the BGDE/WYFI/DGXX case: those
