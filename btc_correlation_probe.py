@@ -702,6 +702,194 @@ def main():
                   (s, "%+.2f" % r_tb, "%+.2f" % r_tq,
                    "%+.2f" % p_tb, "%+.2f" % p_tq))
 
+    # ------------------------------------------------------------------
+    # Before any of the above can be called rotation, the mechanical
+    # explanation has to be ruled out.
+    #
+    # Correlation is scale-invariant, so bitcoin simply moving LESS does not
+    # by itself reduce anything: multiply every BTC return by 0.5 and every
+    # correlation is unchanged. The mechanism only bites through
+    #
+    #     r = beta * sigma_btc / sigma_ticker
+    #
+    # so a fall in r comes from a fall in beta, a fall in sigma_btc relative
+    # to sigma_ticker, or both. Beta is the discriminating quantity: if beta
+    # held while sigma_btc fell, the relationship is intact and bitcoin just
+    # moved less — nothing repriced, and "rotation" would be reporting a
+    # measurement artefact as a market event.
+    # ------------------------------------------------------------------
+    ANN = math.sqrt(252)
+
+    def stdev(vals):
+        v = [x for x in vals if x is not None]
+        if len(v) < 3:
+            return None
+        m = sum(v) / len(v)
+        return math.sqrt(sum((x - m) ** 2 for x in v) / (len(v) - 1))
+
+    def halves(series_a, series_b):
+        """(prior, recent) aligned return vectors for two series."""
+        common = sorted(set(series_a) & set(series_b))
+        if len(common) < 185:
+            return None
+        rec, pri = common[-91:], common[-182:-90]
+        return ((returns_on(pri, series_a), returns_on(pri, series_b)),
+                (returns_on(rec, series_a), returns_on(rec, series_b)))
+
+    print("\n" + "=" * 78)
+    print("13. REALISED VOLATILITY ACROSS THE TWO HALVES")
+    print("=" * 78)
+    print("  Annualised stdev of daily returns, %.0f trading days each half.\n"
+          % 90)
+    print("    %-6s %10s %10s %8s" % ("", "prior 90", "recent 90", "ratio"))
+    vol_rows = {}
+    for label, ser in list(refs.items()) + [(s, eq[s]) for s in symbols
+                                            if s in eq]:
+        common = sorted(set(ser) & set(refs["QQQ"]))
+        if len(common) < 185:
+            continue
+        rec, pri = common[-91:], common[-182:-90]
+        sp = stdev(returns_on(pri, ser))
+        sr = stdev(returns_on(rec, ser))
+        if not sp or not sr:
+            continue
+        vol_rows[label] = (sp * ANN, sr * ANN, sr / sp)
+        mark = "  <<<" if label in refs else ""
+        print("    %-6s %9.0f%% %9.0f%% %8.2f%s" %
+              (label, sp * ANN * 100, sr * ANN * 100, sr / sp, mark))
+    roster_ratios = [v[2] for k, v in vol_rows.items() if k not in refs]
+    if roster_ratios:
+        roster_ratios.sort()
+        print("\n    roster median volatility ratio: %.2f" %
+              roster_ratios[len(roster_ratios) // 2])
+    for r in ("BTC", "QQQ"):
+        if r in vol_rows:
+            print("    %-5s volatility ratio:              %.2f"
+                  % (r, vol_rows[r][2]))
+
+    print("\n" + "=" * 78)
+    print("14. BETA vs CORRELATION — WHICH ONE MOVED?")
+    print("=" * 78)
+    print("  r = beta * sigma_btc / sigma_ticker. If beta held and only the")
+    print("  sigma ratio moved, the relationship is intact and the fall in r")
+    print("  is mechanical. If beta fell, the relationship weakened.\n")
+    print("    %-6s %16s %16s %16s" %
+          ("", "corr  pri->rec", "beta  pri->rec", "sig_b/sig_t"))
+    beta_changes, corr_changes = [], []
+    for s in symbols:
+        if s not in eq:
+            continue
+        h = halves(eq[s], refs["BTC"])
+        if not h:
+            continue
+        (tp, bp), (tr, br) = h
+        rp, _ = pearson(tp, bp)
+        rr, _ = pearson(tr, br)
+        if rp is None or rr is None:
+            continue
+
+        def beta(t, b):
+            pairs = [(x, y) for x, y in zip(t, b)
+                     if x is not None and y is not None]
+            mb = sum(y for _, y in pairs) / len(pairs)
+            mt = sum(x for x, _ in pairs) / len(pairs)
+            vb = sum((y - mb) ** 2 for _, y in pairs)
+            cv = sum((x - mt) * (y - mb) for x, y in pairs)
+            return cv / vb if vb > 0 else None
+        bp_, br_ = beta(tp, bp), beta(tr, br)
+        if bp_ is None or br_ is None:
+            continue
+        sbp, sbr = stdev(bp), stdev(br)
+        stp, str_ = stdev(tp), stdev(tr)
+        ratio_p = sbp / stp if stp else float("nan")
+        ratio_r = sbr / str_ if str_ else float("nan")
+        beta_changes.append((s, br_ - bp_, bp_))
+        corr_changes.append((s, rr - rp))
+        print("    %-6s %16s %16s %16s" %
+              (s, "%+.2f -> %+.2f" % (rp, rr),
+               "%+.2f -> %+.2f" % (bp_, br_),
+               "%.2f -> %.2f" % (ratio_p, ratio_r)))
+    if beta_changes:
+        drops = [d for _, d, _ in beta_changes if d < 0]
+        rel = [d / b for _, d, b in beta_changes if b and abs(b) > 0.05]
+        rel.sort()
+        print("\n    betas that fell: %d of %d" %
+              (len(drops), len(beta_changes)))
+        if rel:
+            print("    median RELATIVE change in beta: %+.0f%%"
+                  % (100 * rel[len(rel) // 2]))
+        cc = sorted(d for _, d in corr_changes)
+        print("    median change in correlation:   %+.2f" % cc[len(cc) // 2])
+
+    print("\n" + "=" * 78)
+    print("15. ARE THE CHANGES BIGGER THAN SAMPLING NOISE?")
+    print("=" * 78)
+    print("  Fisher z difference across two independent 90-day samples.")
+    print("  |dz| > 1.96*sqrt(2/87) = 0.297 to call a change real.\n")
+
+    def z(r):
+        return 0.5 * math.log((1 + r) / (1 - r)) if abs(r) < 1 else None
+    crit = 1.96 * math.sqrt(2.0 / 87.0)
+    print("    %-6s %22s %22s" % ("", "vs BTC", "vs QQQ"))
+    print("    %-6s %22s %22s" % ("", "chg    dz    verdict",
+                                  "chg    dz    verdict"))
+    tally = {"BTC": 0, "QQQ": 0}
+    for s in symbols:
+        if s not in eq:
+            continue
+        line = "    %-6s" % s
+        for rname in ("BTC", "QQQ"):
+            h = halves(eq[s], refs[rname])
+            if not h:
+                line += "%22s" % "-"
+                continue
+            (tp, bp), (tr, br) = h
+            rp, _ = pearson(tp, bp)
+            rr, _ = pearson(tr, br)
+            if rp is None or rr is None:
+                line += "%22s" % "-"
+                continue
+            dz = z(rr) - z(rp)
+            sig = abs(dz) > crit
+            if sig:
+                tally[rname] += 1
+            line += "%22s" % ("%+.2f %+.2f  %s" %
+                              (rr - rp, dz, "REAL" if sig else "noise"))
+        print(line)
+    print("\n    changes exceeding noise:  BTC %d of 14   QQQ %d of 14"
+          % (tally["BTC"], tally["QQQ"]))
+
+    print("\n" + "=" * 78)
+    print("16. DO THE PARTIALS SURVIVE, HALF BY HALF?")
+    print("=" * 78)
+    print("    %-6s %20s %20s" % ("", "BTC|QQQ  pri->rec", "QQQ|BTC  pri->rec"))
+    for s in symbols:
+        if s not in eq:
+            continue
+        common = sorted(set(eq[s]) & set(refs["BTC"]) & set(refs["QQQ"]))
+        if len(common) < 185:
+            continue
+        out = []
+        for span in (common[-182:-90], common[-91:]):
+            rt = returns_on(span, eq[s])
+            rb = returns_on(span, refs["BTC"])
+            rq = returns_on(span, refs["QQQ"])
+            r_tb, _ = pearson(rt, rb)
+            r_tq, _ = pearson(rt, rq)
+            r_bq, _ = pearson(rb, rq)
+            if None in (r_tb, r_tq, r_bq):
+                out.append((None, None))
+                continue
+            d1 = math.sqrt((1 - r_tq ** 2) * (1 - r_bq ** 2))
+            d2 = math.sqrt((1 - r_tb ** 2) * (1 - r_bq ** 2))
+            out.append(((r_tb - r_tq * r_bq) / d1 if d1 else None,
+                        (r_tq - r_tb * r_bq) / d2 if d2 else None))
+        if out[0][0] is None or out[1][0] is None:
+            continue
+        print("    %-6s %20s %20s" %
+              (s, "%+.2f -> %+.2f" % (out[0][0], out[1][0]),
+               "%+.2f -> %+.2f" % (out[0][1], out[1][1])))
+
 
 if __name__ == "__main__":
     main()
