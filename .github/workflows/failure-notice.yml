@@ -82,8 +82,8 @@ jobs:
           # populates these, so a TEST line can only come from a manual run.
           WF: ${{ github.event.workflow_run.name || 'TEST — not a real failure' }}
           TRIGGER: ${{ github.event.workflow_run.event || 'manual test' }}
-          URL: ${{ github.event.workflow_run.html_url || github.server_url }}
-          STARTED: ${{ github.event.workflow_run.run_started_at || github.run_id }}
+          URL: ${{ github.event.workflow_run.html_url || format('{0}/{1}/actions/runs/{2}', github.server_url, github.repository, github.run_id) }}
+          STARTED: ${{ github.event.workflow_run.run_started_at }}
         run: |
           # An unset webhook is not a failure. This workflow exists to report
           # other things breaking; making it break on its own missing config
