@@ -91,7 +91,7 @@ def eastern_offset(dt_naive):
 
 
 def fetch_acceptance_times():
-    """-> list of (utc_datetime, form) for every filing EDGAR reports."""
+    """-> list of (utc_dt, raw_et_dt, filing_date, form) per filing."""
     out = []
     for c in WATCHLIST:
         cik = c["cik"].lstrip("0").zfill(10)
@@ -114,6 +114,7 @@ def fetch_acceptance_times():
         rec = (d.get("filings") or {}).get("recent") or {}
         acc = rec.get("acceptanceDateTime") or []
         forms = rec.get("form") or []
+        fdates = rec.get("filingDate") or []
         n = 0
         for i, ts in enumerate(acc):
             if not ts:
@@ -125,7 +126,8 @@ def fetch_acceptance_times():
                 continue
             # EASTERN despite the Z. Add the offset to reach real UTC.
             utc = naive + timedelta(hours=eastern_offset(naive))
-            out.append((utc.replace(tzinfo=timezone.utc),
+            out.append((utc.replace(tzinfo=timezone.utc), naive,
+                        fdates[i] if i < len(fdates) else None,
                         forms[i] if i < len(forms) else "?"))
             n += 1
         print("  %-6s %4d filings with acceptance times" % (c["ticker"], n))
@@ -201,19 +203,43 @@ def main():
     rows = fetch_acceptance_times()
     if not rows:
         sys.exit("No acceptance times.")
-    weekday = [t for t, _ in rows if t.weekday() < 5]
+    weekday = [r[0] for r in rows if r[0].weekday() < 5]
     print("\n  %d filings total, %d on weekdays" % (len(rows), len(weekday)))
-    print("  range %s .. %s" % (min(t for t, _ in rows).date(),
-                                max(t for t, _ in rows).date()))
+    print("  range %s .. %s" % (min(r[0] for r in rows).date(),
+                                max(r[0] for r in rows).date()))
 
-    # Validation: EDGAR accepts 06:00-22:00 ET = 10:00-02:00 UTC in EDT.
-    # Anything far outside means the Eastern conversion is wrong.
+    # VALIDATION. The first attempt tested the converted times against EDGAR's
+    # 06:00-22:00 ET window and called the conversion suspect. That test was
+    # wrong: those are DISSEMINATION hours. EDGAR accepts submissions around
+    # the clock, so a 23:30 ET acceptance is ordinary and proves nothing.
+    #
+    # SEC's actual rule is self-contained and far sharper: a submission
+    # accepted after 17:30 ET carries the NEXT business day as its filingDate.
+    # If the raw stamp really is Eastern, acceptances at or before 17:30 should
+    # almost all be same-day filings and those after should almost all be
+    # next-day. No external fact needed, and a four or five hour error in
+    # either direction breaks it loudly.
+    same = {True: [0, 0], False: [0, 0]}
+    for _utc, naive, fdate, _form in rows:
+        if not fdate:
+            continue
+        before = (naive.hour * 60 + naive.minute) <= 17 * 60 + 30
+        same[before][0 if str(naive.date()) == fdate else 1] += 1
+    for before in (True, False):
+        s, nxt = same[before]
+        tot = s + nxt
+        if tot:
+            print("  acceptance %-11s -> same-day filingDate %5d (%3.0f%%),"
+                  "  later %5d (%3.0f%%)"
+                  % ("<=17:30 ET" if before else ">17:30 ET",
+                     s, 100.0 * s / tot, nxt, 100.0 * nxt / tot))
+    ok = (same[True][0] > 4 * same[True][1]
+          and same[False][1] > 4 * same[False][0])
+    print("  -> Eastern interpretation %s"
+          % ("CONFIRMED by the 17:30 cutoff"
+             if ok else "FAILS the 17:30 test — do not trust anything below"))
+
     hours = Counter(t.hour for t in weekday)
-    outside = sum(v for h, v in hours.items() if 3 <= h <= 9)
-    print("  filings in 03:00-09:59 UTC (outside EDGAR's hours): %d (%.1f%%)"
-          % (outside, 100.0 * outside / len(weekday)))
-    print("  -> conversion %s" %
-          ("looks right" if outside < 0.02 * len(weekday) else "IS SUSPECT"))
 
     print("\n  by UTC hour:")
     for h in sorted(hours):
@@ -221,12 +247,16 @@ def main():
                                         "#" * (hours[h] * 60 // max(hours.values()))))
 
     # The morning is what this is about. Weight coverage by real arrivals.
-    morning = [t for t in weekday if 10 * 60 <= t.hour * 60 + t.minute < 15 * 60]
-    print("\n  %d weekday filings land 10:00-14:59 UTC (%.0f%% of all weekday)"
-          % (len(morning), 100.0 * len(morning) / len(weekday)))
-    weights = Counter(t.hour * 60 + t.minute for t in morning)
-    if not weights:
-        sys.exit("No morning filings to weight by.")
+    # Weight by EVERY weekday filing rather than by an assumed morning. Where
+    # the mass actually sits is the finding, and pre-selecting a window would
+    # bury it.
+    weights = Counter(t.hour * 60 + t.minute for t in weekday)
+    cur = 10 * 60 + MINUTE
+    inwin = sum(w for m, w in weights.items() if cur <= m < 24 * 60)
+    print("")
+    print("  %d of %d weekday filings (%.0f%%) land inside the CURRENT"
+          % (inwin, len(weekday), 100.0 * inwin / len(weekday)))
+    print("  10:07-23:59 UTC cron window; the rest cannot be caught same day.")
 
     print("\n" + "=" * 78)
     print("2. COVERAGE BY CONFIGURATION")
