@@ -74,6 +74,34 @@ distribution, and a distribution measured across 23 years says something close
 to the opposite. Anchoring on a single observation is how the window came to be
 aimed at the quietest hours.
 
+### The largest remaining gap, and why it is not being closed yet
+
+Simulated against the measured filing and delay distributions, `07:07` catches
+**85%** of filings within fifteen minutes, against 77% for the old `10:07`.
+Inside an active run coverage is 100% for every half hour from 10:00 to 15:00 —
+**the entire residual is one contiguous block, 00:00–06:00 UTC.** That is about
+1,090 filings, 14% of the roster's history, or closer to **9.5%** once the
+23:07 fire is credited for reaching past midnight, which the simulation did not
+model.
+
+**Extending the window end is the only thing that reaches it, and it is
+deliberately deferred.** There is no delay measurement below 05:00 UTC at all —
+the morning regime was measured from 05:00 and the evening to 23:59 — so
+choosing an end time now would be reasoning from a distribution nobody has
+measured, which is the same error the 10:00 start was built on.
+
+The measurement arrives on its own: the new `07:07` and `08:07` fires sit in a
+span that previously had no data, so about a week of them gives something to
+reason from.
+
+**A heartbeat is deferred for the same reason.** The failure notice below
+catches failures, not absences, and absence is the more common failure here — a
+dropped scheduled run produces no event at all. A heartbeat that complains when
+no run has been seen in N hours is the thing that would catch it, but N is
+unmeasured for a third of the day, and a heartbeat with a guessed threshold
+either cries wolf or sleeps through the thing it exists for. **Deferred pending
+the small-hours delay data, not overlooked.**
+
 ### Why the granularity moved off the cron and into the job
 
 Asking GitHub for `*/15` did not produce a check every fifteen minutes. It

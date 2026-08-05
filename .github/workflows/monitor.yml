@@ -2,18 +2,28 @@ name: Press release monitor
 
 on:
   schedule:
-    # Once an hour, weekdays, 10:00-23:59 UTC; the job itself then checks on
+    # Once an hour, weekdays, 07:00-23:59 UTC; the job itself then checks on
     # each fifteen-minute boundary until its hour is out. See the poll step for
     # why the granularity moved off the cron and onto the job.
     #
-    # The window opens at 10:00 UTC because that is 06:00 Eastern, EDGAR's own
-    # opening time — nothing can be filed before it. GitHub cron is UTC and has
-    # no DST awareness, so in EST the window simply opens an hour early:
-    #   EDT (summer, UTC-4): 6am - 8pm ET
-    #   EST (winter, UTC-5): 5am - 7pm ET
-    # GitHub queues scheduled jobs at low priority, so expect 15-25 min drift on
-    # the fire; the loop absorbs it by aligning to wall-clock quarter hours.
-    - cron: "7 10-23 * * 1-5"
+    # The window opens at 07:07, not at EDGAR's 10:00 UTC opening, because a
+    # fire has to arrive before a filing to catch it and morning fires arrive
+    # 83-173 minutes late. A 10:07 fire lands around 12:20 and misses the
+    # 10:00-12:30 block entirely — about 945 filings, 12% of the roster's
+    # history. Simulated against the measured filing and delay distributions,
+    # 07:07 catches 85% of filings within 15 minutes against 77% for 10:07.
+    #
+    # BUDGET_MIN stays at 55. A 75-minute budget reaches 88%, but three points
+    # cost 23% of fires cancelled by supersession against 3% — and cancelled
+    # fires are the mechanism behind the duplicate posting this schedule work
+    # started from. See docs/press-monitor.md.
+    #
+    # GitHub cron is UTC and has no DST awareness:
+    #   EDT (summer, UTC-4): 3am - 8pm ET
+    #   EST (winter, UTC-5): 2am - 7pm ET
+    # Scheduled jobs are queued at low priority; the loop absorbs the drift by
+    # aligning to wall-clock quarter hours.
+    - cron: "7 7-23 * * 1-5"
   workflow_dispatch:
     inputs:
       dry_run:

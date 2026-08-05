@@ -41,6 +41,25 @@ component takes `DRY_RUN`, which evaluates and logs while posting nothing and
 saving no state. Reasoning that a URL or a form type is right does not count as
 confirming it.
 
+**The run history is a primary source, and it is the one nobody opens.** The
+duplicate-post incident of 2026-08-04 was reconstructed from logs and reasoning
+while `gh run list` showed the failed `Persist state` step directly, and the
+same query turned up **nine** failures across 300 runs when the working
+assumption was one. Query it before theorising:
+
+```bash
+gh run list --limit 300 --json name,event,conclusion,createdAt -q '.[] | select(.conclusion=="failure")'
+```
+
+**A number that is true about something adjacent to the question is not an
+answer to the question.** This has now happened three times, and it looks like
+evidence every time: one morning's filings taken for the filing-time
+distribution, when 23 years of it say the opposite; a 20% hit rate measured on
+*daily* workflows used to predict an *hourly* one; and "Alpaca's extended
+session opens 4am ET" — which says when data exists, not when spikes occur —
+used to argue a window start. Ask what population the number was measured over
+before letting it decide anything.
+
 **A test that has never failed proves nothing.** Adding a guard means first
 demonstrating the failure it prevents, with the guard removed. The drift
 detector below was validated that way — `SCHEDULE 13D` was taken back out of

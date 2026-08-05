@@ -2,18 +2,28 @@ name: Volume spikes
 
 on:
   schedule:
-    # Once an hour, weekdays, 10:00-22:59 UTC; the job itself then checks on
+    # Once an hour, weekdays, 07:00-22:59 UTC; the job itself then checks on
     # each fifteen-minute boundary until its hour is out. See the poll step for
     # why the granularity moved off the cron and onto the job.
     #
     # Covers premarket through the close in both DST states:
-    #   EDT (summer, UTC-4): 6am - 6pm ET
-    #   EST (winter, UTC-5): 5am - 5pm ET
+    #   EDT (summer, UTC-4): 3am - 6pm ET
+    #   EST (winter, UTC-5): 2am - 5pm ET
     # Alpaca's free tier includes extended hours, so premarket gaps are caught.
-    # The extended session opens 4am ET, so a 10:00 UTC start is still inside
-    # it rather than ahead of it — this window could open earlier on its own
-    # merits, and does not here only because 10:00 was chosen for EDGAR.
-    - cron: "9 10-22 * * 1-5"
+    #
+    # 07:09 is a MECHANICAL STAGGER two minutes off the press monitor, not a
+    # measured choice. The monitor's 07:07 is justified by a filing-time
+    # distribution; there is no equivalent measurement for when volume spikes
+    # occur, and spike_state.json keeps only the current day, so no history
+    # exists to derive one from. The cost of a late start here is also
+    # different in kind: hourly bars cover the whole 4am-8pm ET extended
+    # session, so a run starting late still SEES earlier premarket volume in
+    # the cumulative total. It alerts later; it is not blind.
+    #
+    # To choose this number on evidence rather than on the monitor's, the
+    # thing to measure is when alerts actually fire. That needs spike_state
+    # to retain history, which it does not.
+    - cron: "9 7-22 * * 1-5"
   workflow_dispatch:
     inputs:
       dry_run:
