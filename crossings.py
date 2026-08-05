@@ -26,8 +26,20 @@ Note what these companies actually do: single-session moves of +112% (ANY),
 at a split date. A 52-week high here is a lower bar than it would be for an
 ordinary equity, and the hysteresis is what keeps it meaningful.
 
+THREE REASONS A TICKER IS ABSENT, NOT ONE
+A company listed six weeks ago, a company whose feed failed, and a company that
+has reported for years and returned three bars today are different findings.
+They were one line — "No data this run" — which reads as a fault for all three.
+See classify(). The distinction survives in the post, not only the log: a
+reader looking at an absent ticker is asking the same question this component
+answers correctly for every ticker it does report, where a window shorter than
+WINDOW carries a `~`.
+
 Companion to daily_recap.py, which shows position in the 52-week range as a
 column every day. This fires only on the boundary, and to a different channel.
+NOTE that the two DO diverge on short history: crossings marks a sub-252
+window with `~` and skips below MIN_BARS, while the recap computes `52w` over
+whatever it has and labels it 52w regardless.
 """
 
 import json
@@ -146,6 +158,40 @@ def fetch(symbols):
 # ---------------------------------------------------------------- ANALYSIS
 
 
+def classify(ticker, rows, state):
+    """Why a ticker produced no reading: 'ok', 'young', 'regressed' or 'nodata'.
+
+    THESE ARE THREE DIFFERENT MEASUREMENTS AND WERE ONE LABEL. A company
+    listed six weeks ago and a company whose price feed failed both used to
+    appear as "No data this run", which reads as a fault in both cases. One of
+    them is not a fault — it is a fact about the company, and the same kind of
+    fact this component already reports for every ticker it does cover, where
+    a window shorter than WINDOW gets a `~`. Below MIN_BARS the grading simply
+    stopped and the ticker fell off the edge.
+
+    'young' vs 'regressed' is the part that has to be right in the general
+    case rather than for whichever company happens to be new today. Bar count
+    alone cannot separate them: three bars looks identical whether the company
+    listed on Tuesday or the feed returned a stub. STATE separates them. A
+    ticker only gets an entry here once it has been assessed successfully, so
+    an entry means it HAS had enough history — and a ticker that once had 300
+    sessions and now has 3 has not become young. That is a source failure
+    wearing a young company's shape, and it is reported as one.
+
+    Returns (verdict, bars). `bars` is the count actually received, so the log
+    and the post can state the measurement rather than assert an absence.
+    """
+    bars = len(rows)
+    if bars == 0:
+        return "nodata", 0
+    if bars >= MIN_BARS:
+        return "ok", bars
+    # Seen before with a usable window, and now too short. Not youth.
+    if state.get(ticker, {}).get("last_seen"):
+        return "regressed", bars
+    return "young", bars
+
+
 def assess(rows):
     """Where today's close sits against the prior WINDOW sessions.
 
@@ -191,7 +237,7 @@ def build_table(rows):
     return "\n".join(out)
 
 
-def build_embed(rows, missing):
+def build_embed(rows, missing, young=()):
     highs = [r for r in rows if r["m"]["crossed"] == "H"]
     lows = [r for r in rows if r["m"]["crossed"] == "L"]
     lines = [f"```\n{build_table(rows)}\n```"]
@@ -211,6 +257,15 @@ def build_embed(rows, missing):
     if short:
         lines.append(f"`~` under {WINDOW} sessions of history, so the window is "
                      f"shorter than 52 weeks: {', '.join(short)}")
+    # Stated as a count against the floor, not as an absence. "SPCX 37/60" is a
+    # measurement a reader can act on — it says the ticker is fine and roughly
+    # when it starts reporting. "No data this run" said neither.
+    if young:
+        lines.append(
+            "Too little history to assess, and not an error — "
+            + ", ".join(f"**{t}** {n}/{MIN_BARS} sessions"
+                        for t, n in sorted(young))
+            + ".")
     if missing:
         lines.append(f"No data this run: {', '.join(sorted(missing))}")
 
@@ -269,16 +324,31 @@ def main():
 
     state = load_state()
     first_run = not STATE_FILE.exists()
-    crossed, missing, rearmed = [], [], []
+    crossed, missing, young, rearmed = [], [], [], []
 
     for ticker in sorted(tickers):
         rows = series.get(ticker, [])
-        if len(rows) < MIN_BARS:
-            print(f"  {ticker}: {len(rows)} bar(s) — too few, skipped")
+        verdict, bars = classify(ticker, rows, state)
+        if verdict == "young":
+            print(f"  {ticker}: {bars} of {MIN_BARS} session(s) — too little "
+                  f"history yet, not an error")
+            young.append((ticker, bars))
+            continue
+        if verdict == "regressed":
+            print(f"  {ticker}: {bars} bar(s), but it has reported before — "
+                  f"treating as a source failure, not a young listing")
+            missing.append(ticker)
+            continue
+        if verdict == "nodata":
+            print(f"  {ticker}: no bars returned")
             missing.append(ticker)
             continue
         m = assess(rows)
         if not m:
+            # Unreachable while assess() and classify() share MIN_BARS, and
+            # kept so they cannot drift apart silently.
+            print(f"  {ticker}: {bars} bar(s) but assess() declined — "
+                  f"MIN_BARS disagrees between classify() and assess()")
             missing.append(ticker)
             continue
 
@@ -308,6 +378,9 @@ def main():
     if rearmed:
         print(f"\n  re-armed (back inside {REARM_LOW:.0f}–{REARM_HIGH:.0f}%): "
               f"{', '.join(rearmed)}")
+    if young:
+        print(f"\n  too little history (under {MIN_BARS} sessions): "
+              + ", ".join(f"{t} at {n}" for t, n in young))
     if missing:
         # Unlike dilution.py or comment_letters.py, a missing ticker does not
         # invert the meaning of this post. Those assert something about every
@@ -328,7 +401,7 @@ def main():
         return 0
 
     print(build_table(crossed))
-    embed = build_embed(crossed, missing)
+    embed = build_embed(crossed, missing, young)
 
     if DRY_RUN:
         print(f"\nDry run: would post {len(crossed)} crossing(s). "
