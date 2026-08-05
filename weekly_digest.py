@@ -1397,6 +1397,60 @@ CONTRIBUTORS = [
 
 SCHEMA = 1
 
+# CONTRIBUTORS ARE NOT ALL INDEPENDENT, AND COUNTING THEM AS THOUGH THEY WERE
+# INFLATES CONVERGENCE FOR EXACTLY THE WRONG COMPANY.
+#
+# price, volume and crossings are three readings of ONE Alpaca bar series. A
+# stock that jumps 20% on heavy volume through its 52-week high scores three,
+# and it has told you one thing. Measured over the 10-week backfill, the
+# co-occurrence against what independence would predict:
+#
+#     price + volume         5.3x        <- one fact
+#     crossings + volume     4.0x        <- one fact
+#     short_interest + threshold_list  3.3x
+#     short_interest + volume          1.8x
+#     short_volume + short_interest    1.4x   <- near-independent, kept apart
+#     crossings + short_interest       1.0x
+#
+# Collapsing the bar-series three into one family moved >=3 from 8 ticker-weeks
+# to 5, and dropped VIP's week of four to two — a week whose four components
+# were crossings, price, volume and filings, three of them the same event.
+#
+# The short-side measures are NOT collapsed. Short volume is a flow, short
+# interest is a position, fails are a settlement failure and the threshold list
+# is a regulatory consequence; they run at 1.0-1.8x, which is what genuinely
+# different measurements of a related phenomenon look like. Collapsing those
+# would throw away the convergence this digest exists to find.
+#
+# The filter's whole purpose argues the same way: a big price move on heavy
+# volume is the thing a reader CANNOT miss. It should not be what pushes a
+# company over the line.
+SOURCE_FAMILY = {
+    "price": "market",
+    "volume": "market",
+    "crossings": "market",
+}
+
+# MEASURED, NOT CHOSEN. Backfill of 10 complete ISO weeks, 2026-W22 to 2026-W31,
+# 19 tickers, 190 ticker-weeks, counting distinct source families:
+#
+#     families:      0     1     2     3
+#     ticker-weeks: 93    60    32     5
+#     share:       49%   32%   17%    3%
+#
+# The decay ratio runs 0.65, 0.53, then 0.16 — a real break between 2 and 3,
+# unlike the heartbeat in docs/rejected.md whose healthy and broken populations
+# overlapped and admitted no threshold at all.
+#
+# At >=2 the section names 3.7 companies a week, a fifth of the roster, which is
+# a second firehose rather than a filter. At >=3 it names 0.5 a week and is
+# EMPTY IN SIX OF THE TEN WEEKS. That is the intended behaviour and not a
+# failure: a renderer must print "nothing converged this week" rather than
+# dropping the section, because absence is a measurement.
+CONVERGENCE_THRESHOLD = 3
+CONVERGENCE_BASIS = ("10 complete ISO weeks, 2026-W22..2026-W31, 190 "
+                     "ticker-weeks; >=3 families = 5 ticker-weeks, 0.5/wk")
+
 
 def build_week(ctx, monday):
     """One week's verdict record. No rendering, no thresholds applied to the
@@ -1448,9 +1502,17 @@ def build_week(ctx, monday):
     for t in TICKERS:
         vs = record["verdicts"].get(t, {})
         hits = sorted(k for k, v in vs.items() if v["level"] == NOTABLE)
+        families = sorted({SOURCE_FAMILY.get(k, k) for k in hits})
         record["convergence"][t] = {
-            "count": len(hits),
+            # `count` is the family count and is the one to threshold on.
+            # `component_count` is kept beside it because the two disagreeing
+            # is itself informative — it means the week's evidence came from
+            # one source read several ways.
+            "count": len(families),
+            "families": families,
+            "component_count": len(hits),
             "components": hits,
+            "converged": len(families) >= CONVERGENCE_THRESHOLD,
             "not_testable": sorted(k for k, v in vs.items()
                                    if v["level"] == NOT_TESTABLE),
             "source_failed": sorted(k for k, v in vs.items()
@@ -1465,6 +1527,9 @@ def build_week(ctx, monday):
     record["denominator"] = {
         "components_in_repo": 13,
         "registered": len(CONTRIBUTORS),
+        "families": len({SOURCE_FAMILY.get(k, k) for k in counted}),
+        "convergence_threshold": CONVERGENCE_THRESHOLD,
+        "threshold_basis": CONVERGENCE_BASIS,
         "fetched": sum(1 for v in record["contributors"].values()
                        if v["fetched"]),
         "counted": len(counted),
@@ -1517,15 +1582,19 @@ def report(records, ctx):
         per_week.append((rec["week"], dist, rec["denominator"]))
 
     maxn = max(counts) if counts else 0
+    print(f"Counting DISTINCT SOURCE FAMILIES, not contributors — "
+          f"{', '.join(sorted(set(SOURCE_FAMILY.values())))} collapses "
+          f"{', '.join(sorted(SOURCE_FAMILY))}.\n")
     print(f"{'week':<10}{'denom':>6}  " +
           "".join(f"{'=' + str(i):>5}" for i in range(maxn + 1)) +
-          "   names at >=2")
+          f"   names at >={CONVERGENCE_THRESHOLD}")
     for rec, (wk, dist, den) in zip(records, per_week):
         names = sorted(t for t, cv in rec["convergence"].items()
-                       if cv["count"] >= 2)
-        print(f"{wk:<10}{den['counted']:>6}  " +
+                       if cv["converged"])
+        print(f"{wk:<10}{den['families']:>6}  " +
               "".join(f"{dist.get(i, 0):>5}" for i in range(maxn + 1)) +
-              "   " + (", ".join(names) if names else "-"))
+              "   " + (", ".join(names) if names
+                       else "nothing converged this week"))
     total = sum(counts.values())
     print(f"\n{'pooled':<10}{'':>6}  " +
           "".join(f"{counts.get(i, 0):>5}" for i in range(maxn + 1)))
@@ -1658,11 +1727,12 @@ def main():
         rec = build_week(ctx, monday)
         records.append(rec)
         named = sorted(t for t, cv in rec["convergence"].items()
-                       if cv["count"] >= 2)
+                       if cv["converged"])
         print(f"  {rec['week']}  {rec['monday']}..{rec['friday']}  "
-              f"denominator {rec['denominator']['counted']}/"
-              f"{rec['denominator']['registered']}  "
-              f">=2 components: {', '.join(named) if named else '-'}")
+              f"denominator {rec['denominator']['families']} families "
+              f"({rec['denominator']['counted']}/"
+              f"{rec['denominator']['registered']} contributors)  "
+              f"converged: {', '.join(named) if named else 'nothing'}")
 
     out = {
         "schema": SCHEMA,
