@@ -63,6 +63,13 @@ Section 4 checks derived quantities. Anything computed FROM the metric inherits
 its artefact rather than correcting it, which is easy to forget when the
 derived number is the sharpest-looking result you have.
 
+IDENTICAL OUTPUT ACROSS TWO RUNS IS NOT REASSURANCE
+It means one of two things and they need telling apart: no new daily bar has
+closed since the last run, or the fetch is broken and serving stale data. The
+header prints the last aligned bar date for exactly that — compare it against
+the last session that actually closed. Figures that have NOT moved after a new
+session closed is the finding, not the reassurance.
+
 WHAT IT FOUND THE FIRST TIME
 Run 2026-08-04 against a proposed BTC-decoupling table. Bitcoin's realised
 volatility fell 54% to 34% while the Nasdaq's rose 16% to 25% and the roster's
@@ -242,8 +249,15 @@ def main():
         sys.exit("No data.")
 
     subjects = [s for s in SUBJECTS if s in eq]
-    print("%d subjects against %s, %d trading days per half.\n"
+    # The aligned grid: dates every reference has. The last one is printed
+    # because identical output across two runs means either no new bar or a
+    # broken fetch, and this date is what distinguishes them.
+    grid = sorted(set.intersection(*[set(v) for v in refs.values()]))
+    print("%d subjects against %s, %d trading days per half."
           % (len(subjects), " and ".join(refs), HALF))
+    print("Last aligned bar %s, %d aligned days. If a session has closed since"
+          % (grid[-1] if grid else "NONE", len(grid)))
+    print("that date, these figures should have moved.\n")
 
     # ------------------------------------------------------------------
     print("=" * 78)
@@ -253,7 +267,6 @@ def main():
     print("  from 1.00 while the subjects sit near it is the setup for a")
     print("  mechanical result.\n")
     print("    %-6s %10s %10s %8s" % ("", "prior", "recent", "ratio"))
-    grid = sorted(set.intersection(*[set(v) for v in refs.values()]))
     ratios = {}
     for label, ser in list(refs.items()) + [(s, eq[s]) for s in subjects]:
         common = sorted(set(ser) & set(grid))

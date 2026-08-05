@@ -220,8 +220,49 @@ Fisher z across the two independent 90-day halves, critical |dz| = 0.30:
 - **2 of 14** real rises against the Nasdaq — **NUAI and BGDE, the roster's two
   biggest idiosyncratic stories**
 
-So the Nasdaq column read "held", not "rose", and the rotation half of the
-story had no support independently of the volatility argument.
+So the Nasdaq column read "held", not "rose".
+
+### The Nasdaq half is the same artefact, in mirror image
+
+Decomposing against QQQ as well as against bitcoin — which the original probe
+could not do, see below — gives the stronger version of that, and it is a
+separate finding rather than a restatement:
+
+| vs QQQ | |
+|---|---|
+| a pure rescaling would move beta | **−35%** |
+| betas that fell | **11 of 14** |
+| median RELATIVE change in beta | **−23%** |
+| median change in correlation | **+0.09** |
+| the `sigma_qqq/sigma_ticker` term | **rose for 13 of 14** |
+
+MARA 0.18 → 0.30, WULF 0.16 → 0.28, BKKT 0.13 → 0.27. The one exception is ANY,
+whose own volatility rose 2.36x and so outran even the Nasdaq's.
+
+**Correlation to the Nasdaq rose while sensitivity to it fell 23%**, against a
+−35% pure-rescaling prediction. The Nasdaq got noisier, so it explained more of
+a variance that had not itself changed — precisely as bitcoin going quieter
+made it explain less.
+
+Both halves of "these rotated out of a bitcoin proxy and into an
+AI-infrastructure proxy" are the same artefact seen from two sides. Neither
+side is a market event.
+
+### The tool found what the probe it was cut from could not
+
+A note about the tool rather than the rejection, but it is why the tool was
+kept rather than deleted along with the idea.
+
+The original probe decomposed against **bitcoin only**, because bitcoin was the
+question. `check_metric_regime.py` loops the decomposition over every
+reference, so it produced the QQQ mirror image above the first time it ran —
+evidence that did not exist while the probe it was trimmed from was the thing
+being run.
+
+That is the reason the reference list is configurable rather than hardcoded. A
+single series cannot separate "the subject moved away from A" from "A went
+quiet", and a second reference moving the *other* way is what turns a
+suspicion into a two-sided demonstration.
 
 ### The confound was in the finding that started it
 
