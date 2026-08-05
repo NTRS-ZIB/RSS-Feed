@@ -147,10 +147,13 @@ phases, campus total, portfolio total; base-term value versus total including
 extensions. A parser gets six numbers and no way to know which pair is the
 subject of the announcement. Tightening the regex does not help.
 
-**Titles remain open.** Headlines are written to disambiguate — *"…with Second
-352 MW IT Lease, Bringing Campus-Level Base-Term Contract Value to $19.6
-Billion"* carries term, MW and value. But this was tested on HUT only, and HUT
-writes unusually structured headlines. Before building, check WULF's and CIFR's.
+**Titles remained open, and are now closed too.** Headlines are written to
+disambiguate — *"…with Second 352 MW IT Lease, Bringing Campus-Level Base-Term
+Contract Value to $19.6 Billion"* carries term, MW and value. But this was
+tested on HUT only, and HUT writes unusually structured headlines. WULF's and
+CIFR's were checked, along with six others: see
+[contracted capacity from titles](#contracted-capacity-from-release-titles)
+below. **Do not read this section as leaving a lead open.**
 
 ---
 
@@ -422,3 +425,372 @@ exactly what the heartbeat could not offer. It is also what actually happened
 on 2026-08-05: APLD's 10-K aged out unseen and seven press items were left to
 be marked seen and silently dropped, and a heartbeat would have said nothing
 about either, correctly, by its own thresholds.
+
+---
+
+## Contracted capacity from release TITLES
+
+The lead left open by
+[contracted capacity from release bodies](#contracted-capacity-from-release-bodies)
+above, measured 2026-08-05 across the whole roster rather than HUT alone.
+
+**Would have added:** MW and contract value for the HPC leases, taken from the
+headline instead of the body, on the theory that headlines are written to
+disambiguate what a body leaves ambiguous.
+
+### Two corpora, and they must not be pooled
+
+Pooling them is what makes this look workable.
+
+| corpus | what it is | size |
+|---|---|---|
+| **headline only** | the twelve RSS `<title>` values plus HUT's scraped page titles — *exactly* what `press_monitor.py` holds today | **134 titles, 13 sources** |
+| **headline + subhead** | first block of each 8-K/6-K EX-99 exhibit since 2024-06-01, for HUT WULF CIFR GLXY APLD BTDR IREN | **217 blocks** |
+
+The second corpus exists because six companies have no feed, and it reaches
+further back than a ten-item window. It is **not** what the monitor sees, and
+the gap between the two is the finding.
+
+### The headline-only result
+
+18 of the 134 are capacity or contract announcements. Financing releases are
+excluded — they carry a dollar figure for a different reason.
+
+| headline carries | count | share |
+|---|---|---|
+| any MW/GW | 6/18 | 33% |
+| any `$` | 5/18 | 28% |
+| a term in years | 3/18 | 17% |
+| **both MW and `$`** | **3/18** | **17%** |
+| term + MW + `$` | 2/18 | 11% |
+
+**All three of the MW+`$` headlines are HUT.** Every one:
+
+```
+Hut 8 Signs 15-Year, 245 MW AI Data Center Lease at River Bend Campus
+  with Total Contract Value of $7.0 Billion
+Hut 8 Commercializes First Phase of 1 GW Beacon Point AI Data Center Campus
+  with 15-Year, 352 MW IT Lease with Base-Term Contract Value of $9.8 Billion
+Hut 8 Fully Commercializes 1 GW Beacon Point AI Data Center Campus with Second
+  352 MW IT Lease, Bringing Campus-Level Base-Term Contract Value to $19.6 Billion
+```
+
+Nine companies have at least one capacity headline and **none** with MW+`$`:
+ANY, BGDE (3), BKKT, CLSK, IREN (4), NUAI, SLNH, WULF, WYFI.
+
+The hypothesis was that HUT writes unusually structured headlines. **It is not
+unusual, it is unique**, and n=3 is one company's house style rather than a
+sector convention. A component built on it covers one company and reports
+silence for eighteen.
+
+### The decisive case
+
+WULF's Anthropic lease — the sector's second-largest of the year:
+
+```
+RSS title : TeraWulf Announces Anthropic Lease at Justified Data Campus and Sale
+            of Majority Interest in Abernathy Joint Venture to Fluidstack
+exhibit   : ...to Fluidstack | Long-Term AI Infrastructure Lease Expected to
+            Generate ~$19 Billion of Contracted Revenue Over Init[ial term]
+```
+
+**The title the monitor sees contains no digit at all.** The figure is in the
+subhead, and RSS discards subheads.
+
+Matched-pair test on the same releases seen both ways: **7 matched, 5 where the
+exhibit carries figures the feed title does not.** The matched set is small
+because feed windows are shallow, but the direction is not in doubt and this
+case alone settles it.
+
+### And the subhead reintroduces the ambiguity that killed the bodies
+
+Of the 20 capacity blocks carrying an MW value, **5 — 25% — carry two or more
+distinct MW values**; 7 of 33 carry two or more distinct dollar values.
+
+| block | MW values in one block |
+|---|---|
+| WULF 2025-08-18 | 160 (this lease) / 360 (cumulative) |
+| APLD 2025-08-29 | 150 (this lease) / 400 (campus total) |
+| CIFR 2025-11-20 | 56 (this lease) / 39 (delivery tranche) |
+| **HUT 2026-07-20** | **352 / 704 / 1000** |
+
+**Even HUT's best headline carries three.** The body rejection above said a
+parser gets six numbers and no way to know which pair is the subject.
+Descending to the subhead does not escape that — it inherits a smaller version
+of it.
+
+### One case that is its own argument
+
+On **2025-12-17** HUT published both of these, same day, same transaction:
+
+```
+Hut 8 Signs 15-Year, 245 MW AI Data Center Lease at River Bend Campus with
+  Total Contract Value of $7.0 Billion
+Hut 8 Announces AI Infrastructure Partnership with Anthropic and Fluidstack
+```
+
+One fully specified, one carrying nothing. A headline parser posts the first and
+is silent on who the counterparty is.
+
+### Verdict
+
+**Titles are not prose — a third of them carry a figure — and it still dies.**
+No company but HUT pairs MW with a dollar value in a headline; the
+disambiguating figure lives in the subhead the feed throws away; and the subhead
+carries the multiple-MW problem forward. Both halves of this idea are now
+closed.
+
+---
+
+## Debt and convertible maturities
+
+**Would have added:** when each company's obligations come due — the maturity
+wall behind the $4.25B, $3.2B, $2.35B and $2.0B senior secured notes issued
+across this roster in the last year, and the converts several carry.
+
+**The expectation going in was that this was the most tractable of three
+probes. It was wrong, and the reason generalises: the structured route has the
+worse data.**
+
+### Route A — XBRL. Enumerated, not guessed.
+
+`companyfacts` was pulled for all 19 and filtered, rather than probing a
+hand-written list of concept names: **1,335 debt-related concept/unit series**
+across the roster.
+
+**That choice is the method note worth keeping.** Probing a guessed concept name
+and getting a 404 is indistinguishable from the concept not existing — the same
+trap `dilution.py` and [short interest](short-interest.md#schema-discovery)
+already work around. Enumerating first turns "does this exist" into a lookup.
+
+`LongTermDebtMaturitiesRepaymentsOfPrincipal*` is tagged by **8 of 19**: CIFR,
+HUT, MARA, NUAI, SLNH, SPCX, VIP, WULF.
+
+**Ten tag nothing** — ABTC, ANY, APLD, BGDE, BKKT, CLSK, DGXX, GLXY, IREN,
+WYFI — including four of the largest issuers of the past year. BTDR is an
+eleventh by a different route: it files IFRS and has no `us-gaap` facts at all,
+not even `Assets`.
+
+#### The buckets do not reconcile
+
+Sum of the buckets at the newest period, against that period's balance-sheet
+debt:
+
+| | sum of buckets | balance-sheet debt | ratio |
+|---|---|---|---|
+| **HUT** | $7,735,104,000 | $7,735,104,000 | **1.00x** |
+| SLNH | $28.7M | $25.9M | 1.11x |
+| **CIFR** | $2.39B | $5.45B | **0.44x** |
+| **SPCX** | $13.2B | $38.3B | **0.35x** |
+| **MARA** | $831M | $2.42B | **0.34x** |
+
+**HUT is the only coherent one.** CIFR and SPCX tag no `InYearFive` and no
+`AfterYearFive` at all, so the long-dated tail — **56% and 65% of their debt** —
+is simply absent from the schedule. A maturity wall built from this reports
+CIFR's near-term obligations and silently omits the majority of what it owes,
+which is the [absence-is-a-measurement](../CLAUDE.md) rule violated by the
+source rather than by the component.
+
+#### Per-instrument detail is unreachable, and that was checked rather than assumed
+
+`DebtInstrumentMaturityDate` returns 404 for all seven companies tested. **A 404
+is not a finding**, so it was checked against HUT's raw 10-Q XBRL instance
+(`hut-20260630x10q_htm.xml`, 3.8MB): **0 occurrences.** Filers genuinely do not
+tag it.
+
+What *is* in that instance and still invisible to the API:
+
+| concept | facts in instance | dimensional | served by `companyfacts` |
+|---|---|---|---|
+| `DebtInstrumentInterestRateStatedPercentage` | 20 | **20** | no |
+| `DebtInstrumentTerm` | 2 | **2** | no |
+| `DebtInstrumentFaceAmount` | 4 | **4** | no |
+| `DebtInstrumentCarryingAmount` | 13 | 12 | the one plain value only |
+| `LongTermDebtMaturities…InYearTwo` | 1 | 0 | yes |
+
+Everything per-instrument is qualified by `DebtInstrumentAxis`, and
+`companyconcept`/`companyfacts` serve **only undimensioned facts**. "The $4.25B
+notes mature 30 November 2042" is in the filing and cannot be reached this way;
+it needs raw instance parsing, which is a different and much larger machine than
+`dilution.py`.
+
+### The second currency-test catch
+
+The currency test built for GLXY's share count on the same day caught this
+immediately, on a different concept and a different company.
+
+**WULF's newest maturity bucket period is 2024-06-30 — 639 days behind its own
+latest balance sheet.** The stale schedule sums to **$75.9M**. WULF's
+`LongTermDebt` at 2026-03-31 is **$3.10B**, after $3.2B of senior secured notes
+and $1.025B of converts in October 2025 alone.
+
+**A component taking each concept's newest value publishes a $75.9M maturity
+wall for a company carrying $3.10B — 41x wrong, correctly parsed, correctly
+attributed, and reading as entirely valid.** NUAI is 365 days behind by the same
+test.
+
+That is now two independent concepts where the first hit was not the current
+one. Treat it as the default expectation for any XBRL series, not as a GLXY
+quirk.
+
+### The Frankenstein schedule — the one a future implementer will walk into
+
+**Taking each concept's newest value is the obvious implementation, and it is
+the shape `dilution.py` invites**, because a single series has one newest
+observation and a schedule has seven.
+
+MARA's `InYearFive` and `AfterYearFive` were last tagged at **2025-12-31** while
+its other buckets are **2026-03-31**. Newest-per-concept gives:
+
+```
+831M (2026-03-31 buckets) + 1.0B + 2.25B (2025-12-31 buckets)
+  = $4.08B   against $2.42B of actual debt
+```
+
+**Two filings stitched into one schedule, no error anywhere, no log line, and a
+number 69% too high.** The buckets must be read at a **single `end` date**, and
+a bucket absent at that date must be distinguished from a bucket not re-tagged
+— see the method note below.
+
+### Route B — 8-K item 2.03. Better than expected, and the wrong shape.
+
+**46** 8-Ks carrying item 2.03 since 2024-06-01 across nine companies:
+
+```
+APLD 11 · HUT 7 · WULF 7 · CIFR 7 · MARA 4 · IREN 4 · CLSK 3 · GLXY 3 · BTDR 0
+```
+
+Sampled 30 bodies: **25 — 83% — state a maturity date or year**, and **20 give
+an exact date**: `will mature on November 30, 2042`, `June 15, 2031`,
+`May 1, 2032`. Far more legible than the XBRL that was expected to win.
+
+**It is the better EVENT signal and the worse STATE signal**, and the
+distinction is the whole verdict:
+
+1. **It is a creation ledger.** Repayments and repurchases never arrive as a
+   2.03. **MARA repurchased $1.0B of its 0.00% converts due 2030 and 2031 on
+   2026-03-26**; a 2.03-only ledger would still be carrying them today.
+2. **BTDR scores 0 because a 6-K has no item codes.** Foreign private issuers
+   are invisible to this route entirely — the same class the earnings calendar
+   reaches only through its 20-F/6-K fallback.
+3. **The accompanying press release is not a substitute.** Of 55 financing
+   announcements in the exhibit corpus, **5 — 9% — state a maturity year.**
+
+### Verdict
+
+**Rejected as "maturity structure". A narrower thing is buildable and should be
+recognised as narrower**: a near-term wall for the six companies whose schedule
+is current, read at one `end` date, with a footer naming the ten that tag
+nothing *and the share of debt each shown schedule omits*. The omission is the
+number, not a caveat on it. WULF must be withheld by the currency test rather
+than displayed.
+
+Item 2.03 belongs in the press monitor as "obligation created, matures 2042" —
+an event, which is what it is — and not in a schedule, which is what it is not.
+
+---
+
+## Lock-up expirations
+
+**Would have added:** the date on which restricted shares become sellable — for
+SPCX, which IPO'd 2026-06-12, and for the other recent listings.
+
+**The interesting part is that extraction WORKS and the component still fails.**
+Every other rejection here died on coverage, discrimination or a confounded
+metric. This one dies on the terms themselves being real, stated, and not
+generalisable.
+
+### Coverage
+
+| | filing | `lock-up` mentions | period stated |
+|---|---|---|---|
+| **SPCX** | 424B4 2026-06-12 | **104** | a dated table — see below |
+| **WYFI** | 424B4 2025-08-08 | 3 | plain **180 days after the date of this prospectus** |
+| **ABTC** | S-4/A 2025-07-29 | **1** | none — the single hit sits inside a fairness-opinion disclaimer |
+| **GLXY** | 424B3 2026-05-21 | **0** | none |
+
+WYFI is the derivable case and its expiry has passed: 2025-08-08 + 180 =
+**2026-02-04**. ABTC's reverse merger states no lock-up at all, which is an
+**absence rather than a parsing failure** — the two must not share a label.
+**Four of five companies state nothing usable.**
+
+### SPCX, where the terms are fully stated and the derivation still fails
+
+The prospectus is dated 11 June 2026 and carries an **explicit dated release
+table**. Extraction is not the obstacle.
+
+**Calendar-dated** — Aug 20 (70th day, 319.0M) · Sep 9 (90th, 319.0M) · Sep 10
+(91st, 59.1M affiliates) · Sep 24 (105th, 328.4M) · Oct 9 (120th, 328.4M) ·
+Oct 24 (135th, 328.4M) · **Dec 8 (180th, 328.4M or 797.6M)** · Mar 18 2027
+(280th, 176.0M) · May 17 2027 (340th)
+
+**Contingent** — second trading day after the First Earnings Release Date,
+**911.5M** · a further **455.8M** if the close is at least 30% above the IPO
+price for 5 of the 10 trading days ending on that date · second day after Q3'26
+results, **1.3 billion (28%)** · after Q4'26 results, 351.9M · after Q1'27
+results, 351.9M
+
+Plus Musk on a **366-day** lock-up and an "extended lock-up period" running to
+Q2 2027 results — together **~7.8B shares, over 63% of pre-IPO shares
+outstanding**.
+
+### What the cheap derivation would have said
+
+180 days from 11 June 2026 is **8 December**, so the arithmetic lands **one day**
+from the stated 180-day date. **The answer is still wrong three ways:**
+
+- the **first release is 20 August 2026**, 110 days earlier
+- the largest single tranche, **1.3 billion shares**, is contingent on the Q3
+  earnings date and is **reachable by no arithmetic**
+- **63% of the shares are on a 366-day or earnings-anchored clock**, so the
+  180-day date is not even the principal event
+
+**A generic parser would report the wrong date and the wrong quantity while
+appearing to work** — the failure mode this repo treats as the serious one.
+
+### Verdict
+
+**Rejected.** There is no consistent standard term to derive from: 180 / 366 /
+earnings-anchored / price-contingent, four of five companies silent, and the one
+richly specified case bespoke enough that generalising from it produces
+confident wrong answers.
+
+### Live at time of writing, and recorded because nothing here will show it
+
+SPCX's **First Earnings Release Date has already passed** — the prospectus
+defines it as the release of results for the quarter ended 30 June 2026, and
+SPCX filed an 8-K carrying item **2.02 on 2026-08-04**. The second full trading
+day following is **2026-08-06**, on which up to **911.5 million shares** become
+transferable, plus a further **455.8 million** if the 30% price condition was
+met.
+
+No component in this repo shows it, and none is being built to. Recorded so the
+date is on paper rather than in one session's memory.
+
+---
+
+## Method notes from the three probes above
+
+Kept rather than discarded with the ideas, because each is a way of getting a
+measurement wrong that looked right first.
+
+**Enumerate the schema; do not probe a guessed name.** Pulling `companyfacts`
+and filtering gave 1,335 debt series and a definitive coverage count. Probing a
+hand-written concept list would have produced a set of 404s, and **a miss on a
+guessed concept name is indistinguishable from an absence.** This is the one
+that generalises past these three probes — it applies to any XBRL question this
+repo asks.
+
+**An under-specified corpus is the wrong error when the question is whether
+something is specified.** The first headline extractor cut at the first line
+break, truncating `TeraWulf Signs 200+ MW, 10-Year AI Hosting Agreements with
+Fluidstack` to its first half. Uncaught, it would have made headlines look
+*less* specified than they are and produced the right verdict from wrong
+numbers. Fixed before anything was counted.
+
+**"Not re-tagged" and "zero, and therefore omitted" are different measurements.**
+The stale-bucket check written for probe 2 cannot tell them apart. HUT trips it
+on two buckets and is entirely fine — its five remaining buckets sum to its
+carrying amount exactly. Read that flag as a prompt to look, never as a verdict.
+It is the same distinction the roster already draws between a young listing and
+a failed source.
