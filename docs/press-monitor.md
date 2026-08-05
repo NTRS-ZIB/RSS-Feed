@@ -965,3 +965,69 @@ Lines worth reacting to:
 | `Not found on EDGAR` | Only possible for `TICKERS` entries; pin the company by CIK in `EXTRA_CIKS` instead. |
 | `rate limited, waiting Ns` | Discord 429. Normal during heavy bursts; the item is retried automatically. |
 | `N item(s) failed to post; will retry next run` | Those items were removed from state and will be re-attempted in 15 minutes. Not a loss. |
+
+## Filings lost to a roster change
+
+The age floor is irreversible by design. Items are added to `seen` **before**
+`MAX_AGE_DAYS` is applied, so a filing already older than seven days when a run
+reads it is recorded and never posted. That is what stops a backlog re-flooding
+the channel, and it is the right trade.
+
+The loss it produces is not caused by the monitor failing to run. It is caused
+by **adding a company whose recent filings are already stale**. On 2026-08-05
+five companies were added and twenty filings were lost that way, across both
+channels. Every one had expired before the roster commit landed:
+
+| | |
+|---|---|
+| APLD 10-K filed | 2026-07-29 |
+| passed the age floor | 2026-08-05 00:00Z |
+| roster commit `946e303` landed | 2026-08-05 13:36Z |
+
+Thirteen hours and thirty-six minutes out of reach before the company was on
+the roster. No amount of running would have caught it.
+
+[`audit_pending.py`](../audit_pending.py) reports these, triggered by a push
+touching `watchlist.py` rather than by a schedule. It is silent unless a
+company was added and some of its filings had already expired.
+
+### Which components share this failure mode
+
+Audited on 2026-08-05, all fourteen. **This is the table worth keeping**: the
+conclusion follows from it, and without it the next person to consider a loss
+check re-derives the whole thing. The signature is *irreversibly marks an item
+handled, then filters it out*, and severity is governed by the ratio of the
+window to the cadence.
+
+| Component | Window | At risk | Why |
+|---|---|---|---|
+| `press_monitor.py` | `MAX_AGE_DAYS` 7d | **yes** | Shortest window against its cadence, discrete events, and the only one that marks-then-drops inside a single run |
+| `comment_letters.py` | `LOOKBACK_DAYS` 180d | no | Twenty-five times the margin; a missed run only delays |
+| `threshold_list.py` | per-day file | lesser | An add or remove episode inside a gap is invisible, but the daily files persist and can be back-read |
+| `crossings.py` | armed flags | lesser | A crossing on a day it does not run is never detected; the bars remain available and it does not look back |
+| `short_interest.py` | `last_settlement` | no | Posts `max(by_date)` only, so an older period is skipped by design |
+| `regsho_volume.py` | `last_trade_date` | no | Same shape; a skipped day is a stale snapshot, not a lost event |
+| `dilution.py` | last share count | no | A missed run delays; the XBRL history persists |
+| `ftd_monitor.py` | `BASELINE_PERIODS` | no | Absence is stored as a literal zero rather than skipped |
+| `daily_recap.py`, `btc_context.py`, `grid_context.py`, `volume_spike.py`, `build_snapshot.py`, `earnings_calendar.py` | none | no | Snapshots recomputed from source every run |
+
+**One at risk, two lesser and recoverable from source data, eleven not.** That
+is why `audit_pending.py` is one tool bound to one component and not a
+framework: a population of one does not want one, and the two lesser cases can
+be repaired by reading the sources again rather than by being watched.
+
+### Why `seen` cannot produce a false positive here
+
+`state.json` retains the last `max(1000, items_this_run * 3)` ids and is
+currently **saturated at exactly 1000**, so ids are being evicted. An item
+posted weeks ago but since evicted would read as unseen, which for a company
+already on the roster would be a false report.
+
+It cannot be one for a company just added, because `press_monitor.py` has never
+queried that CIK, so nothing under it can ever have entered `seen`. **The
+trigger removes the dependency rather than managing it.**
+
+Measured 2026-08-05 for the record: 253 of the 1000 slots sit before the
+earliest 2026 accession, so the eviction frontier is deep in 2007 to 2025
+baseline entries. That buffer erodes, which is exactly why correctness does not
+rest on it.
