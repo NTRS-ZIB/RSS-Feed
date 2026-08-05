@@ -39,14 +39,15 @@ seen within 15 minutes — the cadence the design intends — alongside 30 minut
 and the median and p90 waits.
 """
 
-import json
 import os
 import random
 import sys
-import urllib.request
+import time
 from bisect import bisect_left
 from collections import Counter
 from datetime import datetime, timedelta, timezone
+
+import requests
 
 from watchlist import WATCHLIST
 
@@ -94,13 +95,19 @@ def fetch_acceptance_times():
     out = []
     for c in WATCHLIST:
         cik = c["cik"].lstrip("0").zfill(10)
-        req = urllib.request.Request(SUBMISSIONS % cik,
-                                     headers={"User-Agent": UA,
-                                              "Accept-Encoding": "gzip, deflate",
-                                              "Host": "data.sec.gov"})
+        # requests, not urllib: the SEC sends gzip and urllib does not
+        # decompress it, which reads as a UnicodeDecodeError rather than as
+        # anything to do with encoding. Same headers press_monitor.py sends.
         try:
-            with urllib.request.urlopen(req, timeout=30) as r:
-                d = json.loads(r.read().decode())
+            r = requests.get(SUBMISSIONS % cik, timeout=(8, 20),
+                             headers={"User-Agent": UA,
+                                      "Accept-Encoding": "gzip, deflate",
+                                      "Host": "data.sec.gov"})
+            if r.status_code != 200:
+                print("  %-6s HTTP %s" % (c["ticker"], r.status_code))
+                continue
+            d = r.json()
+            time.sleep(0.15)      # under SEC's 10 req/sec ceiling
         except Exception as e:
             print("  %-6s FAILED %s" % (c["ticker"], type(e).__name__))
             continue
