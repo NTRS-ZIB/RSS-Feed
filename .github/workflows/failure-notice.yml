@@ -50,6 +50,7 @@ on:
       - "Fails to deliver"
       - "Grid and fuel context"
       - "Metric regime check"
+      - "Pending filings"
       - "Press release monitor"
       - "Reg SHO threshold list"
       - "SEC comment letters"
