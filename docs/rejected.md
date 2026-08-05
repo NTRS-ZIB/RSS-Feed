@@ -319,3 +319,106 @@ analyst and production investigations failed the same way: the companies that
 were well covered were the ones already generating abundant news, and the ones
 where a signal would have been most valuable had nothing. Check *where* coverage
 falls before counting how much of it there is.
+
+---
+
+## A "no run in N hours" heartbeat
+
+**Would have added:** an alert when a workflow has not run recently.
+[`failure-notice.yml`](../.github/workflows/failure-notice.yml) says in its own
+header that it catches failures and not absences, and absence is this repo's
+more common failure mode. It was deferred there pending a measurable threshold.
+
+**The threshold was measured, and it does not exist.** Not "is hard to choose"
+— the healthy and broken distributions overlap, so no number separates them.
+
+### The unit, which is worth keeping regardless
+
+Hours cannot express this. Every weekday-only workflow shows a **72-hour**
+maximum gap between successful runs, and that gap is the weekend. A threshold
+set above the observed maximum in hours would let a daily job die from Friday
+to Wednesday before complaining.
+
+The unit that works is **nominal fire opportunities elapsed since the last
+success**, expanded from the workflow's own cron. Weekends contain no fires,
+out-of-window hours contain no fires, and a roster spanning hourly to weekly
+normalises onto one scale. Window correctness stops being logic to get wrong
+and becomes a property of the unit. **Use this unit for anything that reasons
+about schedule adherence here.**
+
+### The measurement
+
+Six days, 2026-07-29 16:27 to 2026-08-05 15:59 UTC — 279 runs, which is the
+entire run history `gh run list` holds. Elapsed fire opportunities between
+consecutive successful scheduled runs:
+
+| Group | Fires | Runs | Distribution | Max |
+|---|---|---|---|---|
+| 12 daily/weekly workflows, pooled | 60 | 40 | `1:27` | **1** |
+| Press release monitor | 69 | 38 | `1:36, 2:19, 3:8, 4:4, 5:1` | **5** |
+| Volume spikes | 64 | 26 | `1:24, 2:17, 3:7, 4:2` | **4** |
+
+The daily workflows are pooled because individually they hold 2–5 observations,
+which cannot support a threshold; they share a cadence shape and a common drop
+process, which is the same pooling `calibrate_staleness.py` used.
+
+Proposed thresholds were max + 2: **7** for the press monitor, **6** for volume
+spikes, **3** for the daily group, with a 240-hour absolute cap for the weekly
+`earnings.yml`, where three missed fires would mean three weeks.
+
+### Why it was rejected
+
+**The threshold would not have fired on the incident that prompted it.** On
+2026-08-05 the press monitor had gone quiet after 12:07. That is **4** elapsed
+fire opportunities, against a proposed threshold of **7** and an observed
+healthy maximum of **5**. The gap was inside normal range and the heartbeat
+would correctly have said nothing.
+
+Lowering N to 4 to catch it means firing on ordinary behaviour: elapsed reached
+4 or more **five times in 68 fires** on the press monitor alone, none of them a
+fault.
+
+**The cause is structural, not calibration.** GitHub drops 30–45% of scheduled
+fires on this repo, so routine gaps and outages are drawn from the same
+distribution. No threshold separates them, and one tuned until it looked right
+would be a number chosen to look right.
+
+A monitor calibrated to stay silent on the one incident that motivated it is
+not worth building.
+
+### Two measurement errors, recorded because both looked like findings
+
+The first pass reported a 45% hit rate for the press monitor and a 15-fire miss
+streak for volume spikes. Both were artefacts.
+
+1. **A cron that changed underneath the measurement.** `monitor.yml` went
+   `7 10-23` → `7 7-23` and `spikes.yml` `9 10-22` → `9 7-22`, both at
+   2026-08-05T14:28Z. Expanding today's cron across the whole week invents
+   three morning fires a day that did not exist, and they all read as misses.
+2. **A tolerance wider than the interval.** Attributing a success to any
+   nominal fire within 3 hours lets ONE run satisfy THREE consecutive hourly
+   fires, which inflates hits in the other direction.
+
+Corrected, the press monitor made 38 successes against **69** real fires, not
+85. **Any measurement of schedule adherence has to use the cron that was in
+force at the time**, and the delay tolerance has to be shorter than the
+interval it is applied to.
+
+### The limitation on all of it
+
+**Six days is not a calibration window.** `calibrate_staleness.py` had months
+of publication history; this had six days and one live incident inside it. The
+daily-group threshold rests on 27 observations, and fires preceding a
+workflow's first success in the window had no baseline and were excluded —
+several of those were real misses, so the true daily maximum may be 2 or 3
+rather than 1. Re-measure before reviving this.
+
+### What replaced it
+
+The question the measurement pointed at is not *has it run* but **has anything
+been lost**. An item ageing past `MAX_AGE_DAYS` with no run in between is a
+consequence rather than a cadence, and it has no false positives — which is
+exactly what the heartbeat could not offer. It is also what actually happened
+on 2026-08-05: APLD's 10-K aged out unseen and seven press items were left to
+be marked seen and silently dropped, and a heartbeat would have said nothing
+about either, correctly, by its own thresholds.
