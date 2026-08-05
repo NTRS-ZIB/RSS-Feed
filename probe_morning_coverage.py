@@ -125,8 +125,12 @@ def fetch_acceptance_times():
                                                .replace("+00:00", ""))
             except ValueError:
                 continue
-            # EASTERN despite the Z. Add the offset to reach real UTC.
-            utc = naive + timedelta(hours=eastern_offset(naive))
+            # The raw stamp IS UTC, notwithstanding the trap row in CLAUDE.md
+            # which says Eastern. Section 1 tests both readings and the data
+            # decides it: a Form 4 stamped 23:00 keeps a same-day filingDate,
+            # which is impossible past the 22:00 ET Section 16 cutoff but
+            # ordinary at 19:00 ET.
+            utc = naive
             out.append((utc.replace(tzinfo=timezone.utc), naive,
                         fdates[i] if i < len(fdates) else None,
                         forms[i] if i < len(forms) else "?"))
