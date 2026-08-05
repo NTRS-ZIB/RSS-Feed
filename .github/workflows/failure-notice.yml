@@ -85,21 +85,36 @@ jobs:
           URL: ${{ github.event.workflow_run.html_url || format('{0}/{1}/actions/runs/{2}', github.server_url, github.repository, github.run_id) }}
           STARTED: ${{ github.event.workflow_run.run_started_at }}
         run: |
-          # An unset webhook is not a failure. This workflow exists to report
-          # other things breaking; making it break on its own missing config
-          # would post nothing and add a second red run to explain.
-          if [[ -z "$WEBHOOK" ]]; then
-            echo "WEBHOOK_URL_OPS is not set — nothing posted."
-            echo "Would have reported: $WF failed ($TRIGGER) $URL"
-            exit 0
-          fi
-          # jq builds the JSON so a workflow name never has to survive shell
-          # quoting into a payload.
+          # workflow_run always carries run_started_at; a dispatch does not, so
+          # a test line gets the current time rather than an empty field.
+          STARTED="${STARTED:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
+
+          # The payload is BUILT BEFORE the webhook is checked, deliberately.
+          # The first version exited early when the webhook was unset, so the
+          # dispatch path — the only way to exercise this without manufacturing
+          # a failure — never reached jq at all, and the one line that had
+          # never run stayed unverified by the very test meant to verify it.
+          #
+          # jq rather than string interpolation, so a workflow name never has
+          # to survive shell quoting into JSON.
           payload=$(jq -n --arg w "$WF" --arg t "$TRIGGER" \
                           --arg u "$URL" --arg s "$STARTED" \
             '{content: ("⚠️ **" + $w + "** failed — " + $t + " — started " + $s + "\n" + $u)}')
+
+          echo "Payload:"
+          echo "$payload" | jq -r .content
+
+          # An unset webhook is not a failure. This workflow exists to report
+          # other things breaking; making it break on its own missing config
+          # would post nothing and add a second red run to explain the first.
+          if [[ -z "$WEBHOOK" ]]; then
+            echo "--"
+            echo "WEBHOOK_URL_OPS is not set — nothing posted."
+            echo "The payload above is exactly what would have been sent."
+            exit 0
+          fi
           # --fail so a rejected webhook is visible in the log rather than
           # silently swallowed; this is the one error it can actually report.
           curl -sS --fail -X POST -H "Content-Type: application/json" \
                -d "$payload" "$WEBHOOK"
-          echo "Posted: $WF failed ($TRIGGER)"
+          echo "Posted."
