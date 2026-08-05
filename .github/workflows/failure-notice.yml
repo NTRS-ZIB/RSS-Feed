@@ -57,6 +57,9 @@ on:
       - "Short interest"
       - "Short sale volume"
       - "Volume spikes"
+      # The gate that guards this very list is watched by it. A check that
+      # protects a list while being absent from it would be its own bug.
+      - "Workflow list gate"
     types: [completed]
   # Without this it could only ever be exercised by making something fail, and
   # a notifier whose first real run is also its first run is one that might

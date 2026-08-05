@@ -1,0 +1,106 @@
+name: Workflow list gate
+
+# Fails when a workflow exists that failure-notice.yml does not watch.
+#
+# `workflow_run` has no wildcard, so failure-notice.yml must name every
+# workflow explicitly. That makes it a silent-gap generator: a workflow added
+# today stays uncovered until somebody remembers a file they have no reason to
+# open, and nothing anywhere reports the gap.
+#
+# WHY THIS TRIGGER. It fires on push to `.github/workflows/**` — the moment the
+# omission is created — because that is the only timing that works for a
+# mistake nobody knows they are making. The alternatives were considered and
+# rejected: folding the check into audit_identifiers.py or calibrate_
+# staleness.py fails because nobody adding a workflow has any reason to run
+# either, and putting it in the notice's own dispatch path only fires when you
+# already suspect something.
+#
+# WHY IT FAILS RATHER THAN WARNS. A warning in a push check is a warning nobody
+# reads. The whole point is to be impossible to walk past.
+#
+# This is NOT the heartbeat. It guards against a MISTAKE — a name left out of a
+# list. The heartbeat guards against an ABSENCE — a scheduled run that never
+# happened — and is deferred until the small-hours delay data exists. See
+# docs/press-monitor.md.
+
+on:
+  push:
+    paths:
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Every workflow must be watched
+        run: |
+          python - <<'PY'
+          import glob
+          import sys
+
+          import yaml
+
+          NOTICE = ".github/workflows/failure-notice.yml"
+
+          # failure-notice.yml is excluded from its own watch list ON PURPOSE,
+          # and this is the comment that stops the next person "fixing" it: a
+          # workflow listed in its own `workflows:` would notify about its own
+          # failure, which then fails, which notifies. Leave it out.
+          EXEMPT = {"Failure notice"}
+
+          names = {}
+          for path in sorted(glob.glob(".github/workflows/*.yml")):
+              with open(path, encoding="utf-8") as fh:
+                  doc = yaml.safe_load(fh) or {}
+              name = doc.get("name")
+              if name:
+                  names[name] = path
+
+          with open(NOTICE, encoding="utf-8") as fh:
+              notice = yaml.safe_load(fh) or {}
+          # PyYAML parses the `on:` key as the boolean True.
+          trigger = (notice.get("on") or notice.get(True) or {})
+          watched = set((trigger.get("workflow_run") or {}).get("workflows") or [])
+
+          missing = sorted(set(names) - watched - EXEMPT)
+          unknown = sorted(watched - set(names))
+          exempt_but_listed = sorted(watched & EXEMPT)
+
+          print("%d workflows in the repo, %d watched, %d exempt."
+                % (len(names), len(watched), len(EXEMPT)))
+
+          fail = False
+          if missing:
+              fail = True
+              print("\nNOT WATCHED by failure-notice.yml:")
+              for n in missing:
+                  print("  %-28s %s" % (n, names[n]))
+              print("\nAdd each to the `workflows:` list in %s." % NOTICE)
+          if unknown:
+              fail = True
+              print("\nWatched but no such workflow (renamed or deleted?):")
+              for n in unknown:
+                  print("  %s" % n)
+          if exempt_but_listed:
+              fail = True
+              print("\nExempt workflow present in its own watch list:")
+              for n in exempt_but_listed:
+                  print("  %s — it would notify about its own failure" % n)
+
+          if fail:
+              sys.exit(1)
+          print("Every workflow is watched.")
+          PY
