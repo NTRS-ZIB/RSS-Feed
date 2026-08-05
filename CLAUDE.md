@@ -14,8 +14,9 @@ mechanics. What matters is that it is a ceiling, not a preference: Discord
 mobile wraps past that width and splits every table row in two, which is worse
 than showing less. A new column means an existing one goes.
 
-**Never identify a company by ticker alone.** Five of fourteen have renamed in
-eighteen months. A ticker is a display label; pin by CIK for EDGAR and CUSIP for
+**Never identify a company by ticker alone.** Six of nineteen have renamed in
+eighteen months, and one ticker on the roster was previously a *different
+company's*. A ticker is a display label; pin by CIK for EDGAR and CUSIP for
 FINRA and SEC data, both of which survive a rename.
 
 **Show a metric against that ticker's own trailing baseline, never as a bare
@@ -93,6 +94,7 @@ logs.
 |---|---|
 | **EDGAR renames form types**, and prefix matching does not bridge a rename — `"SCHEDULE 13D".startswith("SC 13D")` is `False`. | `SC 13D` became `SCHEDULE 13D` around December 2024 and silently missed 117 filings, found only when a real one went unposted. `press_monitor.py` carries a drift detector. |
 | **A CIK survives renames, reverse splits and a Rule 12g-3 succession — but not a combination creating a new registrant.** | HUT changed CIK while keeping its ticker, so nothing in `alt_symbols` would have caught it. The old CIK returns no filings and no error. |
+| **A ticker can be RECYCLED from another company, and in three columns that is indistinguishable from a rename.** The `COLLISIONS` guard cannot catch it on a new company, because it needs a pinned CUSIP to collide with and a new company is added with `"cusips": []`. | `SPCX` was a SPAC ETF until 2026-04-07 and SpaceX from 2026-06-15. The first sweep after SPCX was added proposed the ETF's `19423L672` as a retired CUSIP for SpaceX — right shape, right dates, wrong company — with no collision reported. Only the `DESCRIPTION` column, which `audit_identifiers.py` does not parse, separates them. Refusals are now recorded in `watchlist.REFUSED` and enforced in `ftd_monitor.py`, because the audit re-proposes it on every run. |
 | **A form type matching nothing looks exactly like one whose filings never occur.** | Both give no posts, no errors, no log lines. An entry in `FORM_TYPES` is an assumption until a filing of that type has actually posted. |
 | **SEC's fair-access filter rejects a GitHub noreply address**; it wants a plain name and contact address. | The noreply form returns **403 from every sec.gov endpoint**, in both `urllib` and `requests`. Six components send `SEC_USER_AGENT`, so a wrong value fails all six at once and reads like an SEC outage. |
 | **A source can die at HTTP 200 and look healthy in every check.** | DGXX's old GlobeNewswire feed serves 20 items, valid XML, good uid and timestamp on each, nothing newer than 2025-12-24; its sitemap lists 100 release URLs sharing one rebuild `lastmod`. Both passed every test this repo had. Bakkt's platform move broke loudly with a 404 — that is the rare case. See `check_staleness()` and `calibrate_staleness.py`. |
