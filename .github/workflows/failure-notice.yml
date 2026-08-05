@@ -1,0 +1,105 @@
+name: Failure notice
+
+# Posts one line to Discord when another workflow fails.
+#
+# IT CATCHES FAILURES, NOT ABSENCES — and absence is this repo's more common
+# failure mode by a wide margin. A dropped scheduled run produces no
+# workflow_run event at all, so nothing here fires. On 2026-08-04 the 15:07
+# and 16:07 press-monitor fires simply never happened and this would have said
+# nothing about either. **A quiet channel does not mean everything ran.**
+#
+# The gap it does close is real: nine failures across 300 runs went unnoticed
+# before it existed, seven of them workflow_dispatch, which GitHub notifies on
+# by default. Cheap, and worth having for that alone.
+#
+# The thing that would catch absence is a heartbeat — "no run seen in N hours"
+# — and it is deferred rather than overlooked. N is unmeasured for a third of
+# the day: there is no scheduled-delay data below 05:00 UTC. A heartbeat with
+# a guessed threshold either cries wolf or sleeps through the thing it exists
+# for. See docs/press-monitor.md.
+#
+# FOUR CONSTRAINTS, each load-bearing:
+#
+# 1. `failure` ONLY, never `cancelled`. Supersession cancels the superseded
+#    pending run by design — about 3% of fires at BUDGET_MIN=55, and 23% had
+#    the budget gone to 75. A notice on routine cancellation would train the
+#    reader to ignore the channel inside a week, which is worse than no
+#    notice at all.
+# 2. A DEDICATED webhook, WEBHOOK_URL_OPS. Infrastructure noise in a market
+#    channel degrades the thing that makes that channel worth reading.
+# 3. ONE workflow_run workflow, not a step bolted into each of eighteen.
+# 4. Nothing watches the watchman. If this fails, it fails silently and you
+#    are back to email.
+#
+# MAINTENANCE: `workflows:` must name each workflow explicitly — GitHub has no
+# wildcard — so a NEW WORKFLOW IS NOT COVERED UNTIL IT IS ADDED HERE. This
+# file is deliberately excluded from its own list, or a failure would notify
+# about itself forever.
+
+on:
+  workflow_run:
+    workflows:
+      - "52-week crossings"
+      - "Audit 8-K items"
+      - "Audit identifiers"
+      - "Bitcoin network context"
+      - "Build snapshot"
+      - "Calibrate staleness"
+      - "Daily market recap"
+      - "Earnings calendar"
+      - "Fails to deliver"
+      - "Grid and fuel context"
+      - "Metric regime check"
+      - "Press release monitor"
+      - "Reg SHO threshold list"
+      - "SEC comment letters"
+      - "Shares outstanding"
+      - "Short interest"
+      - "Short sale volume"
+      - "Volume spikes"
+    types: [completed]
+  # Without this it could only ever be exercised by making something fail, and
+  # a notifier whose first real run is also its first run is one that might
+  # simply not work — silently, at the moment it is needed. A dispatch posts a
+  # clearly-labelled test line instead.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    # Constraint 1. `cancelled`, `skipped` and `success` all fall through here.
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post the notice
+        env:
+          WEBHOOK: ${{ secrets.WEBHOOK_URL_OPS }}
+          # Fallbacks are the dispatch path: a real workflow_run always
+          # populates these, so a TEST line can only come from a manual run.
+          WF: ${{ github.event.workflow_run.name || 'TEST — not a real failure' }}
+          TRIGGER: ${{ github.event.workflow_run.event || 'manual test' }}
+          URL: ${{ github.event.workflow_run.html_url || github.server_url }}
+          STARTED: ${{ github.event.workflow_run.run_started_at || github.run_id }}
+        run: |
+          # An unset webhook is not a failure. This workflow exists to report
+          # other things breaking; making it break on its own missing config
+          # would post nothing and add a second red run to explain.
+          if [[ -z "$WEBHOOK" ]]; then
+            echo "WEBHOOK_URL_OPS is not set — nothing posted."
+            echo "Would have reported: $WF failed ($TRIGGER) $URL"
+            exit 0
+          fi
+          # jq builds the JSON so a workflow name never has to survive shell
+          # quoting into a payload.
+          payload=$(jq -n --arg w "$WF" --arg t "$TRIGGER" \
+                          --arg u "$URL" --arg s "$STARTED" \
+            '{content: ("⚠️ **" + $w + "** failed — " + $t + " — started " + $s + "\n" + $u)}')
+          # --fail so a rejected webhook is visible in the log rather than
+          # silently swallowed; this is the one error it can actually report.
+          curl -sS --fail -X POST -H "Content-Type: application/json" \
+               -d "$payload" "$WEBHOOK"
+          echo "Posted: $WF failed ($TRIGGER)"
