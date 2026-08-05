@@ -1,13 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001003297-13-000250",
-  "urn:tag:sec.gov,2008:accession-number=0001003297-13-000241",
-  "urn:tag:sec.gov,2008:accession-number=0001003297-13-000239",
-  "urn:tag:sec.gov,2008:accession-number=0001003297-13-000224",
-  "urn:tag:sec.gov,2008:accession-number=0001003297-13-000221",
-  "urn:tag:sec.gov,2008:accession-number=0001003297-13-000186",
-  "urn:tag:sec.gov,2008:accession-number=0001003297-13-000135",
-  "urn:tag:sec.gov,2008:accession-number=0001003297-13-000096",
   "urn:tag:sec.gov,2008:accession-number=0001003297-13-000086",
   "urn:tag:sec.gov,2008:accession-number=0001003297-12-000491",
   "urn:tag:sec.gov,2008:accession-number=0001003297-12-000486",
@@ -999,7 +991,15 @@
   "urn:tag:sec.gov,2008:accession-number=0001493152-26-036036",
   "urn:tag:sec.gov,2008:accession-number=0001493152-26-036065",
   "urn:tag:sec.gov,2008:accession-number=0001493152-26-036064",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-26-036063"
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-036063",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-036105",
+  "urn:tag:sec.gov,2008:accession-number=0001083301-26-000162",
+  "https://investors.terawulf.com/news-events/press-releases/detail/144/terawulf-reports-second-quarter-2026-results",
+  "dgxx:kr0jcclqulsbf9mqho7dif7o",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-085356",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-085354",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-085353",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-085352"
  ],
  "initialized": true
 }
