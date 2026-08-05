@@ -58,6 +58,7 @@ on:
       - "Short interest"
       - "Short sale volume"
       - "Volume spikes"
+      - "Weekly digest"
       # The gate that guards this very list is watched by it. A check that
       # protects a list while being absent from it would be its own bug.
       - "Workflow list gate"

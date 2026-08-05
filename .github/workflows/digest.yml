@@ -1,0 +1,88 @@
+name: Weekly digest
+
+# Derives the weekly verdict record and prints the distributions the
+# convergence threshold has to be set from.
+#
+# THERE IS NO SCHEDULE AND NO RENDERER YET, deliberately. Nothing is posted and
+# nothing is committed: this exists to produce the backfill measurement first,
+# because a threshold chosen before the distribution exists is a number chosen
+# to look right. The heartbeat in docs/rejected.md was closed exactly that way
+# — its threshold was measured and found not to separate the two populations —
+# and the same outcome here would be a real answer rather than a failure.
+#
+# WHEN THE SCHEDULE ARRIVES it must not be weekly. Measured over the run
+# history: the daily workflows delivered 3-4 of their 5-6 nominal fires, so a
+# once-a-week cron has roughly even odds of simply not running, and nobody
+# would notice until the following Saturday. Fire daily and gate on "have I
+# already produced ISO week N?", which is what short_interest.py and
+# ftd_monitor.py already do to post twice a month off a daily check. Saturday
+# is the earliest a complete Monday-to-Friday week is available, because FINRA
+# short volume is T+1.
+
+on:
+  workflow_dispatch:
+    inputs:
+      backfill:
+        description: "Complete ISO weeks to derive"
+        type: string
+        default: "10"
+
+permissions:
+  contents: read # it writes nothing to the repo
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      # feedparser is not used by weekly_digest.py directly. It is a
+      # dependency of press_monitor.py, which is imported for the 8-K item
+      # taxonomy — ALWAYS_POST_ITEMS carries measurements over 1,986 filings
+      # and a second copy of it would drift the first time either file was
+      # edited alone.
+      - name: Install dependencies
+        run: pip install requests feedparser
+
+      - name: Derive the verdict record
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          DIGEST_BACKFILL: ${{ inputs.backfill }}
+        run: python -u weekly_digest.py
+
+      # A source that failed leaves a hole a reader must be told about, and the
+      # record carries the per-source status precisely so nothing downstream
+      # can mistake it for silence. Surfacing it here as well means a run that
+      # LOOKS complete in the log cannot be read as complete when it was not.
+      - name: Report any source that did not answer
+        run: |
+          python - <<'PY'
+          import json
+          d = json.load(open("digest_backfill.json"))
+          weeks = d["weeks"]
+          bad = {k: v for k, v in weeks[0]["sources"].items()
+                 if v["status"] not in ("ok", "partial")}
+          print("%d weeks, %d requests, %.1fs of fetching"
+                % (len(weeks), d["total_requests"], d["fetch_seconds"]))
+          for k, v in sorted(weeks[0]["sources"].items()):
+              print("  %-16s %-12s %s" % (k, v["status"], v["note"]))
+          if bad:
+              print("\nSources that did not answer: %s" % ", ".join(sorted(bad)))
+              print("Every contributor resting on them is absent from the "
+                    "denominator, so the distribution above is measured over "
+                    "fewer components than the registry holds. Do not set a "
+                    "threshold from it.")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digest-backfill
+          path: digest_backfill.json
+          retention-days: 30
