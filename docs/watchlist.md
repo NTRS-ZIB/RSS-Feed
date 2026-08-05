@@ -416,40 +416,114 @@ than in `watchlist.py` on purpose: no component reads site data, and a field
 nothing reads goes stale with nothing to notice. This is reference for deciding
 what to build, not input to anything running.
 
-> **This table covers 14 of 19 companies.** GLXY, APLD, BTDR, SPCX and ABTC
-> were added on 2026-08-05 and have not been swept for sites or operators. The
-> counts below — including "three of the fourteen have no ISO node" and the
-> per-grid totals — are over the fourteen, not the roster. Two of the five are
-> not miners at all, so their rows may end up empty rather than merely
-> unfilled, but that has not been established either. **A missing row here
-> means unswept, not absent.**
+### The basis tags
 
-**The basis column is the point.** *Stated* means the filing says it plainly.
-*Inferred* means it was read off keyword frequency and has not been verified.
+**The basis column is the point**, and it used to carry two values — *stated* and
+*inferred* — with *inferred* doing far too much work. It covered a filing that
+names states but no operator, a reading taken off keyword frequency, and a
+reading that contradicts the company's own dateline. Those are three different
+things and only one of them is a guess.
+
+The tags below are the equity-research repo's convention. **Three of its six
+earn a place here; the other three are deliberately not imported**, because a
+tag that never appears is a taxonomy being cargo-culted rather than adopted.
+
+| Tag | Means | Sole basis for a claim? |
+|---|---|---|
+| `FILED` | the annual report says it plainly, in prose or a labelled table | yes |
+| `ESTIMATE` | derived rather than read — **the derivation is shown in the cell**, so the arithmetic can be disagreed with | yes, marked |
+| `OPEN` | unresolved. The filing was read and does not answer this | never — it is the absence of a claim |
+
+**Dropped, and why:** `MARKET` — nothing here comes from price or trading data.
+`PRESS` and `SOCIAL` — nothing here rests on a release or a post, and by the
+convention's own rule neither could be a sole basis anyway. `PRESS` is the one
+most likely to be needed first: sites now arrive by press release well before
+the 10-K, so the next row added may well need it.
+
+**One tag is local and is not from the six:** `UNSWEPT`. See below for why
+`OPEN` is wrong for that case.
+
+**`UNSWEPT` resolves by doing the work, not by waiting for anything.** It clears
+when someone reads that company's annual report — the same sweep that produced
+every other row in the table, and nothing more than that. **The five rows
+carrying it were added to the roster on 2026-08-05.** That date is recorded
+because the tag alone cannot distinguish *added last week and pending* from
+*nobody has got round to it in a year*, and those warrant different responses:
+the first is the roster working normally, the second is the table quietly
+decaying.
+
+**Tags attach to a claim, not to a row.** Where a company's sites and its grid
+sit at different levels — and MARA is exactly that case — the cell carries both.
+That separation is the whole reason for the change.
 
 | | Grid | Where | Basis |
 |---|---|---|---|
-| VIP | NYISO | New York | stated — and it **sells** |
-| IREN | ERCOT | Texas: Childress, Sweetwater | stated; expects to participate in the ERCOT wholesale spot market |
-| BGDE | PJM | Pennsylvania, Ohio | stated: "all strategically located in locations served by the PJM Energy Market" |
-| DGXX | NYISO | New York, two sites; Alabama | stated |
-| WYFI | none — Duke Energy Carolinas | North Carolina, Greensboro | stated; a capacity agreement, not a market |
-| CLSK | none — Georgia Power | Georgia, Wyoming, Mississippi, Tennessee | stated; an electrical services agreement |
-| MARA | unclear, spans several | Texas, Nevada, Nebraska, Ohio, North Dakota | **inferred**; no operator named in the 10-K |
-| SLNH | ERCOT? | Texas, New York, Kentucky | **inferred**; ERCOT appears 19 times, but in glossary definitions |
-| NUAI | unclear | New Mexico 50x, above Texas 44x | **inferred**; contradicts its Midland, Texas dateline |
-| ANY | MISO? | Iowa | **inferred**; hosted capacity |
-| BKKT | n/a | New York | not a miner |
-| WULF | NYISO; SPP | New York: Lake Mariner (Barker), Cayuga; Texas: Abernathy | stated: Lake Mariner sits "within the single-state NYISO market", on NYISO Zone A |
-| HUT | ERCOT; AESO; NYISO | Texas: Vega, Salt Creek, King Mountain; Alberta: Medicine Hat, Drumheller; New York: Niagara Falls | stated, in a labelled asset table with each site's grid footnoted |
-| CIFR | ERCOT; PJM from 2027 | Texas: Barber Lake, Black Pearl, Stingray, Reveille; Ohio: Ulysses | stated: "agreements necessary to participate in the ERCOT market" |
+| VIP | NYISO | New York | `FILED` — and it **sells** |
+| IREN | ERCOT | Texas: Childress, Sweetwater | `FILED`; expects to participate in the ERCOT wholesale spot market |
+| BGDE | PJM | Pennsylvania, Ohio | `FILED`: "all strategically located in locations served by the PJM Energy Market" |
+| DGXX | NYISO | New York, two sites; Alabama | `FILED` |
+| WYFI | none — Duke Energy Carolinas | North Carolina, Greensboro | `FILED`; a capacity agreement, not a market |
+| CLSK | none — Georgia Power | Georgia, Wyoming, Mississippi, Tennessee | `FILED`; an electrical services agreement |
+| WULF | NYISO; SPP | New York: Lake Mariner (Barker), Cayuga; Texas: Abernathy | `FILED`: Lake Mariner sits "within the single-state NYISO market", on NYISO Zone A |
+| HUT | ERCOT; AESO; NYISO | Texas: Vega, Salt Creek, King Mountain; Alberta: Medicine Hat, Drumheller; New York: Niagara Falls | `FILED`, in a labelled asset table with each site's grid footnoted |
+| CIFR | ERCOT; PJM from 2027 | Texas: Barber Lake, Black Pearl, Stingray, Reveille; Ohio: Ulysses | `FILED`: "agreements necessary to participate in the ERCOT market" |
+| BKKT | n/a | New York | `FILED` — the 10-K describes a business that does not mine |
+| MARA | **none named** | Texas, Nevada, Nebraska, Ohio, North Dakota | grid `OPEN` · sites `FILED` — the 10-K names five states and **no operator anywhere** |
+| SLNH | ERCOT? | Texas, New York, Kentucky | grid `ESTIMATE` · sites `FILED` — ERCOT appears 19 times, **every one in a glossary definition** |
+| ANY | MISO? | Iowa | `ESTIMATE` — read off hosted-capacity mentions, nothing else |
+| NUAI | **none named** | New Mexico? | sites `ESTIMATE` · grid `OPEN` — New Mexico 50x against Texas 44x, which **contradicts its own Midland, Texas dateline** |
+| GLXY | — | — | `UNSWEPT` |
+| APLD | — | — | `UNSWEPT` |
+| BTDR | — | — | `UNSWEPT` |
+| SPCX | — | — | `UNSWEPT` |
+| ABTC | — | — | `UNSWEPT` |
+
+Rows are grouped by tag rather than by the order they were swept in, so the
+shape is visible at a glance: **ten `FILED`, three `ESTIMATE`, two `OPEN`
+grids, five `UNSWEPT`.**
 
 WULF, HUT and CIFR were swept separately, on 2026-08-03, having been added to
 the roster after the first sweep ran. All three name their operators outright,
-so no row here is inferred.
+so all three are `FILED`.
 
-Two of their rows contradict what a state name would have implied, which is the
-whole reason the excerpts are read rather than the counts:
+#### MARA is `OPEN`, not `ESTIMATE`, and the distinction is the point
+
+MARA's 10-K names five states plainly and names **no grid operator at all**.
+Nothing was derived, so there is nothing to call an estimate; the question was
+asked of the filing and the filing does not answer it.
+
+That is a slightly wider reading of `OPEN` than the research repo's *expected
+but unconfirmed, nothing filed either way* — here something **was** filed, it
+just does not reach the question. The reading that carries across is the part
+that matters: **`OPEN` marks the absence of a claim, and an absence must never
+be quoted as a weak version of one.** Under the old column MARA read `inferred`
+alongside NUAI, which said MARA had been guessed at when in fact it had been
+looked up and found silent.
+
+`OPEN` also correctly refuses to be a sole basis. `grid_context.py` cannot place
+MARA on a grid from this table, and that is the honest state rather than a gap
+to be filled with the most likely answer.
+
+#### `UNSWEPT` is not `OPEN`, and adding a seventh tag is the smaller error
+
+GLXY, APLD, BTDR, SPCX and ABTC were added on 2026-08-05 and **their annual
+reports have not been read**. Tagging them `OPEN` would assert that a filing was
+consulted and did not answer — a measurement nobody made.
+
+That is this repo's oldest rule in a new place: a window that found nothing has
+shown only that it did not sweep far enough, and **an unswept absence is not a
+measured one**. The same distinction separates BKKT's `FILED` "not a miner"
+from these five: one was established, the others were never looked at. Two of
+the five may well end up with empty rows rather than merely unfilled ones —
+that has not been established either.
+
+So `UNSWEPT` is local to this table and is flagged as such rather than passed
+off as part of the imported six.
+
+#### Why the excerpts are read rather than the counts
+
+Two of the WULF, HUT and CIFR rows contradict what a state name would have
+implied — which is why an `ESTIMATE` built on frequency alone is marked as one:
 
 - **WULF's Texas site is not on ERCOT.** Abernathy is in the Panhandle and the
   10-K places it in the Southwest Power Pool. Texas is not a synonym for ERCOT.
@@ -460,11 +534,16 @@ whole reason the excerpts are read rather than the counts:
 HUT's single `Duke Energy` hit is a third instance: it appears in a list of the
 companies its executives previously worked at, not as a power supplier.
 
-NUAI's row is the one to distrust most. New Mexico outranking Texas contradicts
-the Midland, Texas dateline that put ERCOT into `grid_context.py` in the first
-place, and nothing has been done to resolve which is right. Four rows rest on
-keyword frequency alone; none of them should be quoted as though a filing said
-it.
+**NUAI's row is still the one to distrust most, and the tag is meant to keep it
+that way.** New Mexico outranking Texas 50 to 44 contradicts the Midland, Texas
+dateline that put ERCOT into `grid_context.py` in the first place, and nothing
+has been done to resolve which is right. `ESTIMATE` is not a softer word for
+*stated* — it is a claim carrying its own derivation so the derivation can be
+attacked, and this one has a contradiction sitting inside it.
+
+Three rows carry `ESTIMATE` — SLNH, ANY and NUAI. **None should be quoted as
+though a filing said it.** MARA is deliberately not among them: it is `OPEN`,
+which is a different and more honest failure.
 
 Ignore Delaware and California in any keyword count. They are incorporation and
 counsel addresses, not sites.
@@ -474,14 +553,17 @@ counsel addresses, not sites.
 Counted from the table above, so a region choice can be made against the roster
 rather than against habit. A company appears under every grid its filing names.
 
-| Grid | Stated | Also claimed, unverified |
+**Over the fourteen swept companies, not the roster** — the five `UNSWEPT` rows
+contribute to nothing here.
+
+| Grid | `FILED` | Also claimed, unverified |
 |---|---|---|
 | NYISO | VIP, DGXX, WULF, HUT — **4** | SLNH has a New York site, grid unnamed |
 | ERCOT | IREN, CIFR, HUT — **3** | SLNH, NUAI, and MARA's Texas sites |
 | PJM | BGDE — **1** operating | CIFR's Ulysses site energizes Q4 2027; MARA has Ohio sites |
 | SPP | WULF — **1** | |
 | AESO | HUT — **1** | Alberta; outside any US data source |
-| MISO | none | ANY, inferred |
+| MISO | none | ANY, `ESTIMATE` |
 | No RTO | WYFI, CLSK — **2** | vertically integrated utilities |
 
 `grid_context.py` reads ERCOT and PJM. That pair was chosen when the roster was
