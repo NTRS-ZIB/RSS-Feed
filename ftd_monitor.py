@@ -57,12 +57,31 @@ import watchlist
 # directions come from the same `alt_symbols` list, so they cannot disagree —
 # hand-maintaining them is how GREE was once mapped to Soluna.
 #
-# CUSIP_PINS carries every CUSIP, current and retired. Twelve entries for
-# eleven tickers is correct: ANY appears twice because a CUSIP survives a
-# rename but NOT a reverse split. watchlist.py validates the check digits.
+# CUSIP_PINS carries every CUSIP, current and retired. More entries than
+# tickers is correct: several companies appear more than once, because a CUSIP
+# survives a rename but NOT a reverse split. watchlist.py validates the check
+# digits.
 TICKERS = watchlist.tickers()
 CANON = watchlist.symbol_to_ticker()
 CUSIP_PINS = watchlist.cusip_pins()
+
+# Identifiers checked and rejected, and the dates symbols changed hands. Both
+# are roster facts rather than component settings, so they live in
+# watchlist.py — see the three guards in fetch_period().
+REFUSED_CUSIPS = watchlist.refused_cusips()
+HANDOVER = watchlist.symbol_handover()
+
+# Every pinned identifier grouped by ticker, so the learning guard can ask
+# "does this look like one of ours" without rebuilding the map per row.
+PINNED_BY_TICKER = {}
+for _cu, _t in CUSIP_PINS.items():
+    PINNED_BY_TICKER.setdefault(_t, []).append(_cu)
+
+# Leading characters that must match for an unrecorded CUSIP to be adopted
+# automatically. Four, because DGXX's genuine 25381D -> 25380B reassignment
+# shares exactly that many and must not be quarantined; HUT's 44812T -> 44812J
+# shares five. See related_prefix().
+STEM = 4
 
 INDEX_URL = "https://www.sec.gov/data-research/sec-markets-data/fails-deliver-data"
 
@@ -167,11 +186,47 @@ def pretty(period):
     return f"{period[:4]}-{period[4:6]}{period[6]}"
 
 
+def related_prefix(cusip, known):
+    """Does `cusip` share a leading stem with any identifier already ours?
+
+    A genuine change of identifier keeps part of the issuer prefix even when
+    the prefix itself moves: HUT went 44812T -> 44812J, sharing five, and DGXX
+    25381D -> 25380B, sharing four. STEM is set to the tighter of those.
+
+    This is a REPORTING heuristic, not a truth test, and it is deliberately
+    one-directional. ABTC is the counter-example that stops it being anything
+    stronger: its chain runs 00973W (Akerna) -> 400510 (Gryphon) -> 02462A,
+    three unrelated prefixes on one continuous registrant. Those are pinned in
+    the roster, so this function never sees them — which is the point. An
+    identifier a HUMAN has checked is recorded; one that merely turned up is
+    not adopted on its own say-so.
+    """
+    return any(cusip[:STEM] == k[:STEM] for k in known if k)
+
+
 def fetch_period(sess, url, cusips):
     """Download one half-month zip and return {ticker: [(date, qty, cusip)]}.
 
     Matching is by symbol OR by a CUSIP already learned for that ticker, so a
     rename part-way through the baseline window doesn't silently drop history.
+
+    THREE GUARDS stand between this loop and a recycled ticker, because the
+    consequences here are asymmetric and permanent. A missed row under-reports
+    one period, visibly. A wrongly matched row attributes another security's
+    fails to one of ours, and — before these guards — taught the state file to
+    keep doing it:
+
+      1. A REFUSED CUSIP is never ours, whatever symbol it carries. See
+         watchlist.REFUSED.
+      2. A symbol is only ours AFTER its handover date. SPCX belonged to a
+         SPAC ETF until 2026-04-07; without this, an FTD_REPLAY of 8 or more
+         periods reaches rows that are not this company's. Symbol matching is
+         the only thing gated — a pinned CUSIP is unambiguous and stays
+         authoritative.
+      3. An unrecorded CUSIP is only LEARNED if it looks related to one
+         already ours. Anything else is reported and left unlearned rather
+         than written into ftd_state.json, where a wrong entry would outlive
+         every run that followed it.
     """
     r = sess.get(url, timeout=TIMEOUT)
     r.raise_for_status()
@@ -180,6 +235,7 @@ def fetch_period(sess, url, cusips):
     raw = zf.read(member).decode("latin-1")
 
     rows, learned, skipped, seen_syms = {}, {}, 0, {}
+    refused_rows, pre_handover, unlearned = {}, {}, {}
     for line in raw.splitlines():
         parts = line.split("|")
         if len(parts) < 5:
@@ -187,7 +243,23 @@ def fetch_period(sess, url, cusips):
         date, cusip, symbol, qty = (p.strip() for p in parts[:4])
         if not date.isdigit() or len(date) != 8:
             continue          # header and any trailer line
-        ticker = CANON.get(symbol.upper()) or cusips.get(cusip)
+        sym = symbol.upper()
+
+        # (1) Refused outright — checked before any matching, so no path
+        # reaches it.
+        if cusip in REFUSED_CUSIPS:
+            refused_rows[cusip] = refused_rows.get(cusip, 0) + 1
+            continue
+
+        # (2) The symbol is ours only after the handover. Fall through to
+        # CUSIP matching rather than dropping the row outright: if it carries
+        # an identifier genuinely pinned to us, it is ours despite the date.
+        by_symbol = CANON.get(sym)
+        if by_symbol and date <= HANDOVER.get(sym, ""):
+            pre_handover[sym] = pre_handover.get(sym, 0) + 1
+            by_symbol = None
+
+        ticker = by_symbol or cusips.get(cusip)
         if not ticker:
             continue
         try:
@@ -196,9 +268,47 @@ def fetch_period(sess, url, cusips):
             skipped += 1
             continue
         rows.setdefault(ticker, []).append((date, shares, cusip))
-        seen_syms.setdefault(ticker, {}).setdefault(symbol.upper(), set()).add(date)
+        seen_syms.setdefault(ticker, {}).setdefault(sym, set()).add(date)
+
+        # (3) Learn only what looks like ours. `known` is every identifier
+        # already attributed to this ticker — pinned, learned earlier, or
+        # learned in this period.
         if cusip and cusip not in cusips:
-            learned[cusip] = ticker
+            known = [c for c, t in cusips.items() if t == ticker]
+            known += [c for c, t in learned.items() if t == ticker]
+            known += [c for c in PINNED_BY_TICKER.get(ticker, ())]
+            if related_prefix(cusip, known):
+                learned[cusip] = ticker
+            else:
+                unlearned.setdefault(ticker, {})[cusip] = sym
+
+    if refused_rows:
+        for cu, n in sorted(refused_rows.items()):
+            rec = REFUSED_CUSIPS[cu]
+            print(f"\n    refused {cu}: {n} row(s) skipped — {rec['belongs_to']}, "
+                  f"not {rec['symbol']}", end="")
+    if pre_handover:
+        for sym, n in sorted(pre_handover.items()):
+            print(f"\n    {sym}: {n} row(s) at or before its "
+                  f"{HANDOVER[sym]} handover, not matched by symbol", end="")
+    if unlearned:
+        for t, found in sorted(unlearned.items()):
+            # A ticker with NO pins at all is the new-company case, and it
+            # reads differently from a genuine prefix mismatch: there is
+            # nothing to be unrelated to. Refusing to learn is still right —
+            # that empty base is exactly how the SPCX ETF's identifier would
+            # have been adopted — but the log should say which situation it is.
+            bare = not PINNED_BY_TICKER.get(t)
+            for cu, sym in sorted(found.items()):
+                if bare:
+                    print(f"\n    {t}: saw {cu} (as {sym}) but has no pinned "
+                          f"identifier to compare against — NOT learned. Run "
+                          f"audit_identifiers.py and pin it.", end="")
+                else:
+                    print(f"\n    {t}: saw {cu} (as {sym}) unrelated to any "
+                          f"known identifier — NOT learned. Check its "
+                          f"description, then add it to watchlist.py or to "
+                          f"REFUSED.", end="")
     return rows, learned, skipped, seen_syms
 
 
