@@ -339,8 +339,16 @@ def fmt_pct(p):
     return f"{p:+.0f}%"
 
 
-def build_table(rows):
-    """Kept to 25 characters. See the output-width note in the README."""
+def build_table(rows, unavailable=()):
+    """Kept to 25 characters. See the output-width note in the README.
+
+    `unavailable` companies are appended as `n/a~` rows rather than omitted. A
+    company absent from the table reads as "no dilution", which is the opposite
+    of unknown, and that reading is what used to make this component refuse to
+    post at all. The `~` sits against the SHARES column because that is the
+    figure that is missing; the change and trailing-year columns are blank
+    because they are derived from it, not separately unavailable.
+    """
     out = [f"{'':<5}{'Shares':>7}{'Chg':>6}{'1yr':>7}", "-" * 25]
     for r in rows:
         m = r["m"]
@@ -355,11 +363,26 @@ def build_table(rows):
             year, mark = "-", "~"
         out.append(f"{r['ticker']:<5}{fmt_shares(m['shares']):>7}"
                    f"{step:>6}{(year + mark):>7}"[:25])
+    # Always last and always alphabetical. A row that is permanently n/a should
+    # be boring: it must not move as other companies' growth figures move, and
+    # it must not sit among them implying a rank it does not have.
+    for tk, _reason in sorted(unavailable):
+        # rstrip because the change and trailing-year columns are empty, and
+        # thirteen trailing spaces in a code block are invisible padding that
+        # only widens the line.
+        out.append(f"{tk:<5}{'n/a~':>7}".rstrip())
     return "\n".join(out)
 
 
-def build_embed(rows, changed, splits):
-    lines = [f"```\n{build_table(rows)}\n```"]
+UNAVAILABLE_REASONS = {
+    "untagged": "publishes no share count in any concept read here",
+    "stale": "last published count predates its own most recent report",
+    "implausible": "last published count disagrees with its own period average",
+}
+
+
+def build_embed(rows, changed, splits, unavailable=()):
+    lines = [f"```\n{build_table(rows, unavailable)}\n```"]
 
     for r in rows:
         m = r["m"]
@@ -373,6 +396,17 @@ def build_embed(rows, changed, splits):
                 f"**{r['ticker']}** +{m['step']:.0f}% in one filing, "
                 f"{fmt_shares(m['prior'])} → {fmt_shares(m['shares'])} "
                 f"(as of {m['date']:%d %b})")
+
+    # One line per reason, never one line for all of them. "Does not publish a
+    # count" and "publishes one that is out of date" are different findings
+    # about a company, and a reader who cannot tell them apart learns nothing
+    # from either.
+    by_reason = {}
+    for tk, reason in unavailable:
+        by_reason.setdefault(reason, []).append(tk)
+    for reason, tks in sorted(by_reason.items()):
+        lines.append(f"`n/a~` {UNAVAILABLE_REASONS.get(reason, reason)}: "
+                     f"{', '.join(sorted(tks))}")
 
     thin = [r["ticker"] for r in rows if r["m"]["year_reason"] == "thin"]
     if thin:
@@ -443,20 +477,23 @@ def main():
 
     state = load_state()
     first_run = not STATE_FILE.exists()
-    rows, failed, withheld, changed, splits = [], [], [], 0, 0
+    rows, failed, unavailable, changed, splits = [], [], [], 0, 0
     any_drop = False
 
     for ticker, (cik, name) in sorted(watchlist.ciks().items()):
         try:
             series, concept = observations(cik)
         except Exception as e:
+            # A FAULT, not a measurement. The company may well publish a count;
+            # this run could not find out. Distinct from every case below, and
+            # the only one that still refuses to post.
             print(f"  {ticker}: FAILED {type(e).__name__}: {e}")
             failed.append(ticker)
             continue
         if not series:
             print(f"  {ticker}: no share-count concept tagged "
                   f"({', '.join(f'{t}:{g}' for t, g in CONCEPTS)})")
-            failed.append(ticker)
+            unavailable.append((ticker, "untagged"))
             continue
 
         # A count that is present but not current is worse than one that is
@@ -471,7 +508,7 @@ def main():
         if verdict:
             reason, detail = verdict
             print(f"  {ticker}: share count WITHHELD, {reason} — {detail}")
-            withheld.append((ticker, reason))
+            unavailable.append((ticker, reason))
             continue
 
         m = summarise(series)
@@ -504,18 +541,29 @@ def main():
         print("  drop straddling filings a quarter apart is a corporate action;")
         print("  one straddling years is a reporting gap with an action inside.")
 
-    if failed or withheld:
-        print(f"\n{len(failed) + len(withheld)} company/companies unavailable: "
-              f"{', '.join(failed + [t for t, _ in withheld])}")
-        print("Not posting a partial picture — a company missing from the table")
-        print("would read as 'no dilution', which is the opposite of unknown.")
+    if unavailable:
+        # POSTED, not withheld. Refusing the whole post was right while there
+        # was no way to say "unknown" in the table; there is one now, and
+        # blocking sixteen companies' figures to avoid two n/a rows is the
+        # wrong trade once the alternative is a sentence rather than ambiguity.
+        print(f"\n{len(unavailable)} unavailable, shown as n/a in the table: "
+              + ", ".join(f"{t} ({r})" for t, r in sorted(unavailable)))
+
+    if failed:
+        # A fetch fault is the one case that still refuses to post. The company
+        # may publish a count and this run could not find out, so an n/a row
+        # would assert something about the company that was really about the
+        # network.
+        print(f"\n{len(failed)} could not be fetched: {', '.join(failed)}")
+        print("Not posting — this is a fault, not a measurement, and a company")
+        print("shown as n/a for a network error asserts the wrong thing.")
         return 1
 
     rows.sort(key=lambda r: (r["m"]["year"] if r["m"]["year"] is not None else -1e9),
               reverse=True)
 
     print()
-    print(build_table(rows))
+    print(build_table(rows, unavailable))
     print()
     print(f"{changed} of {len(rows)} changed since last run"
           + ("  (no state file — first run)" if first_run else ""))
@@ -528,10 +576,10 @@ def main():
         if DRY_RUN:
             print("\nDry run: nothing changed, but this is what a post would "
                   "look like.\n")
-            print(build_embed(rows, 0, splits)["description"])
+            print(build_embed(rows, 0, splits, unavailable)["description"])
         return 0
 
-    embed = build_embed(rows, changed, splits)
+    embed = build_embed(rows, changed, splits, unavailable)
 
     if DRY_RUN:
         print(f"\nDry run: would post. State not saved.")
