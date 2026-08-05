@@ -66,6 +66,7 @@ watchlist.py                      the roster: one record per company
 audit_identifiers.py              maintenance: what each company trades as
 calibrate_staleness.py            maintenance: publication cadence per source
 audit_8k_items.py                 maintenance: 8-K item distribution
+check_metric_regime.py            maintenance: is a metric's move real or a regime shift
 ftd_monitor.py                    SEC fails-to-deliver
 threshold_list.py                 Reg SHO threshold list (exception report)
 comment_letters.py                SEC review correspondence
@@ -88,6 +89,7 @@ grid_context.py                   grid demand and natural gas
 .github/workflows/audit.yml       identifier audit, manual only
 .github/workflows/calibrate.yml   staleness calibration, manual only
 .github/workflows/items.yml       8-K item audit, manual only
+.github/workflows/metric-regime.yml  metric regime check, manual only
 spike_state.json                  auto-generated; per-day alert tiers
 shortinterest_state.json          auto-generated; last posted settlement date
 regsho_state.json                 auto-generated; last posted trade date

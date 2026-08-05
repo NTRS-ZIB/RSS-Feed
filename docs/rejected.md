@@ -154,6 +154,116 @@ writes unusually structured headlines. Before building, check WULF's and CIFR's.
 
 ---
 
+## BTC decoupling — rolling correlation against bitcoin
+
+**Would have added:** a weekly table of each ticker's rolling return
+correlation against bitcoin, answering the question the watchlist is built
+around — which of these are still bitcoin proxies, and which have repriced as
+something else, now that WULF, HUT and CIFR have all pivoted toward AI/HPC.
+
+**It got further than any other rejected idea, and that is why it is here.**
+The other four failed on coverage or discrimination before anything was
+measured. This one was built, produced a clean finding, and the finding turned
+out to be an artefact of the measurement.
+
+### The sources were not the problem
+
+Alpaca's crypto bars need **no authentication at all** — same provider and
+clock as the equity bars `daily_recap.py` already fetches, so dates align by
+construction. 431 bars, of which 124 fall on weekends and are dropped by an
+inner join against the 295 equity trading days. Splits were confirmed rather
+than assumed by fetching `adjustment=raw` alongside `adjustment=all`: ANY is
+adjusted on 174 of 295 days and BGDE on 121, matching the Feb 2026 and Nov
+2025 splits recorded in [crossings.md](crossings.md).
+
+### The finding, and how good it looked
+
+Over the recent 90 trading days, **thirteen of fourteen fell against bitcoin**
+— MARA 0.76 to 0.41, CLSK 0.73 to 0.46, SLNH 0.66 to 0.24 — while Nasdaq
+correlation held or rose. It read as a sector rotating out of a bitcoin proxy
+and into an AI-infrastructure proxy, which is exactly the kind of repricing
+this watchlist exists to notice.
+
+### What actually happened
+
+| | prior 90 | recent 90 | ratio |
+|---|---|---|---|
+| **BTC realised volatility** | **54%** | **34%** | **0.63** |
+| **QQQ realised volatility** | **16%** | **25%** | **1.54** |
+| roster median | — | — | **1.05** |
+
+Bitcoin went quiet, the Nasdaq got noisy, and the companies did neither.
+
+Correlation is scale-invariant, so bitcoin moving less cannot reduce it
+directly. The mechanism runs through `r = beta x sigma_btc / sigma_ticker`,
+which makes **beta** — how far the stock moves per 1% of bitcoin — the
+discriminating quantity, and yields a falsifiable signature: a pure rescaling
+of bitcoin leaves `r` unchanged and raises beta by 1/0.63, or **+59%**.
+
+| | |
+|---|---|
+| median change in correlation | **−0.20** |
+| median RELATIVE change in beta | **+4%** |
+| betas that fell | **7 of 14** — a coin flip |
+| the `sigma_btc/sigma_ticker` term | **fell for all 14** |
+
+**Beta did not move.** Sensitivity to bitcoin was unchanged at roughly 0.85 to
+1.5 across the roster. The entire fall is the sigma-ratio term. The
+relationship was intact; bitcoin simply explained less of a variance that had
+not itself changed.
+
+### It did not clear noise either
+
+Fisher z across the two independent 90-day halves, critical |dz| = 0.30:
+
+- **4 of 14** real falls against bitcoin (MARA, CLSK, ANY, SLNH)
+- **2 of 14** real rises against the Nasdaq — **NUAI and BGDE, the roster's two
+  biggest idiosyncratic stories**
+
+So the Nasdaq column read "held", not "rose", and the rotation half of the
+story had no support independently of the volatility argument.
+
+### The confound was in the finding that started it
+
+The result that made the idea look worth building was a 180-day separation
+between the groups: **BTC proxies +0.70 against AI/HPC pivots +0.45**. But
+`r` is penalised directly by a high `sigma_ticker`, and the pivots are the more
+volatile group — WULF 90%, HUT 113%, CIFR 122%, against MARA 82%, CLSK 88%,
+BKKT 93%. Comparing betas instead gives **1.21 against 1.03**.
+
+A meaningful part of "the pivots are less bitcoin-correlated" is just "the
+pivots are more volatile stocks."
+
+Partial correlations inherited it too, being built from the same numbers:
+WULF's independent bitcoin exposure read 0.36 in the prior half and 0.09 in the
+recent one. The sharpest-looking result was the one most contaminated.
+
+### Verdict
+
+**A weekly table would have reported a sector-wide decoupling event in a
+quarter whose honest answer is "bitcoin was quiet and nothing changed."** The
+metric moves for at least two reasons that have nothing to do with the
+companies: bitcoin's volatility regime, and each ticker's own volatility.
+
+### If it comes back
+
+Build **beta**, not correlation. Beta is what "still a bitcoin proxy" means and
+is confounded by neither. But measure its stability and its intervals first —
+its standard error is large when the fit is poor, and WYFI's 1.78 comes with an
+`r` of 0.42. Reaching for beta immediately, on the strength of this
+investigation alone, would repeat the same mistake in a new variable.
+
+**And state bitcoin's own realised volatility in the post alongside whatever is
+reported**, so a reader can tell "the link weakened" from "bitcoin went quiet".
+Without it, no reader can.
+
+The decomposition is kept as [`check_metric_regime.py`](../check_metric_regime.py),
+because any metric shaped as a ratio of two moving quantities has this failure
+mode and the next one should be cheap to check rather than expensive to
+discover.
+
+---
+
 ## Two findings worth keeping, from the same corpus
 
 **EDGAR and the IR feeds disagree, and the feed is right.** EDGAR full-text

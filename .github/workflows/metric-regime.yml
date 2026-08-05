@@ -1,0 +1,36 @@
+name: Metric regime check
+
+# Maintenance tool, not a component. Read-only: fetches price history, prints
+# tables, exits. No webhook, no state, no commit, no schedule — it runs only
+# when started by hand.
+#
+# Run it before building any component whose output is a ratio, when a probe
+# has produced a finding that looks like a change in behaviour; or when an
+# existing metric moves across the whole roster at once, which is far more
+# often one input changing regime than fourteen companies changing together.
+#
+# See check_metric_regime.py and docs/rejected.md.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install requests
+      - name: Check
+        timeout-minutes: 10
+        env:
+          ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u check_metric_regime.py
