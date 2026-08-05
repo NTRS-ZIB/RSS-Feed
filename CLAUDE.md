@@ -34,6 +34,43 @@ monitor stores a literal zero rather than skipping the period. Median over only
 the periods where a ticker appeared would average its non-zero periods and erase
 the most informative case there is: a name that never fails suddenly failing.
 
+**"Too little history yet" and "the source failed" are different measurements
+and must never share a label.** The roster gains listings regularly — WYFI
+2025-08, ABTC 2025-09, SPCX 2026-06 — and each one arrives with less history
+than every threshold in the repo. A young company reported as a failure trains
+the reader to ignore the failure line; worse, a *cause* attached to it stops
+them checking at all. `short_interest.py` told the reader that every absent
+ticker "usually means a symbol change", which for a new listing is a confident
+wrong answer where silence would at least have invited a look.
+
+There is **no shared helper for this, deliberately.** The floors are component
+thresholds and belong nowhere near `watchlist.py`, which carries facts about
+companies and no behaviour; and the units genuinely differ — sessions, bars,
+half-month periods, settlement dates, filings. What is shared is the shape:
+
+| Situation | Treatment |
+|---|---|
+| In the table, figure computed over a short window | `~` on **the affected column only**, plus a line naming the tickers and the threshold |
+| Absent, too little history | Its own line, with a **count against the floor** — `SPCX 37/60 sessions` |
+| Absent, source failed | A separate line, no count |
+
+**The count is the part that matters.** A name in a list is an excuse; a count
+is a measurement, and it tells the reader both that nothing is wrong and
+roughly when it resolves.
+
+Marking the affected column rather than the row is equally deliberate: a short
+history invalidates a 52-week position, and leaves close, change and volume
+untouched. Marking the ticker would overstate the damage.
+
+Components may still differ on **whether to show the row at all** —
+`crossings.py` skips below `MIN_BARS` because a crossing against 37 sessions
+is not a 52-week crossing, while `daily_recap.py` keeps the row and caveats one
+column. That is a real difference in what the number means, not an
+inconsistency to iron out.
+
+`earnings_calendar.py` is the one case still naming tickers without a count.
+It is correct, just less useful than it could be.
+
 ## Verification
 
 **Nothing is trusted until a dry run against live data confirms it.** Every
