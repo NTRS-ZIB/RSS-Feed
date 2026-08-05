@@ -37,9 +37,16 @@ WINDOW carries a `~`.
 
 Companion to daily_recap.py, which shows position in the 52-week range as a
 column every day. This fires only on the boundary, and to a different channel.
-NOTE that the two DO diverge on short history: crossings marks a sub-252
-window with `~` and skips below MIN_BARS, while the recap computes `52w` over
-whatever it has and labels it 52w regardless.
+Both now mark a short window with `~` and name the tickers, so the claim that
+the two cannot disagree about what "52 weeks" means holds for the missing case
+as well as the present one — they previously agreed on the window and
+disagreed on what to do when it was not there.
+
+They still differ in one deliberate place: this component SKIPS a ticker below
+MIN_BARS, because a crossing measured against 37 sessions is not a 52-week
+crossing, while the recap keeps the row, because close, change and volume do
+not depend on how much history sits behind them. Only its 52w column is
+caveated.
 """
 
 import json

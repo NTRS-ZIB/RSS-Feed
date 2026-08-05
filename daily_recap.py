@@ -63,6 +63,11 @@ CHART_EXTENDED = False   # True to include 04:00-20:00 ET rather than 09:30-16:0
 
 CHART_DAYS = 60        # trading days shown per sparkline in "daily" mode
 VOL_AVG_DAYS = 30      # baseline for the volume comparison
+
+# Sessions behind the `52w` column. Named rather than inlined because
+# crossings.py pins its WINDOW to this number and says so — one place to
+# change, and a reader can see the two are the same figure.
+WINDOW_SESSIONS = 252
 GRID_COLS = 2
 
 # Panel size in inches, and a ceiling on the overall shape.
@@ -296,14 +301,28 @@ def fetch_intraday(symbols):
 
 
 def summarise(label, rows):
-    """Reduce a price series to the figures shown in the table."""
+    """Reduce a price series to the figures shown in the table.
+
+    The `52w` column is computed over whatever history exists, so a company
+    that listed six weeks ago gets a position within a SIX-WEEK range under a
+    column labelled 52w. `short` marks that, and the caller names the tickers
+    — crossings.py has always marked the same condition with `~`, and its
+    docstring claimed the two "cannot disagree about what 52 weeks means".
+    They agreed on the window and disagreed on what to do when it was not
+    there, which is a harder disagreement to notice than an outright one.
+
+    The two still differ, deliberately: crossings SKIPS a ticker below its
+    MIN_BARS floor because a crossing measured against 37 sessions is not a
+    52-week crossing, while the recap keeps the row because close, change and
+    volume are unaffected — only this one column is caveated.
+    """
     if len(rows) < 2:
         return None
     closes = [c for _, c, _ in rows]
     vols = [v for _, _, v in rows]
     last, prev = closes[-1], closes[-2]
 
-    window = closes[-252:]          # ~1 trading year
+    window = closes[-WINDOW_SESSIONS:]          # ~1 trading year
     vol_base = vols[-VOL_AVG_DAYS - 1:-1] or [0]
     avg_vol = sum(vol_base) / len(vol_base)
 
@@ -316,6 +335,8 @@ def summarise(label, rows):
         "vol_x": (vols[-1] / avg_vol) if avg_vol else 0.0,
         "hi": max(window),
         "lo": min(window),
+        "bars": len(window),
+        "short": len(window) < WINDOW_SESSIONS,
         "series": closes[-CHART_DAYS:],
         "prev_close": prev,
         "intraday": None,          # filled in later when available
@@ -364,14 +385,19 @@ def build_table(stats, partial=False):
     hot = {s["label"] for s in flagged(stats, partial)}
     stats = sorted(stats, key=lambda s: s["pct"], reverse=True)
     lines = [f"{'':5}{'Close':>6}{'Chg':>7}{'Vol':>5} {'52w':>3}"]
-    lines.append("-" * 26)
+    lines.append("-" * 28)
     for s in stats:
         span = s["hi"] - s["lo"]
         pos = ((s["close"] - s["lo"]) / span * 100) if span else 0
         mark = "*" if s["label"] in hot else " "
+        # `~` sits against the 52w figure rather than the ticker, because that
+        # is the only column a short window affects — close, change and volume
+        # are unaffected by how much history exists behind them. 28 characters
+        # with it, which is the ceiling rather than past it.
+        short = "~" if s.get("short") else ""
         lines.append(
             f"{s['label']:<5}{s['close']:>6.2f}{s['pct']:>6.1f}%"
-            f"{s['vol_x']:>4.1f}x{mark}{pos:>3.0f}"
+            f"{s['vol_x']:>4.1f}x{mark}{pos:>3.0f}{short}"
         )
     return "\n".join(lines)
 
@@ -472,8 +498,22 @@ def main():
     elif not WEBHOOK_URL:
         sys.exit("WEBHOOK_URL_MARKET is not set.")
 
-    stats, missing = [], []
+    # `missing` and `thin` were one list. A ticker whose fetch returned
+    # nothing and one that listed yesterday both printed as "no data", which
+    # reads as a fault for a company that is simply new. summarise() declines
+    # below two bars either way, so the bar count is what separates them.
+    stats, missing, thin = [], [], []
     alpaca, source = None, "unknown"
+
+    def record(label, rows):
+        """Bank a summary, or file the failure under why it failed."""
+        summary = summarise(label, rows)
+        if summary:
+            stats.append(summary)
+        elif rows:
+            thin.append((label, len(rows)))
+        else:
+            missing.append(label)
 
     if ALPACA_KEY_ID and ALPACA_SECRET:
         print(f"Trying Alpaca ({ALPACA_FEED})...")
@@ -484,8 +524,7 @@ def main():
         source = f"Alpaca {ALPACA_FEED}"
         print(f"Source: {source} — {len(alpaca)} symbol(s)\n")
         for label in TICKERS:
-            summary = summarise(label, alpaca.get(label, []))
-            (stats if summary else missing).append(summary or label)
+            record(label, alpaca.get(label, []))
     else:
         source = "Twelve Data" if TWELVEDATA_KEY else "Stooq"
         if ALPACA_KEY_ID:
@@ -501,11 +540,7 @@ def main():
             if TWELVEDATA_KEY and i:
                 time.sleep(TWELVEDATA_GAP)   # 8 req/min free-tier ceiling
             print(f"  {label}...")
-            summary = summarise(label, fetch_series(label))
-            if summary:
-                stats.append(summary)
-            else:
-                missing.append(label)
+            record(label, fetch_series(label))
 
     if not stats:
         sys.exit("No data for any ticker; not posting.")
@@ -523,6 +558,15 @@ def main():
         header = f"Close {latest:%a %d %b}"
     if missing:
         header += f"\nno data: {', '.join(missing)}"
+    if thin:
+        header += ("\ntoo new to summarise: "
+                   + ", ".join(f"{t} {n}bar" for t, n in sorted(thin)))
+    short = sorted(s["label"] for s in stats if s.get("short"))
+    if short:
+        # Named, not just marked. The `~` says which row is caveated; this
+        # says what the caveat is, and both are needed — the same pairing
+        # crossings.py uses for the identical condition.
+        header += f"\n~ 52w over <{WINDOW_SESSIONS} sessions: {', '.join(short)}"
     if stale:
         header += f"\nlagging: {', '.join(stale)}"
 
@@ -555,7 +599,8 @@ def main():
 
     if DRY_RUN:
         print(f"Dry run complete: {len(stats)} ticker(s) resolved, "
-              f"{len(missing)} failed. Download the artifact to see the chart.")
+              f"{len(missing)} failed, {len(thin)} too new. "
+              f"Download the artifact to see the chart.")
         return
 
     if post(text, png):
