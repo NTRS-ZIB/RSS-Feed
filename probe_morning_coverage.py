@@ -41,6 +41,7 @@ and the median and p90 waits.
 
 import os
 import random
+import re
 import sys
 import time
 from bisect import bisect_left
@@ -208,36 +209,57 @@ def main():
     print("  range %s .. %s" % (min(r[0] for r in rows).date(),
                                 max(r[0] for r in rows).date()))
 
-    # VALIDATION. The first attempt tested the converted times against EDGAR's
-    # 06:00-22:00 ET window and called the conversion suspect. That test was
-    # wrong: those are DISSEMINATION hours. EDGAR accepts submissions around
-    # the clock, so a 23:30 ET acceptance is ordinary and proves nothing.
+    # VALIDATION. Two earlier attempts were both wrong tests rather than
+    # wrong conversions, which is worth recording because each looked
+    # conclusive.
     #
-    # SEC's actual rule is self-contained and far sharper: a submission
-    # accepted after 17:30 ET carries the NEXT business day as its filingDate.
-    # If the raw stamp really is Eastern, acceptances at or before 17:30 should
-    # almost all be same-day filings and those after should almost all be
-    # next-day. No external fact needed, and a four or five hour error in
-    # either direction breaks it loudly.
-    same = {True: [0, 0], False: [0, 0]}
-    for _utc, naive, fdate, _form in rows:
-        if not fdate:
-            continue
-        before = (naive.hour * 60 + naive.minute) <= 17 * 60 + 30
-        same[before][0 if str(naive.date()) == fdate else 1] += 1
-    for before in (True, False):
-        s, nxt = same[before]
-        tot = s + nxt
-        if tot:
-            print("  acceptance %-11s -> same-day filingDate %5d (%3.0f%%),"
-                  "  later %5d (%3.0f%%)"
-                  % ("<=17:30 ET" if before else ">17:30 ET",
-                     s, 100.0 * s / tot, nxt, 100.0 * nxt / tot))
-    ok = (same[True][0] > 4 * same[True][1]
-          and same[False][1] > 4 * same[False][0])
-    print("  -> Eastern interpretation %s"
-          % ("CONFIRMED by the 17:30 cutoff"
-             if ok else "FAILS the 17:30 test — do not trust anything below"))
+    #   1. Converted times against EDGAR's 06:00-22:00 ET window. Those are
+    #      DISSEMINATION hours; EDGAR accepts around the clock, so a 23:30 ET
+    #      acceptance is ordinary and proves nothing.
+    #   2. A flat 17:30 ET cutoff for next-business-day filingDate. Real, but
+    #      it does NOT apply to Section 16 forms: Forms 3, 4 and 5 keep a
+    #      same-day filingDate until 22:00 ET. Those forms dominate this
+    #      corpus, so a flat cutoff mostly measures their exemption.
+    #
+    # The test below applies the right cutoff per form and runs it against
+    # BOTH readings of the raw stamp. Only one can produce a clean split, and
+    # a four or five hour error breaks it loudly in the other direction.
+    def cutoff_for(form):
+        return 22 * 60 if re.sub(r"/A$", "", (form or "")) in ("3", "4", "5")             else 17 * 60 + 30
+
+    print("")
+    print("  Next-business-day rule, applied per form (22:00 ET for Sections")
+    print("  16 forms 3/4/5, 17:30 ET otherwise), under both readings:")
+    for label, shift in (("raw stamp IS Eastern", 0),
+                         ("raw stamp is UTC", None)):
+        before_same = before_tot = after_next = after_tot = 0
+        for utc, naive, fdate, form in rows:
+            if not fdate:
+                continue
+            if shift == 0:
+                local, ldate = naive, naive.date()
+            else:
+                off = eastern_offset(naive)
+                local = naive - timedelta(hours=off)
+                ldate = local.date()
+            mins = local.hour * 60 + local.minute
+            same = str(ldate) == fdate
+            if mins <= cutoff_for(form):
+                before_tot += 1
+                before_same += 1 if same else 0
+            else:
+                after_tot += 1
+                after_next += 0 if same else 1
+        b = 100.0 * before_same / before_tot if before_tot else 0
+        a = 100.0 * after_next / after_tot if after_tot else 0
+        print("    %-22s before cutoff same-day %3.0f%% (n=%d)"
+              "   after cutoff next-day %3.0f%% (n=%d)"
+              % (label, b, before_tot, a, after_tot))
+    print("  -> the reading that puts BOTH near 100%% is the correct one.")
+    print("")
+    print("  Raw stamp samples (as returned by EDGAR):")
+    for utc, naive, fdate, form in rows[:4]:
+        print("    form %-6s raw %s   filingDate %s" % (form, naive, fdate))
 
     hours = Counter(t.hour for t in weekday)
 
