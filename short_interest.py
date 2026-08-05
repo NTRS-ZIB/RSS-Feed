@@ -356,6 +356,39 @@ def parse(rows):
     return by_date
 
 
+def classify_absent(missing, by_date):
+    """Split absent tickers into ('unseen', 'dropped').
+
+    THE OLD MESSAGE NAMED A CAUSE AND NAMED THE WRONG ONE. Every absent ticker
+    was reported as "FINRA keys on ticker, so this usually means a symbol
+    change", which for a newly listed company is not merely uninformative — a
+    stated cause closes the question, and the reader stops looking. ABTC, WYFI
+    and SPCX would each have hit it in their first weeks, and the roster gains
+    listings regularly now.
+
+    It is also the least likely explanation, because a recorded rename is
+    ALREADY handled: canonical() maps every alt_symbol back to its ticker, so
+    a renamed company still resolves. Only an UNRECORDED rename produces this,
+    which is a much narrower claim than the message made.
+
+    The response carries every settlement date in the window, not only the
+    latest, so the roster can be split on evidence already fetched:
+
+      unseen   absent from EVERY date in the window. Nothing has ever been
+               reported under this symbol here — a new listing, or a company
+               FINRA does not carry. Not a rename: there is no history to have
+               been renamed away from.
+      dropped  present on an earlier date, absent from the latest. THIS is the
+               shape an unrecorded rename makes, and the only case where the
+               old message was right.
+    """
+    ever = set()
+    for one_date in by_date.values():
+        ever |= set(one_date)
+    return (sorted(t for t in missing if t not in ever),
+            sorted(t for t in missing if t in ever))
+
+
 def human(v):
     if v is None:
         return "n/a"
@@ -383,7 +416,7 @@ def build_table(data):
     return "\n".join(lines)
 
 
-def build_embed(settled, data, missing):
+def build_embed(settled, data, missing, unseen=(), dropped=(), periods=0):
     movers = [s for s, m in data.items()
               if m.get("change_pct") is not None
               and abs(m["change_pct"]) >= NOTABLE_CHANGE_PCT]
@@ -392,9 +425,21 @@ def build_embed(settled, data, missing):
     desc = (f"Settlement {settled}. Reported twice monthly and published about "
             f"eight business days later, so this is positioning context rather "
             f"than a live signal.")
-    if missing:
-        desc += (f"\n\n**Not found: {', '.join(missing)}** — FINRA keys on "
-                 f"ticker, so this usually means a symbol change.")
+    # Two different findings, and they were one sentence with one cause
+    # attached. See classify_absent().
+    if unseen:
+        desc += (f"\n\nNo history in this dataset: {', '.join(unseen)} — "
+                 f"absent from all {periods} settlement date(s) in the window, "
+                 f"so nothing has been reported under these symbols rather "
+                 f"than something having gone missing. Expected for a recent "
+                 f"listing.")
+    if dropped:
+        desc += (f"\n\n**Reported before, absent now: {', '.join(dropped)}** — "
+                 f"these appear on an earlier settlement date in the window. "
+                 f"FINRA keys on ticker and canonical() already resolves every "
+                 f"recorded rename, so check for an UNRECORDED one.")
+    if missing and not (unseen or dropped):
+        desc += f"\n\n**Not found: {', '.join(missing)}**"
     revised = sorted(s for s, m in data.items() if m.get("revised"))
     if revised:
         desc += f"\n\nRevised by FINRA: {', '.join(revised)}."
@@ -472,15 +517,20 @@ def main():
         sys.exit(f"Newest settlement is {age} days old — FINRA publishes twice "
                  f"a month, so the dataset '{DATASET}' is likely wrong or "
                  f"deprecated. Not posting.")
-    if missing:
-        print(f"  NOT FOUND: {', '.join(missing)}  (symbol change?)")
+    unseen, dropped = classify_absent(missing, by_date)
+    if unseen:
+        print(f"  no history in {len(by_date)} settlement date(s): "
+              f"{', '.join(unseen)}  (recent listing, or not carried)")
+    if dropped:
+        print(f"  REPORTED BEFORE, ABSENT NOW: {', '.join(dropped)}  "
+              f"(unrecorded rename?)")
 
     state = load_state()
     if state.get("last_settlement") == latest and not DRY_RUN:
         print(f"Already posted {latest}. Nothing to do.")
         return
 
-    embed = build_embed(latest, data, missing)
+    embed = build_embed(latest, data, missing, unseen, dropped, len(by_date))
     print()
     print(embed["fields"][0]["value"])
     # The description carries the revision / split / alias notes, which are
