@@ -188,6 +188,31 @@ true diluted count is higher than anything shown, sometimes substantially.
 filing date, which is why the table prints those dates in the log. Comparing
 two companies' counts compares two different moments.
 
+### Not a lock-up release, and this component cannot see one
+
+**A lock-up expiry is a dilution event that produces no movement in any number
+shown here.** Cover-page shares outstanding count issued shares, and restricted
+shares are already counted — so when a lock-up releases and hundreds of millions
+of shares become sellable for the first time, the count does not change and this
+component correctly reports no change.
+
+The supply of shares that can actually reach the market changes; the
+denominator does not. Those are different quantities, and this one measures the
+denominator.
+
+The scale is not marginal. SPCX's release schedule frees up to **911.5 million
+shares** on a single date, against a company whose whole reported history here
+is one 10-Q — and `dilution.py` will show `n/a~` for it either way, for an
+unrelated reason. Every recent listing on the roster has a version of this:
+WYFI's 180-day lock-up expired 2026-02-04 with nothing here reflecting it.
+
+**This is a known limitation rather than a bug to fix.** Lock-up tracking was
+measured and rejected — see
+[lock-up expirations](rejected.md#lock-up-expirations) for why the terms do not
+generalise. The gap is recorded here because it exists whether or not that is
+ever built, and because "no change" from this component is otherwise easy to
+read as "no dilution".
+
 ## A partial fetch is not a partial post
 
 If any company fails — a request error, or no share-count concept tagged at all
