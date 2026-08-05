@@ -392,12 +392,27 @@ def build_table(stats, partial=False):
         mark = "*" if s["label"] in hot else " "
         # `~` sits against the 52w figure rather than the ticker, because that
         # is the only column a short window affects — close, change and volume
-        # are unaffected by how much history exists behind them. 28 characters
-        # with it, which is the ceiling rather than past it.
+        # are unaffected by how much history exists behind them.
         short = "~" if s.get("short") else ""
+
+        # TWO FIELDS DROP THEIR DECIMAL RATHER THAN THEIR WIDTH. A close over
+        # 999.99 needs seven characters at 2dp and a ratio over 99.9 needs six
+        # at 1dp, and either one pushed the row to 29 once `~` took the last
+        # spare character. Both are measured, not hypothetical: the ticker
+        # field was never the constraint — `:<5` already pads MARA and VIP to
+        # five, so a five-character symbol like GOOGL costs nothing.
+        #
+        # Precision is given up exactly where it stops mattering. Cents on a
+        # four-figure share price and the difference between 123x and 123.4x
+        # are not what anyone reads this table for; a wrapped row on mobile
+        # costs every column at once.
+        close = (f"{s['close']:>6.2f}" if s["close"] < 1000
+                 else f"{s['close']:>6.0f}")
+        volx = (f"{s['vol_x']:>4.1f}x" if s["vol_x"] < 100
+                else f"{min(s['vol_x'], 9999):>4.0f}x")
         lines.append(
-            f"{s['label']:<5}{s['close']:>6.2f}{s['pct']:>6.1f}%"
-            f"{s['vol_x']:>4.1f}x{mark}{pos:>3.0f}{short}"
+            f"{s['label']:<5}{close}{s['pct']:>6.1f}%{volx}{mark}"
+            f"{pos:>3.0f}{short}"
         )
     return "\n".join(lines)
 
