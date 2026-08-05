@@ -55,9 +55,21 @@ from watchlist import WATCHLIST
 UA = os.environ.get("SEC_USER_AGENT", "").strip()
 SUBMISSIONS = "https://data.sec.gov/submissions/CIK%s.json"
 
-# The 14 measured morning-regime delays, minutes, from docs/press-monitor.md.
+# Delay is bimodal by time of day and the two regimes barely overlap, so a
+# fire is drawn from the pool its own NOMINAL hour falls in. Bootstrapping
+# morning delays for every fire understates coverage badly, because 55% of
+# filings land in the evening where runs arrive an hour sooner.
+# Both sets from docs/press-monitor.md.
 MORNING_DELAYS = [142, 152, 153, 113, 173, 134, 83, 85, 159, 140, 154, 147,
-                  132, 116]
+                  132, 116]                                    # 05:00-15:59
+EVENING_DELAYS = [63, 60, 61, 66, 69, 64, 61, 62, 55, 53, 60, 61, 63, 71,
+                  52, 51]                                      # 16:00-23:59
+REGIME_SPLIT_HOUR = 16
+
+
+def delay_pool(nominal_minute):
+    return (MORNING_DELAYS if nominal_minute < REGIME_SPLIT_HOUR * 60
+            else EVENING_DELAYS)
 
 MIN_GAP = 3          # minutes; matches the loop's boundary guard
 BOUNDARY = 15
@@ -161,7 +173,7 @@ def simulate(first_hour, budget, per_hour, rng):
     for h in range(first_hour, LAST_HOUR + 1):
         for k in range(per_hour):
             nominal.append(h * 60 + MINUTE + k * (60 // per_hour))
-    arrivals = sorted(n + rng.choice(MORNING_DELAYS) for n in nominal)
+    arrivals = sorted(n + rng.choice(delay_pool(n)) for n in nominal)
 
     passes, cancelled = [], 0
     running_until = None
@@ -287,10 +299,11 @@ def main():
     print("\n" + "=" * 78)
     print("2. COVERAGE BY CONFIGURATION")
     print("=" * 78)
-    print("  Delay bootstrapped per fire from the 14 measured morning values")
-    print("  (%d..%d min, mean %.0f). %d simulated days each."
-          % (min(MORNING_DELAYS), max(MORNING_DELAYS),
-             sum(MORNING_DELAYS) / len(MORNING_DELAYS), TRIALS))
+    print("  Delay bootstrapped per fire from the regime its nominal hour")
+    print("  falls in: morning %d..%d (n=%d), evening %d..%d (n=%d)."
+          % (min(MORNING_DELAYS), max(MORNING_DELAYS), len(MORNING_DELAYS),
+             min(EVENING_DELAYS), max(EVENING_DELAYS), len(EVENING_DELAYS)))
+    print("  %d simulated days each." % TRIALS)
     print("  Coverage weighted by the real filing-time distribution above.\n")
     print("  %-22s %8s %8s %8s %8s %8s" %
           ("config", "<=15m", "<=30m", "median", "p90", "cancel"))

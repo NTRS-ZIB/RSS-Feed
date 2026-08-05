@@ -267,6 +267,207 @@ WATCHLIST = [
         # /rss/news-releases.xml pattern as VIP.
         "ir_feed": "https://investors.cipherdigital.com/rss/news-releases.xml",
     },
+    {
+        "ticker": "GLXY",
+        "name": "Galaxy Digital",
+        # NOT 0001405064. That is Galaxy Digital Holdings Ltd., the Cayman
+        # entity that listed in Toronto, and it is this redomiciliation's
+        # HUT-shaped trap: it is named "Galaxy Digital", it appears first in an
+        # EDGAR name search, and it has NEVER filed a periodic report — only
+        # 425s, the last on 2025-05-06. Pinning it returns an empty filing list
+        # and no error.
+        #
+        # This CIK is the one that files. Registered 2021-05-05 as Galaxy
+        # Digital Pubco Inc. and renamed 2021-09-14, it became the reporting
+        # parent at the US listing: 8-A12B and CERT both 2025-05-15, first 10-Q
+        # 2025-05-13, first 10-K 2026-02-26, most recent 8-K 2026-08-05.
+        # Confirmed against a 10-Q accession (0001859392-26-000054), not
+        # against the ticker.
+        #
+        # Thirty-four registrants match "galaxy digital" in EDGAR. All but
+        # these two are funds, LPs and 13F filers; none files a periodic
+        # report, so "which one files today" separates them cleanly.
+        "cik": "0001859392",
+        # Observed 2025-05-19 to 2026-07-13 by a 120-period sweep, unbroken,
+        # and named "GALAXY DIGITAL INC CL A (DE)" in the SEC's own files —
+        # the (DE) is the redomiciliation, visible in the identifier.
+        #
+        # It starts three trading days after the Nasdaq listing and nothing
+        # trades under this company earlier, because the Cayman predecessor
+        # traded in TORONTO and never appears in US fails data at any depth.
+        # So there is no retired identifier to carry, and that is a measured
+        # absence rather than an unswept one.
+        "cusips": ["36317J209"],
+        "alt_symbols": [],
+        "ir_feed": None,                  # NOT CHECKED YET — see below
+    },
+    {
+        "ticker": "APLD",
+        "name": "Applied Digital",
+        # A 2001-era CIK on a company that took this name in 2023: Reel Staff
+        # -> Flight Safety Technologies -> Applied Science Products -> Applied
+        # Blockchain (2021-04) -> Applied Digital (2023-02). One registrant
+        # throughout, so the low number is correct rather than a wrong entity —
+        # the same shape as WULF's 1999-era CIK.
+        #
+        # formerNames carries a FIFTH row that reads like a rename and is not
+        # one: "Applied Digital Corp." — the current name — from 2023-02-09 to
+        # 2026-08-04, an end date of yesterday. The 10-K filed 2026-07-29
+        # (0001144879-26-000048) carries the conformed name "Applied Digital
+        # Corp.", and the ticker and exchange are unchanged. An end date on a
+        # formerNames row is an EDGAR record refresh, not evidence of a rename.
+        "cik": "0001144879",
+        # [1] retired 2022-04-13, replaced by [0] on 2022-04-18 at the Nasdaq
+        # uplisting — the same week as the 424B4. The ISSUER prefix does not
+        # move (038169 both sides), only the issue number, so this is a
+        # corporate action on one issuer rather than a reassignment. Contrast
+        # HUT and DGXX, where the prefix itself changed.
+        #
+        # The 2023 rename is visible in the description against an UNCHANGED
+        # identifier: 038169207 reads "APPLIED BLOCKCHAIN INC COM NEW" in
+        # 2022-05 and "APPLIED DIGITAL CORP COM NEW" from 2024-02. That is the
+        # rule in this file's header demonstrated in data — a CUSIP survives a
+        # rename but not a corporate action.
+        "cusips": ["038169207", "038169108"],
+        # None. The symbol was APLD across both eras — a 120-period sweep sees
+        # it from 2021-07-29, in the Applied Blockchain era, unbroken to today.
+        # So the four earlier NAMES on this CIK never traded under a symbol
+        # this window reaches, and none is recorded from the filing that lists
+        # them.
+        "alt_symbols": [],
+        "ir_feed": None,                  # NOT CHECKED YET — see below
+    },
+    {
+        "ticker": "BTDR",
+        "name": "Bitdeer Technologies",
+        "cik": "0001899123",
+        # CINS: G prefix, non-US issuer, same as WYFI's G96115103. Observed
+        # 2023-04-14 to 2026-07-13 by a 120-period sweep, unbroken from the
+        # listing date onward — its whole life as a US-traded security, so
+        # there is nothing earlier to miss.
+        "cusips": ["G11448100"],
+        "alt_symbols": [],
+        # FOREIGN PRIVATE ISSUER — confirmed from the filing record, not from
+        # the address: 99 6-Ks and 5 20-Fs in the recent block, no 10-K and no
+        # 8-K at any point, first 20-F 2023-04-19. State of incorporation E9
+        # (Cayman Islands), operations in Singapore. So it behaves like IREN
+        # and DGXX, and the earnings calendar reaches it through its 20-F/6-K
+        # fallback rather than through 10-K/8-K.
+        "ir_feed": None,                  # NOT CHECKED YET — see below
+    },
+    {
+        "ticker": "SPCX",
+        "name": "Space Exploration Technologies",
+        # The CIK dates to 2002 and the public company does not. It is a
+        # long-dormant private-placement filer — REGDEX and Form D from
+        # 2002-08-19 onward — that became a reporting company at the IPO. No
+        # formerNames, so the registrant is continuous and this is the same
+        # entity throughout.
+        "cik": "0001181412",
+        # ONE identifier, not the two the sweep proposed. 84615Q103 is
+        # "SPACE EXPL TECHNOLOGIES CORP C" and runs 2026-06-15 to 2026-07-14,
+        # from three days after the IPO.
+        #
+        # CRITICAL: the sweep also reported 19423L672 under this ticker,
+        # 2021-07-16 to 2026-04-07, and it is NOT this company. The SEC's own
+        # description names it "COLLABORATIVE INVT SER TR SPAC" — a SPAC ETF
+        # that held the ticker SPCX until April 2026, two months before this
+        # company existed as a security. THE TICKER WAS RECYCLED, and a
+        # recycled ticker is indistinguishable from a rename in the three
+        # columns audit_identifiers.py reads.
+        #
+        # Nothing flagged it. The COLLISIONS check needs a row whose symbol and
+        # CUSIP name different companies, and with "cusips": [] there was no
+        # pin to collide with — so a brand-new company is exactly the case that
+        # check cannot cover. It was caught by reading the DESCRIPTION column
+        # of the same files, which the audit does not parse. Do that before
+        # accepting any identifier that predates a company's own listing.
+        "cusips": ["84615Q103"],
+        # Deliberately empty, and it must stay that way. The pre-IPO SPCX rows
+        # belong to that ETF, so SPCX is a symbol this company shares with a
+        # dead security rather than one it inherited.
+        "alt_symbols": [],
+        # UNDER TWO MONTHS PUBLIC, and that is a property of the roster rather
+        # than a temporary inconvenience. 8-A12B and CERT 2026-06-10, 424B4
+        # 2026-06-12, first 8-K 2026-06-15. Its FIRST AND ONLY 10-Q was filed
+        # 2026-08-04 for the period ended 2026-06-30; there is no 10-K.
+        #
+        # What that costs, per component:
+        #   - crossings.py SKIPS IT ENTIRELY. MIN_BARS is 60 and the IPO is
+        #     ~37 sessions back, so it lands in `missing` and is printed as
+        #     "N bar(s) — too few, skipped". In the embed it joins "No data
+        #     this run", alongside genuine feed failures — the one place this
+        #     reads as a fault rather than as a young listing. It starts
+        #     reporting about 2026-09-08 and carries the `~` shorter-window
+        #     mark until roughly 2027-06.
+        #   - dilution.py reports it as `-` with a `~`, and says why in the
+        #     footer: "under a year of reported history". `year_reason` is
+        #     "thin", which the component distinguishes from "split" precisely
+        #     so a young company does not read as a corporate action. Nothing
+        #     is wrong here; the trailing-year figure simply begins mid-2027.
+        #   - the staleness check needs STALE_MIN_DAYS (4) distinct publication
+        #     days before it will judge a source. That does not bite yet
+        #     because there is no feed to judge — it becomes the first thing to
+        #     check if one is added.
+        "ir_feed": None,                  # NOT CHECKED YET — see below
+    },
+    {
+        "ticker": "ABTC",
+        "name": "American Bitcoin",
+        # NOT 0002068580, which EDGAR ALSO names "American Bitcoin Corp." That
+        # is the private company that came through the reverse merger; its only
+        # filing is a Form D on 2025-07-09 and it files no periodic reports.
+        # Two live registrants under one name is HUT's silent failure reached
+        # by a different route — a name search alone cannot separate them.
+        #
+        # The reporting registrant is a 2018 SPAC renamed three times: MTech
+        # Acquisition Holdings (2018-11) -> Akerna (2018-12) -> Gryphon Digital
+        # Mining (2024-02) -> American Bitcoin (2025-09-03). The registrant
+        # continues across all of them — a succession, not a new one — so a CIK
+        # seven years older than the company is correct. Confirmed against a
+        # 10-Q accession, 0001193125-26-329472, filed 2026-08-03 for the period
+        # ended 2026-06-30.
+        "cik": "0001755953",
+        # [1] retired 2026-07-06 and [0] begins the same day. Same issuer
+        # prefix 02462A, issue number 104 -> 203, and the descriptions read
+        # "AMERICAN BITCOIN CORP COM CL A" then "AMERICAN BITCOIN CORP CL A
+        # NEW" — a corporate action on one issuer, five weeks old at the time
+        # of writing, not a reassignment.
+        #
+        # Both are American-Bitcoin-era. The sweep sees nothing under this
+        # company before 2025-09-04, the day after the rename, because the
+        # September 2025 combination reassigned at ISSUER level: Gryphon
+        # traded under 400510103 and Akerna under 00973W102/00973W300, neither
+        # of which shares this prefix. So a pinned CUSIP cannot bridge back to
+        # the earlier eras in one hop — see alt_symbols.
+        "cusips": ["02462A203", "02462A104"],
+        # ABTCZZZZ is not a ticker. NSCC uses a ZZZZ suffix while a symbol
+        # change processes, and here it occupies the single settlement day of
+        # the CUSIP changeover, 2026-07-06 — the same placeholder as DGXX's
+        # DGHIZZZZ and HUT's HUTZZZZ. Listed because it occurs in the data.
+        #
+        # GRYP and KERN are NOT here, and that is an UNDER-REPORT rather than a
+        # measured absence. Both exist in the fails files against this
+        # registrant's earlier names — "GRYPHON DIGITAL MNG INC COM" under
+        # 400510103, "AKERNA CORP COM" under 00973W102 — but establishing them
+        # means pinning those CUSIPs and re-sweeping, not copying them out of a
+        # probe. Until that is done, an FTD_REPLAY reaching past 2025-09-03
+        # loses this company's rows. A pinned CUSIP bridges one rename per
+        # pass, and this registrant has three.
+        #
+        # MTEC, the 2018-19 SPAC symbol, sits outside a 120-period window
+        # altogether and cannot be established from these files at any depth
+        # they reach.
+        "alt_symbols": ["ABTCZZZZ"],
+        "ir_feed": None,                  # NOT CHECKED YET — see below
+    },
+    # THE FIVE `ir_feed: None` VALUES ABOVE MEAN SOMETHING DIFFERENT from the
+    # three that precede them. DGXX's None means "renders client-side, cannot
+    # be read"; HUT's means "no feed exists, so it is scraped instead". Both
+    # are measured absences. These five mean only "not looked for yet" — the
+    # companies were added on 2026-08-05 without a newsroom check. Each is
+    # EDGAR-only until someone checks, which is safe but not the same as
+    # covered. Do not read these as evidence that no feed exists.
 ]
 
 # ------------------------------------------------------------------ VIEWS ---
