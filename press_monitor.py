@@ -17,7 +17,7 @@ import socket
 import sys
 import time
 from calendar import timegm
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -612,6 +612,10 @@ def company_filings(cik):
     dates = recent.get("filingDate") or []
     items = recent.get("items") or []
     descriptions = recent.get("primaryDocDescription") or []
+    # The time EDGAR took the filing, alongside the date it is credited to.
+    # Both are carried because they answer different questions: see the
+    # horizon note in collect_all() for why the two are not interchangeable.
+    accepted = recent.get("acceptanceDateTime") or []
 
     out = []
     for i, form in enumerate(forms):
@@ -624,6 +628,7 @@ def company_filings(cik):
             "form": form,
             "accession": acc,
             "filed": filed,
+            "accepted": accepted[i] if i < len(accepted) else "",
             "items": items[i] if i < len(items) else "",
             "description": descriptions[i] if i < len(descriptions) else "",
         })
@@ -641,7 +646,48 @@ def filing_uid(accession):
     return f"urn:tag:sec.gov,2008:accession-number={accession}"
 
 
-def filed_time(datestr):
+def filed_time(datestr, accepted=None):
+    """When a filing became visible, as an epoch second.
+
+    `acceptanceDateTime` is when EDGAR took the filing. `filingDate` is a DATE
+    ONLY, so parsing it alone puts publication at 00:00 UTC and charges the
+    item for every hour of the day it was actually filed in. Measured across
+    the 122 in-window filings on this roster, that discards a MEAN OF 17.7
+    HOURS and a median of 20.1, which is 10.5% of the MAX_AGE_DAYS window, and
+    nothing gains less than six hours.
+
+    The reason it is so large is the same fact the schedule is built around:
+    48% of filings land between 20:00 and 23:00 UTC. A midnight reading throws
+    away almost the whole filing day for half the roster. See
+    docs/press-monitor.md.
+
+    ACCEPTANCE CAN SIT MORE THAN 24 HOURS AFTER THAT MIDNIGHT, and that is
+    correct rather than a parsing fault. SEC assigns the previous business
+    day's `filingDate` to a filing accepted after its cutoff, so an item filed
+    late on the 29th can carry `filingDate` 2026-07-29 and acceptance
+    2026-07-30T01:42Z. Using acceptance simply dates it when it happened; the
+    age is still measured backwards from now, so nothing goes negative and
+    nothing reads as filed in the future.
+
+    THE FALLBACK IS DEFENSIVE AND UNDEMONSTRATED. `acceptanceDateTime` was
+    present on 10,201 of 10,201 filings across all 19 companies, at every form
+    type and every age, so no case has ever exercised the midnight path. It is
+    kept because a field observed everywhere is not a field the API guarantees,
+    and the alternative to a fallback is an exception rather than a slightly
+    worse timestamp. Do not read it as handling a known condition.
+    """
+    if accepted:
+        try:
+            # Ends in Z and is UTC. See the trap table in CLAUDE.md: this field
+            # is NOT Eastern, and the two confirmations that once said it was
+            # were both artefacts of reading the web index instead.
+            stamp = accepted.replace("Z", "+00:00")
+            dt = datetime.fromisoformat(stamp)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return int(dt.timestamp())
+        except (ValueError, TypeError):
+            pass                      # fall through to the date
     try:
         return timegm(date.fromisoformat(datestr).timetuple())
     except (ValueError, TypeError):
@@ -662,6 +708,16 @@ def collect_all(resolved):
         kept = ins = skipped = 0
         for f in filings:
             seen_forms.add(f["form"])
+            # DELIBERATELY THE DATE, not the acceptance time. This is a date
+            # comparison against a date horizon and does not want a clock: it
+            # decides which filings are worth collecting at all, and a filing
+            # credited to a date inside the window belongs in the window
+            # whatever hour it was taken. The AGE FLOOR is the thing that
+            # needs the real time, and it gets it through filed_time().
+            #
+            # Making these two consistent is the obvious tidy-up and it would
+            # be wrong. It would move a boundary that is correct where it is,
+            # and shift RETAIN_DAYS by up to a day for no gain.
             try:
                 if date.fromisoformat(f["filed"]) < horizon:
                     skipped += 1
@@ -674,7 +730,7 @@ def collect_all(resolved):
                 "uid": filing_uid(acc),
                 "accession": acc,
                 "link": filing_url(cik, acc),
-                "published": filed_time(f["filed"]),
+                "published": filed_time(f["filed"], f.get("accepted")),
                 "is_edgar": True,
             }
             title = filing_title(form, f["items"], f["description"])

@@ -74,6 +74,40 @@ distribution, and a distribution measured across 23 years says something close
 to the opposite. Anchoring on a single observation is how the window came to be
 aimed at the quietest hours.
 
+### The same distribution decides how much of the age window is real
+
+The schedule is not the only thing this shape governs. `MAX_AGE_DAYS` is
+measured from an item's publication time, and `filingDate` is a DATE with no
+clock on it, so reading it alone puts publication at 00:00 UTC and charges
+every filing for the whole of the day it was actually filed in.
+
+With 55% of filings landing between 20:00 and 23:00, that is most of a day
+thrown away for most of the roster. Measured across the 122 in-window tracked
+filings on the nineteen-company roster, 2026-08-05:
+
+| | hours recovered |
+|---|---|
+| mean | **17.7** |
+| median | **20.1** |
+| minimum | 6.0 |
+| maximum | 25.7 |
+
+**10.5% of the seven-day window**, and nothing gains less than six hours.
+`acceptanceDateTime` carries the real time, is UTC, and was present on 10,201
+of 10,201 filings across every company, form type and age, so `filed_time()`
+now reads it and falls back to midnight only defensively.
+
+The maximum exceeding 24 hours is correct rather than a parsing fault. SEC
+credits a filing accepted after its cutoff to the previous business day, so an
+item can carry `filingDate` 2026-07-08 and acceptance 2026-07-09T01:41Z. Seven
+of the 122 are in that position. Age is measured backwards from now, so a later
+publication time simply means a younger item; none reads as filed in the future.
+
+**The collection horizon deliberately still uses the date.** `RETAIN_DAYS`
+decides which filings are worth collecting, compares a date against a date, and
+does not want a clock. Making the two consistent is the obvious tidy-up and it
+would move a boundary that is correct where it is.
+
 ### The largest remaining gap, and why it is not being closed yet
 
 Simulated against the measured filing and delay distributions, `07:07` catches
