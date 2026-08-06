@@ -116,6 +116,19 @@ def family(form):
     return None
 
 
+# EDGAR's `primaryDocument` for a structured 13D/G is
+# `xslSCHEDULE_13D_X02/primary_doc.xml` — the XSL-RENDERED HTML VIEW, not the
+# XML. Fetching it returns HTML and ElementTree dies on the first unclosed tag,
+# which reads exactly like "the filing is not structured after all". The raw
+# document sits in the same accession directory with the stylesheet segment
+# removed.
+XSL_SEGMENT = re.compile(r"^xsl[A-Z0-9_]+/", re.I)
+
+
+def raw_xml_path(doc):
+    return XSL_SEGMENT.sub("", doc)
+
+
 def roster():
     ciks = watchlist.ciks()
     return {t: v for t, v in ciks.items() if not ONLY or t in ONLY}
@@ -239,7 +252,7 @@ def phase_structured():
         sample = xmls[-1]
         url = ARCHIVE.format(cik=int(cik),
                              nodash=sample["accession"].replace("-", ""),
-                             doc=sample["doc"])
+                             doc=raw_xml_path(sample["doc"]))
         try:
             raw = fetch(url, as_json=False)
             fetched += 1
@@ -382,7 +395,7 @@ def phase_timeline():
                 break
             url = ARCHIVE.format(cik=int(cik),
                                  nodash=r["accession"].replace("-", ""),
-                                 doc=r["doc"])
+                                 doc=raw_xml_path(r["doc"]))
             try:
                 root = ET.fromstring(fetch(url, as_json=False))
                 fetched += 1
