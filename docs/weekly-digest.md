@@ -158,27 +158,27 @@ week       denom     =0   =1   =2   =3   names at >=3
 2026-W26       7      7    8    3    1   ABTC
 2026-W27       7     11    4    4    0   nothing converged this week
 2026-W28       7      6    8    4    1   ANY
-2026-W29       7     10    8    1    0   nothing converged this week
+2026-W29       7     12    4    3    0   nothing converged this week
 2026-W30       6     14    3    2    0   nothing converged this week
-2026-W31       8     10    4    3    2   ANY, NUAI
+2026-W31       8      9    5    2    3   ABTC, ANY, NUAI
 
-pooled               93   60   32    5
-                    49%  32%  17%   3%
+pooled               94   57   33    6
+                    49%  30%  17%   3%
 ```
 
 | threshold | ticker-weeks | per week | share of roster |
 |---|---|---|---|
-| >=1 | 97 | 9.7 | 51% |
-| >=2 | 37 | 3.7 | 19% |
-| **>=3** | **5** | **0.5** | **3%** |
+| >=1 | 96 | 9.6 | 51% |
+| >=2 | 39 | 3.9 | 21% |
+| **>=3** | **6** | **0.6** | **3%** |
 
-**Set at 3 families.** The decay runs 0.65, 0.53, then **0.16** — a real break
+**Set at 3 families.** The decay runs 0.61, 0.58, then **0.18** — a real break
 between two and three. This is not the heartbeat case in
 [`rejected.md`](rejected.md), whose healthy and broken populations overlapped
 and admitted no threshold at all.
 
-At `>=2` the section would name 3.7 companies a week, a fifth of the roster,
-which is a second firehose rather than a filter. At `>=3` it names 0.5 and is
+At `>=2` the section would name 3.9 companies a week, a fifth of the roster,
+which is a second firehose rather than a filter. At `>=3` it names 0.6 and is
 **empty in six of the ten weeks**.
 
 **That is the intended behaviour.** A renderer must print *"nothing converged
@@ -305,6 +305,77 @@ Record size is **51 KB/week** with full daily detail. That is at the line the
 design set for collapsing the grid, and it will cross it as contributors are
 added.
 
+## The two renderings
+
+`digest_render.py`. Both are **pure functions of the verdict record** — a
+renderer that derived anything would be a second derivation to keep in step
+with the first, and the two would disagree the week it mattered. Both take
+`[older, ..., this week]`, so a claim spanning weeks reads the record rather
+than recomputing it.
+
+### The post
+
+Filter first; the summary is what is left over. Convergence, then the
+two-family tier, then persistence, then silence, then what could not be
+measured — and only after all of that, the `<=28`-character table of the week's
+moves and the material filings.
+
+Measured on real weeks:
+
+| | 2026-W31 (3 converged) | 2026-W30 (empty) |
+|---|---|---|
+| description | 1,397 / 4,096 | 1,092 / 4,096 |
+| embed total | 2,171 / 6,000 | 1,832 / 6,000 |
+| widest monospace line | 26 / 28 | 26 / 28 |
+
+`check_post()` **fails the run** on any of those rather than trusting them.
+Discord accepts an over-wide code block silently and wraps it on mobile, so
+the ceiling cannot be verified by reading the post — which is how the recap
+sat at 47 characters and the earnings calendar at 52 before both were rebuilt.
+
+Three rules held in code, none of them stylistic:
+
+1. **An empty convergence section prints.** Six of the ten backfilled weeks
+   land there. A section that vanishes when empty teaches the reader that its
+   absence means nothing happened, when it means the filter worked.
+2. **The two-family tier is listed, never promoted** — `At 2 families, not
+   promoted: BGDE, VIP`. Promoting 3.9 companies a week is the firehose the
+   threshold exists to prevent.
+3. **Never a silent cap.** When the post runs out of budget it says how many it
+   dropped and where they are.
+
+### The file
+
+`digest/YYYY-Www.md`, written once and never rewritten. **11.3 KB** for a week
+with three converged companies, 9.0 KB for an empty one — against 51 KB for
+the same week's JSON record.
+
+**The grid is what keeps that flat.** One glyph per company per *family*, not a
+block per company per contributor:
+
+```
+| | letters | shares | filings | FTD | market | sh int | sh vol | thresh |
+| **NUAI** | · | · | ● | ● | · | ● | · | · |
+| **SPCX** | · | · | · | ~ | ~ | ● | · | · |
+```
+
+`●` above threshold · `·` measured, routine · `~` rule not applicable · `✕`
+source failed · `–` nothing published.
+
+A contributor added later joins a family or adds **one column**, and no other
+section changes shape. The alternative — a subsection per company per
+contributor — is 19xN blocks and needs restructuring the first time N grows,
+which for a file article-writing reads for a year is the worse failure.
+
+The cells that say nothing are the point. *Nobody else on the roster did this*
+is a claim only the complete grid supports.
+
+Detail blocks sit outside the grid and carry only the non-routine cells: the
+figure, **the baseline it is measured against**, the per-session values, a
+source citation per claim, and **latency per figure rather than per section**,
+because an FTD number and a short-volume number in the same file are six weeks
+apart.
+
 ## Two traps found by running it
 
 **FINRA caps every response at 5,000 rows and says nothing about it.** Asking
@@ -322,6 +393,29 @@ settlement was counted twice and short interest fired 7.3 times a week from a
 source that publishes twice a month — a number that would have set the
 threshold wrongly while looking like a finding. Each settlement now lands in
 exactly one week, at settlement + 12 calendar days.
+
+## And three found by rendering it
+
+**Silence is the one section a missing source turns into an invention.** A dry
+run with EDGAR unavailable reported eleven companies as having filed nothing,
+which nothing had measured. Every other section *understates* when a source
+fails; this one asserts, because absence is its subject. It now names what did
+not run and downgrades to *"quiet on the measures that ran — NOT silence"*.
+
+**A verdict must not depend on how much history the caller happened to fetch.**
+`derive_ftd` took its median over every prior period in the fetch, so ABTC
+converged in a three-week render that pulled 8 half-month periods and did not
+in the ten-week backfill that pulled 11 — the same week, two answers. Bounded
+to `ftd_monitor.BASELINE_PERIODS`. Every other contributor was already bounded;
+this was the one reading *everything fetched*, and re-derivability is the
+premise the component rests on.
+
+**Detail keys are a shared namespace even though the dicts are not.**
+`baseline_median` meant a volume median to one contributor and a median of
+half-month fail peaks to another. The renderer matched the first and read a
+field only the second carries. Renamed to carry the quantity, and the backfill
+now prints every key claimed by more than one contributor so the next
+collision is visible rather than latent.
 
 ## Adding a contributor
 
