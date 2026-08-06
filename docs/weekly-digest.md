@@ -476,6 +476,35 @@ measured 45% rate. A Friday digest was never an option regardless: FINRA short
 volume is T+1 and `regsho.yml` runs at 23:00 UTC for the *previous* trade date,
 so Friday evening would report a four-day week as five.
 
+### The floor: `FIRST_LIVE_WEEK`
+
+The schedule landed mid-week on 2026-08-05, when the gate's target was
+**2026-W31** — a week that had ended the previous Friday. Left alone the first
+live post would have been five days stale, which is a poor opening for a
+component whose whole argument is that it reports a week while the week still
+means something.
+
+`FIRST_LIVE_WEEK = "2026-W32"`. Anything earlier is refused.
+
+**A floor, not a freshness window, and the difference is the catch-up.**
+*"Only post a week whose Saturday is today"* would also have delayed the first
+post, and would have destroyed the thing the daily cadence exists for: by
+Sunday the Saturday has passed, so a dropped Saturday would never be
+recovered. The floor leaves all seven fires per week intact and only ever
+refuses weeks that predate the component.
+
+```
+Wed 2026-08-05  -> 2026-W31   no-op, below the floor
+Thu 2026-08-06  -> 2026-W31   no-op
+Fri 2026-08-07  -> 2026-W31   no-op
+Sat 2026-08-08  -> 2026-W32   FIRST LIVE POST
+Sun 2026-08-09  -> 2026-W32   posts only if Saturday dropped
+```
+
+It stays after go-live. A fresh clone, a reset, or a hand-run with `digest/`
+absent would otherwise walk backwards through history and post weeks nobody
+asked for.
+
 ### There is no state file
 
 **The file for week N is itself the record that week N was produced.** A state

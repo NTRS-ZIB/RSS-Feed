@@ -822,6 +822,27 @@ def dry_run(week_key, prior=3):
 WEBHOOK = os.environ.get("WEBHOOK_URL_DIGEST", "").strip()
 DRY_RUN = os.environ.get("DRY_RUN", "").strip().lower() in ("1", "true", "yes")
 
+# THE FIRST WEEK THIS COMPONENT IS ALLOWED TO POST.
+#
+# The schedule landed mid-week on 2026-08-05, and the gate's target at that
+# moment was 2026-W31 — a week that ended the previous Friday. Left alone the
+# first live post would have been five days stale, which is a poor first
+# impression of a component whose entire argument is that it reports a week
+# while the week still means something. 2026-W32 is the first week whose
+# Saturday falls after the schedule existed.
+#
+# A FLOOR, NOT A FRESHNESS WINDOW, and the difference matters. "Only post a
+# week whose Saturday is today" would also have worked for the first post and
+# would have destroyed the catch-up the whole daily cadence exists for: by
+# Sunday the Saturday has passed, so a dropped Saturday would never be
+# recovered. The floor leaves all seven fires per week intact and only ever
+# refuses weeks that predate the component.
+#
+# It stays after go-live. A fresh clone, a reset, or a hand-run with the
+# digest/ directory absent would otherwise walk backwards through history and
+# post weeks nobody asked for.
+FIRST_LIVE_WEEK = "2026-W32"
+
 
 def already_produced(outdir, week):
     """THE GATE. The file for week N IS the record that week N was produced.
@@ -876,6 +897,15 @@ def produce(outdir="digest", prior=3):
     """
     week = wd.iso_week_key(wd.recent_weeks(1)[0])
     print(f"Target week: {week}")
+
+    # ISO week keys are zero-padded, so a lexical compare is a chronological
+    # one within a year and across the year boundary alike.
+    if week < FIRST_LIVE_WEEK:
+        print(f"{week} is before {FIRST_LIVE_WEEK}, the first week this "
+              f"component is allowed to post. Nothing to do — this is the "
+              f"floor working, not a fault. The first live post is "
+              f"{FIRST_LIVE_WEEK}, on its Saturday.")
+        return 0
 
     if already_produced(outdir, week):
         print(f"{outdir}/{week}.md exists — {week} has already been produced. "
