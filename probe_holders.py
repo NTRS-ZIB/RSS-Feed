@@ -350,7 +350,9 @@ NAME_TAGS = ["reportingPersonName", "filerName", "name", "personName",
              "companyName", "rptOwnerName"]
 PCT_TAGS = ["percentOfClass", "classPercent", "percentClass"]
 AMT_TAGS = ["aggregateAmountOwned", "amountBeneficiallyOwned", "aggregateAmount"]
-CUSIP_TAGS = ["issuerCUSIP", "cusip", "cusipNumber"]
+# Measured from a real filing, not guessed: the tag is
+# issuerCusipNumber, nested under coverPageHeader/issuerInfo/issuerCusips.
+CUSIP_TAGS = ["issuerCusipNumber", "issuerCUSIP", "cusip", "cusipNumber"]
 
 
 def first_text(root, names):
@@ -431,13 +433,87 @@ def phase_timeline():
     print(f"\n  documents fetched: {fetched}")
 
 
+NUMERIC = re.compile(r"^[\d,]+(?:\.\d+)?%?$")
+
+
+def phase_census():
+    """How much of the structured era is actually MACHINE-READABLE?
+
+    The elements exist. Their CONTENTS do not always: a meaningful minority of
+    filings put prose into percentOfClass and aggregateAmountOwned — "The
+    information required by this item is set forth above on the cover page" is
+    the common one, and some carry a whole explanatory paragraph. Structured is
+    not the same as clean, and the difference decides whether a component reads
+    these or parses them.
+    """
+    print("=" * 78)
+    print("CENSUS — of the structured era, how much parses?")
+    print("=" * 78)
+    print(f"{'':6}{'xml':>5}{'read':>6}{'pct ok':>8}{'prose':>7}{'group':>7}"
+          f"   {'holders':>8}  span")
+    fetched = 0
+    totals = Counter()
+    for ticker, (cik, _n) in sorted(roster().items()):
+        rows, _ = all_filings(cik)
+        xmls = sorted((r for r in rows if is_13x(r["form"])
+                       and r["doc"].endswith(".xml")), key=lambda r: r["filed"])
+        if not xmls:
+            print(f"{ticker:<6}{0:>5}   —      —      —      —          —")
+            continue
+        ok = prose = group = 0
+        holders, read = set(), 0
+        for r in xmls:
+            if fetched >= MAX_DOCS:
+                break
+            url = ARCHIVE.format(cik=int(cik),
+                                 nodash=r["accession"].replace("-", ""),
+                                 doc=raw_xml_path(r["doc"]))
+            try:
+                root = ET.fromstring(fetch(url, as_json=False))
+                fetched += 1
+                read += 1
+            except Exception:                                   # noqa: BLE001
+                continue
+            names = all_text(root, NAME_TAGS)
+            holders.update(names)
+            if len(names) > 1:
+                group += 1
+            pcts = all_text(root, PCT_TAGS)
+            if pcts and all(NUMERIC.match(p) for p in pcts):
+                ok += 1
+            elif pcts:
+                prose += 1
+            time.sleep(GAP)
+        totals["xml"] += len(xmls)
+        totals["read"] += read
+        totals["ok"] += ok
+        totals["prose"] += prose
+        totals["group"] += group
+        totals["holders"] += len(holders)
+        print(f"{ticker:<6}{len(xmls):>5}{read:>6}{ok:>8}{prose:>7}{group:>7}"
+              f"   {len(holders):>8}  {xmls[0]['filed']}..{xmls[-1]['filed']}")
+    print()
+    r = totals["read"] or 1
+    print(f"  {totals['xml']} structured filings, {totals['read']} read")
+    print(f"  percentOfClass fully numeric in {totals['ok']} "
+          f"({totals['ok'] / r * 100:.0f}%), prose in {totals['prose']} "
+          f"({totals['prose'] / r * 100:.0f}%)")
+    print(f"  group filings (more than one reporting person): "
+          f"{totals['group']} ({totals['group'] / r * 100:.0f}%)")
+    print(f"  distinct reporting persons summed across companies: "
+          f"{totals['holders']}")
+    if fetched >= MAX_DOCS:
+        print(f"  HIT THE {MAX_DOCS}-DOCUMENT CEILING — counts are truncated")
+
+
 def main():
     print(f"phase: {PHASE}   roster: "
           f"{', '.join(sorted(roster())) if ONLY else 'all 19'}\n")
     {"inventory": phase_inventory,
      "structured": phase_structured,
      "legacy": phase_legacy,
-     "timeline": phase_timeline}[PHASE]()
+     "timeline": phase_timeline,
+     "census": phase_census}[PHASE]()
     return 0
 
 
