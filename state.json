@@ -1,12 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0000064463-07-000033",
-  "urn:tag:sec.gov,2008:accession-number=0000064463-07-000027",
-  "urn:tag:sec.gov,2008:accession-number=0000064463-07-000026",
-  "urn:tag:sec.gov,2008:accession-number=0000064463-07-000025",
-  "urn:tag:sec.gov,2008:accession-number=0000064463-07-000021",
-  "urn:tag:sec.gov,2008:accession-number=0000064463-07-000018",
-  "urn:tag:sec.gov,2008:accession-number=0000064463-07-000017",
   "urn:tag:sec.gov,2008:accession-number=0000064463-07-000016",
   "urn:tag:sec.gov,2008:accession-number=0000064463-07-000015",
   "urn:tag:sec.gov,2008:accession-number=0000064463-07-000014",
@@ -999,7 +992,14 @@
   "urn:tag:sec.gov,2008:accession-number=0001083301-26-000166",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-085655",
   "urn:tag:sec.gov,2008:accession-number=0001859392-26-000086",
-  "urn:tag:sec.gov,2008:accession-number=0000315066-26-002020"
+  "urn:tag:sec.gov,2008:accession-number=0000315066-26-002020",
+  "urn:tag:sec.gov,2008:accession-number=0001507605-26-000022",
+  "urn:tag:sec.gov,2008:accession-number=0001507605-26-000020",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-338382",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-337999",
+  "https://ir.mara.com/news-events/press-releases/detail/1427/mara-announces-second-quarter-2026-results",
+  "fe8bfcb4-7130-4260-92c9-3ef874e72b1c",
+  "urn:tag:sec.gov,2008:accession-number=0001628280-26-054432"
  ],
  "initialized": true
 }
