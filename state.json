@@ -1,6 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0000064463-07-000034",
   "urn:tag:sec.gov,2008:accession-number=0000064463-07-000033",
   "urn:tag:sec.gov,2008:accession-number=0000064463-07-000027",
   "urn:tag:sec.gov,2008:accession-number=0000064463-07-000026",
@@ -999,7 +998,8 @@
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-326454",
   "urn:tag:sec.gov,2008:accession-number=0001083301-26-000166",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-085655",
-  "urn:tag:sec.gov,2008:accession-number=0001859392-26-000086"
+  "urn:tag:sec.gov,2008:accession-number=0001859392-26-000086",
+  "urn:tag:sec.gov,2008:accession-number=0000315066-26-002020"
  ],
  "initialized": true
 }
