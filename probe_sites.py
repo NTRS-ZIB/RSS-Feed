@@ -262,6 +262,23 @@ def sweep(ticker, cik, name):
                 print(f"        ...{frag}...")
     print()
 
+    # Arbitrary follow-up terms, for the second pass. The first pass narrows —
+    # it says which operators and states are worth asking about — and a
+    # question raised by the first pass is almost never answerable from the
+    # same fixed vocabulary. APLD's MISO hit is the case: three mentions, all
+    # about a generation project, and whether its own campuses sit on MISO
+    # needs "interconnection", "substation" and the site names instead.
+    extra = [e.strip() for e in
+             os.environ.get("SITES_EXTRA", "").split("|") if e.strip()]
+    if extra:
+        print("  FOLLOW-UP TERMS")
+        for term in extra:
+            n = len(re.findall(term, text, re.I))
+            print(f"    --- {term}: {n} ---")
+            for frag in excerpts(text, term, 6):
+                print(f"        ...{frag}...")
+        print()
+
     # Item 2 Properties (10-K) / Item 4.D Property (20-F) is where the answer
     # usually is, when the filing has not incorporated it by reference.
     print("  PROPERTIES SECTION")

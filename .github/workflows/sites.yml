@@ -15,6 +15,10 @@ on:
         description: "Roster tickers to sweep, comma separated"
         type: string
         default: "GLXY,APLD,BTDR,SPCX,ABTC"
+      extra:
+        description: "Follow-up regexes for a second pass, pipe separated"
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -34,4 +38,5 @@ jobs:
         env:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
           SITES_TICKERS: ${{ inputs.tickers }}
+          SITES_EXTRA: ${{ inputs.extra }}
         run: python -u probe_sites.py
