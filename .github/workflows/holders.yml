@@ -1,0 +1,46 @@
+name: Probe holders
+
+# Temporary probe. Can holder concentration be backfilled from EDGAR 13D/G?
+# Posts nothing, writes nothing, decides nothing — the output is read.
+#
+# Four phases, each bounding the next: inventory, structured, legacy, timeline.
+# The last is the one that decides whether there is anything to build, since a
+# roster of three institutions that never change reports a constant.
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: "inventory | structured | legacy | timeline"
+        type: string
+        default: "inventory"
+      tickers:
+        description: "Limit to these tickers, comma separated. Blank = all 19."
+        type: string
+        default: ""
+      max_docs:
+        description: "Ceiling on document fetches; reported when hit"
+        type: string
+        default: "400"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Probe
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          HOLDERS_PHASE: ${{ inputs.phase }}
+          HOLDERS_TICKERS: ${{ inputs.tickers }}
+          HOLDERS_MAX_DOCS: ${{ inputs.max_docs }}
+        run: python -u probe_holders.py
