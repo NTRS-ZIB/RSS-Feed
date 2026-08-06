@@ -1217,8 +1217,21 @@ def derive_ftd(c, ctx, week, sessions):
         return out
     period = fresh[-1]
     current = data[period] or {}
+    # THE BASELINE IS A FIXED WINDOW, NOT "EVERYTHING FETCHED".
+    #
+    # This read every prior period in the fetch, which made the verdict depend
+    # on how much history the caller happened to pull: ABTC converged in a
+    # three-week render that fetched 8 periods and did not in the ten-week
+    # backfill that fetched 11, for the same week. A digest whose answer moves
+    # with its own fetch window cannot be re-derived, and re-derivability is
+    # the whole premise.
+    #
+    # ftd_monitor.BASELINE_PERIODS is the owner's answer — six periods, three
+    # months — and it keeps only that many in its state file for the same
+    # reason.
     prior_periods = [p for p in sorted(data) if p < period
-                     and "error" not in (data[p] or {})]
+                     and "error" not in (data[p] or {})
+                     ][-ftd_monitor.BASELINE_PERIODS:]
     for t in TICKERS:
         row = current.get(t)
         prior_peaks = [(data[p] or {}).get(t, {}).get("peak")
@@ -1629,7 +1642,7 @@ def derive_one(week_key, prior_weeks=1):
     weeks = [monday - timedelta(days=7 * i)
              for i in range(prior_weeks, -1, -1)]
     span_start, span_end = weeks[0], weeks[-1] + timedelta(days=4)
-    ftd_periods = (len(weeks) // 2) + ftd_monitor.MIN_FLAG_PERIODS + 2
+    ftd_periods = (len(weeks) // 2) + ftd_monitor.BASELINE_PERIODS + 2
     ctx = gather(span_start, span_end, ftd_periods)
     return [build_week(ctx, m) for m in weeks], ctx
 
@@ -1837,7 +1850,11 @@ def main():
     span_start, span_end = weeks[0], weeks[-1] + timedelta(days=4)
     # Enough half-month periods to cover the span plus MIN_FLAG_PERIODS of
     # baseline behind it.
-    ftd_periods = (n // 2) + ftd_monitor.MIN_FLAG_PERIODS + 2
+    # Enough periods to cover the span plus a full BASELINE_PERIODS window
+    # behind its first week, so the earliest week's baseline is as wide as the
+    # latest's. A backfill whose first weeks rest on a narrower baseline than
+    # its last would report a distribution shaped partly by the fetch.
+    ftd_periods = (n // 2) + ftd_monitor.BASELINE_PERIODS + 2
 
     print(f"Backfilling {n} complete ISO weeks: "
           f"{iso_week_key(weeks[0])} .. {iso_week_key(weeks[-1])}\n")
