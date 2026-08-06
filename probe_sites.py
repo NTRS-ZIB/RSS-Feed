@@ -1,33 +1,79 @@
 #!/usr/bin/env python3
 """
-Read each company's most recent annual report for grid operators and sites.
+maintenance: which grid operators and which states a company's annual report
+actually names.
 
-Temporary probe, not a component. Posts nothing, writes nothing. It exists to
-resolve the UNSWEPT rows in docs/watchlist.md's operating footprint table, and
-the output is READ by a person — it does not decide anything itself.
+WHAT IT ANSWERS
+    The operating footprint table in docs/watchlist.md — one row per company,
+    carrying its grid, its states, and a FILED / ESTIMATE / OPEN tag per claim.
 
-WHY IT PRINTS EXCERPTS RATHER THAN A RANKING
---------------------------------------------
-Counts narrow, they do not answer. The first sweep produced four findings that
-a count alone would have got wrong, and each is a distinct failure mode:
+WHEN TO REACH FOR IT
+    Whenever a company is added to the roster. It arrives tagged UNSWEPT, and
+    that tag "resolves by doing the work" — this is the work. Five companies
+    needed it in a single week in August 2026.
 
-  glossary        SLNH's ERCOT appears 19 times and every one is a definition,
-                  not an operation. Tagged ESTIMATE for that reason.
-  executive bio   HUT's single Duke Energy hit is a list of where its
-                  executives previously worked, beside NextEra and Exelon. A
-                  count would have made it a fourth Duke company.
-  office not site CIFR's New York is leased office space; every data centre it
-                  describes is in Texas or Ohio.
-  state != grid   WULF's Texas site is in the Panhandle and the 10-K places it
-                  in SPP, not ERCOT.
+    Also after a company acquires, energizes or divests a site, since the row
+    is only as current as the annual report it was read from.
 
-So every hit is printed with its surrounding sentence, and Delaware and
-California are excluded from the state ranking outright — they are
-incorporation and counsel addresses.
+It posts nothing, writes nothing and decides nothing. **The output is read by a
+person.** That is not modesty about the tool: the six traps below are all
+invisible to a count, and four of the five companies swept on 2026-08-06 would
+have been tagged wrongly by reading the rankings alone.
 
-    SITES_TICKERS=GLXY,APLD,BTDR,SPCX,ABTC python -u probe_sites.py
+THE SIX TRAPS — THIS IS THE TOOL'S REAL CONTENT
+-----------------------------------------------
+Each has happened. None announces itself in a count.
 
-Needs SEC_USER_AGENT, so run it through the workflow rather than locally.
+  1. GLOSSARY.  SLNH's ERCOT appears 19 times and every one is a definition,
+     not an operation. It is ESTIMATE for exactly that reason.
+
+  2. EXECUTIVE BIO.  HUT's single Duke Energy hit is a list of where its
+     executives previously worked, beside NextEra and Exelon. A count would
+     have made it a fourth Duke company.
+
+  3. OFFICE, NOT SITE.  CIFR's New York is leased office space; every data
+     centre it describes is in Texas or Ohio. APLD's Texas count of 27 is a
+     Dallas office and an Irving warehouse. Auditors and counsel do this too —
+     ABTC's one Illinois mention is a former auditor's Deer Park address.
+
+  4. STATE IS NOT GRID.  WULF's Abernathy is in the Texas Panhandle and its
+     10-K places it in SPP. GLXY's Helios is in the Texas Panhandle and its
+     10-K places it in ERCOT. Two Panhandle sites, two operators; the region
+     decides nothing.
+
+  5. INCORPORATION STATE.  APLD is Nevada-incorporated and Nevada is its
+     top-ranked state at 39 mentions — cover page, Nevada Revised Statutes,
+     control share law, no site. This is DERIVED per filing rather than listed;
+     see incorporation_state(). A fixed list of Delaware and California was the
+     old rule and it failed on the fifth company swept.
+
+  6. A SINGLE MENTION CARRYING THE WHOLE ANSWER.  APLD's Louisiana appears
+     once, in Item 2, and it is an owned data centre — the business section
+     only ever calls it "a strategic southern U.S. market". The exact inverse
+     of trap 1: a count floor and a count ceiling are both wrong. The count
+     says where to look; the excerpt says what is there.
+
+So every hit prints with its surrounding sentence, and the follow-up pass
+exists because the fixed vocabulary narrows without answering — SITES_EXTRA is
+what actually resolved APLD and BTDR.
+
+TWO OUTCOMES THAT ARE ANSWERS, NOT GAPS
+---------------------------------------
+  No operator named.  The filing was read and does not say. That is OPEN, and
+  OPEN must never be quoted as a weak version of a claim. BTDR's 20-F describes
+  the largest US footprint of the 2026-08 additions and names no US operator
+  anywhere.
+
+  No annual report.  A company that has not reached its first one cannot be
+  swept by this method. That is not "unread" and it resolves on a known date.
+  SPCX is the case.
+
+RUNNING IT
+    gh workflow run "Probe sites" -f tickers=GLXY,APLD
+
+    -f extra='Polaris Forge|substation|interconnect\\w*'   second pass
+
+It needs SEC_USER_AGENT, so run it through the workflow rather than locally.
 """
 
 import html
@@ -100,9 +146,40 @@ STATES = [
     "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia",
     "Washington", "West Virginia", "Wisconsin", "Wyoming",
 ]
-# Incorporation and counsel addresses. Excluded from the RANKING, still
-# counted and printed, because "excluded" must not mean "invisible".
-IGNORE_IN_RANKING = {"Delaware", "California"}
+# Trap 5. The state to exclude is DERIVED from the filing, not listed here.
+#
+# The old rule was the fixed set {"Delaware", "California"} and it failed on
+# the fifth company swept: APLD is Nevada-incorporated, so Nevada ranked first
+# at 39 mentions with not one of them a site. A list of the cases seen so far
+# is an assumption that no further case exists, and the further case was two
+# companies away.
+#
+# Same shape as "NT " replacing four hand-enumerated late-filing forms in
+# press_monitor.py: match the thing itself rather than the instances of it.
+INCORPORATION_LINE = re.compile(
+    r"\(\s*State or other jurisdiction of\s+incorporation", re.I)
+# How far back from that line to look for the state name. The cover page runs
+# "Nevada 95-4863690 (State or other jurisdiction of incorporation...)", so the
+# name sits just before the IRS number.
+INCORPORATION_LOOKBACK = 90
+
+
+def incorporation_state(text):
+    """The state named on the cover page as the jurisdiction of incorporation.
+
+    None for a foreign private issuer, which has no such line — BTDR is Cayman
+    and files 20-F. That is the correct answer rather than a fallback: there is
+    no US incorporation state to discount.
+    """
+    m = INCORPORATION_LINE.search(text)
+    if not m:
+        return None
+    window = text[max(0, m.start() - INCORPORATION_LOOKBACK):m.start()]
+    found = [s for s in STATES
+             if re.search(r"\b" + re.escape(s) + r"\b", window)]
+    # Longest wins, so "New York" is not read as "York" and a window holding
+    # both a state and a city keeps the state.
+    return max(found, key=len) if found else None
 
 COUNTRIES = ["Norway", "Bhutan", "Ethiopia", "Canada", "Alberta", "Iceland",
              "Sweden", "Finland", "Paraguay", "Singapore", "Germany",
@@ -236,21 +313,34 @@ def sweep(ticker, cik, name):
             print(f"        ...{frag}...")
     print()
 
-    print("  STATES  (Delaware and California excluded from the ranking — "
-          "incorporation and counsel)")
+    incorporated = incorporation_state(text)
+    ignore = {incorporated} if incorporated else set()
+    print(f"  STATES  (incorporated in "
+          f"{incorporated or 'no US state named — foreign private issuer?'}"
+          f"{', excluded from the ranking' if incorporated else ''})")
     counts = {s: len(re.findall(r"\b" + re.escape(s) + r"\b", text))
               for s in STATES}
-    ranked = [(s, n) for s, n in counts.items()
-              if n and s not in IGNORE_IN_RANKING]
+    ranked = [(s, n) for s, n in counts.items() if n and s not in ignore]
     for s, n in sorted(ranked, key=lambda kv: -kv[1])[:8]:
         print(f"    --- {s}: {n} ---")
         for frag in excerpts(text, r"\b" + re.escape(s) + r"\b", 4):
             print(f"        ...{frag}...")
-    excluded = [(s, n) for s, n in counts.items()
-                if n and s in IGNORE_IN_RANKING]
+    # Excluded is not invisible. Trap 6 says a single mention can carry the
+    # whole answer, and a state discounted for one reason can still be a site.
+    excluded = [(s, n) for s, n in counts.items() if n and s in ignore]
     if excluded:
-        print("    excluded from ranking but present: "
-              + ", ".join(f"{s} {n}" for s, n in excluded))
+        print("    excluded from the ranking but present, and still worth "
+              "reading: " + ", ".join(f"{s} {n}" for s, n in excluded))
+        for s, _n in excluded:
+            for frag in excerpts(text, r"\b" + re.escape(s) + r"\b", 2):
+                print(f"        ...{frag}...")
+    # Trap 6 again, from the other end: the ranking shows the top eight, and
+    # APLD's answer was a state mentioned once. Anything with a low count is
+    # listed by name so it cannot be lost below the fold.
+    tail = sorted((s, n) for s, n in ranked if n <= 2)
+    if tail:
+        print("    mentioned once or twice — a low count is not a dismissal, "
+              "see trap 6: " + ", ".join(f"{s} {n}" for s, n in tail))
     print()
 
     print("  NON-US")

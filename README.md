@@ -70,6 +70,7 @@ audit_identifiers.py              maintenance: what each company trades as
 calibrate_staleness.py            maintenance: publication cadence per source
 audit_8k_items.py                 maintenance: 8-K item distribution
 check_metric_regime.py            maintenance: is a metric's move real or a regime shift
+probe_sites.py                    maintenance: grid operators and states a filing names
 ftd_monitor.py                    SEC fails-to-deliver
 threshold_list.py                 Reg SHO threshold list (exception report)
 comment_letters.py                SEC review correspondence
@@ -90,6 +91,7 @@ grid_context.py                   grid demand and natural gas
 .github/workflows/crossings.yml   crossings schedule and runner setup
 .github/workflows/grid.yml        grid context schedule and runner setup
 .github/workflows/digest.yml      digest schedule and runner setup
+.github/workflows/sites.yml       operating footprint sweep, manual only
 .github/workflows/audit.yml       identifier audit, manual only
 .github/workflows/calibrate.yml   staleness calibration, manual only
 .github/workflows/items.yml       8-K item audit, manual only

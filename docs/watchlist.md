@@ -472,19 +472,88 @@ That separation is the whole reason for the change.
 | SLNH | ERCOT? | Texas, New York, Kentucky | grid `ESTIMATE` · sites `FILED` — ERCOT appears 19 times, **every one in a glossary definition** |
 | ANY | MISO? | Iowa | `ESTIMATE` — read off hosted-capacity mentions, nothing else |
 | NUAI | **none named** | New Mexico? | sites `ESTIMATE` · grid `OPEN` — New Mexico 50x against Texas 44x, which **contradicts its own Midland, Texas dateline** |
-| GLXY | — | — | `UNSWEPT` |
-| APLD | — | — | `UNSWEPT` |
-| BTDR | — | — | `UNSWEPT` |
-| SPCX | — | — | `UNSWEPT` |
-| ABTC | — | — | `UNSWEPT` |
+| GLXY | ERCOT | Texas: Helios campus, West Texas panhandle | `FILED`: "ERCOT has approved over 1.6 GW of gross power capacity at our Helios campus" |
+| APLD | MISO? | North Dakota: Ellendale, Harwood, Jamestown; Louisiana | grid `ESTIMATE` · sites `FILED` — MISO appears **only** via the Base Electron generation partnership, never against a campus |
+| BTDR | **none named** | Texas: Rockdale; Ohio: Massillon, Clarington, Niles; Tennessee: Knoxville; Washington: Pangborn; Alberta: Fox Creek; Norway, Bhutan, Ethiopia, Malaysia | grid `OPEN` · sites `FILED` — a labelled capacity table, and **no US operator anywhere in the 20-F** |
+| ABTC | n/a — hosted at HUT's sites | Hut 8's Alpha (Niagara Falls NY), Medicine Hat (AB), Salt Creek (Orla TX), Vega (Amarillo TX) | sites `FILED` · grid `OPEN` — **owns and leases no real property.** Do not assign it grids; see below |
+| SPCX | — | — | `UNSWEPT` — **nothing to read yet**, not unread. No annual report exists |
 
 Rows are grouped by tag rather than by the order they were swept in, so the
-shape is visible at a glance: **ten `FILED`, three `ESTIMATE`, two `OPEN`
-grids, five `UNSWEPT`.**
+shape is visible at a glance: **eleven `FILED`, four `ESTIMATE`, three rows
+whose grid is `OPEN` with sites `FILED`, one `UNSWEPT`.**
 
 WULF, HUT and CIFR were swept separately, on 2026-08-03, having been added to
 the roster after the first sweep ran. All three name their operators outright,
-so all three are `FILED`.
+so all three are `FILED`. GLXY, APLD, BTDR, SPCX and ABTC were swept on
+2026-08-06 by [`probe_sites.py`](../probe_sites.py), two days after being added.
+
+#### Critical: two Texas Panhandle sites, two different grids
+
+This is the strongest statement of *state is not grid* the table can make,
+because **both cases now sit in it**:
+
+| | Site | Panhandle | Grid, per its own annual report |
+|---|---|---|---|
+| WULF | Abernathy | yes | **SPP** |
+| GLXY | Helios | yes | **ERCOT** |
+
+Neither the state nor the region determines the operator. Anyone tempted to
+infer a grid from a location has a counter-example two rows away, and the
+inference is wrong for one of the two whichever way it is made.
+
+#### `UNSWEPT` now means two different things, and SPCX has the second
+
+SPCX has **no annual report on file at all** — Form D, Form 3, 8-K, FWP,
+CORRESP and UPLOAD, and nothing else. Its first 10-K is due around February
+2027.
+
+So it cannot be swept by this method, and that is not the same state as the
+other four were in. Both read `UNSWEPT`, but:
+
+| | Means | Resolves |
+|---|---|---|
+| GLXY, APLD, BTDR, ABTC — until 2026-08-06 | the filing exists and nobody has read it | by doing the work |
+| SPCX | there is nothing to read | on a known date |
+
+The second needs no chasing and no reminder. Recording only the tag would have
+left someone re-checking a company whose answer cannot exist yet.
+
+#### Critical: ABTC owns nothing, and assigning it grids would double-count
+
+ABTC is a category this table has not had before. Its Item 2 Properties, in
+full substance:
+
+> "We do not own or lease any real property for our corporate offices. We
+> currently operate out of facilities provided by Hut 8... We use Hut 8's
+> facilities for our Bitcoin mining operations pursuant to a MCSA... Pursuant to
+> an Exclusivity Agreement, Hut 8 is the exclusive provider of hosting and
+> colocation services."
+
+Its miners run at four Hut 8 sites, and **HUT is on this roster**. Alpha is
+Niagara Falls; Medicine Hat is Alberta; Salt Creek and Vega are Texas — the same
+physical facilities already counted in HUT's row.
+
+**Do not "complete" this row by giving ABTC NYISO, AESO and ERCOT.** That is the
+tempting edit, it looks like filling a gap, and it would count Hut 8's
+facilities twice in every count taken off this table — including the grid tally
+below, which is what a region decision rests on. The row is not incomplete. A
+company whose entire footprint is another roster company's footprint has no
+grid exposure of its own to record.
+
+The filing names no operator in any case, so the grid claim is `OPEN` on the
+ordinary evidence standard as well.
+
+#### ABTC's 10-K is its own, not Gryphon's
+
+Worth recording because the opposite was the reasonable expectation. ABTC went
+public by reverse merger in September 2025, and the CIK carries the chain MTech
+→ Akerna → Gryphon Digital Mining → American Bitcoin. A predecessor's annual
+report sitting as the most recent one on a successor's CIK is a real hazard, and
+its properties would be the predecessor's.
+
+It is not this case. The 10-K filed 2026-03-27 for FY2025 is `American Bitcoin
+Corp.`, audited by KPMG, describing the Mergers and "Historical ABTC". Checked
+before its properties were read, which is the order that matters.
 
 #### MARA is `OPEN`, not `ESTIMATE`, and the distinction is the point
 
@@ -541,33 +610,117 @@ has been done to resolve which is right. `ESTIMATE` is not a softer word for
 *stated* — it is a claim carrying its own derivation so the derivation can be
 attacked, and this one has a contradiction sitting inside it.
 
-Three rows carry `ESTIMATE` — SLNH, ANY and NUAI. **None should be quoted as
-though a filing said it.** MARA is deliberately not among them: it is `OPEN`,
+Four rows carry `ESTIMATE` — SLNH, ANY, NUAI and APLD. **None should be quoted
+as though a filing said it.** MARA is deliberately not among them: it is `OPEN`,
 which is a different and more honest failure.
 
-Ignore Delaware and California in any keyword count. They are incorporation and
-counsel addresses, not sites.
+APLD is the newest and its derivation is this: MISO is named three times and
+every one attaches to the Base Electron partnership — an independent power
+producer developing 1.2 GW of front-of-the-meter generation "anticipated to
+expand power and capacity supplied to the grid and utility customers in the
+MISO region". That places a related party's generation project in MISO. It does
+not place Polaris Forge on MISO, and no utility is named anywhere: Otter Tail 0,
+Basin Electric 0, Montana-Dakota 0. Same shape as SLNH — the operator is in the
+document, just not about the company's own load.
+
+#### A count floor and a count ceiling are both wrong
+
+Worth recording together, because either alone teaches half the lesson: **a
+mention count is not evidence in either direction.**
+
+| | Count | What it was worth |
+|---|---|---|
+| SLNH, ERCOT | **19** | nothing — every one a glossary definition |
+| APLD, Louisiana | **1** | the whole answer — an owned data centre |
+
+APLD's business section only ever calls Delta Forge "a strategic southern U.S.
+market". The state appears exactly once, in Item 2: "We own our Polaris Forge
+and Delta Forge data centers... located in North Dakota and Louisiana."
+Meanwhile its Texas count is 27 and every one is a Dallas office or an Irving
+warehouse.
+
+A high count cannot be trusted and a low count cannot be dismissed. **The count
+says where to look; the excerpt says what is there.**
+
+#### The state to ignore is derived, not listed
+
+This rule used to read *ignore Delaware and California — incorporation and
+counsel addresses*. A fixed list, and it failed on the fifth company swept:
+**APLD is Nevada-incorporated, and Nevada is its top state at 39 mentions** —
+the cover page, the Nevada Revised Statutes, its control share law, and not one
+of them a site.
+
+The rule is now derived per filing: **exclude the jurisdiction the cover page
+names as the state of incorporation.** `probe_sites.py` reads it out of the
+"(State or other jurisdiction of incorporation or organization)" line rather
+than carrying a list.
+
+Same shape as `"NT "` replacing four hand-enumerated late-filing forms in
+`press_monitor.py`. A list of the cases seen so far is an assumption that no
+further case exists, and here the further case was two companies away rather
+than years. A foreign private issuer has no such line — BTDR is Cayman and files
+20-F — so the derivation finds nothing and excludes nothing, which is the
+correct answer rather than a fallback.
+
+Counsel and auditor cities do not generalise the same way and are still read
+rather than filtered. ABTC's single Illinois mention is a former auditor's Deer
+Park address; most of its five New York mentions are KPMG's signature block.
 
 ### How many companies sit on each grid
 
 Counted from the table above, so a region choice can be made against the roster
 rather than against habit. A company appears under every grid its filing names.
 
-**Over the fourteen swept companies, not the roster** — the five `UNSWEPT` rows
-contribute to nothing here.
+**Over the eighteen swept companies** — SPCX has no annual report and
+contributes to nothing here. **ABTC contributes to nothing either, and that is a
+decision rather than an omission:** its four sites are HUT's, already counted in
+HUT's row, so adding it would count the same facilities twice.
 
 | Grid | `FILED` | Also claimed, unverified |
 |---|---|---|
 | NYISO | VIP, DGXX, WULF, HUT — **4** | SLNH has a New York site, grid unnamed |
-| ERCOT | IREN, CIFR, HUT — **3** | SLNH, NUAI, and MARA's Texas sites |
-| PJM | BGDE — **1** operating | CIFR's Ulysses site energizes Q4 2027; MARA has Ohio sites |
+| ERCOT | IREN, CIFR, HUT, **GLXY** — **4** | SLNH, NUAI, MARA's Texas sites, BTDR's Rockdale |
+| PJM | BGDE — **1** operating | CIFR's Ulysses energizes Q4 2027; MARA has Ohio sites; **BTDR has three Ohio sites, ~991 MW** |
 | SPP | WULF — **1** | |
-| AESO | HUT — **1** | Alberta; outside any US data source |
-| MISO | none | ANY, `ESTIMATE` |
-| No RTO | WYFI, CLSK — **2** | vertically integrated utilities |
+| AESO | HUT — **1** | Alberta; outside any US data source. BTDR's Fox Creek site is also Alberta |
+| MISO | none | ANY and **APLD**, both `ESTIMATE` |
+| No RTO | WYFI, CLSK — **2** | vertically integrated utilities; BTDR's Pangborn is hydro-supplied |
 
-`grid_context.py` reads ERCOT and PJM. That pair was chosen when the roster was
-eleven and this table did not exist; it has not been reviewed against it.
+`grid_context.py` reads **ERCOT, PJM and NYISO**. That set was chosen when the
+roster was fourteen, and NYISO was added on the evidence of four `FILED`
+companies.
+
+#### The 2026-08-06 sweep does not make a case for a fourth region
+
+The test was whether it put two or more of the five on a grid the component
+does not read. It did not. **One of the five landed on a grid at all, and it
+landed on ERCOT**, which is already read — moving ERCOT from three companies to
+four and tying NYISO.
+
+Nothing changed for SPP, MISO or AESO on the evidence standard the existing
+three met. MISO gained a second `ESTIMATE` and still has **zero** `FILED`, and
+by this table's own rule an `ESTIMATE` is a claim carrying its derivation, never
+quotable as though a filing said it. Two of those are not the four `FILED`
+companies NYISO cleared on. Applying the bar loosely once would make the tag
+mean nothing everywhere.
+
+**MISO is the strongest candidate for a fourth region.** APLD's estimate is
+better evidenced than ANY's — ANY's was read off hosted-capacity mentions, while
+APLD's comes from a named generation partnership placed in the MISO region —
+and APLD's North Dakota campuses carry 1,410 MW of contracted portfolio. It is
+still two estimates.
+
+**BTDR is the highest-leverage unknown on the roster.** Its US footprint is the
+largest of the five swept and among the largest anywhere here — Rockdale at 563
+MW, three Ohio sites totalling ~991 MW, Knoxville at 86 MW — and its 20-F names
+no US operator at all. Establishing its grids would plausibly move PJM from one
+company to two and ERCOT from four to five, which is the single change most
+likely to alter a region decision.
+
+**Its 20-F cannot answer it, and that is a boundary rather than a task.** This
+table takes filings. Resolving BTDR needs a source that is not one, and whether
+this table ever accepts non-filing evidence is a decision to take deliberately —
+not one to arrive at because a single row was inconvenient.
 
 ### Critical: VIP's exposure runs the opposite way
 
