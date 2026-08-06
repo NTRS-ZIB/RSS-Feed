@@ -315,6 +315,157 @@ def fetch_period(sess, url, cusips):
 # ------------------------------------------------------------- AGGREGATION --
 
 
+# ------------------------------------------------- SYMBOL COLLISION CHECK ---
+
+# What symbol_report() can say. COLLISION is the only one that means the roster
+# is wrong.
+COLLISION = "collision"      # two live securities under one ticker
+UNRECORDED = "unrecorded"    # a changeover marker the roster does not carry
+MARKER = "marker"            # a recorded placeholder, benign
+RENAME = "rename"            # disjoint ranges, benign
+
+# NSCC settlement-line markers. A symbol change in progress occupies a single
+# settlement date under a `ZZZZ` suffix, between the old symbol and the new.
+#
+# ONLY `ZZZZ` IS LISTED, AND THAT IS DELIBERATE. docs/watchlist.md records two
+# other marker families on this roster — `HUTXXXX`, the tail draining off a
+# retired CUSIP over ten days, and the `D` suffix on `HSSHD` and `MIGID`, which
+# nothing has explained. Neither has been observed tripping this check: both
+# sit in 2021 and 2023, outside the six-period window a routine run reads.
+# Adding them here would be claiming a fix for a failure nobody has seen, which
+# is the standard this repo holds everything else to.
+#
+# `MIGID` is the one to expect. docs/watchlist.md says it runs WHILE MIGI is
+# trading, so a deep FTD_REPLAY reaching 2021 will trip on it. When that
+# happens the fix is one more entry here — provided it is recorded in
+# alt_symbols, which it is.
+PLACEHOLDER_SUFFIXES = ("ZZZZ",)
+
+
+def placeholder_stem(symbol):
+    """The symbol a settlement-line marker stands in for, or None."""
+    for suffix in PLACEHOLDER_SUFFIXES:
+        if symbol.endswith(suffix) and len(symbol) > len(suffix):
+            return symbol[: -len(suffix)]
+    return None
+
+
+def recorded_marker(symbol, ticker):
+    """Is this a placeholder the ROSTER has recorded against this ticker?
+
+    Read out of watchlist.py rather than carried here, for the same reason
+    probe_sites.incorporation_state() reads the cover page instead of keeping a
+    list of states: a local list falls behind the roster silently, and the
+    roster already knows what these are.
+
+    THREE CONDITIONS, and the third is what keeps it narrow:
+
+      1. it has a marker suffix
+      2. the roster records the marker itself against this ticker
+      3. the roster records its STEM against this ticker too
+
+    Condition 2 alone would be far too broad — GREE is recorded against VIP and
+    is a real former ticker, so a rule that exempted every recorded symbol
+    would suppress the GREE -> SLNH collision this check exists to catch.
+    Condition 3 makes it specifically "a marker standing over one of this
+    ticker's own symbols".
+    """
+    stem = placeholder_stem(symbol)
+    if stem is None:
+        return False
+    return CANON.get(symbol) == ticker and CANON.get(stem) == ticker
+
+
+def symbol_report(ticker, symmap):
+    """[(kind, text)] for one ticker's symbols in one period.
+
+    Two symbols mapping to one canonical ticker is either a rename mid-period
+    (benign), a settlement-line marker (benign), or a wrong alt_symbols entry
+    merging two companies (corrupting). Symbol count alone cannot tell them
+    apart, and neither can CUSIP: renames in this sector frequently arrive
+    alongside a reverse split, which changes the CUSIP too.
+
+    Time separates a rename from a collision — a rename means one symbol stops
+    before the other starts, so the ranges are disjoint, while two live
+    companies interleave.
+
+    IT CANNOT SEPARATE A PLACEHOLDER FROM A COLLISION, AND THAT WAS THE BUG. A
+    `ZZZZ` marker sits INSIDE the changeover by definition, on a settlement day
+    the real symbol also touches, so it is neither disjoint nor interleaved. It
+    read as concurrent and reported two live securities. Observed in production
+    on 2026-08-06:
+
+        WARNING: ABTC matched 2 symbols, 1 shared settlement date(s):
+                 ABTC 07-06..07-14, ABTCZZZZ 07-06..07-06
+
+    Four such markers are recorded on this roster, so it fired on every
+    changeover it ever saw.
+
+    Markers are therefore taken out before the interval test rather than
+    excused after it. An unrecorded one is still reported — loudly, and with a
+    different message, because a changeover the roster does not know about is
+    exactly what audit_identifiers.py exists to find.
+    """
+    out = []
+    markers, unrecorded, live = {}, {}, {}
+    for sym, dates in symmap.items():
+        if placeholder_stem(sym) is None:
+            live[sym] = dates
+        elif recorded_marker(sym, ticker):
+            markers[sym] = dates
+        else:
+            unrecorded[sym] = dates
+
+    def spans(group):
+        return ", ".join(
+            f"{sym} {mmdd(min(ds))}..{mmdd(max(ds))}"
+            for sym, ds in sorted(group.items(), key=lambda kv: min(kv[1])))
+
+    for sym, dates in sorted(unrecorded.items()):
+        out.append((UNRECORDED,
+                    f"WARNING: {ticker} saw {sym} on {len(dates)} settlement "
+                    f"date(s) — a changeover marker the roster does not "
+                    f"record. Run audit_identifiers.py and add it to "
+                    f"alt_symbols, or this company under-reports the next "
+                    f"time it changes symbol."))
+    if markers:
+        out.append((MARKER,
+                    f"note: {ticker} spans a changeover — {spans(markers)} is "
+                    f"the NSCC placeholder, not a second security"))
+
+    # The interval test runs on live symbols only. Placeholders are excluded
+    # whether or not the roster records them: an unrecorded one has already
+    # been reported above, and letting it also read as a collision would give
+    # one event two contradictory explanations.
+    if len(live) < 2:
+        return out
+
+    # Test INTERVAL overlap, not exact shared dates. This data is sparse — only
+    # days with a non-zero balance appear — so two live companies frequently
+    # miss each other's exact dates by chance. A real observation: MARA
+    # 07-01..07-13 and CLSK 07-10..07-10 share no date at all, yet plainly
+    # interleave. A rename is the strict case where one symbol's whole range
+    # ends before the other begins.
+    ordered = sorted(((sym, min(ds), max(ds)) for sym, ds in live.items()),
+                     key=lambda t: t[1])
+    concurrent = any(ordered[i][2] >= ordered[i + 1][1]
+                     for i in range(len(ordered) - 1))
+    counts = Counter(d for ds in live.values() for d in ds)
+    shared = sorted(d for d, n in counts.items() if n > 1)
+    if concurrent:
+        detail = (f", {len(shared)} shared settlement date(s)" if shared
+                  else ", ranges interleave")
+        out.append((COLLISION,
+                    f"WARNING: {ticker} matched {len(live)} symbols{detail}: "
+                    f"{spans(live)}"))
+        out.append((COLLISION,
+                    "  Concurrent trading means these are different "
+                    "securities. Check alt_symbols in watchlist.py."))
+    else:
+        out.append((RENAME, f"note: {ticker} spans a rename — {spans(live)}"))
+    return out
+
+
 def summarise(rows):
     """Peak balance, its date, and the count of settlement days with a fail."""
     out = {}
@@ -535,44 +686,11 @@ def main():
               + (f", zero: {' '.join(absent)}" if absent else "")
               + (f", {skipped} unparsable" if skipped else ""))
 
-        # Two symbols mapping to one canonical ticker in a single period is
-        # either a rename mid-period (benign) or a wrong alt_symbols entry
-        # two companies (corrupting). Symbol count alone cannot tell them
-        # apart, and neither can CUSIP: renames in this sector frequently
-        # arrive alongside a reverse split, which changes the CUSIP too.
-        #
-        # Time separates them. A rename means the old symbol stops and the new
-        # one starts, so the date sets are disjoint. Two live companies trade
-        # on the same settlement days.
         for ticker, symmap in sorted(seen_syms.items()):
-            if len(symmap) < 2:
-                continue
-            # Test INTERVAL overlap, not exact shared dates. This data is
-            # sparse — only days with a non-zero balance appear — so two live
-            # companies frequently miss each other's exact dates by chance. A
-            # real observation: MARA 07-01..07-13 and CLSK 07-10..07-10 share
-            # no date at all, yet plainly interleave. A rename is the strict
-            # case where one symbol's whole range ends before the other begins.
-            ordered = sorted(
-                ((sym, min(ds), max(ds)) for sym, ds in symmap.items()),
-                key=lambda t: t[1],
-            )
-            concurrent = any(
-                ordered[i][2] >= ordered[i + 1][1] for i in range(len(ordered) - 1)
-            )
-            counts = Counter(d for ds in symmap.values() for d in ds)
-            shared = sorted(d for d, n in counts.items() if n > 1)
-            spans = ", ".join(f"{sym} {mmdd(lo)}..{mmdd(hi)}" for sym, lo, hi in ordered)
-            if concurrent:
-                overlapped.add(ticker)
-                detail = (f", {len(shared)} shared settlement date(s)"
-                          if shared else ", ranges interleave")
-                print(f"    WARNING: {ticker} matched {len(symmap)} symbols"
-                      f"{detail}: {spans}")
-                print("      Concurrent trading means these are different"
-                      " securities. Check alt_symbols in watchlist.py.")
-            else:
-                print(f"    note: {ticker} spans a rename — {spans}")
+            for kind, text in symbol_report(ticker, symmap):
+                if kind == COLLISION:
+                    overlapped.add(ticker)
+                print(f"    {text}")
         time.sleep(REQUEST_GAP)
 
     # A ticker under two CUSIPs across the window is almost always a reverse
