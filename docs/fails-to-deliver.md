@@ -115,6 +115,61 @@ Absent tickers are also named under the table and in the log for every period,
 rather than silently dropped, so a broken symbol match cannot masquerade as a
 clean period. That distinction is the whole diagnostic — see below.
 
+### Critical: the convention has a cost, and it is the mirror of its benefit
+
+The two halves have to be read together, because the cost is invisible from the
+reason alone.
+
+**The reason:** the SEC lists only non-zero fails, so absence *is* a zero, and
+storing it as one is what keeps a never-fails company's median at 0 and puts
+its first real fail at the top of the table.
+
+**The cost:** absence and zero are then **the same value**, so a company whose
+identifiers fail to resolve is indistinguishable from one that genuinely never
+fails. A broken symbol match does not produce a gap. It produces a clean sheet.
+
+That is the worse direction for this component specifically, because *a name
+that never fails suddenly failing* is the most informative case it has. A
+resolution failure does not merely lose the company — it manufactures the
+quietest possible reading of it, and quiet is what nobody investigates.
+
+**This is the same asymmetry `docs/watchlist.md` states for identifiers** — a
+missing one loses rows quietly, a wrong one gains them quietly — arriving from
+the data convention rather than from the roster.
+
+It is why absent tickers are named rather than dropped, and it is also why that
+mitigation is partial: the line reads `Zero balance all period: BGDE, VIP`,
+which is the ambiguous statement itself. Nothing in the output separates *this
+company had no fails* from *this company did not resolve*. Reading that line
+means checking the names against what you expect, not just noting the line
+appeared.
+
+**Do not "improve" this by dropping absent tickers from the history.** That
+trades a quiet wrong answer for a quietly wrong median, which is the failure
+this section opens with.
+
+### Eight of nineteen were an untested path until 2026-08-06
+
+Recorded because it was a real gap in coverage that nobody had counted, and
+because it is now closed.
+
+`ftd.yml` only reaches `fetch_period()` when a new half-month period publishes.
+Between `202607a` being fetched and 2026-08-06, eight companies joined the
+roster and none had ever been through it: **WULF, HUT and CIFR** (added
+2026-08-03) and **GLXY, APLD, BTDR, SPCX and ABTC** (added 2026-08-05). Every
+scheduled run in between exited at the dedupe check with `Already posted
+2026-07a. Nothing new.` — which is correct behaviour and looks identical to a
+run that verified something.
+
+A read-only `FTD_REPLAY=1` on 2026-08-06 resolved all of them: 17 of 19 with
+non-zero fails, BGDE and VIP genuine zeros, and the five newest present —
+SPCX 1.2M, ABTC 585K, APLD 188K, BTDR 18K, GLXY 11K.
+
+**The general point outlives the instance.** A component that only exercises
+its identifier resolution when its source publishes has a window, after every
+roster addition, in which nothing has tested the new entries and nothing says
+so. A dry replay closes it in one run and costs nothing.
+
 ## Critical: the download URLs are not constructible
 
 The obvious implementation builds the filename from the date. Do not. The

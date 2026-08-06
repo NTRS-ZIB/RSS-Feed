@@ -676,6 +676,14 @@ contributes to nothing here. **ABTC contributes to nothing either, and that is a
 decision rather than an omission:** its four sites are HUT's, already counted in
 HUT's row, so adding it would count the same facilities twice.
 
+**So the denominator is a judgement, not a count, and re-deriving it from the
+roster will not reproduce it.** Nineteen companies, eighteen swept, and the
+eighteenth excluded on a reading of what ABTC's footprint *is* rather than on
+whether it was read. Anyone recomputing these tallies from the table's nineteen
+rows will get different numbers and reasonably conclude the tally is stale. It
+is not — it is answering "how many companies have grid exposure here" rather
+than "how many rows are there", and those differ by exactly one.
+
 | Grid | `FILED` | Also claimed, unverified |
 |---|---|---|
 | NYISO | VIP, DGXX, WULF, HUT — **4** | SLNH has a New York site, grid unnamed |
@@ -718,9 +726,26 @@ company to two and ERCOT from four to five, which is the single change most
 likely to alter a region decision.
 
 **Its 20-F cannot answer it, and that is a boundary rather than a task.** This
-table takes filings. Resolving BTDR needs a source that is not one, and whether
-this table ever accepts non-filing evidence is a decision to take deliberately —
-not one to arrive at because a single row was inconvenient.
+table takes filings. Resolving BTDR needs a source that is not one.
+
+**If that boundary is ever relaxed, it must be decided as a change to what this
+table accepts — not as an exception for one row.** The distinction is the whole
+protection. An exception is granted once, for the case that seemed to warrant
+it, and leaves no rule behind; the next reader sees a row sourced from
+somewhere the table does not otherwise accept and has nothing to tell them
+whether that was a considered widening or a lapse.
+
+And **BTDR is precisely the case that will make the exception tempting**, which
+is the reason to say this in advance rather than when it comes up. It is the
+largest unresolved footprint on the roster, it would move PJM from one company
+to two, and it is the single row most likely to change a region decision.
+Relaxing a standard for its most valuable case is exactly how the standard
+stops meaning anything — the tag survives, and stops carrying information.
+
+The `FILED` / `ESTIMATE` / `OPEN` tags are only worth the reading discipline
+they impose. `OPEN` on BTDR is not a gap waiting to be filled by a better
+source; it is the accurate statement that this table's evidence standard does
+not reach the answer.
 
 ### Critical: VIP's exposure runs the opposite way
 
