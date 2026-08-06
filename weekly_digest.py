@@ -1451,6 +1451,68 @@ CONVERGENCE_THRESHOLD = 3
 CONVERGENCE_BASIS = ("10 complete ISO weeks, 2026-W22..2026-W31, 190 "
                      "ticker-weeks; >=3 families = 5 ticker-weeks, 0.5/wk")
 
+# The tier below the threshold. Named in the output but never promoted into the
+# convergence section: at >=2 it runs 3.7 companies a week, a fifth of the
+# roster, which is the firehose the threshold exists to prevent.
+SECONDARY_TIER = 2
+
+# CONTRIBUTORS WHOSE RULE HAS NEVER FIRED AGAINST A REAL OCCURRENCE.
+#
+# An empty section from one of these is indistinguishable from a working one,
+# which is the same standing trap as a FORM_TYPES entry that has never matched:
+# a form matching nothing looks exactly like one whose filings never occur.
+# Both renderers carry this, because a reader of the file a year from now has
+# no other way to know.
+#
+# A key is REMOVED FROM HERE the first time the contributor fires. Do not remove
+# one because the rule looks right.
+UNEXERCISED = {
+    "dilution": (
+        "0 of 190 ticker-weeks over 2026-W22..2026-W31. Not a wrong rule: only "
+        "3 ticker-weeks had a new XBRL observation at all, and the largest step "
+        "was HUT at +9.50% against the 10.0% threshold — half a point under the "
+        "line."),
+}
+
+
+def demonstrate_cadence_guard():
+    """Run the cadence guard with and without itself, and print both.
+
+    THIS IS THE GUARD'S JUSTIFICATION AND IT RUNS ON EVERY INVOCATION, because
+    a test that has never failed proves nothing. It is cheap, it needs no
+    network, and it is the only place the failure it prevents is visible.
+
+    Restores PERSISTENCE_CADENCES before returning; the widened set must not
+    leak into the run.
+    """
+    reg = {c["key"]: c for c in CONTRIBUTORS}
+    print("Cadence guard — persistence eligibility derived from cadence, "
+          "not remembered:")
+    for key in sorted(reg):
+        c = reg[key]
+        try:
+            mk(c, NOTABLE, persistence={"hits": 4, "of": 5, "direction": "up"})
+            verdict = "accepts a persistence claim"
+        except DigestError:
+            verdict = "REFUSES"
+        print(f"    {key:<16} {c['cadence']:<14} {verdict}")
+
+    original = set(PERSISTENCE_CADENCES)
+    try:
+        PERSISTENCE_CADENCES.update({EVENT, PER_FILING, TWICE_MONTHLY,
+                                     HALF_MONTHLY})
+        leaked = mk(reg["ftd"], NOTABLE,
+                    figure="412,000 peak fails",
+                    basis="failed on 8 of 10 settlement dates",
+                    persistence={"hits": 8, "of": 10, "direction": "up"})
+    finally:
+        PERSISTENCE_CADENCES.clear()
+        PERSISTENCE_CADENCES.update(original)
+    print(f"  With the guard removed, ftd accepts {leaked['persistence']} — "
+          f"which reads as a claim about this week and is about a period that "
+          f"ended up to six weeks earlier. Nothing downstream could catch it.")
+    print()
+
 
 def build_week(ctx, monday):
     """One week's verdict record. No rendering, no thresholds applied to the
@@ -1540,6 +1602,29 @@ def build_week(ctx, monday):
                               if not v["fetched"]),
     }
     return record
+
+
+def monday_of(week_key):
+    """'2026-W31' -> the Monday of that ISO week."""
+    year, week = week_key.upper().split("-W")
+    return date.fromisocalendar(int(year), int(week), 1)
+
+
+def derive_one(week_key, prior_weeks=1):
+    """One week's record, plus the records of the weeks before it.
+
+    `prior_weeks` exists because the interesting claims span weeks — "third
+    week running" needs last week's verdict, and the renderers read it from
+    here rather than reconstructing it. Live, this is what the stored records
+    in digest/ supply; deriving them is only for a dry run of a past week.
+    """
+    monday = monday_of(week_key)
+    weeks = [monday - timedelta(days=7 * i)
+             for i in range(prior_weeks, -1, -1)]
+    span_start, span_end = weeks[0], weeks[-1] + timedelta(days=4)
+    ftd_periods = (len(weeks) // 2) + ftd_monitor.MIN_FLAG_PERIODS + 2
+    ctx = gather(span_start, span_end, ftd_periods)
+    return [build_week(ctx, m) for m in weeks], ctx
 
 
 def gather(span_start, span_end, ftd_periods):
@@ -1695,6 +1780,12 @@ def report(records, ctx):
                   f"company in any of them. Its rule has never been exercised "
                   f"against a real occurrence, so an empty section from it "
                   f"cannot yet be read as a working one.")
+            if c["key"] not in UNEXERCISED:
+                print(f"  {'':<18} ^ NOT IN weekly_digest.UNEXERCISED — add it, "
+                      f"or the renderers will present its silence as a result.")
+        elif c["key"] in UNEXERCISED:
+            print(f"  {c['key']:<18} FIRED {n} time(s) — remove it from "
+                  f"weekly_digest.UNEXERCISED. Its rule is now exercised.")
     th = ctx["threshold"].data or {}
     ever = sorted({t for h in (th.get("by_day") or {}).values() for t in h})
     print(f"\n  threshold_list: {len(th.get('by_day') or {})} daily files read, "
@@ -1710,6 +1801,7 @@ def main():
     for problem in watchlist.validate():
         print(f"WARNING: watchlist.py — {problem}")
 
+    demonstrate_cadence_guard()
     weeks = recent_weeks(n)
     span_start, span_end = weeks[0], weeks[-1] + timedelta(days=4)
     # Enough half-month periods to cover the span plus MIN_FLAG_PERIODS of

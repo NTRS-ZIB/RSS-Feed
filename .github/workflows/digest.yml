@@ -23,9 +23,13 @@ on:
   workflow_dispatch:
     inputs:
       backfill:
-        description: "Complete ISO weeks to derive"
+        description: "Complete ISO weeks to derive. 0 skips the backfill."
         type: string
         default: "10"
+      render:
+        description: "ISO weeks to dry-run both renderings for, comma separated"
+        type: string
+        default: ""
 
 permissions:
   contents: read # it writes nothing to the repo
@@ -50,6 +54,7 @@ jobs:
         run: pip install requests feedparser
 
       - name: Derive the verdict record
+        if: inputs.backfill != '0' && inputs.backfill != ''
         env:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
           ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
@@ -57,11 +62,28 @@ jobs:
           DIGEST_BACKFILL: ${{ inputs.backfill }}
         run: python -u weekly_digest.py
 
+      # DRY RUN ONLY. DIGEST_WRITE is unset, so both renderings are printed in
+      # full and neither is written. The step FAILS if the post breaks any of
+      # its limits — the 4,096-character description, the 1,024-character
+      # field, the 6,000-character embed, or the 28-character monospace
+      # ceiling. Discord accepts an over-wide code block silently and wraps it
+      # on mobile, which is why the check has to live here rather than in the
+      # reading of the post.
+      - name: Dry-run both renderings
+        if: inputs.render != ''
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          DIGEST_WEEKS: ${{ inputs.render }}
+        run: python -u digest_render.py
+
       # A source that failed leaves a hole a reader must be told about, and the
       # record carries the per-source status precisely so nothing downstream
       # can mistake it for silence. Surfacing it here as well means a run that
       # LOOKS complete in the log cannot be read as complete when it was not.
       - name: Report any source that did not answer
+        if: inputs.backfill != '0' && inputs.backfill != ''
         run: |
           python - <<'PY'
           import json
@@ -82,6 +104,7 @@ jobs:
           PY
 
       - uses: actions/upload-artifact@v4
+        if: inputs.backfill != '0' && inputs.backfill != ''
         with:
           name: digest-backfill
           path: digest_backfill.json
