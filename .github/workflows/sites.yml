@@ -1,0 +1,37 @@
+name: Probe sites
+
+# Reads each named company's most recent annual report for grid operators and
+# states, and prints every hit with its surrounding sentence.
+#
+# TEMPORARY, manual only. It resolves the UNSWEPT rows in
+# docs/watchlist.md's operating footprint table and posts nothing. The output
+# is read by a person: counts narrow the search, excerpts answer it, and the
+# four failure modes recorded in probe_sites.py are all invisible to a count.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: "Roster tickers to sweep, comma separated"
+        type: string
+        default: "GLXY,APLD,BTDR,SPCX,ABTC"
+
+permissions:
+  contents: read
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Read the annual reports
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          SITES_TICKERS: ${{ inputs.tickers }}
+        run: python -u probe_sites.py
