@@ -1,41 +1,65 @@
 name: Weekly digest
 
-# Derives the weekly verdict record and prints the distributions the
-# convergence threshold has to be set from.
+# Posts the weekly digest to #weekly-digest and commits digest/<week>.md and
+# .json, once per ISO week.
 #
-# THERE IS NO SCHEDULE AND NO RENDERER YET, deliberately. Nothing is posted and
-# nothing is committed: this exists to produce the backfill measurement first,
-# because a threshold chosen before the distribution exists is a number chosen
-# to look right. The heartbeat in docs/rejected.md was closed exactly that way
-# — its threshold was measured and found not to separate the two populations —
-# and the same outcome here would be a real answer rather than a failure.
+# DAILY, NOT WEEKLY, AND THE REASON IS MEASURED. Over the run history of
+# 2026-07-29 to 2026-08-05 the daily workflows delivered 3-4 of their 5-6
+# nominal scheduled fires; docs/rejected.md records the rate as GitHub dropping
+# 30-45% of scheduled fires on this repo. A once-a-week cron therefore has
+# roughly even odds of simply not running, and nobody would notice until the
+# following Saturday. So it fires every day and gates on "have I already
+# produced ISO week N?" — the same shape short_interest.py and ftd_monitor.py
+# have used for months to post twice a month off a daily check.
 #
-# WHEN THE SCHEDULE ARRIVES it must not be weekly. Measured over the run
-# history: the daily workflows delivered 3-4 of their 5-6 nominal fires, so a
-# once-a-week cron has roughly even odds of simply not running, and nobody
-# would notice until the following Saturday. Fire daily and gate on "have I
-# already produced ISO week N?", which is what short_interest.py and
-# ftd_monitor.py already do to post twice a month off a daily check. Saturday
-# is the earliest a complete Monday-to-Friday week is available, because FINRA
-# short volume is T+1.
+# 17:00 UTC, AND THE HOUR IS OFF THE DELAY DISTRIBUTION RATHER THAN
+# CONVENIENCE. Scheduled runs here are never on time and the lateness is
+# bimodal: 83-173 minutes in the 05:00-15:59 UTC window against 51-71 in the
+# 16:00-23:59 one (docs/press-monitor.md). Firing in the afternoon regime costs
+# about an hour and a half less drift, and drift is drop exposure. 17:00 lands
+# around 17:51-18:11.
+#
+# SATURDAY IS THE FIRST ELIGIBLE DAY, and that falls out of the gate rather
+# than the cron: recent_weeks() only returns a week once its Friday has passed.
+# Friday's short volume is not available on Friday evening — FINRA is T+1 and
+# regsho.yml runs at 23:00 UTC for the PREVIOUS trade date — so a Friday digest
+# would be a four-day week reported as five.
+#
+# A Saturday that drops is picked up by Sunday's fire, or Monday's, all
+# targeting the same week. That is the whole point of the daily cadence.
 
 on:
+  schedule:
+    - cron: "0 17 * * *"
   workflow_dispatch:
     inputs:
+      dry_run:
+        description: "Evaluate and log without posting or committing"
+        type: boolean
+        default: true
       backfill:
         description: "Complete ISO weeks to derive. 0 skips the backfill."
         type: string
-        default: "10"
+        default: "0"
       render:
         description: "ISO weeks to dry-run both renderings for, comma separated"
         type: string
         default: ""
 
+# At most one run is ever pending, and a newer arrival CANCELS the older
+# pending one, so the survivor is always the one with the freshest checkout.
+# Do not try to detect supersession in the job — the platform does it, and a
+# run that does start is not doing stale work anyway: "has week N been
+# produced" is a timeless question.
+concurrency:
+  group: weekly-digest
+  cancel-in-progress: false
+
 permissions:
-  contents: read # it writes nothing to the repo
+  contents: write # digest/<week>.md and .json
 
 jobs:
-  backfill:
+  digest:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -52,6 +76,84 @@ jobs:
       # edited alone.
       - name: Install dependencies
         run: pip install requests feedparser
+
+      # THE GATE READS THE WORKING TREE, so the working tree has to be current.
+      # A queued run checks out the SHA fixed when the run was CREATED, not
+      # when its job starts, so without this it can ask "has this week been
+      # produced?" of a tip that already answers yes — and post again. That is
+      # the mechanism behind the duplicate-post incident of 2026-08-04, where
+      # two runs were serialised exactly as the concurrency group intended and
+      # the second still began from the commit before the first one's push.
+      # A dispatch asking for a backfill or a render is a measurement, not a
+      # production run, and must not also take the live path — the first
+      # version's condition let it, which on a non-dry dispatch would have
+      # posted.
+      - name: Pull before reading the gate
+        if: >-
+          github.event_name == 'schedule'
+          || (inputs.render == ''
+              && (inputs.backfill == '0' || inputs.backfill == ''))
+        run: git pull --ff-only origin "$GITHUB_REF_NAME" || true
+
+      - name: Produce the week
+        if: >-
+          github.event_name == 'schedule'
+          || (inputs.render == ''
+              && (inputs.backfill == '0' || inputs.backfill == ''))
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          WEBHOOK_URL_DIGEST: ${{ secrets.WEBHOOK_URL_DIGEST }}
+          # A scheduled fire is live. A dispatch defaults to a dry run, which
+          # posts nothing and writes nothing — per the trap table, DRY_RUN has
+          # to skip the commit as well as the post, or a dry run closes the
+          # gate and suppresses the real one.
+          DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
+          DIGEST_LIVE: "1"
+        run: python -u digest_render.py
+
+      # Only ever adds a file for a week that has none. Last writer does NOT
+      # win here — unlike snapshot.json, which is rebuilt whole every run, a
+      # week file is written once and never rewritten, so the retry re-applies
+      # this run's new file onto whatever else landed meanwhile.
+      - name: Commit the week
+        if: github.event_name == 'schedule'
+        run: |
+          git config user.name "digest-bot"
+          git config user.email "digest-bot@users.noreply.github.com"
+          git add digest/ 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No new week file — either already produced, or the post did not go out."
+            exit 0
+          fi
+          mkdir -p "$RUNNER_TEMP/digest"
+          cp digest/*.md digest/*.json "$RUNNER_TEMP/digest/"
+          for attempt in 1 2 3 4 5; do
+            git fetch -q origin "$GITHUB_REF_NAME"
+            git reset -q --hard "origin/$GITHUB_REF_NAME"
+            mkdir -p digest
+            cp "$RUNNER_TEMP"/digest/* digest/
+            git add digest/
+            if git diff --cached --quiet; then
+              echo "Already on origin; nothing to push."
+              exit 0
+            fi
+            git commit -q -m "Weekly digest [skip ci]"
+            if git push -q origin "HEAD:$GITHUB_REF_NAME"; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt); another run pushed first. Retrying."
+            sleep $((attempt * 3))
+          done
+          # THE POST HAS ALREADY GONE OUT. Without the file the gate stays
+          # open and tomorrow's run posts the same week again. Failing loudly
+          # turns a silent duplicate-tomorrow into a notice today.
+          echo "Could not persist the week file after 5 attempts. The post is" >&2
+          echo "already sent, so tomorrow's run will repeat it unless this is" >&2
+          echo "resolved by hand." >&2
+          exit 1
 
       - name: Derive the verdict record
         if: inputs.backfill != '0' && inputs.backfill != ''

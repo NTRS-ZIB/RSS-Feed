@@ -817,7 +817,132 @@ def dry_run(week_key, prior=3):
     return records, embed, md, problems
 
 
+# ------------------------------------------------------------------ LIVE ----
+
+WEBHOOK = os.environ.get("WEBHOOK_URL_DIGEST", "").strip()
+DRY_RUN = os.environ.get("DRY_RUN", "").strip().lower() in ("1", "true", "yes")
+
+
+def already_produced(outdir, week):
+    """THE GATE. The file for week N IS the record that week N was produced.
+
+    No state file, deliberately — see the ordering note in produce(). A state
+    file would carry exactly the same information, be written by exactly the
+    same commit, and add one more thing for fifteen workflows to race on.
+
+    It reads the WORKING TREE, which is only current if the job pulled first.
+    A queued run checks out the SHA fixed when the run was CREATED, not when
+    its job starts, so without a pull this asks about a tip that may already
+    have the file. That is the mechanism behind the duplicate-post incident of
+    2026-08-04, and the pull is in the workflow for that reason.
+    """
+    return os.path.exists(os.path.join(outdir, f"{week}.md"))
+
+
+def post_embed(embed):
+    import requests
+    try:
+        r = requests.post(WEBHOOK, json={"embeds": [embed]}, timeout=25)
+    except requests.RequestException as e:
+        print(f"webhook failed: {type(e).__name__}")
+        return False
+    if r.status_code >= 300:
+        print(f"webhook returned {r.status_code}: {r.text[:200]}")
+        return False
+    return True
+
+
+def produce(outdir="digest", prior=3):
+    """The live path: one week, gated, posted, then written.
+
+    ORDER IS POST THEN WRITE, and the alternative was considered.
+
+    Writing first would mean a run that commits the file and then fails to
+    post leaves the gate saying "done" with nothing ever posted — a silent
+    miss, which is the failure mode this repo is worst at noticing. Posting
+    first means a run that posts and then cannot push repeats the post
+    tomorrow. A duplicate is louder than a silence and recoverable by reading
+    the channel, so it is the better failure to have.
+
+    A separate state file would NOT improve on this. It would be written by the
+    same commit as the file, so it fails in the same instant for the same
+    reason; it just adds a second artefact to the push race. The residual risk
+    is identical either way, which is why there isn't one.
+
+    What closes most of the gap is the workflow: pull before the gate, and a
+    fetch-reset-retry loop around the push. If the push still fails after
+    those, the step exits non-zero so `Failure notice` fires — converting a
+    silent duplicate-tomorrow into a visible failure today.
+    """
+    week = wd.iso_week_key(wd.recent_weeks(1)[0])
+    print(f"Target week: {week}")
+
+    if already_produced(outdir, week):
+        print(f"{outdir}/{week}.md exists — {week} has already been produced. "
+              f"Nothing to do.")
+        return 0
+    if not DRY_RUN and not WEBHOOK:
+        print("WEBHOOK_URL_DIGEST is not set.")
+        return 1
+
+    wd.demonstrate_cadence_guard()
+    records, ctx = wd.derive_one(week, prior_weeks=prior)
+    rec = records[-1]
+
+    # A digest with nothing behind it is not a quiet week, it is an outage, and
+    # posting one would teach the reader that a thin post means a thin week.
+    if not rec["denominator"]["counted"]:
+        print("No contributor was counted — every source failed or published "
+              "nothing. Not posting a digest of nothing.")
+        return 1
+
+    embed = render_post(records)
+    md = render_markdown(records)
+    problems = check_post(embed)
+    print(embed["description"])
+    for f in embed["fields"]:
+        print(f["value"])
+    if problems:
+        # Discord accepts an over-wide code block silently and wraps it on
+        # mobile, so a broken post is not visibly broken. Refuse rather than
+        # ship it; the gate stays open and tomorrow's run retries.
+        print("PROBLEMS: " + "; ".join(problems))
+        return 1
+
+    if DRY_RUN:
+        print(f"\nDry run: would post {week} and write {outdir}/{week}.md "
+              f"({len(md) / 1024:.1f} KB). Nothing posted, nothing written.")
+        return 0
+
+    if not post_embed(embed):
+        print("Post failed; writing nothing so the gate stays open and "
+              "tomorrow's run retries.")
+        return 1
+    print(f"Posted {week}.")
+
+    os.makedirs(outdir, exist_ok=True)
+    with open(os.path.join(outdir, f"{week}.md"), "w", encoding="utf-8") as fh:
+        fh.write(md)
+    # The JSON record is committed alongside, and it is not redundant with the
+    # markdown. Sources RESTATE — FINRA flags revisions and splits on short
+    # interest, the SEC republishes fails files — so re-deriving this week in
+    # six months may not reproduce what was posted today. The record is the
+    # only evidence of what was actually asserted, which is what an article
+    # citing it needs.
+    with open(os.path.join(outdir, f"{week}.json"), "w",
+              encoding="utf-8") as fh:
+        json.dump({"schema": rec["schema"],
+                   "generated": datetime.now(timezone.utc).replace(
+                       microsecond=0).isoformat(),
+                   "weeks": records}, fh, indent=1, sort_keys=True)
+    print(f"Wrote {outdir}/{week}.md and {outdir}/{week}.json")
+    return 0
+
+
 def main():
+    if os.environ.get("DIGEST_LIVE", "").strip().lower() in ("1", "true", "yes"):
+        return produce(os.environ.get("DIGEST_DIR", "digest"))
+
     weeks = [w.strip() for w in
              os.environ.get("DIGEST_WEEKS", "").split(",") if w.strip()]
     if not weeks:
@@ -843,8 +968,19 @@ def main():
               f"{len(md.splitlines()):4d} lines  "
               f"converged: {', '.join(conv) if conv else 'nothing'}")
     if os.environ.get("DIGEST_WRITE", "").lower() in ("1", "true", "yes"):
+        # THE GATE IS A FILE, SO WRITING ONE IS A SIDE EFFECT ON THE LIVE PATH.
+        # A dry run of the current target week that wrote its file would close
+        # the gate and suppress the real post permanently, with no error
+        # anywhere — the same shape as the state-file races this repo already
+        # carries scars from. Backfilling an OLD week is harmless and allowed.
+        live = wd.iso_week_key(wd.recent_weeks(1)[0])
         os.makedirs(outdir, exist_ok=True)
-        for path, md, _ in allmd:
+        for path, md, rec in allmd:
+            if rec["week"] == live:
+                print(f"  REFUSED {path} — {live} is the week the live path is "
+                      f"about to produce, and writing it here would close the "
+                      f"gate with nothing posted.")
+                continue
             with open(path, "w", encoding="utf-8") as fh:
                 fh.write(md)
             print(f"  wrote {path}")
