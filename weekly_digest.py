@@ -885,7 +885,14 @@ def derive_volume(c, ctx, week, sessions):
         mult = [(d.isoformat(), v / base) for d, v in inside]
         hits = sum(1 for _, m in mult if m >= VOLUME_MULTIPLE)
         peak = max(m for _, m in mult)
-        detail = {"baseline_median": int(base), "baseline_sessions": len(prior),
+        # `baseline_volume_median`, not `baseline_median`. ftd_monitor's own
+        # baseline is a median of half-month fail PEAKS and lands in a detail
+        # dict under the second name; a renderer keying on the shorter one
+        # matched both and then read a field only one of them has. Detail keys
+        # are a shared namespace across contributors even though the dicts are
+        # not, so they carry the quantity in the name.
+        detail = {"baseline_volume_median": int(base),
+                  "baseline_sessions": len(prior),
                   "peak_multiple": round(peak, 1),
                   "daily_multiple": [(d, round(m, 1)) for d, m in mult]}
         if hits >= VOLUME_DAYS:
@@ -1754,6 +1761,30 @@ def report(records, ctx):
     else:
         print("  no ticker qualified on a persistence-carrying contributor in "
               "more than one week")
+
+    # DETAIL KEYS ARE A SHARED NAMESPACE even though the dicts are not, and a
+    # renderer keys on them. `baseline_median` meant a volume median to one
+    # contributor and a fails-peak median to another; a renderer that matched
+    # the first then read a field only the second has died on a KeyError, and
+    # would have printed a wrong figure had the field happened to exist.
+    # Printed so a collision is visible rather than latent.
+    print("\n" + "=" * 72)
+    print("DETAIL KEYS SHARED BY MORE THAN ONE CONTRIBUTOR")
+    print("=" * 72)
+    owners = defaultdict(set)
+    for rec in records:
+        for t in TICKERS:
+            for key, v in rec["verdicts"].get(t, {}).items():
+                for field in (v.get("detail") or {}):
+                    owners[field].add(key)
+    shared = {k: v for k, v in owners.items() if len(v) > 1}
+    if shared:
+        for field, keys in sorted(shared.items()):
+            print(f"  {field:<26} {', '.join(sorted(keys))}")
+        print("  Shared is fine where the quantity is the same. Where it is "
+              "not, rename — the name is all a renderer has.")
+    else:
+        print("  None.")
 
     print("\n" + "=" * 72)
     print("CONTRIBUTOR COVERAGE — untested is not the same as working")

@@ -474,9 +474,32 @@ def md_detail(record, ticker):
         if d.get("daily_multiple"):
             out.append("  - by session: " + ", ".join(
                 f"{day} {m}x" for day, m in d["daily_multiple"]))
+        if d.get("baseline_volume_median") is not None:
+            out.append(f"  - baseline {d['baseline_volume_median']:,} shares, "
+                       f"median over {d.get('baseline_sessions')} sessions; "
+                       f"peak {d.get('peak_multiple')}x")
         if d.get("baseline_median") is not None:
-            out.append(f"  - baseline median {d['baseline_median']:,} over "
-                       f"{d['baseline_periods']} prior periods")
+            out.append(f"  - baseline median {d['baseline_median']:,.0f} peak "
+                       f"fails over {d.get('baseline_periods')} prior periods, "
+                       f"period {d.get('period')}, "
+                       f"{d.get('days')} settlement dates with a fail")
+        if d.get("step_pct") is not None:
+            out.append(f"  - {d['from'][1]:,} on {d['from'][0]} "
+                       f"({d['from'][2]}) to {d['to'][1]:,} on {d['to'][0]} "
+                       f"({d['to'][2]}), concept {d.get('concept')}")
+        if d.get("prior_high") is not None and (d.get("new_highs")
+                                                or d.get("new_lows")):
+            out.append(f"  - prior range {d['prior_low']}–{d['prior_high']} "
+                       f"over {d['window_bars']} bars")
+        if d.get("settlement"):
+            prev = d.get("previous")
+            out.append(f"  - settlement {d['settlement']}, "
+                       f"{d.get('current'):,.0f} shares"
+                       + (f", against {prev[1]:,.0f} on {prev[0]}"
+                          if prev else ""))
+        if d.get("dates"):
+            out.append(f"  - listed on {', '.join(d['dates'])} of "
+                       f"{d.get('files_read')} files published")
         # LATENCY PER FIGURE, not per section. An FTD number and a short-volume
         # number in the same table are six weeks apart.
         out.append(f"  - latency: {c['latency']} · cadence {c['cadence']}"
