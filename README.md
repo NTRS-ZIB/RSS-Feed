@@ -21,6 +21,7 @@ maintain.
 | [`dilution.py`](docs/dilution.md) | `dilution.yml` | `WEBHOOK_URL_MARKET` | 15:00 UTC weekdays, posts only on a change |
 | [`crossings.py`](docs/crossings.md) | `crossings.yml` | `WEBHOOK_URL_ALERTS` | 21:45 UTC weekdays, posts only on a crossing |
 | [`grid_context.py`](docs/grid-context.md) | `grid.yml` | `WEBHOOK_URL_MARKET` | 21:20 UTC, weekdays |
+| [`weekly_digest.py`](docs/weekly-digest.md) | `digest.yml` | `WEBHOOK_URL_DIGEST` | 17:00 UTC daily, posts once per ISO week |
 
 They are deliberately separate workflows: a failure in one data provider must
 not take down the others. The context posts 15 minutes before the recap so it
@@ -88,7 +89,7 @@ grid_context.py                   grid demand and natural gas
 .github/workflows/dilution.yml    dilution schedule and runner setup
 .github/workflows/crossings.yml   crossings schedule and runner setup
 .github/workflows/grid.yml        grid context schedule and runner setup
-.github/workflows/digest.yml      weekly digest backfill, manual only
+.github/workflows/digest.yml      digest schedule and runner setup
 .github/workflows/audit.yml       identifier audit, manual only
 .github/workflows/calibrate.yml   staleness calibration, manual only
 .github/workflows/items.yml       8-K item audit, manual only
@@ -103,6 +104,7 @@ dilution_state.json               auto-generated; last reported share count
 crossings_state.json              auto-generated; armed flags per ticker
 state.json                        auto-generated; do not hand-edit except to reset
 docs/                             per-component documentation
+digest/                           auto-generated; one file per ISO week, never rewritten
 docs/local-workflow.md            working from a clone; state-file merges
 ```
 
@@ -119,6 +121,7 @@ Settings → Secrets and variables → Actions:
 | `ALPACA_KEY_ID` / `ALPACA_SECRET_KEY` | Free Alpaca account (Market Data). Used by the recap and the spike alerts. Paper-trading keys work. |
 | `TWELVEDATA_KEY` | *Optional fallback only.* Its free tier lags intraday — see [data sources](docs/recap.md#data-sources--and-why). |
 | `WEBHOOK_URL_ALERTS` | *Optional.* Webhook for the volume alerts channel. Falls back to `WEBHOOK_URL_MARKET` if unset. |
+| `WEBHOOK_URL_DIGEST` | Webhook for the weekly digest channel. |
 | `EIA_API_KEY` | Free key from <https://www.eia.gov/opendata/register.php>. Used only by the grid context. |
 
 **Secrets must also be mapped in the workflow that needs them.** Adding one

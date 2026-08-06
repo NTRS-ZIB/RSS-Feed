@@ -442,13 +442,78 @@ the distribution is measured over the rest, which is not a distribution to set
 a threshold from. The run says so explicitly rather than leaving the gap to be
 noticed.
 
-## When a schedule arrives, it must not be weekly
+## The schedule
 
-The daily workflows delivered 3–4 of their 5–6 nominal fires, so **a
-once-a-week cron has roughly even odds of simply not running**, and nobody
-would notice until the following Saturday. Fire daily and gate on *"have I
-already produced ISO week N?"* — which is what `short_interest.py` and
-`ftd_monitor.py` already do to post twice a month off a daily check.
+**Daily at 17:00 UTC, gated on the week file.** Both halves are measured
+rather than chosen.
 
-Saturday is the earliest a complete Monday-to-Friday week exists, because FINRA
-short volume is T+1 and `regsho.yml` runs at 23:00 UTC for the *previous* day.
+**Daily, not weekly.** The daily workflows delivered 3–4 of their 5–6 nominal
+fires, so a once-a-week cron has roughly even odds of simply not running, and
+nobody would notice until the following Saturday. Firing every day and gating
+on *"has week N been produced?"* is the shape `short_interest.py` and
+`ftd_monitor.py` have used for months to post twice a month off a daily check.
+
+**17:00 UTC off the delay distribution.** Scheduled runs here are never on
+time and the lateness is bimodal: 83–173 minutes in the 05:00–15:59 window
+against 51–71 in the 16:00–23:59 one. Firing in the afternoon regime costs
+about ninety minutes less drift, and drift is drop exposure. 17:00 lands
+around 17:51–18:11.
+
+**Saturday is the first eligible day, and it falls out of the gate rather than
+the cron.** `recent_weeks()` only returns a week once its Friday has passed:
+
+```
+Sat 2026-08-08  -> targets 2026-W32     <- first chance
+Sun 2026-08-09  -> targets 2026-W32
+Mon 2026-08-10  -> targets 2026-W32
+...
+Fri 2026-08-14  -> targets 2026-W32     <- last chance
+Sat 2026-08-15  -> targets 2026-W33
+```
+
+Seven fires at the same week. All seven dropping is about **0.4%** at the
+measured 45% rate. A Friday digest was never an option regardless: FINRA short
+volume is T+1 and `regsho.yml` runs at 23:00 UTC for the *previous* trade date,
+so Friday evening would report a four-day week as five.
+
+### There is no state file
+
+**The file for week N is itself the record that week N was produced.** A state
+file would carry the same information, be written by the same commit, fail in
+the same instant for the same reason, and add one more artefact for fifteen
+workflows to race on.
+
+It reads the **working tree**, so the job pulls first. A queued run checks out
+the SHA fixed when the run was *created*, not when its job starts, so without
+the pull it can ask "has this week been produced?" of a tip that already
+answers yes — which is the mechanism behind the duplicate-post incident of
+2026-08-04, where two runs were serialised exactly as the concurrency group
+intended and the second still began from the commit before the first one's
+push.
+
+### Post first, then write
+
+The ordering is a choice between two failures, and the quieter one is worse.
+
+| order | failure | consequence |
+|---|---|---|
+| write, then post | commit succeeds, post fails | gate closed, **nothing ever posted** — silent |
+| **post, then write** | post succeeds, push fails | the post repeats tomorrow — **loud** |
+
+A duplicate is visible by reading the channel; a silent miss is not, and
+silence is the failure this repo is worst at noticing. So: post, then write,
+with `snapshot.yml`'s fetch-reset-retry loop around the push, and **the step
+exits non-zero if the push still fails** — turning a silent
+duplicate-tomorrow into a notice today.
+
+Last writer does *not* win here, unlike `snapshot.json`. A week file is
+written once and never rewritten, so the retry re-applies this run's new file
+on top of whatever else landed meanwhile.
+
+### DRY_RUN skips the post and the commit
+
+And the dry-run render path **refuses to write the live target week**. A dry
+run that wrote that file would close the gate and suppress the real post
+permanently, with no error anywhere — the same shape as the state-file races
+this repo already carries scars from. Backfilling an older week is harmless
+and allowed.
