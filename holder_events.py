@@ -126,7 +126,11 @@ SUBMISSIONS = "https://data.sec.gov/submissions/CIK{cik}.json"
 ARCHIVE = "https://www.sec.gov/Archives/edgar/data/{cik}/{nodash}/{doc}"
 INDEX = "https://www.sec.gov/Archives/edgar/data/{cik}/{nodash}/{acc}-index.htm"
 
-ARRIVAL, CHANGE, EXIT = "arrival", "change", "exit"
+ARRIVAL, CHANGE, EXIT, BELOW = "arrival", "change", "exit", "below"
+
+# The threshold the whole form family is about. A first sighting BELOW it is
+# not an arrival — see classify().
+FILING_THRESHOLD_PCT = 5.0
 AMBER, GREEN, GREY = 0xD29922, 0x3FB950, 0x5A6672
 
 # The two schema variants, one per form family. Measured over 233 filings:
@@ -318,7 +322,22 @@ def classify(state, ticker, people, pct):
     """(kind, previous_percent, state_key)."""
     key = match_holder(state, ticker, people)
     if key is None:
-        return ARRIVAL, None, f"{ticker}|{signature(people)}"
+        new_key = f"{ticker}|{signature(people)}"
+        # A FIRST SIGHTING BELOW 5% IS NOT AN ARRIVAL, and calling it one was
+        # the defect the first dry run caught: it rendered "ABTC — new >5%
+        # holder / Roxy Capital Corp / 0.20% of class", which is three claims
+        # and all of them wrong.
+        #
+        # What it actually is: an amendment disclosing a position that has
+        # already fallen below the threshold, whose crossing happened before
+        # this component's record begins. Reporting it as an arrival inverts
+        # the direction. Reporting it as an EXIT would be almost as bad — that
+        # asserts a transition nobody observed.
+        #
+        # So it gets its own kind, which states only what the filing states.
+        if pct is not None and pct < FILING_THRESHOLD_PCT:
+            return BELOW, None, new_key
+        return ARRIVAL, None, new_key
     prev = state["holders"].get(key)
     if pct is not None and pct == 0:
         return EXIT, prev, key
@@ -344,6 +363,10 @@ def era_note(state, ticker, filed):
                 "filing seen for this company, so there is no record to have "
                 "been absent from")
     months = (date.fromisoformat(filed) - date.fromisoformat(first)).days / 30.44
+    if months < 1:
+        return (f"first appearance, and this is at or near the start of "
+                f"{ticker}'s structured record ({first}) — there is barely "
+                f"any record to have been absent from")
     return (f"first appearance in {ticker}'s structured record, which begins "
             f"{first} ({months:.0f} months)")
 
@@ -364,7 +387,8 @@ def latency_note(form, ev, filed):
 def build_embed(ticker, name, row, kind, people, pct, prev, ev, note):
     title = {ARRIVAL: f"{ticker} — new >5% holder",
              CHANGE: f"{ticker} — holder position changed",
-             EXIT: f"{ticker} — holder dropped below 5%"}[kind]
+             EXIT: f"{ticker} — holder dropped below 5%",
+             BELOW: f"{ticker} — holder reported below 5%"}[kind]
     if "13D" in row["form"] and kind == ARRIVAL:
         title = f"{ticker} — activist stake disclosed"
 
@@ -378,6 +402,9 @@ def build_embed(ticker, name, row, kind, people, pct, prev, ev, note):
         elif prev is not None:
             arrow = "up" if pct > prev else "down"
             body += f"**{pct:.2f}%** of class — {arrow} from {prev:.2f}%"
+        elif kind == BELOW:
+            body += (f"**{pct:.2f}%** of class — already below the 5% "
+                     f"threshold when first seen here")
         else:
             body += f"**{pct:.2f}%** of class"
         body += "\n"
@@ -397,7 +424,8 @@ def build_embed(ticker, name, row, kind, people, pct, prev, ev, note):
         "url": INDEX.format(cik=int(CIKS[ticker][0]),
                             nodash=row["accession"].replace("-", ""),
                             acc=row["accession"]),
-        "color": {ARRIVAL: AMBER, CHANGE: GREY, EXIT: GREEN}[kind],
+        "color": {ARRIVAL: AMBER, CHANGE: GREY, EXIT: GREEN,
+                  BELOW: GREY}[kind],
         "footer": {"text": f"{name} · {row['accession']} · >5% disclosures "
                            f"only; holders below 5% never file"},
         "timestamp": datetime.now(timezone.utc).isoformat(),
