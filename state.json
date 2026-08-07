@@ -1,6 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001424020-25-000001",
   "urn:tag:sec.gov,2008:accession-number=0001871559-25-000005",
   "urn:tag:sec.gov,2008:accession-number=0001870910-25-000006",
   "urn:tag:sec.gov,2008:accession-number=0002043681-25-000003",
@@ -999,7 +998,8 @@
   "https://www.globenewswire.com/news-release/2025/11/07/3183921/0/en/mawson-infrastructure-group-inc-announces-lease-extension-for-its-bellefonte-pa-facility.html",
   "urn:tag:sec.gov,2008:accession-number=0002052994-26-000003",
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-340270",
-  "urn:tag:sec.gov,2008:accession-number=0001628280-26-054892"
+  "urn:tag:sec.gov,2008:accession-number=0001628280-26-054892",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-340447"
  ],
  "initialized": true
 }
