@@ -504,7 +504,7 @@ def main():
     alerts = evaluate(metrics, state)
 
     # Always show the full picture in the log, not just what alerted.
-    print("\nCurrent ratios (incl. extended hours):")
+    print("\nCurrent ratios (IEX day, 09:00-15:59 ET):")
     firing = {a["symbol"] for a in alerts}
     for symbol in TICKERS:
         m = metrics.get(symbol)

@@ -104,28 +104,34 @@ At time of writing BGDE and ANY are excluded by the first floor.
 
 ## Known quirks
 
-- **The threshold means different things through the day.** It compares session
-  volume to a *full-day* average with no intraday curve, so 1.5x at 9:45am is
-  extraordinary while 1.5x at 3:55pm is merely a busy day. This is deliberate —
-  it needs no volume-curve model and cannot produce false positives from
-  comparing a partial day against a full one. The cost is late detection: a
-  stock at 1.1x by midday is running at roughly double pace but won't alert.
-  Dividing by the fraction of session elapsed would fix this, at the cost of
-  wild extrapolation in the first few minutes.
+- **The threshold meant different things through the day, and now mostly does
+  not.** It compared session volume to a *full-day* average with no intraday
+  curve, so 1.5x at 09:45 was extraordinary while 1.5x at 15:55 was a busy day.
 
-  **The post now says where in the session it was taken**, because for a long
-  time this was documented here and nowhere the reader could see it. The footer
-  carries the Eastern clock and the elapsed fraction:
+  **From 10:00 ET the ratio is session-normalised** — elapsed volume against
+  the same elapsed fraction of the trailing thirty sessions rather than
+  against their totals. Measured over 60 sessions against the built code, that
+  reaches **152 tiers** the old measure never does and catches **129** a
+  median of **four hours** earlier, across **17 of 19** tickers.
 
-  ```
-  Alpaca IEX feed · read 15:55 ET, 74% through the 04:00-20:00 session,
-  against full-session averages
-  ```
+  It costs nothing to fetch. `hourly_bars()` has always requested the intraday
+  profile and `daily_totals()` has always discarded it, so this is a change to
+  how data already in hand is aggregated.
 
-  It sits in the footer rather than the table because the monospace block is
-  held to 28 characters and prose is not. Every other component in this repo
-  states its own latency; this one stated its feed and not its position in the
-  session, which is the same omission wearing different clothes.
+  **Before 10:00 ET the old denominator still applies**, and so it does
+  wherever a slot's baseline is thinner than `MIN_BASELINE_BARS`. The footer
+  names which was used.
+
+  | read at | elapsed of the 09:00–16:00 IEX day | basis |
+  |---|---|---|
+  | before 09:00 | **no data — IEX has not opened** | — |
+  | 09:45 | 10% | full-session, understates |
+  | 12:00 | 42% | normalised |
+  | 15:55 | 98% | normalised |
+  | after 16:00 | complete | normalised |
+
+  The 09:45 row is the only one that still understates, and it is one hour in
+  seven rather than the whole morning the old 04:00–20:00 framing implied.
 
 - **Pagination.** `MAX_PAGES` guards the bar fetch. If it is ever hit with data
   still pending, the log warns explicitly — a truncated baseline understates
@@ -136,31 +142,35 @@ At time of writing BGDE and ANY are excluded by the first floor.
 
 ## Running it outside its window
 
-**A run after the session closes is the most complete reading of the day, not
-a degraded one.** This inverts the obvious intuition and matters after a missed
-evening, so it is written down rather than rediscovered.
+**A run after the close is the most complete reading of the day, not a
+degraded one.** It matters after a missed evening, so it is written down.
 
-`today` is an **Eastern** date and the extended session runs to 20:00 ET. A run
-at 19:18 ET therefore sums a session that is roughly 95% complete and compares
-it against thirty complete baselines. Every *scheduled* fire compares a partial
-session against full ones and understates the ratio; a late one understates it
-least.
+`today` is an **Eastern** date and the IEX day ends at 15:59, so any run from
+16:00 onward sums a complete session against complete baselines — and from
+10:00 the two sides are normalised to the same elapsed fraction, which at the
+close is all of it. The footer says `the complete 09:00-16:00 IEX day`.
 
-| run at | session elapsed | the ratio is |
-|---|---|---|
-| 07:09 ET | 19% | understated ~5x |
-| 09:45 ET | 35% | understated ~3x |
-| 15:55 ET | 74% | understated ~1.3x |
-| 19:18 ET | 95% | very nearly true |
+So after an outage, **dispatch it rather than writing the day off.**
 
-So after an outage or a dropped evening, **dispatch it rather than writing the
-day off.** It is barely late in its own terms either: the last scheduled fire
-is 22:09 UTC, and at the measured 51–71 minute drift that normally lands
-23:00–23:20 UTC anyway.
-
-The one thing it cannot recover is a *tier* that was crossed and receded. State
-resets on a new Eastern date and records only the highest tier reached, so a
-ticker that touched 3x at noon and fell back to 1.8x by the close alerts at 1.8x
-on a single late run, where the hourly schedule would have caught the 3x. Late
-is the most accurate reading of the session; it is not a substitute for having
+The one thing it cannot recover is a *tier crossed and receded*. State resets
+on a new Eastern date and records only the highest tier reached, so a ticker
+that touched 3x at noon and fell back to 1.8x by the close alerts at 1.8x on a
+single late run, where the hourly schedule would have caught the 3x. Late is
+the most accurate reading of the session; it is not a substitute for having
 watched it.
+
+## The gate, and why it is not just a floor
+
+Ungated, normalising from 09:00 raises **149 alerts** the old measure does not,
+led by **BKKT at 16.8x on 35,588 shares** — over `MIN_ALERT_VOLUME`, and not a
+spike. The 09:00 denominator is one venue's opening sixty minutes.
+
+With the gate, 09:00 raises **none**, and the cost is 47 of the 152 tiers.
+
+`MIN_NORMALISED_VOLUME` (46,880) is a **second, independent** guard, derived
+rather than chosen: the 10th percentile of volume behind 298 full-session
+alerts, so a normalised alert never rests on less than an ordinary one.
+
+**It is not a substitute for the gate**, and the measurement says so — alone it
+blocks only 12 of those 149. The gate stops the hour; the floor stops the thin
+ones anywhere.
