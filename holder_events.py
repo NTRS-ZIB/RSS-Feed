@@ -475,10 +475,19 @@ def main():
 
     # FIRST RUN POSTS NOTHING. Every structured filing is new on a cold start,
     # and 233 of them would arrive at once. The same rule press_monitor uses.
+    #
+    # BUT A DRY RUN STILL SHOWS THEM, because a dry run saves no state and
+    # posts nothing, so there is no reason to withhold the output —
+    # comment_letters.py carries the same exception for the same reason.
+    # Without it the embed is unpreviewable on the only run where every event
+    # is available to preview, and the rendering ships having never been
+    # looked at.
     if first_run:
-        print(f"\nFirst run: {len(events)} event(s) recorded as seen, none "
-              f"posted. State initialised.")
-        events = []
+        print(f"\nFirst run: {len(events)} event(s) recorded as seen. "
+              + ("Showing them below; a dry run posts nothing and saves "
+                 "nothing." if DRY_RUN else "None posted. State initialised."))
+        if not DRY_RUN:
+            events = []
 
     print(f"\n{len(events)} event(s) to post")
     for ticker, name, row, kind, people, pct, prev, ev, note in events:
