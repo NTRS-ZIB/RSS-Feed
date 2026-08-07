@@ -54,6 +54,7 @@ on:
       - "Pending filings"
       - "Press release monitor"
       - "Probe holders"
+      - "Probe premarket"
       - "Probe sites"
       - "Probe spike normalisation"
       - "Reg SHO threshold list"

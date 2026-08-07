@@ -1,0 +1,33 @@
+name: Probe premarket
+
+# Is the missing premarket the request, the feed, or the venue? Compares the
+# IEX and SIP feeds hour by hour over the same window and symbols.
+#
+# Manual only, posts nothing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Calendar days to sample"
+        type: string
+        default: "30"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - env:
+          ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          PREMARKET_DAYS: ${{ inputs.days }}
+        run: python -u probe_premarket.py
