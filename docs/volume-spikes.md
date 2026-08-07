@@ -95,7 +95,7 @@ At time of writing BGDE and ANY are excluded by the first floor.
   carries the Eastern clock and the elapsed fraction:
 
   ```
-  Alpaca IEX feed · read 15:55 ET, 75% through the 04:00-20:00 session,
+  Alpaca IEX feed · read 15:55 ET, 74% through the 04:00-20:00 session,
   against full-session averages
   ```
 
@@ -103,6 +103,13 @@ At time of writing BGDE and ANY are excluded by the first floor.
   held to 28 characters and prose is not. Every other component in this repo
   states its own latency; this one stated its feed and not its position in the
   session, which is the same omission wearing different clothes.
+
+- **Pagination.** `MAX_PAGES` guards the bar fetch. If it is ever hit with data
+  still pending, the log warns explicitly — a truncated baseline understates
+  the average and overstates every ratio, which otherwise looks like normal
+  output. Observed requirement is 8 pages; the cap is 40.
+- **Thresholds are untested against a real event.** Tune after observing a
+  genuine earnings or news day rather than in advance.
 
 ## Running it outside its window
 
@@ -118,10 +125,10 @@ least.
 
 | run at | session elapsed | the ratio is |
 |---|---|---|
-| 07:09 ET | 20% | understated ~5x |
-| 09:45 ET | 36% | understated ~3x |
-| 15:55 ET | 75% | understated ~1.3x |
-| 19:18 ET | 96% | very nearly true |
+| 07:09 ET | 19% | understated ~5x |
+| 09:45 ET | 35% | understated ~3x |
+| 15:55 ET | 74% | understated ~1.3x |
+| 19:18 ET | 95% | very nearly true |
 
 So after an outage or a dropped evening, **dispatch it rather than writing the
 day off.** It is barely late in its own terms either: the last scheduled fire
@@ -134,9 +141,3 @@ ticker that touched 3x at noon and fell back to 1.8x by the close alerts at 1.8x
 on a single late run, where the hourly schedule would have caught the 3x. Late
 is the most accurate reading of the session; it is not a substitute for having
 watched it.
-- **Pagination.** `MAX_PAGES` guards the bar fetch. If it is ever hit with data
-  still pending, the log warns explicitly — a truncated baseline understates
-  the average and overstates every ratio, which otherwise looks like normal
-  output. Observed requirement is 8 pages; the cap is 40.
-- **Thresholds are untested against a real event.** Tune after observing a
-  genuine earnings or news day rather than in advance.

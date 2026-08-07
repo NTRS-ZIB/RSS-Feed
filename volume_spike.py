@@ -306,6 +306,16 @@ def build_embed(alerts):
         lines.append(f"{a['symbol']:<5}{a['ratio']:>5.1f}x"
                      f"{a['close']:>8.2f}{move:>8}")
     clock, pct = session_position()
+    # A COMPLETE SESSION IS NOT "100% THROUGH" ONE, and the two must not print
+    # the same string. `{pct:.0%}` rounded 99.9% up, so a reading one minute
+    # before the close was textually identical to one taken after it — and
+    # telling those apart is exactly what docs/volume-spikes.md now asks a
+    # reader to do when deciding whether a late run is worth dispatching.
+    #
+    # int() floors, so 99.9% reads 99% and only a genuinely finished session
+    # reaches the other branch.
+    elapsed = ("the complete 04:00-20:00 session" if pct >= 1.0
+               else f"{int(pct * 100)}% through the 04:00-20:00 session")
 
     return {
         "title": "Unusual volume",
@@ -319,9 +329,8 @@ def build_embed(alerts):
         # In the FOOTER, not the block. The monospace table is held to 28
         # characters and check_post()-style width rules bite there; the footer
         # is prose and has no such ceiling.
-        "footer": {"text": f"Alpaca IEX feed · read {clock} ET, {pct:.0%} "
-                           f"through the 04:00-20:00 session, against "
-                           f"full-session averages"},
+        "footer": {"text": f"Alpaca IEX feed · read {clock} ET, {elapsed}, "
+                           f"against full-session averages"},
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
