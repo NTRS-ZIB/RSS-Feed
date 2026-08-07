@@ -46,11 +46,41 @@ for problem in watchlist.validate():
 # with "SC 13D" — the fourth character is H, not a space — so the legacy prefix
 # alone silently misses every recent one. Keep both.
 #
-# The oldest filing observed under the new spelling is 2024-12-16, which is what
-# dates the changeover; it was not the 2023 modernisation, as this comment
-# previously claimed. Adding the prefix recovered 117 filings across eleven
-# issuers. That count came from a measurement taken at the time and is recorded
-# nowhere else in this repo, so it cannot be re-derived from anything here.
+# THERE IS NO CHANGEOVER DATE. This comment used to give one — 2024-12-16, "the
+# oldest filing observed under the new spelling", offered as the date the
+# spelling changed. A full-history sweep of 13D/G across all nineteen companies
+# on 2026-08-06 measured 707 filings and found the two spellings INTERLEAVED
+# for ten months:
+#
+#   oldest SCHEDULE spelling anywhere   2024-01-26   IREN
+#   newest SC spelling anywhere         2024-11-29   APLD
+#
+# and the transition is per-filer, not per-calendar:
+#
+#   IREN   last SC 2024-02-14, first SCHEDULE 2024-01-26   <- overlaps itself
+#   VIP    last SC 2023-02-09, first SCHEDULE 2025-01-28
+#   ANY    last SC 2024-02-13, first SCHEDULE 2025-02-14
+#   HUT    last SC 2024-11-12, first SCHEDULE 2025-09-10
+#
+# 2024-12-16 was NUAI's first filing of any kind, and NUAI files structured
+# only. The old number was the oldest structured filing inside a window that
+# never reached IREN's January 2024 — the CUSIP-sweep lesson a third time: a
+# window that found nothing had not been swept far enough, and the figure sat
+# in a comment as a fact.
+#
+# CORRECTING THE DATE IS THE SMALLER HALF. Recording a single date at all is the
+# error, because a reader who takes 2024-01-26 as a boundary makes the same
+# mistake one step later. It is a range, and within the range it is per-filer.
+#
+# None of this changes behaviour, and that is the point: FORMS carries both
+# spellings, so an interleaved transition is handled by construction. Matching
+# both was right for a reason better than the one originally given — not
+# "filings before the changeover use the old spelling" but "there was no
+# changeover to be before".
+#
+# Adding the prefix recovered 117 filings across eleven issuers. That count came
+# from a measurement taken at the time and is recorded nowhere else in this
+# repo, so it cannot be re-derived from anything here.
 #
 # NT is MATCHED as a family prefix but EMITTED per form. press_monitor.py moved
 # to "NT " after hand-enumeration left NT 20-F missing for months — precisely the

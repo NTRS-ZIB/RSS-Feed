@@ -24,6 +24,25 @@ questions in order, because each one bounds the next:
 
 Needs SEC_USER_AGENT. Run it through the workflow.
 
+A CENSUS OVER A TAG LIST IS ONLY AS GOOD AS THE TAG LIST, AND IT FAILS AS A
+PLAUSIBLE NUMBER RATHER THAN AS AN ERROR.
+
+The census phase reported "group filings: 233 (100%)" and "310 distinct
+reporting persons". Both were wrong. It took the first element anywhere in the
+document whose tag was in a candidate list, and `personName` under
+`coverPageHeader/authorizedPersons/notificationInfo` precedes the reporting
+persons in document order — so every filing was credited to its notification
+contact, the filing agent's clerk.
+
+Nothing errored. Both numbers were the right order of magnitude and would have
+been reported as findings. What caught it was a single visibly wrong name:
+ANY's July 13D read "Joshua Kilgore" where the filer is Endeavor Blockchain,
+LLC. **Without that name being recognisable, the contamination was invisible.**
+
+So: when a census counts occurrences of a tag, check that the tag it found is
+the tag it meant, on a case whose answer is known independently. A count over
+the wrong element looks exactly like a count over the right one.
+
 WHAT THIS PROBE MUST NOT CONCLUDE
 Two things are known before it starts and no output here can overturn them:
 
@@ -525,8 +544,37 @@ def phase_census():
 # percentOfClass carries prose, classPercent may still be numeric, and the
 # fallback is then reading the right element rather than regexing the wrong
 # one.
+# THE TWO STRUCTURES ARE NOT ALTERNATIVES WITHIN A FILING — THEY ARE ONE PER
+# FORM FAMILY, and reading only the first is the tag-list mistake a third time.
+# Measured 2026-08-07 over 233 structured filings: every one carries blocks of
+# exactly one kind and none of the other.
+#
+#   SCHEDULE 13D, 13D/A   ->  reportingPersons/reportingPersonInfo
+#   SCHEDULE 13G, 13G/A   ->  coverPageHeaderReportingPersonDetails
+#
+# A pass reading only reportingPersonInfo found zero blocks in 156 of 233
+# filings and duly reported "no prose percentOfClass anywhere" — an answer
+# about two-thirds of nothing. The block-count histogram is printed for that
+# reason: `0x156` is what exposed it, and a census that does not show its own
+# denominator cannot.
 RP_BLOCK = "reportingPersonInfo"
 CP_BLOCK = "coverPageHeaderReportingPersonDetails"
+# (name, percent, amount) field names, per variant.
+VARIANTS = {
+    RP_BLOCK: ("reportingPersonName", "percentOfClass", "aggregateAmountOwned"),
+    CP_BLOCK: ("reportingPersonName", "classPercent",
+               "reportingPersonBeneficiallyOwnedAggregateNumberOfShares"),
+}
+
+
+def person_blocks(root):
+    """[(name, percent_raw, amount_raw, variant)] across both schemas."""
+    out = []
+    for block_name, (n_tag, p_tag, a_tag) in VARIANTS.items():
+        for b in blocks(root, block_name):
+            out.append((field(b, n_tag), field(b, p_tag), field(b, a_tag),
+                        block_name))
+    return out
 
 NUMERIC = re.compile(r"^\s*-?[\d,]*\.?\d+\s*%?\s*$")
 # Last resort only, and measured against the cover page rather than trusted.
@@ -567,6 +615,7 @@ def phase_questions():
     # (company, holder) -> [(filed, pct, form)]
     history = defaultdict(list)
     prose_cases = []
+    missing = []
     per_filing = []
     fetched = 0
 
@@ -589,62 +638,48 @@ def phase_questions():
                 continue
             time.sleep(GAP)
 
-            rp = blocks(root, RP_BLOCK)
-            cp = blocks(root, CP_BLOCK)
-            per_filing.append((ticker, r["filed"], r["form"], len(rp), len(cp)))
+            people = person_blocks(root)
+            kinds = Counter(v for _n, _p, _a, v in people)
+            per_filing.append((ticker, r["filed"], r["form"], len(people),
+                               dict(kinds)))
 
-            for i, b in enumerate(rp):
-                name = field(b, "reportingPersonName")
-                pct_raw = field(b, "percentOfClass")
-                num = as_number(pct_raw) if pct_raw and NUMERIC.match(pct_raw) \
-                    else None
+            for name, pct_raw, _amt, variant in people:
+                num = as_number(pct_raw) if pct_raw and NUMERIC.match(pct_raw)                     else None
                 if name:
-                    history[(ticker, name)].append(
-                        (r["filed"], num, r["form"]))
+                    history[(ticker, name)].append((r["filed"], num, r["form"]))
                 if pct_raw is not None and num is None:
-                    # The matching cover-page block, by position then by name.
-                    mate = cp[i] if i < len(cp) else None
-                    if mate is None:
-                        mate = next((c for c in cp
-                                     if field(c, "reportingPersonName") == name),
-                                    None)
-                    cover = field(mate, "classPercent") if mate is not None \
-                        else None
                     m = PROSE_PCT.search(pct_raw)
                     prose_cases.append({
                         "ticker": ticker, "filed": r["filed"], "name": name,
+                        "form": r["form"], "variant": variant,
                         "prose": " ".join(pct_raw.split())[:70],
-                        "cover": cover,
-                        "cover_num": as_number(cover),
                         "regex": float(m.group(1)) if m else None,
                     })
+                if pct_raw is None and name:
+                    missing.append((ticker, r["filed"], r["form"], variant))
 
     # ------------------------------------------------------------ Q1 -------
-    print("\n" + "-" * 78)
-    print("Q1  the 14% prose rate — does the cover page recover it?")
+    print(chr(10) + "-" * 78)
+    print("Q1  the prose rate — measured over BOTH schema variants")
     print("-" * 78)
-    if not prose_cases:
-        print("  no prose percentOfClass found")
-    recovered = [c for c in prose_cases if c["cover_num"] is not None]
-    byregex = [c for c in prose_cases if c["regex"] is not None]
-    agree = [c for c in recovered
-             if c["regex"] is not None and abs(c["cover_num"] - c["regex"]) < 0.01]
-    print(f"  {len(prose_cases)} reporting-person blocks with non-numeric "
-          f"percentOfClass")
-    print(f"  cover-page classPercent numeric in {len(recovered)} "
-          f"({len(recovered) / len(prose_cases) * 100:.0f}%)"
-          if prose_cases else "")
-    print(f"  prose regex yields a number in {len(byregex)}")
-    print(f"  both present and agreeing: {len(agree)} of "
-          f"{len([c for c in recovered if c['regex'] is not None])}")
-    print(f"\n  {'ticker':<7}{'filed':<12}{'cover':>8}{'regex':>8}  holder / prose")
-    for c in prose_cases[:24]:
-        print(f"  {c['ticker']:<7}{c['filed']:<12}"
-              f"{(c['cover'] or '-'):>8}"
-              f"{(c['regex'] if c['regex'] is not None else '-'):>8}  "
-              f"{str(c['name'])[:26]:<26} {c['prose'][:44]}")
-    if len(prose_cases) > 24:
-        print(f"  ... and {len(prose_cases) - 24} more")
+    total_blocks = sum(p[3] for p in per_filing)
+    print(f"  {total_blocks} reporting-person blocks across "
+          f"{len(per_filing)} filings")
+    print(f"  percent field absent entirely: {len(missing)}")
+    print(f"  percent field non-numeric (prose): {len(prose_cases)} "
+          f"({len(prose_cases) / total_blocks * 100:.1f}%)"
+          if total_blocks else "")
+    byvariant = Counter(c["variant"] for c in prose_cases)
+    print(f"  by variant: {dict(byvariant) or 'none'}")
+    got = [c for c in prose_cases if c["regex"] is not None]
+    print(f"  a percentage recoverable from the prose by regex: {len(got)} "
+          f"of {len(prose_cases)}")
+    for c in prose_cases[:20]:
+        print(f"    {c['ticker']:<6}{c['filed']}  {c['form']:<15}"
+              f"regex={str(c['regex']):>6}  {str(c['name'])[:22]:<22} "
+              f"{c['prose'][:40]}")
+    if len(prose_cases) > 20:
+        print(f"    ... and {len(prose_cases) - 20} more")
 
     # ------------------------------------------------------------ Q2 -------
     print("\n" + "-" * 78)
@@ -658,10 +693,15 @@ def phase_questions():
     sizes = Counter(p[3] for p in per_filing)
     print(f"  blocks per filing: "
           + ", ".join(f"{n}x{c}" for n, c in sorted(sizes.items())))
-    mismatch = [p for p in per_filing if p[3] != p[4]]
-    print(f"  reportingPersonInfo count != coverPageHeader count: "
-          f"{len(mismatch)}"
-          + (f"  {mismatch[:5]}" if mismatch else ""))
+    variants = Counter()
+    for p in per_filing:
+        for k, n in p[4].items():
+            variants[k] += n
+    print(f"  blocks by schema variant: {dict(variants)}")
+    empty = [p for p in per_filing if p[3] == 0]
+    print(f"  filings yielding NO person block under either schema: "
+          f"{len(empty)}" + (f"  {[(e[0], e[1], e[2]) for e in empty[:4]]}"
+                             if empty else ""))
     people = {k[1] for k in history}
     print(f"  distinct reporting persons, deduplicated by name: {len(people)}")
     print(f"  distinct (company, holder) pairs: {len(history)}")
