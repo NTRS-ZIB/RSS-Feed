@@ -86,6 +86,20 @@ MIN_BASELINE_BARS = 10
 MIN_BASELINE_VOLUME = 10_000
 MIN_ALERT_VOLUME = 25_000
 
+# The session-normalised measure starts here, in Eastern hours. Not a
+# preference — see ratio_for(). IEX trades 09:00-15:59, so this withholds
+# normalisation from one hour in seven, and it is the hour the thin-day
+# measurement flagged.
+NORMALISE_FROM_HOUR = 10
+
+# A NORMALISED alert must rest on at least this much absolute volume, over and
+# above MIN_ALERT_VOLUME. Derived rather than chosen: it is the 10th percentile
+# of the volume behind alerts the FULL-SESSION measure raises, so a normalised
+# alert can never rest on less than an ordinary one does. Set from the
+# measurement in probe_spike_norm.py; the value is recorded in
+# docs/volume-spikes.md with the distribution it came from.
+MIN_NORMALISED_VOLUME = 0        # measured below, set after the probe runs
+
 FEED = "iex"          # free tier. Must match on both sides; see module docstring.
 
 # Calendar days fetched to yield ~30 sessions of hourly bars.
@@ -144,8 +158,9 @@ def save_state(state):
 def hourly_bars():
     """All hourly bars for the watchlist over the lookback window.
 
-    Hourly bars span the extended session, so premarket and after-hours
-    trades are included on both today's figure and the baseline.
+    Both sides of every ratio are built from these same bars, so whatever
+    hours IEX happens to carry appear in numerator and denominator alike. On
+    this feed that is 09:00-15:59 ET; see the module docstring.
     """
     start = (date.today() - timedelta(days=LOOKBACK_DAYS)).isoformat()
     bars, token, pages = defaultdict(list), None, 0
@@ -196,6 +211,66 @@ def daily_totals(rows):
         if b.get("c"):
             closes[day] = b["c"]
     return {d: (vols[d], closes.get(d)) for d in vols}
+
+
+def slot_totals(rows):
+    """{ET date: {hour: volume}} — the intraday profile.
+
+    hourly_bars() has always fetched this and daily_totals() has always thrown
+    it away on the next line. The session-normalised baseline below needs no
+    new request for that reason: it is a change to how already-fetched data is
+    aggregated, not a new fetch, so there is no cache and no staleness.
+    """
+    out = defaultdict(lambda: defaultdict(float))
+    for b in rows:
+        stamp, volume = b.get("t"), b.get("v")
+        if not stamp or volume is None:
+            continue
+        try:
+            ts = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        et = ts.astimezone(EASTERN)
+        out[et.date()][et.hour] += volume
+    return out
+
+
+def elapsed_through(day_slots, hour):
+    """Volume from the session open through `hour` inclusive."""
+    return sum(v for h, v in day_slots.items()
+               if SESSION_OPEN.hour <= h <= hour)
+
+
+def ratio_for(volume, hour, slot_base, full_base):
+    """(ratio, basis) — the gated session-normalised measure.
+
+    THE COMPONENT UNDERSTATES ALL DAY, because it divides a partial session by
+    a full-session mean. Measured over 60 sessions: a normalised measure
+    reaches 151 tiers this one never does, and catches 129 more a median of
+    four hours earlier, across 17 of 19 tickers.
+
+    SO WHY IS IT GATED. The gain concentrates in the first hour, and the first
+    hour is where the denominator is one venue's opening sixty minutes. BKKT
+    read 16.8x on 35,588 shares at 09:00 — comfortably over MIN_ALERT_VOLUME,
+    and not a spike. The understatement is at least conservative in the
+    direction that avoids that; removing it wholesale removes the protection
+    too.
+
+    The gate costs little because of what the feed actually is. IEX trades
+    09:00-15:59, seven hours, so holding the first hour back on the old
+    denominator withholds normalisation from ONE HOUR IN SEVEN rather than
+    from a whole morning.
+
+    Falls back to the full-session denominator whenever the slot baseline is
+    too thin to lean on — 55% of (ticker, hour) cells fail that test across
+    the roster, and every one of them sits outside 09:00-15:00.
+    """
+    full = sum(full_base) / len(full_base) if full_base else 0
+    if hour >= NORMALISE_FROM_HOUR and len(slot_base) >= MIN_BASELINE_BARS:
+        mean_slot = sum(slot_base) / len(slot_base)
+        if mean_slot > 0:
+            return volume / mean_slot, "normalised"
+    return (volume / full if full else 0), "full-session"
 
 
 def build_metrics(bars):
@@ -282,10 +357,19 @@ def human(v):
     return f"{v:.0f}"
 
 
-# Alpaca's extended session, in Eastern. The same span daily_totals() groups
-# by, so the fraction below describes exactly the window the numerator covers.
-SESSION_OPEN = dtime(4, 0)
-SESSION_CLOSE = dtime(20, 0)
+# THE IEX TRADING DAY, in Eastern — not the extended session.
+#
+# This was 04:00-20:00, the extended session, and that is the wrong
+# denominator for this feed. Measured over 30 sessions: IEX carries 0.02% of
+# its volume before 09:00 and 0.00% after 16:00, so a reading at 15:55 was
+# reported as "74% through the session" when it was within five minutes of the
+# last bar of the day.
+#
+# A footer stating a false denominator is worse than no footer, because it
+# reads as precision. The whole point of it is to say where in the session the
+# number was taken, and 04:00-20:00 is not the session the number came from.
+SESSION_OPEN = dtime(9, 0)
+SESSION_CLOSE = dtime(16, 0)
 
 
 def session_position(now=None):
@@ -332,8 +416,8 @@ def build_embed(alerts):
     #
     # int() floors, so 99.9% reads 99% and only a genuinely finished session
     # reaches the other branch.
-    elapsed = ("the complete 04:00-20:00 session" if pct >= 1.0
-               else f"{int(pct * 100)}% through the 04:00-20:00 session")
+    elapsed = ("the complete 09:00-16:00 IEX day" if pct >= 1.0
+               else f"{int(pct * 100)}% through the 09:00-16:00 IEX day")
 
     return {
         "title": "Unusual volume",
