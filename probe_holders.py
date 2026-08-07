@@ -38,6 +38,7 @@ Two things are known before it starts and no output here can overturn them:
 
 import json
 import os
+import statistics
 import re
 import sys
 import time
@@ -45,6 +46,7 @@ import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
+from datetime import date
 
 import watchlist
 
@@ -506,6 +508,231 @@ def phase_census():
         print(f"  HIT THE {MAX_DOCS}-DOCUMENT CEILING — counts are truncated")
 
 
+# --------------------------------------------------------------- QUESTIONS --
+
+# THE SCHEMA, READ OFF THE TREE DUMP RATHER THAN GUESSED. Two parallel
+# structures carry the same facts, and the census only read one of them:
+#
+#   /formData/reportingPersons/reportingPersonInfo/     repeats, one per person
+#       reportingPersonName, reportingPersonCIK, percentOfClass,
+#       aggregateAmountOwned, sole/shared voting/dispositive power
+#
+#   /formData/coverPageHeaderReportingPersonDetails/    repeats, one per person
+#       reportingPersonName, classPercent,
+#       reportingPersonBeneficiallyOwnedAggregateNumberOfShares
+#
+# The second IS the cover page. That matters for question 1: when
+# percentOfClass carries prose, classPercent may still be numeric, and the
+# fallback is then reading the right element rather than regexing the wrong
+# one.
+RP_BLOCK = "reportingPersonInfo"
+CP_BLOCK = "coverPageHeaderReportingPersonDetails"
+
+NUMERIC = re.compile(r"^\s*-?[\d,]*\.?\d+\s*%?\s*$")
+# Last resort only, and measured against the cover page rather than trusted.
+PROSE_PCT = re.compile(r"([\d]{1,3}(?:\.\d+)?)\s*%")
+
+
+def tag_of(el):
+    return el.tag.split("}")[-1]
+
+
+def blocks(root, name):
+    return [el for el in root.iter() if tag_of(el) == name]
+
+
+def field(block, *names):
+    for el in block.iter():
+        if tag_of(el) in names and (el.text or "").strip():
+            return el.text.strip()
+    return None
+
+
+def as_number(text):
+    if text is None:
+        return None
+    t = text.strip().rstrip("%").replace(",", "")
+    try:
+        return float(t)
+    except ValueError:
+        return None
+
+
+def phase_questions():
+    """Settle the three open questions, each measured rather than assumed."""
+    print("=" * 78)
+    print("THE THREE OPEN QUESTIONS")
+    print("=" * 78)
+
+    # (company, holder) -> [(filed, pct, form)]
+    history = defaultdict(list)
+    prose_cases = []
+    per_filing = []
+    fetched = 0
+
+    for ticker, (cik, _name) in sorted(roster().items()):
+        rows, _ = all_filings(cik)
+        xmls = sorted((r for r in rows if is_13x(r["form"]) and r["doc"]),
+                      key=lambda r: r["filed"])
+        xmls = [r for r in xmls if r["doc"].endswith(".xml")]
+        for r in xmls:
+            if fetched >= MAX_DOCS:
+                print(f"  HIT THE {MAX_DOCS}-DOCUMENT CEILING at {ticker}")
+                break
+            url = ARCHIVE.format(cik=int(cik),
+                                 nodash=r["accession"].replace("-", ""),
+                                 doc=raw_xml_path(r["doc"]))
+            try:
+                root = ET.fromstring(fetch(url, as_json=False))
+                fetched += 1
+            except Exception:                               # noqa: BLE001
+                continue
+            time.sleep(GAP)
+
+            rp = blocks(root, RP_BLOCK)
+            cp = blocks(root, CP_BLOCK)
+            per_filing.append((ticker, r["filed"], r["form"], len(rp), len(cp)))
+
+            for i, b in enumerate(rp):
+                name = field(b, "reportingPersonName")
+                pct_raw = field(b, "percentOfClass")
+                num = as_number(pct_raw) if pct_raw and NUMERIC.match(pct_raw) \
+                    else None
+                if name:
+                    history[(ticker, name)].append(
+                        (r["filed"], num, r["form"]))
+                if pct_raw is not None and num is None:
+                    # The matching cover-page block, by position then by name.
+                    mate = cp[i] if i < len(cp) else None
+                    if mate is None:
+                        mate = next((c for c in cp
+                                     if field(c, "reportingPersonName") == name),
+                                    None)
+                    cover = field(mate, "classPercent") if mate is not None \
+                        else None
+                    m = PROSE_PCT.search(pct_raw)
+                    prose_cases.append({
+                        "ticker": ticker, "filed": r["filed"], "name": name,
+                        "prose": " ".join(pct_raw.split())[:70],
+                        "cover": cover,
+                        "cover_num": as_number(cover),
+                        "regex": float(m.group(1)) if m else None,
+                    })
+
+    # ------------------------------------------------------------ Q1 -------
+    print("\n" + "-" * 78)
+    print("Q1  the 14% prose rate — does the cover page recover it?")
+    print("-" * 78)
+    if not prose_cases:
+        print("  no prose percentOfClass found")
+    recovered = [c for c in prose_cases if c["cover_num"] is not None]
+    byregex = [c for c in prose_cases if c["regex"] is not None]
+    agree = [c for c in recovered
+             if c["regex"] is not None and abs(c["cover_num"] - c["regex"]) < 0.01]
+    print(f"  {len(prose_cases)} reporting-person blocks with non-numeric "
+          f"percentOfClass")
+    print(f"  cover-page classPercent numeric in {len(recovered)} "
+          f"({len(recovered) / len(prose_cases) * 100:.0f}%)"
+          if prose_cases else "")
+    print(f"  prose regex yields a number in {len(byregex)}")
+    print(f"  both present and agreeing: {len(agree)} of "
+          f"{len([c for c in recovered if c['regex'] is not None])}")
+    print(f"\n  {'ticker':<7}{'filed':<12}{'cover':>8}{'regex':>8}  holder / prose")
+    for c in prose_cases[:24]:
+        print(f"  {c['ticker']:<7}{c['filed']:<12}"
+              f"{(c['cover'] or '-'):>8}"
+              f"{(c['regex'] if c['regex'] is not None else '-'):>8}  "
+              f"{str(c['name'])[:26]:<26} {c['prose'][:44]}")
+    if len(prose_cases) > 24:
+        print(f"  ... and {len(prose_cases) - 24} more")
+
+    # ------------------------------------------------------------ Q2 -------
+    print("\n" + "-" * 78)
+    print("Q2  group filings — the real rate, from the repeating block")
+    print("-" * 78)
+    multi = [p for p in per_filing if p[3] > 1]
+    print(f"  {len(per_filing)} filings read")
+    print(f"  more than one reportingPersonInfo block: {len(multi)} "
+          f"({len(multi) / len(per_filing) * 100:.0f}%)"
+          if per_filing else "")
+    sizes = Counter(p[3] for p in per_filing)
+    print(f"  blocks per filing: "
+          + ", ".join(f"{n}x{c}" for n, c in sorted(sizes.items())))
+    mismatch = [p for p in per_filing if p[3] != p[4]]
+    print(f"  reportingPersonInfo count != coverPageHeader count: "
+          f"{len(mismatch)}"
+          + (f"  {mismatch[:5]}" if mismatch else ""))
+    people = {k[1] for k in history}
+    print(f"  distinct reporting persons, deduplicated by name: {len(people)}")
+    print(f"  distinct (company, holder) pairs: {len(history)}")
+    for probe in ("Citadel", "Susquehanna", "Vanguard", "FMR", "Endeavor",
+                  "Armistice", "BlackRock"):
+        hits = sorted({n for n in people if probe.lower() in n.lower()})
+        if hits:
+            print(f"    {probe}: {len(hits)} entity name(s)")
+            for h in hits:
+                print(f"      {h}")
+
+    # ------------------------------------------------------------ Q3 -------
+    print("\n" + "-" * 78)
+    print("Q3  ageing a holder out — is there a threshold at all?")
+    print("-" * 78)
+    gaps = []
+    explicit_exit, still, lapsed = [], [], []
+    newest = max((d for v in history.values() for d, _p, _f in v), default="")
+    for (ticker, name), rec in history.items():
+        rec.sort()
+        for a, b in zip(rec, rec[1:]):
+            d0 = date.fromisoformat(a[0])
+            d1 = date.fromisoformat(b[0])
+            gaps.append((d1 - d0).days)
+        last_date, last_pct, _form = rec[-1]
+        age = (date.fromisoformat(newest) - date.fromisoformat(last_date)).days
+        if last_pct is not None and last_pct == 0:
+            explicit_exit.append((ticker, name, last_date))
+        elif age <= 200:
+            still.append((ticker, name, age, len(rec)))
+        else:
+            lapsed.append((ticker, name, age, len(rec)))
+    if gaps:
+        gaps.sort()
+        med = statistics.median(gaps)
+        print(f"  {len(gaps)} consecutive-filing gaps across "
+              f"{len(history)} (company, holder) pairs")
+        print(f"  percentiles  p10 {gaps[len(gaps)//10]}d  p50 {med:.0f}d  "
+              f"p90 {gaps[len(gaps)*9//10]}d  max {gaps[-1]}d")
+        print(f"  calibrate_staleness formula, max(6 x median, 60): "
+              f"{max(6 * med, 60):.0f} days")
+    print(f"\n  EXPLICIT EXITS — a final filing reporting 0%: "
+          f"{len(explicit_exit)}")
+    for t, n, d in explicit_exit[:10]:
+        print(f"    {t:<6} {d}  {n[:50]}")
+    print(f"\n  holders whose last filing is <=200 days old: {len(still)}")
+    print(f"  holders silent longer than that: {len(lapsed)}")
+    print("\n  THE SEPARATION TEST — median own-gap of each group. If these")
+    print("  overlap, no threshold distinguishes gone from quiet.")
+    for label, group in (("still filing", still), ("silent", lapsed)):
+        owngaps = []
+        for t, n, _age, _cnt in group:
+            rec = sorted(history[(t, n)])
+            g = [(date.fromisoformat(b[0]) - date.fromisoformat(a[0])).days
+                 for a, b in zip(rec, rec[1:])]
+            if g:
+                owngaps.append(statistics.median(g))
+        if owngaps:
+            owngaps.sort()
+            print(f"    {label:<14} n={len(owngaps):<4} "
+                  f"median own-gap p10 {owngaps[len(owngaps)//10]:.0f}d  "
+                  f"p50 {statistics.median(owngaps):.0f}d  "
+                  f"p90 {owngaps[len(owngaps)*9//10]:.0f}d")
+        else:
+            print(f"    {label:<14} no holder with two or more filings")
+    singles = sum(1 for v in history.values() if len(v) == 1)
+    print(f"\n  holders with a SINGLE filing and no gap to measure: "
+          f"{singles} of {len(history)}")
+    print(f"  documents fetched: {fetched}")
+
+
 def main():
     print(f"phase: {PHASE}   roster: "
           f"{', '.join(sorted(roster())) if ONLY else 'all 19'}\n")
@@ -513,7 +740,8 @@ def main():
      "structured": phase_structured,
      "legacy": phase_legacy,
      "timeline": phase_timeline,
-     "census": phase_census}[PHASE]()
+     "census": phase_census,
+     "questions": phase_questions}[PHASE]()
     return 0
 
 
