@@ -773,6 +773,131 @@ def phase_questions():
     print(f"  documents fetched: {fetched}")
 
 
+SUFFIXES = {"LLC", "LP", "INC", "INC.", "LTD", "LTD.", "CORP", "CORP.", "CO",
+            "PLC", "SA", "SARL", "AG", "NV", "BV", "PTE", "GMBH", "LLP",
+            "L.P.", "L.L.C.", "S.A.", "GROUP", "HOLDINGS", "HOLDING",
+            "COMPANY", "THE", "&", "DE", "C.V."}
+
+
+def name_stem(name):
+    """First meaningful token. A HYPOTHESIS about grouping, never the answer."""
+    words = re.sub(r"[^\w\s&.]", " ", name.upper()).split()
+    for w in words:
+        if w not in SUFFIXES and len(w) > 2:
+            return w
+    return words[0] if words else name.upper()
+
+
+def phase_groups():
+    """Bound the filer-group overstatement, and date each structured era.
+
+    THE NAME IS THE HYPOTHESIS; CO-FILING IS THE EVIDENCE. Two entities that
+    appear as reporting persons on the SAME filing are one filer group — that
+    is what a group filing is. Two unrelated firms sharing a word never
+    co-file. So the same discriminator that separated a rename from a
+    collision, and a placeholder from a second security, settles this too:
+    look at whether they occur together, not at whether they look alike.
+
+    Name-stem matching alone would merge two unrelated firms sharing a word,
+    silently, which is the alias-collision shape watchlist.validate() exists to
+    catch.
+    """
+    print("=" * 78)
+    print("GROUPS AND ERA STARTS")
+    print("=" * 78)
+    cofile = defaultdict(set)     # name -> names it has ever co-filed with
+    names = set()
+    era = {}
+    fetched = 0
+
+    for ticker, (cik, _name) in sorted(roster().items()):
+        rows, _ = all_filings(cik)
+        xmls = sorted((r for r in rows if is_13x(r["form"])
+                       and r["doc"].endswith(".xml")),
+                      key=lambda r: r["filed"])
+        if xmls:
+            era[ticker] = (xmls[0]["filed"], xmls[-1]["filed"], len(xmls))
+        for r in xmls:
+            if fetched >= MAX_DOCS:
+                break
+            url = ARCHIVE.format(cik=int(cik),
+                                 nodash=r["accession"].replace("-", ""),
+                                 doc=raw_xml_path(r["doc"]))
+            try:
+                root = ET.fromstring(fetch(url, as_json=False))
+                fetched += 1
+            except Exception:                                   # noqa: BLE001
+                continue
+            time.sleep(GAP)
+            here = {n for n, _p, _a, _v in person_blocks(root) if n}
+            names |= here
+            for n in here:
+                cofile[n] |= (here - {n})
+
+    # Connected components over the co-filing graph.
+    seen, components = set(), []
+    for n in sorted(names):
+        if n in seen:
+            continue
+        stack, comp = [n], set()
+        while stack:
+            cur = stack.pop()
+            if cur in comp:
+                continue
+            comp.add(cur)
+            stack.extend(cofile[cur] - comp)
+        seen |= comp
+        components.append(sorted(comp))
+
+    multi = [c for c in components if len(c) > 1]
+    print(f"\n  {len(names)} distinct reporting-person names")
+    print(f"  {len(components)} filer groups by CO-FILING "
+          f"({len(multi)} of them with more than one name)")
+    print(f"  names inside a multi-name group: "
+          f"{sum(len(c) for c in multi)} "
+          f"({sum(len(c) for c in multi) / len(names) * 100:.0f}%)")
+    print(f"\n  the multi-name groups, largest first:")
+    for c in sorted(multi, key=len, reverse=True):
+        print(f"    [{len(c)}] {c[0]}")
+        for n in c[1:]:
+            print(f"        {n}")
+
+    # Where would a name-stem rule disagree?
+    print(f"\n  WHERE A NAME-STEM RULE WOULD DISAGREE WITH CO-FILING")
+    by_stem = defaultdict(set)
+    for n in names:
+        by_stem[name_stem(n)].add(n)
+    comp_of = {n: i for i, c in enumerate(components) for n in c}
+    wrong_merge, missed = [], []
+    for stem, group in sorted(by_stem.items()):
+        if len(group) < 2:
+            continue
+        comps = {comp_of[n] for n in group}
+        if len(comps) > 1:
+            wrong_merge.append((stem, sorted(group)))
+    for c in multi:
+        if len({name_stem(n) for n in c}) > 1:
+            missed.append(c)
+    print(f"    stems that would MERGE entities which never co-file: "
+          f"{len(wrong_merge)}")
+    for stem, group in wrong_merge:
+        print(f"      {stem}: {group}")
+    print(f"    co-filing groups a stem rule would MISS: {len(missed)}")
+    for c in missed:
+        print(f"      {c}")
+
+    print(f"\n  STRUCTURED ERA PER COMPANY")
+    print(f"    {'':6}{'first':<12}{'last':<12}{'filings':>8}  months")
+    today = date.fromisoformat(max(v[1] for v in era.values()))
+    for t in sorted(era, key=lambda k: era[k][0]):
+        first, last, n = era[t]
+        months = (today - date.fromisoformat(first)).days / 30.44
+        print(f"    {t:<6}{first:<12}{last:<12}{n:>8}  {months:5.1f}")
+    for t in sorted(set(roster()) - set(era)):
+        print(f"    {t:<6}{'—':<12}{'—':<12}{0:>8}   none")
+    print(f"\n  documents fetched: {fetched}")
+
+
 def main():
     print(f"phase: {PHASE}   roster: "
           f"{', '.join(sorted(roster())) if ONLY else 'all 19'}\n")
@@ -781,7 +906,8 @@ def main():
      "legacy": phase_legacy,
      "timeline": phase_timeline,
      "census": phase_census,
-     "questions": phase_questions}[PHASE]()
+     "questions": phase_questions,
+     "groups": phase_groups}[PHASE]()
     return 0
 
 
