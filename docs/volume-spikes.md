@@ -7,11 +7,11 @@ average, including premarket and after-hours.
 
 ## Schedule
 
-`9 10-22 * * 1-5` — **once an hour**, weekdays, 10:00–22:59 UTC. The job then
+`9 7-22 * * 1-5` — **once an hour**, weekdays, 07:00–22:59 UTC. The job then
 polls internally on each fifteen-minute boundary until its budget runs out:
 
-- EDT (summer, UTC-4): 6am – 6pm ET
-- EST (winter, UTC-5): 5am – 5pm ET
+- EDT (summer, UTC-4): 3am – 6pm ET
+- EST (winter, UTC-5): 2am – 5pm ET
 
 Covers premarket through the close year-round without seasonal edits.
 
@@ -21,10 +21,15 @@ questions are documented once, in
 same shape for the same reasons; only the minute (`:09`, staggered) and the
 per-pass timeout differ.
 
-One difference worth noting: the 10:00 UTC start is inherited from the press
-monitor, where it is EDGAR's opening time. Alpaca's extended session opens 04:00
-Eastern — 08:00 UTC in EDT — so this window sits *inside* the session rather than
-ahead of it and could open earlier on its own merits.
+**The window used to open at 10:00 UTC and no longer does.** That start was
+inherited from the press monitor, where it is EDGAR's opening time and means
+something; here it meant the window opened *inside* the session, six hours after
+Alpaca's extended feed does. It now opens at 07:00 UTC — 03:00 ET in EDT, an
+hour ahead of the 04:00 ET extended open — so the first fire of the day arrives
+before there is anything to measure rather than after.
+
+A fire before 04:00 ET has no bars for the day and simply finds nothing, which
+is the correct behaviour for a window that is meant to be ahead of its session.
 
 ## Alert tiers
 
