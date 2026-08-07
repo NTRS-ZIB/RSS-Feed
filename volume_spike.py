@@ -33,7 +33,7 @@ import json
 import os
 import sys
 from collections import defaultdict
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time as dtime, timedelta, timezone
 from pathlib import Path
 
 import requests
@@ -264,6 +264,38 @@ def human(v):
     return f"{v:.0f}"
 
 
+# Alpaca's extended session, in Eastern. The same span daily_totals() groups
+# by, so the fraction below describes exactly the window the numerator covers.
+SESSION_OPEN = dtime(4, 0)
+SESSION_CLOSE = dtime(20, 0)
+
+
+def session_position(now=None):
+    """(Eastern clock, fraction of the extended session elapsed).
+
+    THE RATIO MEANS SOMETHING DIFFERENT AT EVERY HOUR AND THE POST NEVER SAID
+    SO. Today's figure is a running total over a session still in progress; the
+    baseline is thirty COMPLETE sessions. So the ratio is scaled by however
+    much of the day has happened — 1.5x at 09:45 and 1.5x at 15:55 are not the
+    same measurement, and a reader had no way to tell which one they were
+    looking at.
+
+    Every other component in this repo states its own latency in the footer.
+    This one stated its feed and not its position in the session, which is the
+    same omission wearing different clothes.
+
+    Clamped at both ends. The window opens at 07:00 UTC, which is 03:00 ET in
+    EDT, so a fire can genuinely land before the session opens — that reads as
+    0%, which is true rather than an error.
+    """
+    now = now or datetime.now(EASTERN)
+    start = datetime.combine(now.date(), SESSION_OPEN, tzinfo=EASTERN)
+    end = datetime.combine(now.date(), SESSION_CLOSE, tzinfo=EASTERN)
+    span = (end - start).total_seconds()
+    elapsed = (now - start).total_seconds()
+    return now.strftime("%H:%M"), max(0.0, min(1.0, elapsed / span))
+
+
 def build_embed(alerts):
     # Kept under ~28 chars: Discord mobile wraps code blocks past that.
     # The IEX share count is deliberately omitted — it is a fraction of
@@ -273,6 +305,7 @@ def build_embed(alerts):
         move = f"{a['pct']:+.1f}%" if a["pct"] is not None else "n/a"
         lines.append(f"{a['symbol']:<5}{a['ratio']:>5.1f}x"
                      f"{a['close']:>8.2f}{move:>8}")
+    clock, pct = session_position()
 
     return {
         "title": "Unusual volume",
@@ -283,7 +316,12 @@ def build_embed(alerts):
         ),
         "color": UP if any((a["pct"] or 0) > 0 for a in alerts) else DOWN,
         "fields": [{"name": "\u200b", "value": "```\n" + "\n".join(lines) + "\n```"}],
-        "footer": {"text": "Alpaca IEX feed"},
+        # In the FOOTER, not the block. The monospace table is held to 28
+        # characters and check_post()-style width rules bite there; the footer
+        # is prose and has no such ceiling.
+        "footer": {"text": f"Alpaca IEX feed · read {clock} ET, {pct:.0%} "
+                           f"through the 04:00-20:00 session, against "
+                           f"full-session averages"},
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 

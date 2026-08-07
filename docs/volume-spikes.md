@@ -89,6 +89,51 @@ At time of writing BGDE and ANY are excluded by the first floor.
   stock at 1.1x by midday is running at roughly double pace but won't alert.
   Dividing by the fraction of session elapsed would fix this, at the cost of
   wild extrapolation in the first few minutes.
+
+  **The post now says where in the session it was taken**, because for a long
+  time this was documented here and nowhere the reader could see it. The footer
+  carries the Eastern clock and the elapsed fraction:
+
+  ```
+  Alpaca IEX feed · read 15:55 ET, 75% through the 04:00-20:00 session,
+  against full-session averages
+  ```
+
+  It sits in the footer rather than the table because the monospace block is
+  held to 28 characters and prose is not. Every other component in this repo
+  states its own latency; this one stated its feed and not its position in the
+  session, which is the same omission wearing different clothes.
+
+## Running it outside its window
+
+**A run after the session closes is the most complete reading of the day, not
+a degraded one.** This inverts the obvious intuition and matters after a missed
+evening, so it is written down rather than rediscovered.
+
+`today` is an **Eastern** date and the extended session runs to 20:00 ET. A run
+at 19:18 ET therefore sums a session that is roughly 95% complete and compares
+it against thirty complete baselines. Every *scheduled* fire compares a partial
+session against full ones and understates the ratio; a late one understates it
+least.
+
+| run at | session elapsed | the ratio is |
+|---|---|---|
+| 07:09 ET | 20% | understated ~5x |
+| 09:45 ET | 36% | understated ~3x |
+| 15:55 ET | 75% | understated ~1.3x |
+| 19:18 ET | 96% | very nearly true |
+
+So after an outage or a dropped evening, **dispatch it rather than writing the
+day off.** It is barely late in its own terms either: the last scheduled fire
+is 22:09 UTC, and at the measured 51–71 minute drift that normally lands
+23:00–23:20 UTC anyway.
+
+The one thing it cannot recover is a *tier* that was crossed and receded. State
+resets on a new Eastern date and records only the highest tier reached, so a
+ticker that touched 3x at noon and fell back to 1.8x by the close alerts at 1.8x
+on a single late run, where the hourly schedule would have caught the 3x. Late
+is the most accurate reading of the session; it is not a substitute for having
+watched it.
 - **Pagination.** `MAX_PAGES` guards the bar fetch. If it is ever hit with data
   still pending, the log warns explicitly — a truncated baseline understates
   the average and overstates every ratio, which otherwise looks like normal
