@@ -1,0 +1,37 @@
+name: Probe spike normalisation
+
+# Measures whether volume_spike.py's partial-session understatement is worth
+# fixing: the alert delta over 60 sessions, the fetch cost, the per-slot
+# profile depth IEX can support, and the false alerts a normalised ratio would
+# raise on thin early-session volume.
+#
+# Manual only, posts nothing, decides nothing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sessions:
+        description: "Sessions to analyse"
+        type: string
+        default: "60"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install requests
+      - name: Measure
+        env:
+          ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          SPIKE_SESSIONS: ${{ inputs.sessions }}
+        run: python -u probe_spike_norm.py

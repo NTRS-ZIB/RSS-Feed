@@ -55,6 +55,7 @@ on:
       - "Press release monitor"
       - "Probe holders"
       - "Probe sites"
+      - "Probe spike normalisation"
       - "Reg SHO threshold list"
       - "SEC comment letters"
       - "Shares outstanding"
