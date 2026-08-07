@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-06T12:50:50+00:00",
+  "generated": "2026-08-07T11:38:27+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -305,7 +305,7 @@
     },
     "APLD": {
       "cik": "0001144879",
-      "filing_count": 811,
+      "filing_count": 812,
       "filings": {
         "10-K": {
           "accession": "0001144879-26-000048",
@@ -333,12 +333,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1144879/000149315226023991/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001628280-26-052805",
-          "count": 211,
-          "filed": "2026-08-04",
+          "accession": "0001628280-26-054432",
+          "count": 212,
+          "filed": "2026-08-06",
           "form": "4",
-          "period": "2026-07-31",
-          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000162828026052805/xslF345X06/wk-form4_1785881838.xml"
+          "period": "2026-08-04",
+          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000162828026054432/xslF345X06/wk-form4_1786049520.xml"
         },
         "40-F": null,
         "424": {
@@ -440,7 +440,7 @@
         "FLIGHT SAFETY TECHNOLOGIES INC",
         "REEL STAFF INC"
       ],
-      "latest_filing_date": "2026-08-04",
+      "latest_filing_date": "2026-08-06",
       "name": "Applied Digital Corp.",
       "projection": {
         "confidence": "normal",
@@ -590,7 +590,7 @@
     },
     "BKKT": {
       "cik": "0001820302",
-      "filing_count": 752,
+      "filing_count": 754,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019870",
@@ -972,7 +972,7 @@
     },
     "CLSK": {
       "cik": "0000827876",
-      "filing_count": 750,
+      "filing_count": 752,
       "filings": {
         "10-K": {
           "accession": "0001193125-25-297510",
@@ -983,12 +983,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312525297510/clsk-20250930.htm"
         },
         "10-Q": {
-          "accession": "0001193125-26-217036",
-          "count": 56,
-          "filed": "2026-05-11",
+          "accession": "0001193125-26-338382",
+          "count": 57,
+          "filed": "2026-08-06",
           "form": "10-Q",
-          "period": "2026-03-31",
-          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526217036/clsk-20260331.htm"
+          "period": "2026-06-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526338382/clsk-20260630.htm"
         },
         "20-F": null,
         "3": {
@@ -1018,12 +1018,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001193125-26-302448",
-          "count": 213,
-          "filed": "2026-07-14",
+          "accession": "0001193125-26-337999",
+          "count": 214,
+          "filed": "2026-08-06",
           "form": "8-K",
-          "period": "2026-07-10",
-          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526302448/clsk-20260710.htm"
+          "period": "2026-08-06",
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526337999/clsk-20260806.htm"
         },
         "DEF 14A": {
           "accession": "0001193125-26-019447",
@@ -1090,17 +1090,17 @@
         "STRATEAN INC.",
         "SMARTDATA CORP"
       ],
-      "latest_filing_date": "2026-07-17",
+      "latest_filing_date": "2026-08-06",
       "name": "CLEANSPARK, INC.",
       "projection": {
         "confidence": "normal",
-        "expected": "2026-08-07",
+        "expected": "2026-12-14",
         "fiscal_year_end_month": 9,
-        "kind": "quarterly",
-        "median_lag_days": 38,
-        "period_end": "2026-06-30",
+        "kind": "annual",
+        "median_lag_days": 75,
+        "period_end": "2026-09-30",
         "sample": 8,
-        "spread_days": 2
+        "spread_days": 25
       }
     },
     "DGXX": {
@@ -1237,7 +1237,7 @@
     },
     "GLXY": {
       "cik": "0001859392",
-      "filing_count": 259,
+      "filing_count": 260,
       "filings": {
         "10-K": {
           "accession": "0001859392-26-000016",
@@ -1322,18 +1322,18 @@
         "SC 13G": null,
         "SCHEDULE 13D": null,
         "SCHEDULE 13G": {
-          "accession": "0001595888-26-000064",
-          "count": 11,
-          "filed": "2026-06-24",
-          "form": "SCHEDULE 13G",
+          "accession": "0000315066-26-002020",
+          "count": 12,
+          "filed": "2026-08-06",
+          "form": "SCHEDULE 13G/A",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000159588826000064/xslSCHEDULE_13G_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000031506626002020/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
         "Galaxy Digital Pubco Inc."
       ],
-      "latest_filing_date": "2026-08-05",
+      "latest_filing_date": "2026-08-06",
       "name": "Galaxy Digital Inc.",
       "projection": {
         "confidence": "normal",
@@ -1597,7 +1597,7 @@
     },
     "MARA": {
       "cik": "0001507605",
-      "filing_count": 1096,
+      "filing_count": 1098,
       "filings": {
         "10-K": {
           "accession": "0001507605-26-000007",
@@ -1608,12 +1608,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1507605/000150760526000007/mara-20251231.htm"
         },
         "10-Q": {
-          "accession": "0001507605-26-000016",
-          "count": 52,
-          "filed": "2026-05-11",
+          "accession": "0001507605-26-000022",
+          "count": 53,
+          "filed": "2026-08-06",
           "form": "10-Q",
-          "period": "2026-03-31",
-          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000150760526000016/mara-20260331.htm"
+          "period": "2026-06-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000150760526000022/mara-20260630.htm"
         },
         "20-F": null,
         "3": {
@@ -1643,12 +1643,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001493152-26-035933",
-          "count": 289,
-          "filed": "2026-08-04",
+          "accession": "0001507605-26-000020",
+          "count": 290,
+          "filed": "2026-08-06",
           "form": "8-K",
-          "period": "2026-07-29",
-          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000149315226035933/form8-k.htm"
+          "period": "2026-08-06",
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000150760526000020/mara-20260806.htm"
         },
         "DEF 14A": {
           "accession": "0001507605-26-000010",
@@ -1724,22 +1724,22 @@
         "American Strategic Minerals Corp",
         "VERVE VENTURES INC"
       ],
-      "latest_filing_date": "2026-08-04",
+      "latest_filing_date": "2026-08-06",
       "name": "MARA Holdings, Inc.",
       "projection": {
         "confidence": "normal",
-        "expected": "2026-08-07",
+        "expected": "2026-11-06",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
-        "median_lag_days": 38,
-        "period_end": "2026-06-30",
+        "median_lag_days": 37,
+        "period_end": "2026-09-30",
         "sample": 8,
         "spread_days": 7
       }
     },
     "NUAI": {
       "cik": "0002028336",
-      "filing_count": 175,
+      "filing_count": 179,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-027143",
