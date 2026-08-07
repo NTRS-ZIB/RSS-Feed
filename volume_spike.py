@@ -517,9 +517,15 @@ def main():
                 print(f"  {symbol:<6}   no data")
             continue
         mark = "*" if symbol in firing else " "
-        print(f" {mark}{symbol:<6}{m['volume']/m['base']:>6.2f}x   "
+        # THE RATIO THE ALERT PATH USES, not a second one computed here.
+        # evaluate() writes it back onto the metric, so the log cannot drift
+        # from what fired — which it would have, silently, on any fire before
+        # the two measures converge at the close.
+        ratio = m.get("ratio", m["volume"] / m["base"])
+        basis = m.get("basis", "full-session")
+        print(f" {mark}{symbol:<6}{ratio:>6.2f}x   "
               f"({human(m['volume'])} vs {human(m['base'])} avg, "
-              f"{m['sessions']}d)")
+              f"{m['sessions']}d, {basis})")
 
     if not alerts:
         print("\nNothing above threshold.")
