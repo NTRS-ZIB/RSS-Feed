@@ -1356,6 +1356,56 @@ def derive_short_interest(c, ctx, week, sessions):
     return out
 
 
+# Both spellings, and only these — a 13D/G is the >5% ownership disclosure.
+# "SCHEDULE 13D" does not start with "SC 13D"; see press_monitor.FORM_TYPES.
+HOLDER_FORMS = ("SC 13D", "SC 13G", "SCHEDULE 13D", "SCHEDULE 13G")
+
+
+def derive_holders(c, ctx, week, sessions):
+    """A >5% holder disclosure filed during the week.
+
+    Reads the submissions payload already fetched for `filings`, so it costs
+    nothing extra. It reports that a disclosure happened, not the position —
+    holder_events.py parses the XML and posts the arrival, change or exit.
+
+    CADENCE IS `EVENT`, WHICH IS LOAD-BEARING. A holder position is not a daily
+    measurement, so mk() refuses any persistence claim about it — "filed on
+    three of five sessions" would be meaningless. That refusal is mechanical
+    rather than remembered.
+
+    It also never counts holders. 184 distinct reporting-person names on this
+    roster collapse to 70 filer groups once co-filing is accounted for, so a
+    count would overstate by 83% without a grouping rule. An event needs none.
+    """
+    filings = ctx["filings"].data or {}
+    lo, hi = sessions[0].isoformat(), sessions[-1].isoformat()
+    out = {}
+    for t in TICKERS:
+        rows = filings.get(t)
+        if rows is None:
+            out[t] = mk(c, SOURCE_FAILED, basis="EDGAR submissions fetch failed")
+            continue
+        hits = [r for r in rows
+                if r["form"].startswith(HOLDER_FORMS) and lo <= r["filed"] <= hi]
+        if hits:
+            initial = [r for r in hits if not r["form"].endswith("/A")]
+            out[t] = mk(c, NOTABLE,
+                        figure=f"{len(hits)} >5% disclosure"
+                               f"{'s' if len(hits) != 1 else ''}"
+                               + (f", {len(initial)} initial" if initial else
+                                  ", all amendments"),
+                        basis="a 13D is filed within days of crossing 5%; a "
+                              "13G reports a position periodically and files "
+                              "no event date at all",
+                        sources=[r["url"] for r in hits],
+                        detail={"count": len(hits),
+                                "forms": sorted({r["form"] for r in hits}),
+                                "accessions": [r["accession"] for r in hits]})
+        else:
+            out[t] = mk(c, ROUTINE, detail={"count": 0})
+    return out
+
+
 # THE REGISTRY. One line per contributor. Adding a component means adding its
 # derive function and one entry here; every existing section is untouched, the
 # record gains a key, and the convergence denominator grows by one.
@@ -1401,6 +1451,9 @@ CONTRIBUTORS = [
     {"key": "comment_letters", "cadence": EVENT, "needs": ["filings"],
      "latency": "released >=20 business days after the review closed",
      "derive": derive_letters},
+    {"key": "holders", "cadence": EVENT, "needs": ["filings"],
+     "latency": "13D within days of the event; 13G periodic, no event date",
+     "derive": derive_holders},
     {"key": "dilution", "cadence": PER_FILING, "needs": ["dilution"],
      "latency": "as filed; cover-page counts lag the balance sheet",
      "derive": derive_dilution},

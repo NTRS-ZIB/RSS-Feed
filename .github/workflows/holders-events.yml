@@ -1,0 +1,86 @@
+name: Holder events
+
+# Schedule 13D/G holder events -> the insider channel.
+#
+# Arrival, change and declared exit. It never counts holders and never reports
+# a departure by inference — see holder_events.py for both refusals and the
+# measurements behind them.
+#
+# NOT A DUPLICATE OF THE PRESS MONITOR. That component posts every 13D/G to the
+# main filings channel because both spellings are in its FORM_TYPES; it
+# announces that a filing exists. This one reads it. Different channels, so the
+# pair never reads as a double post.
+
+on:
+  schedule:
+    - cron: "45 13 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Evaluate and log without posting or saving state"
+        type: boolean
+        default: true
+
+concurrency:
+  group: holder-events
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      # A queued run checks out the SHA fixed when it was created, so without
+      # this it can load a state file older than the tip and repost. That is
+      # the duplicate-post incident of 2026-08-04.
+      - name: Pull before reading state
+        run: git pull --ff-only origin "$GITHUB_REF_NAME" || true
+
+      - name: Read 13D/G filings
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          WEBHOOK_URL_INSIDER: ${{ secrets.WEBHOOK_URL_INSIDER }}
+          DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
+        run: python -u holder_events.py
+
+      - name: Persist state
+        if: github.event_name == 'schedule'
+        run: |
+          git config user.name "holder-bot"
+          git config user.email "holder-bot@users.noreply.github.com"
+          git add holder_state.json
+          if git diff --cached --quiet; then
+            echo "No state change."
+            exit 0
+          fi
+          cp holder_state.json "$RUNNER_TEMP/holder_state.json"
+          for attempt in 1 2 3 4 5; do
+            git fetch -q origin "$GITHUB_REF_NAME"
+            git reset -q --hard "origin/$GITHUB_REF_NAME"
+            cp "$RUNNER_TEMP/holder_state.json" holder_state.json
+            git add holder_state.json
+            if git diff --cached --quiet; then
+              echo "Already current on origin."
+              exit 0
+            fi
+            git commit -q -m "Update holder state [skip ci]"
+            if git push -q origin "HEAD:$GITHUB_REF_NAME"; then
+              echo "State pushed on attempt $attempt."
+              exit 0
+            fi
+            sleep $((attempt * 3))
+          done
+          echo "Could not persist holder_state.json after 5 attempts." >&2
+          exit 1

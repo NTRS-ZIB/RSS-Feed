@@ -22,6 +22,7 @@ maintain.
 | [`crossings.py`](docs/crossings.md) | `crossings.yml` | `WEBHOOK_URL_ALERTS` | 21:45 UTC weekdays, posts only on a crossing |
 | [`grid_context.py`](docs/grid-context.md) | `grid.yml` | `WEBHOOK_URL_MARKET` | 21:20 UTC, weekdays |
 | [`weekly_digest.py`](docs/weekly-digest.md) | `digest.yml` | `WEBHOOK_URL_DIGEST` | 17:00 UTC daily, posts once per ISO week |
+| [`holder_events.py`](docs/holder-events.md) | `holders-events.yml` | `WEBHOOK_URL_INSIDER` | 13:45 UTC weekdays, posts only on an event |
 
 They are deliberately separate workflows: a failure in one data provider must
 not take down the others. The context posts 15 minutes before the recap so it
@@ -71,6 +72,8 @@ calibrate_staleness.py            maintenance: publication cadence per source
 audit_8k_items.py                 maintenance: 8-K item distribution
 check_metric_regime.py            maintenance: is a metric's move real or a regime shift
 probe_sites.py                    maintenance: grid operators and states a filing names
+probe_holders.py                  maintenance: what 13D/G filings carry
+holder_events.py                  >5% holder arrivals, changes and exits
 ftd_monitor.py                    SEC fails-to-deliver
 threshold_list.py                 Reg SHO threshold list (exception report)
 comment_letters.py                SEC review correspondence
@@ -91,6 +94,7 @@ grid_context.py                   grid demand and natural gas
 .github/workflows/crossings.yml   crossings schedule and runner setup
 .github/workflows/grid.yml        grid context schedule and runner setup
 .github/workflows/digest.yml      digest schedule and runner setup
+.github/workflows/holders-events.yml  holder event schedule and runner setup
 .github/workflows/sites.yml       operating footprint sweep, manual only
 .github/workflows/audit.yml       identifier audit, manual only
 .github/workflows/calibrate.yml   staleness calibration, manual only
@@ -104,6 +108,7 @@ threshold_state.json              auto-generated; companies currently listed
 letters_state.json                auto-generated; accessions seen in the window
 dilution_state.json               auto-generated; last reported share count
 crossings_state.json              auto-generated; armed flags per ticker
+holder_state.json                 auto-generated; accessions seen, last percent per filer group
 state.json                        auto-generated; do not hand-edit except to reset
 docs/                             per-component documentation
 digest/                           auto-generated; one file per ISO week, never rewritten

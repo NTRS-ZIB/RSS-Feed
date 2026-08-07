@@ -1,6 +1,6 @@
 # Working on this repo
 
-Fourteen components post to Discord from GitHub Actions crons. [`README.md`](README.md)
+Fifteen components post to Discord from GitHub Actions crons. [`README.md`](README.md)
 lists them; [`docs/`](docs/) covers one per component;
 [`docs/watchlist.md`](docs/watchlist.md) holds the roster and identifier rules;
 [`docs/local-workflow.md`](docs/local-workflow.md) holds the git mechanics. This

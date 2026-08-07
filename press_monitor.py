@@ -173,6 +173,17 @@ FORM_TYPES = [
     # of news from company announcements, which is why Form 4 lives there.
     "SC 13G",
     "SCHEDULE 13G",  # passive / >5% stake disclosures
+    #
+    # A SECOND COMPONENT ALSO READS THESE, and it is not a duplicate to be
+    # removed. holder_events.py parses the structured XML behind every 13D/G
+    # and posts arrivals, position changes and declared exits to the INSIDER
+    # channel. This component announces that a filing exists; that one reads
+    # it. Same source, different question — the relationship regsho_volume.py
+    # and short_interest.py already have.
+    #
+    # Removing either leaves a real gap: without this the filing is not
+    # announced at all, and without that the reader learns a 13D was filed and
+    # not who crossed what.
     # "NT " covers the whole late-filing family under Rule 12b-25: NT 10-K,
     # NT 10-Q, NT 20-F, NT 40-F and any future sibling. Listing two of them
     # individually meant NT 20-F was missing entirely — found by the drift
