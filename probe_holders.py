@@ -898,6 +898,125 @@ def phase_groups():
     print(f"\n  documents fetched: {fetched}")
 
 
+def phase_eventdate():
+    """Is coverPageHeader/dateOfEvent usable as the basis for a latency claim?
+
+    THE WHOLE LATENCY DESIGN RESTS ON THIS FIELD, and four artefacts in this
+    probe already came from a field being assumed present rather than measured.
+    So: fill rate, split by form family, and — the part that matters — what it
+    contains when it is present but useless.
+
+    Three ways it can be present and still defeat the design, none of which
+    fails loudly:
+
+      empty        an empty or whitespace element
+      placeholder  a sentinel like 1900-01-01 that parses fine
+      == filed     equal to the filing date, which makes every lag zero and
+                   reads as "disclosed the same day" for every filing
+    """
+    print("=" * 78)
+    print("dateOfEvent — fill rate and usability")
+    print("=" * 78)
+    rows = []
+    fetched = 0
+    for ticker, (cik, _name) in sorted(roster().items()):
+        subs, _ = all_filings(cik)
+        xmls = sorted((r for r in subs if is_13x(r["form"])
+                       and r["doc"].endswith(".xml")),
+                      key=lambda r: r["filed"])
+        for r in xmls:
+            if fetched >= MAX_DOCS:
+                break
+            url = ARCHIVE.format(cik=int(cik),
+                                 nodash=r["accession"].replace("-", ""),
+                                 doc=raw_xml_path(r["doc"]))
+            try:
+                root = ET.fromstring(fetch(url, as_json=False))
+                fetched += 1
+            except Exception:                                   # noqa: BLE001
+                continue
+            time.sleep(GAP)
+            raw = None
+            for el in root.iter():
+                if tag_of(el) == "dateOfEvent":
+                    raw = el.text
+                    break
+            rows.append((ticker, r["filed"], r["form"], raw))
+
+    fam = lambda f: "13D" if "13D" in f else "13G"              # noqa: E731
+    buckets = defaultdict(Counter)
+    lags = defaultdict(list)
+    oddities = []
+    for ticker, filed, form, raw in rows:
+        k = fam(form)
+        if raw is None:
+            buckets[k]["absent"] += 1
+            oddities.append((ticker, filed, form, "ABSENT", raw))
+            continue
+        if not raw.strip():
+            buckets[k]["empty"] += 1
+            oddities.append((ticker, filed, form, "EMPTY", repr(raw)))
+            continue
+        try:
+            ev = date.fromisoformat(raw.strip()[:10])
+        except ValueError:
+            buckets[k]["unparseable"] += 1
+            oddities.append((ticker, filed, form, "UNPARSEABLE", raw))
+            continue
+        fd = date.fromisoformat(filed)
+        lag = (fd - ev).days
+        if ev.year < 2000:
+            buckets[k]["placeholder"] += 1
+            oddities.append((ticker, filed, form, "PLACEHOLDER", raw))
+        elif lag < 0:
+            buckets[k]["future"] += 1
+            oddities.append((ticker, filed, form, f"AFTER FILING {lag}d", raw))
+        elif lag == 0:
+            buckets[k]["same day"] += 1
+            lags[k].append(lag)
+        else:
+            buckets[k]["usable"] += 1
+            lags[k].append(lag)
+
+    total = len(rows)
+    print(f"\n  {total} structured filings read\n")
+    print(f"  {'':14}{'13D':>8}{'13G':>8}{'both':>8}")
+    keys = ["usable", "same day", "absent", "empty", "unparseable",
+            "placeholder", "future"]
+    for k in keys:
+        d, g = buckets["13D"][k], buckets["13G"][k]
+        if d or g:
+            print(f"  {k:<14}{d:>8}{g:>8}{d + g:>8}")
+    good = sum(buckets[f][k] for f in ("13D", "13G")
+               for k in ("usable", "same day"))
+    print(f"\n  usable for a lag: {good}/{total} "
+          f"({good / total * 100:.1f}%)" if total else "")
+
+    for k in ("13D", "13G"):
+        v = sorted(lags[k])
+        if not v:
+            continue
+        print(f"\n  {k} lag, filed minus event, in days")
+        print(f"    n={len(v)}  min {v[0]}  p10 {v[len(v)//10]}  "
+              f"p50 {statistics.median(v):.0f}  p90 {v[len(v)*9//10]}  "
+              f"max {v[-1]}")
+        print(f"    zero-day: {sum(1 for x in v if x == 0)}  "
+              f"within 5d: {sum(1 for x in v if x <= 5)}  "
+              f"over 45d: {sum(1 for x in v if x > 45)}")
+    if lags["13D"] and lags["13G"]:
+        print(f"\n  THE DESIGN'S PREMISE — 13D prompt, 13G scheduled:")
+        print(f"    13D median {statistics.median(lags['13D']):.0f}d "
+              f"against 13G median {statistics.median(lags['13G']):.0f}d")
+
+    if oddities:
+        print(f"\n  UNUSABLE OR SUSPICIOUS — {len(oddities)}")
+        for t, f, form, why, raw in oddities[:20]:
+            print(f"    {t:<6}{f}  {form:<15}{why:<18}{str(raw)[:24]}")
+        if len(oddities) > 20:
+            print(f"    ... and {len(oddities) - 20} more")
+    print(f"\n  documents fetched: {fetched}")
+
+
 def main():
     print(f"phase: {PHASE}   roster: "
           f"{', '.join(sorted(roster())) if ONLY else 'all 19'}\n")
@@ -907,7 +1026,8 @@ def main():
      "timeline": phase_timeline,
      "census": phase_census,
      "questions": phase_questions,
-     "groups": phase_groups}[PHASE]()
+     "groups": phase_groups,
+     "eventdate": phase_eventdate}[PHASE]()
     return 0
 
 
