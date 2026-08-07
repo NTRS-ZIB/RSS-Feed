@@ -7,11 +7,29 @@ Alerts when a ticker's cumulative session volume crosses a multiple of its own
 
 Data: Alpaca market data, free tier. No daily call cap.
 
-Volume is accumulated from HOURLY bars, not daily bars. Alpaca's daily bars are
-only emitted once the regular session opens, so before 9:30 ET there is no
-daily bar for today and premarket activity is invisible. Hourly bars cover the
-full extended session (4:00-20:00 ET), so premarket and after-hours volume are
-both counted.
+Volume is accumulated from HOURLY bars, not daily bars, and the reason is
+intraday granularity: a daily bar gives one number at the close, while this
+component has to answer "how much has traded so far" at every fire.
+
+IT IS NOT FOR PREMARKET, AND THE ORIGINAL RATIONALE HERE WAS WRONG. This
+docstring used to say hourly bars were chosen because "before 9:30 ET there is
+no daily bar for today and premarket activity is invisible — exactly the case
+most worth alerting on". Measured 2026-08-07 over 30 sessions:
+
+    IEX   bars from 08:00 to 16:59 ET, and 08:00 is 1-9 sessions of 23.
+          Effectively 09:00-15:59. Volume before 09:00: 0.02%.
+    SIP   bars from 04:00 to 19:59 ET, 23 of 23 sessions at every hour.
+          Volume before 09:00: 1.71%, after 16:00: 7.38%.
+
+So the trades exist and IEX was not part of them — IEX does not operate before
+08:00 ET. It is the VENUE, not the request and not Alpaca's serving: the
+request carries no `end`, no window boundary and no extended-hours parameter.
+
+And the claim was never true here rather than surviving a feed change: the
+premarket rationale and `FEED = "iex"` were introduced in the same commit.
+
+THE CONSEQUENCE FOR THE SCHEDULE is in spikes.yml — a window opening at 07:00
+UTC spent its first five or six fires every day on an empty feed.
 
 Both sides of the ratio are built the same way from the same bars. Comparing an
 extended-hours session total against a regular-hours-only baseline would

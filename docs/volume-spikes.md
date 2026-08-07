@@ -3,17 +3,18 @@
 # Volume spikes
 
 Alerts when a ticker's session volume crosses a multiple of its own 30-day
-average, including premarket and after-hours.
+average, over the IEX trading day — which is 09:00–15:59 ET, not the extended
+session. See the schedule section.
 
 ## Schedule
 
-`9 7-22 * * 1-5` — **once an hour**, weekdays, 07:00–22:59 UTC. The job then
+`9 12-22 * * 1-5` — **once an hour**, weekdays, 12:00–22:59 UTC. The job then
 polls internally on each fifteen-minute boundary until its budget runs out:
 
-- EDT (summer, UTC-4): 3am – 6pm ET
-- EST (winter, UTC-5): 2am – 5pm ET
+- EDT (summer, UTC-4): 8am – 6pm ET
+- EST (winter, UTC-5): 7am – 5pm ET
 
-Covers premarket through the close year-round without seasonal edits.
+Covers the IEX trading day year-round without seasonal edits.
 
 The mechanics, the measured scheduling behaviour behind them and the open
 questions are documented once, in
@@ -21,15 +22,30 @@ questions are documented once, in
 same shape for the same reasons; only the minute (`:09`, staggered) and the
 per-pass timeout differ.
 
-**The window used to open at 10:00 UTC and no longer does.** That start was
-inherited from the press monitor, where it is EDGAR's opening time and means
-something; here it meant the window opened *inside* the session, six hours after
-Alpaca's extended feed does. It now opens at 07:00 UTC — 03:00 ET in EDT, an
-hour ahead of the 04:00 ET extended open — so the first fire of the day arrives
-before there is anything to measure rather than after.
+**The window has moved twice, and the second move corrected the first.**
 
-A fire before 04:00 ET has no bars for the day and simply finds nothing, which
-is the correct behaviour for a window that is meant to be ahead of its session.
+It opened at 10:00 UTC originally, inherited from the press monitor where that
+is EDGAR's opening time. It was moved to 07:00 UTC to sit an hour ahead of the
+04:00 ET extended open — and that reasoning was wrong, because **the extended
+open does not exist on the feed this component uses.**
+
+Measured 2026-08-07 over 30 sessions, six liquid tickers:
+
+| feed | bars seen | volume before 09:00 ET | after 16:00 |
+|---|---|---|---|
+| **IEX** | 08:00–16:59 ET, and 08:00 on 1–9 sessions of 23 | **0.02%** | **0.00%** |
+| SIP | 04:00–19:59 ET, 23 of 23 sessions at every hour | 1.71% | 7.38% |
+
+**The trades exist; IEX was not part of them.** IEX does not operate before
+08:00 ET. It is the venue rather than the request or Alpaca's serving — the
+request carries no `end`, no window boundary and no extended-hours parameter.
+
+So a 07:00 UTC start spent its **first five fires of every day, six in EST**,
+on an empty feed. It now opens at 12:00 UTC, which is 08:00 EDT and 07:00 EST
+— the first IEX bar year-round, with at most one wasted winter fire.
+
+**The effective IEX day is 09:00–15:59 ET, seven hours.** Everything this
+component measures happens inside it.
 
 ## Alert tiers
 
@@ -56,17 +72,24 @@ figures, where IEX would be wrong.
 
 ## Why hourly bars, not daily bars
 
-Alpaca's daily bars are only emitted once the regular session opens, so before
-9:30 ET there is no daily bar for today and premarket activity is invisible —
-exactly the case most worth alerting on. Hourly bars span the full extended
-session (4:00–20:00 ET).
+Hourly bars give **intraday granularity**: a daily bar is one number at the
+close, and this component has to answer "how much has traded so far" at every
+fire.
 
-The baseline is built from the same hourly bars. Comparing an extended-hours
-session total against a regular-hours-only baseline would inflate every ratio.
+**Not for premarket.** That was the original reason given and it was wrong on
+this feed — see the schedule section above. The claim and the IEX restriction
+were introduced in the same commit, so it was never true here rather than
+surviving a feed change.
 
-Bars are grouped by **Eastern date, not UTC**. A 19:00 ET after-hours bar is
-the next UTC day in winter; grouping on UTC would split single sessions across
-two days and corrupt the baseline.
+The baseline is built from the same hourly bars, so both sides of the ratio
+cover the same hours whatever those hours turn out to be. That property is what
+survived the premarket finding intact.
+
+Bars are grouped by **Eastern date, not UTC**, so a session is never split
+across two days. The original example for this was a 19:00 ET after-hours bar
+falling on the next UTC day in winter — which does not occur on IEX, since it
+carries nothing after 16:59. The grouping is still right; a 15:00 ET bar is
+20:00 UTC in EST and the boundary still has to be Eastern.
 
 ## Liquidity floors
 

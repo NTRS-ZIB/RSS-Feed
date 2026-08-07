@@ -23,7 +23,16 @@ on:
     # To choose this number on evidence rather than on the monitor's, the
     # thing to measure is when alerts actually fire. That needs spike_state
     # to retain history, which it does not.
-    - cron: "9 7-22 * * 1-5"
+    - cron: "9 12-22 * * 1-5"
+    # 12:00 UTC, not 07:00. IEX does not operate before 08:00 ET and carries
+    # 0.02% of its volume before 09:00, so a window opening at 07:00 UTC spent
+    # its first five fires (six in EST) on an empty feed — measured over 30
+    # sessions, 2026-08-07. 12:00 UTC is 08:00 EDT and 07:00 EST, so it covers
+    # the first IEX bar year-round with at most one wasted winter fire.
+    #
+    # The old 07:00 start was chosen to sit an hour ahead of the 04:00 ET
+    # EXTENDED open. That open is real on SIP and does not exist on IEX, which
+    # is the feed this component is restricted to. See volume_spike.py.
   workflow_dispatch:
     inputs:
       dry_run:
