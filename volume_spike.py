@@ -98,7 +98,15 @@ NORMALISE_FROM_HOUR = 10
 # alert can never rest on less than an ordinary one does. Set from the
 # measurement in probe_spike_norm.py; the value is recorded in
 # docs/volume-spikes.md with the distribution it came from.
-MIN_NORMALISED_VOLUME = 0        # measured below, set after the probe runs
+# Measured 2026-08-07 over 60 sessions: the volume behind 298 full-session
+# alerts runs p10 46,880 / p25 105,080 / p50 616,713. The 10th percentile is
+# the floor, so a normalised alert never rests on less absolute volume than an
+# ordinary one typically does.
+#
+# IT IS NOT A SUBSTITUTE FOR THE GATE and the measurement says so: alone it
+# blocks only 12 of the 149 alerts an ungated 09:00 would raise. The gate stops
+# the hour; the floor stops the thin ones anywhere. Both, doing different jobs.
+MIN_NORMALISED_VOLUME = 46_880
 
 FEED = "iex"          # free tier. Must match on both sides; see module docstring.
 
@@ -295,6 +303,12 @@ def build_metrics(bars):
 
         volume, close = totals[today]
         base = sum(totals[d][0] for d in past) / len(past)
+        # The per-slot baseline for the hour this fire lands in. Built from
+        # the same bars already in hand; see slot_totals().
+        hour = datetime.now(EASTERN).hour
+        slots = slot_totals(rows)
+        slot_base = [elapsed_through(slots.get(d, {}), hour) for d in past]
+        slot_base = [v for v in slot_base if v > 0]
         if base <= 0:
             continue
         if base < MIN_BASELINE_VOLUME:
@@ -305,6 +319,9 @@ def build_metrics(bars):
         out[symbol] = {
             "volume": volume,
             "base": base,
+            "slot_base": slot_base,
+            "full_base": [totals[d][0] for d in past if totals[d][0] > 0],
+            "hour": hour,
             "close": close,
             "prev_close": totals[history[-1]][1] if history else None,
             "sessions": len(past),
@@ -327,12 +344,19 @@ def evaluate(metrics, state):
 
     alerts = []
     for symbol, m in metrics.items():
-        ratio = m["volume"] / m["base"]
+        ratio, basis = ratio_for(m["volume"], m["hour"], m["slot_base"],
+                                 m["full_base"])
+        m["basis"] = basis
+        m["ratio"] = ratio
         tier = tier_for(ratio)
         if tier is None:
             continue
         if m["volume"] < MIN_ALERT_VOLUME:
             continue          # 3x of almost nothing is still almost nothing
+        # The normalised measure divides by a smaller number, so it needs a
+        # higher absolute floor. Derived, not chosen — see the constant.
+        if basis == "normalised" and m["volume"] < MIN_NORMALISED_VOLUME:
+            continue
         if state["alerted"].get(symbol, 0) >= tier:
             continue          # already alerted at this level or higher today
 
@@ -342,6 +366,7 @@ def evaluate(metrics, state):
         alerts.append({
             "symbol": symbol,
             "ratio": ratio,
+            "basis": basis,
             "tier": tier,
             "volume": m["volume"],
             "close": close,
@@ -408,6 +433,10 @@ def build_embed(alerts):
         lines.append(f"{a['symbol']:<5}{a['ratio']:>5.1f}x"
                      f"{a['close']:>8.2f}{move:>8}")
     clock, pct = session_position()
+    bases = {a.get("basis", "full-session") for a in alerts}
+    basis_note = ("same-hour averages" if bases == {"normalised"}
+                  else "full-session averages" if bases == {"full-session"}
+                  else "mixed baselines, see the log")
     # A COMPLETE SESSION IS NOT "100% THROUGH" ONE, and the two must not print
     # the same string. `{pct:.0%}` rounded 99.9% up, so a reading one minute
     # before the close was textually identical to one taken after it — and
@@ -431,8 +460,14 @@ def build_embed(alerts):
         # In the FOOTER, not the block. The monospace table is held to 28
         # characters and check_post()-style width rules bite there; the footer
         # is prose and has no such ceiling.
+        # WHICH BASELINE, because the two answer different questions and the
+        # reader cannot tell from the number. A normalised ratio compares
+        # elapsed volume against the same elapsed fraction of prior sessions;
+        # the full-session one compares it against their totals and therefore
+        # understates. Before 10:00 ET, and wherever the slot baseline is too
+        # thin, the second is used — see ratio_for().
         "footer": {"text": f"Alpaca IEX feed · read {clock} ET, {elapsed}, "
-                           f"against full-session averages"},
+                           f"against {basis_note}"},
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
