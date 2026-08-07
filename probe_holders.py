@@ -65,7 +65,7 @@ import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
-from datetime import date
+from datetime import date, datetime
 
 import watchlist
 
@@ -898,6 +898,21 @@ def phase_groups():
     print(f"\n  documents fetched: {fetched}")
 
 
+# EDGAR writes this one as US MM/DD/YYYY, not ISO — unlike filingDate in the
+# submissions payload, which is ISO. A parser that assumes one format across a
+# payload that mixes both reports "unparseable" for a field that is perfectly
+# populated, which is what the first pass of this measurement did for all 76
+# 13D filings.
+def parse_event_date(raw):
+    text = (raw or "").strip()[:10]
+    for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%m-%d-%Y", "%Y/%m/%d"):
+        try:
+            return datetime.strptime(text, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
 def phase_eventdate():
     """Is coverPageHeader/dateOfEvent usable as the basis for a latency claim?
 
@@ -957,9 +972,8 @@ def phase_eventdate():
             buckets[k]["empty"] += 1
             oddities.append((ticker, filed, form, "EMPTY", repr(raw)))
             continue
-        try:
-            ev = date.fromisoformat(raw.strip()[:10])
-        except ValueError:
+        ev = parse_event_date(raw)
+        if ev is None:
             buckets[k]["unparseable"] += 1
             oddities.append((ticker, filed, form, "UNPARSEABLE", raw))
             continue
