@@ -1,0 +1,34 @@
+name: Filing regime census
+
+# Which regime does each company file under, and does anything sit outside
+# EDGAR? Maintenance tool. Posts nothing, writes nothing, manual only.
+#
+# Run it when a company is added, and when one changes listing or domicile.
+#
+# A gap needs two conditions at once: the FPI regime, AND a home regulator
+# holding a record EDGAR does not. This roster has never had both — BTDR has
+# the regime and no second regulator, DGXX had the regulator and left the
+# regime. The census checks the mechanical half and flags who to ask the
+# judgement half about.
+#
+# Domicile does not decide it, which is the whole reason this exists rather
+# than a list: GLXY has Cayman history and never filed a 6-K in its life.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  census:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: python -u filer_regime.py
