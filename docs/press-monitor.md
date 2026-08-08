@@ -193,6 +193,33 @@ Three consequences worth carrying:
    delayed 50–170 minutes, pending fires coalesce and survivors emerge roughly
    one an hour. "48 asked, 3 arrived" is what that looks like counted as a rate.
 
+### Supersession: the concurrency group already keeps the newest run
+
+**Never build queue-position detection. The platform does it, and it keeps the
+right one.**
+
+With `cancel-in-progress: false` the obvious reading is that runs queue up and
+drain in order. They do not. **At most one run is ever *pending*, and a newer
+arrival cancels the older pending one** — so the survivor is always the newest,
+and therefore the one with the freshest checkout.
+
+Established by experiment, because the config reads the other way. Three
+dispatches into `press-monitor`:
+
+| | state |
+|---|---|
+| A | `in_progress` |
+| B | `pending` |
+| C arrives | B goes `cancelled`, C becomes `pending` |
+
+**A queued run must not try to detect that it has been superseded and exit.**
+The platform has already done it and kept the right one, and a run that does
+start is not doing stale work anyway — "check for new items now" is a timeless
+question, so a late start asks the same question with better data.
+
+This is why the ~3% cancellation rate at `BUDGET_MIN=55` is routine rather
+than a fault, and why `failure-notice.yml` never reports `cancelled`.
+
 ### Registration lag when a cron changes
 
 A new or changed cron does not take effect immediately. Measured across all 17
