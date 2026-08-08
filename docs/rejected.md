@@ -877,3 +877,20 @@ The thing to reach for is a **roster-level reading of the staleness check** —
 several sources going stale at once. That uses a signal which already exists
 and already fires per source, and is a far smaller change than a component.
 The 2025 production-reporting shift would have shown as exactly that.
+
+## A note on the same corpus: half of it is not the company
+
+Not about this idea, and needed by anyone measuring anything per-company over
+EDGAR.
+
+**A company's submissions index is mostly filings made BY OTHERS about it** —
+Schedule 13D/G by holders, Forms 3/4/5 by insiders, Form 144 by sellers.
+Across 11,092 filings on this roster, **5,946 are the company's own — 54%**.
+
+Per company it runs from **CIFR at 32%** to **DGXX and SPCX at 84%**. A
+measure built over the raw index would, for CIFR, be two-thirds a reading of
+its shareholders' behaviour rather than its own.
+
+It did not change the outcome above — 21% of ordinary months halve on
+company-only against 23% on everything — and it was measured both ways for
+that reason. It would have changed a component built without noticing.
