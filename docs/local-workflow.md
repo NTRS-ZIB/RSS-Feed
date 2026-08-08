@@ -193,6 +193,24 @@ git checkout -- <file>
   first `git add .` in a fresh clone would commit a bytecode cache.
   `watchlist.py` is the one script this repo tells you to run locally, and every
   run creates `__pycache__/`. Belt and braces costs nothing here.
+- **A script that fails partway can leave the commit looking complete.** A
+  two-part split — write the reduced file, commit, restore the rest, commit
+  again — errored on the first write and never reached the truncation, so the
+  commit took *both* parts under the first message. **The exit code was
+  non-zero and the work was still half-done in the safe direction**, which is
+  luck rather than design: the same failure one line later would have
+  committed a truncated file.
+
+  What made it a non-event was checking **what the commit contained** rather
+  than that the command exited:
+
+  ```bash
+  git show HEAD:docs/rejected.md | grep -c "the section that should not be here"
+  ```
+
+  Caught before the push, so a `reset --soft` fixed it. Verify content, not
+  exit status, whenever a commit is assembled by a script.
+
 - **The clone lives under a OneDrive-synced path.** OneDrive syncing `.git`
   can occasionally produce lock or corruption errors during git operations. It
   has not so far, but an unexplained git error is worth checking against this
