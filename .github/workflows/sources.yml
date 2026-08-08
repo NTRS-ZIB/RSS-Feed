@@ -33,3 +33,5 @@ jobs:
         env:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
         run: python -u probe_sources2.py
+      - name: Part three — enumerate the Sanity dataset
+        run: python -u probe_sources3.py
