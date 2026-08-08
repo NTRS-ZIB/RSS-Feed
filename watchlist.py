@@ -352,7 +352,7 @@ WATCHLIST = [
         # absence rather than an unswept one.
         "cusips": ["36317J209"],
         "alt_symbols": [],
-        "ir_feed": None,                  # NOT CHECKED YET — see below
+        "ir_feed": None,                  # no feed; scraped, see scrape_galaxy()
     },
     {
         "ticker": "APLD",
