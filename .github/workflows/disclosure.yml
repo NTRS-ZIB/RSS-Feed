@@ -1,0 +1,30 @@
+name: Probe disclosure gap
+
+# Is the repo missing disclosure by reading EDGAR only? Manual, posts nothing.
+#
+# Four companies have a non-US home jurisdiction. A foreign domicile is not a
+# gap — an issuer on domestic forms has its complete disclosure on EDGAR — so
+# phase 1 reads form types rather than reasoning from incorporation.
+#
+# The decisive EDGAR-side check is what is INSIDE a 6-K. If the Canadian
+# material change report is furnished as an exhibit, EDGAR already carries the
+# primary document and the SEDAR+ comparison is settled without leaving EDGAR.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: python -u probe_disclosure.py

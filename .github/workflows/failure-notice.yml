@@ -53,6 +53,7 @@ on:
       - "Metric regime check"
       - "Pending filings"
       - "Press release monitor"
+      - "Probe disclosure gap"
       - "Probe filing rate"
       - "Probe holders"
       - "Probe premarket"
