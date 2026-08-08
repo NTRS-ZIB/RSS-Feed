@@ -3,9 +3,14 @@
 Fifteen components post to Discord from GitHub Actions crons. [`README.md`](README.md)
 lists them; [`docs/`](docs/) covers one per component;
 [`docs/watchlist.md`](docs/watchlist.md) holds the roster and identifier rules;
-[`docs/local-workflow.md`](docs/local-workflow.md) holds the git mechanics. This
-file is only the reasoning behind the conventions — the part not recoverable by
-reading the code.
+[`docs/local-workflow.md`](docs/local-workflow.md) holds the git mechanics.
+
+**This file is the conventions, and the hazards that are not visible from the
+code.** The second half is now the larger one, and that is correct rather than
+drift: the code shows what a component does, and nothing in it shows that a
+source can die at HTTP 200, that a plausible cross-check can confirm the wrong
+answer, or that a window finding nothing has only shown it was too short. A
+conventions document would be shorter and less useful.
 
 ## Output conventions
 
@@ -146,6 +151,25 @@ day, so a non-fast-forward rejection is the normal case, not the exception.
 Each has happened once. They are listed because none announces itself in the
 logs.
 
+**A row with an empty case column has stopped being a row.** The two columns
+are the mechanism rather than the decoration — the claim is scanned, the case
+is read only on a hit. A row carrying its whole argument in the claim cannot be
+skipped, and a table that cannot be skipped is a document. Two rows reached 788
+and 657 characters of claim with nothing in the case column before this was
+noticed; both moved to `docs/press-monitor.md` and left a claim and a pointer.
+
+That is the test for whether a future trap belongs here at all: **if it cannot
+be stated as a claim short enough to skip, it belongs in the component's doc
+with a pointer from here.** The longest cases in this table run past 1,100
+characters behind claims of 140–160 and are fine, so length is not the measure.
+
+**Group at roughly 18–20 rows, not before.** The clusters are already latent —
+identifiers and the roster; what EDGAR's data actually contains; a source that
+looks healthy and is not; scheduling and concurrency — and new traps land in an
+existing one far more often than they create one. But adding that structure at
+fifteen costs a reader a level of navigation to save them nothing, and the
+clusters sitting there visibly is not a reason to build them.
+
 | Trap | The case that proves it |
 |---|---|
 | **MONTHS OF FILING HISTORY IS NOT MONTHS OF COMPARABLE HISTORY, so it cannot be the young-versus-failed arm for anything read off EDGAR.** | SPCX shows **288 months** of filings, first 2002-08, which reads as the second-oldest company on the roster. It is the newest listing, with **two months** as a public filer — the CIK carries Form D private placements back to SpaceX's founding year. Any baseline built by counting months would be built from private-placement notices. The repo now draws the young-versus-failed distinction in five components and every one of them would get SPCX wrong on a month count; the arm has to be observations of the thing being measured, not age of the CIK. Found while measuring filing rates — see docs/rejected.md. |
@@ -160,5 +184,5 @@ logs.
 | **A default sort is not a date sort, and document order is not date order.** | DGXX's CMS returns a 2025-11-19 item first on an unsorted page 1, so `rows[0]` reports something eight months stale as newest; Hut 8's page interleaves recent and old in markup order. Sort explicitly by date; never trust position. |
 | **EDGAR's web filing index renders EASTERN; the submissions API returns UTC. Mixing the two sources manufactures a four-hour error and a confirmation for it.** | This row previously said `acceptanceDateTime` is Eastern despite ending in `Z`, "confirmed twice". **Both confirmations were artefacts and the field is UTC.** The 8-K cited as proof is stamped `12:05:19` in the API — matching the IR feed's 12:05 UTC exactly, not sitting four hours behind it; the `08:05` was read off the web index, which renders ET. The second argument confused **dissemination** hours (06:00–22:00 ET) with acceptance, which EDGAR takes around the clock, so nothing is out of range. Settled by SEC's own next-business-day rule applied per form — 22:00 ET for Section 16 forms 3/4/5, 17:30 ET otherwise — which puts 98% of before-cutoff filings on a same-day `filingDate` under the UTC reading against 76% under Eastern, and by a Form 4 stamped `23:00:06` keeping a same-day date, impossible past a 22:00 ET cutoff but ordinary at 19:00 ET. **No production code reads the field, so nothing was ever mis-timestamped** — there is no damage to go looking for. The durable lesson is not the timezone: it is that a plausible cross-check can confirm the wrong answer, and that two of them agreeing means nothing when both draw on the same mistaken source. |
 | **`concurrency` prevents overlap, not staleness. A queued run checks out the SHA fixed when the run was CREATED, not when its job starts.** | Two press-monitor runs were serialised exactly as the concurrency group intended, and the second still began from the commit before the first one's state push. It loaded a stale `state.json` and reposted three items to Discord; the two runs' logs are identical. The rejected push at the end was the symptom, not the harm. Both halves of the fix are needed: `git pull` before the monitor step so the run reads current state, and a fetch-and-retry loop around the push so it writes onto the current tip. **As of 2026-08-04 the retry loop had still never executed anywhere:** every run since it landed was a dry dispatch, which saves no state and stops before the push, and the last live scheduled runs predate the commit. Only a live run that finds something new will exercise it, and manufacturing one means real posts. Do not read the surrounding work looking finished as evidence that this part ran. |
-| **A `concurrency` group already supersedes queued runs, so never build that yourself.** With `cancel-in-progress: false` the obvious reading is that runs queue up and drain in order — they do not. At most one run is ever *pending*, and a newer arrival **cancels** the older pending one, so the survivor is always the newest and therefore the one with the freshest checkout. Established by experiment, because the config reads the other way: three dispatches into `press-monitor` gave A `in_progress`, B `pending`, then C arriving and B going `cancelled`. A queued run must not try to detect that it has been superseded and exit — the platform does it, keeps the right one, and a run that does start is not doing stale work anyway, since "check for new items now" is a timeless question. |
-| **A scheduled run on this repo is never on time, and a changed cron does not take effect for hours.** All 30 scheduled runs measured on 2026-08-04 were late: 51 to 173 minutes, none inside GitHub's documented 15–25 minute drift, and bimodal — 83–173 in the 05:00–15:59 UTC window, 51–71 in the 16:00–23:59 one. Separately, all 17 cron epochs took 55 minutes to 2h 53m to register after landing on `main`, changed crons no differently from new ones. Two consequences: a schedule that has not fired an hour after you push it is normal, not broken; and any interval reasoned from a nominal cron time is wrong. `docs/press-monitor.md` carries the measurement. |
+| **A `concurrency` group already supersedes queued runs, so never build that yourself.** | At most one run is ever pending and a newer arrival cancels the older one, so the survivor is always the freshest checkout — the opposite of what `cancel-in-progress: false` reads like. Established by experiment; a queued run must never detect its own supersession and exit. [press-monitor.md → Supersession](docs/press-monitor.md#supersession-the-concurrency-group-already-keeps-the-newest-run) |
+| **A scheduled run on this repo is never on time, and a changed cron does not take effect for hours.** | All 30 scheduled runs measured were 51–173 minutes late, none inside GitHub's documented drift; all 17 cron epochs took 55 minutes to 2h 53m to register. So a schedule that has not fired an hour after you push it is normal, and any interval reasoned from a nominal cron time is wrong. [press-monitor.md → never on time](docs/press-monitor.md#measured-scheduled-runs-on-this-repo-are-never-on-time) |
