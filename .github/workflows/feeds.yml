@@ -30,3 +30,5 @@ jobs:
           python-version: "3.12"
       - run: pip install --quiet feedparser requests
       - run: python -u probe_feeds.py
+      - name: Part two — verify each feed against its own newsroom
+        run: python -u probe_feeds2.py
