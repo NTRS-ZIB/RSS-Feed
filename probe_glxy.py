@@ -1,83 +1,121 @@
 #!/usr/bin/env python3
-"""Structure dump for galaxy.com/newsroom, so the scraper is written against
-observed markup rather than a guess. TEMPORARY. Posts nothing."""
+"""Prototype the GLXY extraction against live markup, before it goes into
+press_monitor.py. TEMPORARY. Posts nothing.
 
+The structure, read off the dump rather than guessed:
+
+    <a href="/newsroom/<slug>" ...>
+        <figure><picture>... ~1,500 chars of srcset ...</picture></figure>
+        <p class="card2__eyebrow"><span class="post-type">Research &bull;</span>
+            August 07, 2026</p>
+        <h3 class="card2__title">Weekly Research Brief: ...</h3>
+
+Both regex pairing directions failed on the first dump because the image block
+sits between the anchor and the text. So the title is the anchor point and the
+date and href are found by looking BACKWARD from it.
+"""
+
+import html as htmlmod
 import re
 import sys
+import time
+from calendar import timegm
 from collections import Counter
+from urllib.parse import urljoin
 
 import requests
 
 import press_monitor as pm
 
 URL = "https://www.galaxy.com/newsroom"
+DATE = re.compile(
+    r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+"
+    r"\d{1,2},?\s+20\d{2}")
+
+
+def text_of(fragment):
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", fragment)).strip()
 
 
 def main():
     r = requests.get(URL, headers=pm.IR_HEADERS, timeout=(10, 30))
-    print(f"HTTP {r.status_code}, {len(r.text):,} chars, final {r.url}\n")
     h = r.text
+    print(f"HTTP {r.status_code}, {len(h):,} chars\n")
 
     print("=" * 78)
-    print("ANCHOR HREF SHAPES — which path prefix carries individual releases")
+    print("CLASS INVENTORY — is card2__ the only card shape on the page?")
     print("=" * 78)
-    pref = Counter()
-    for m in re.finditer(r'href="(/[^"#?]*)"', h):
-        parts = m.group(1).strip("/").split("/")
-        pref["/" + "/".join(parts[:2])] += 1
-    for k, v in pref.most_common(18):
+    c = Counter(re.findall(r'class="([a-z0-9_]*__(?:title|eyebrow))"', h))
+    for k, v in c.most_common():
         print(f"  {v:>4}  {k}")
+    print(f"  post-type values: "
+          f"{Counter(text_of(m) for m in re.findall(r'<span class=\"post-type\">(.*?)</span>', h, re.S)).most_common()}")
 
     print("\n" + "=" * 78)
-    print("A RELEASE ANCHOR IN CONTEXT — 1,400 chars around the first August item")
+    print("EXTRACTION — title as the anchor point, date and href found backward")
     print("=" * 78)
-    m = re.search(r"August 0?7,? 2026", h)
-    if m:
-        s = max(0, m.start() - 900)
-        print(h[s:m.start() + 500])
-    else:
-        print("no 'August 07, 2026' found; dumping around the first 2026 date")
-        m2 = re.search(r"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)"
-                       r"[a-z]*\.?\s+\d{1,2},?\s+2026", h)
-        if m2:
-            s = max(0, m2.start() - 900)
-            print(h[s:m2.start() + 500])
+    items, seen = [], set()
+    for m in re.finditer(r'<h\d[^>]*class="[a-z0-9_]*__title"[^>]*>(.*?)</h\d>',
+                         h, re.S):
+        title = text_of(m.group(1))
+        if not title:
+            continue
+        before = h[max(0, m.start() - 4000):m.start()]
+        # nearest preceding eyebrow date
+        eyes = re.findall(r'class="[a-z0-9_]*__eyebrow"[^>]*>(.*?)</p>',
+                          before, re.S)
+        when = None
+        kind = None
+        if eyes:
+            d = DATE.search(text_of(eyes[-1]))
+            when = d.group(0) if d else None
+            k = re.search(r'<span class="post-type">(.*?)</span>', eyes[-1], re.S)
+            kind = text_of(k.group(1)).rstrip("• ").strip() if k else None
+        hrefs = re.findall(r'href="(/[^"]+)"', before)
+        link = hrefs[-1] if hrefs else None
+        items.append((when, kind, link, title))
+
+    print(f"  {len(items)} cards\n")
+    print(f"  {'date':<20}{'type':<14}{'href':<46}title")
+    for when, kind, link, title in items:
+        print(f"  {str(when):<20}{str(kind)[:13]:<14}{str(link)[:45]:<46}"
+              f"{title[:40]}")
 
     print("\n" + "=" * 78)
-    print("CLASS NAMES near dates — what a selector could key on")
+    print("WHAT A PRESS-RELEASE FILTER WOULD KEEP")
     print("=" * 78)
-    cls = Counter()
-    for m in re.finditer(r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)"
-                         r"[a-z]*\.?\s+\d{1,2},?\s+20\d{2}", h):
-        window = h[max(0, m.start() - 400):m.start()]
-        for c in re.findall(r'class="([^"]{0,120})"', window)[-3:]:
-            cls[c.strip()] += 1
-    for k, v in cls.most_common(14):
-        print(f"  {v:>4}  {k[:100]}")
+    keep = [i for i in items
+            if i[2] and re.fullmatch(r"/newsroom/[a-z0-9\-]+", i[2])]
+    print(f"  {len(keep)} of {len(items)} have an href of /newsroom/<slug>")
+    for when, kind, link, title in keep:
+        print(f"    {str(when):<20}{str(kind)[:12]:<13}{title[:52]}")
 
     print("\n" + "=" * 78)
-    print("DATE + NEAREST FOLLOWING ANCHOR — the pairing a scraper would use")
+    print("DOCUMENT ORDER vs DATE ORDER — the thing the sort exists for")
     print("=" * 78)
-    pairs = re.findall(
-        r'(?is)((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+'
-        r'\d{1,2},?\s+20\d{2}).{0,600}?<a[^>]+href="([^"]+)"[^>]*>(.{0,140}?)</a>',
-        h)
-    print(f"  {len(pairs)} date->anchor pairs\n")
-    for d, href, text in pairs[:14]:
-        t = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", text)).strip()
-        print(f"  {d:<20} {href[:52]:<52} {t[:44]}")
-
-    print("\n" + "=" * 78)
-    print("REVERSE PAIRING — anchor then following date, in case order differs")
-    print("=" * 78)
-    rev = re.findall(
-        r'(?is)<a[^>]+href="(/[^"]*)"[^>]*>(.{10,140}?)</a>.{0,400}?'
-        r'((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+'
-        r'\d{1,2},?\s+20\d{2})', h)
-    print(f"  {len(rev)} anchor->date pairs\n")
-    for href, text, d in rev[:14]:
-        t = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", text)).strip()
-        print(f"  {href[:50]:<50} {t[:40]:<40} {d}")
+    parsed = []
+    for when, kind, link, title in keep:
+        t = 0
+        if when:
+            for fmt in ("%B %d, %Y", "%b %d, %Y"):
+                try:
+                    t = timegm(time.strptime(when.replace(",", "") + "",
+                                             fmt.replace(",", "")))
+                    break
+                except ValueError:
+                    continue
+        parsed.append((t, when, title))
+    print("  as delivered:")
+    for t, when, title in parsed[:8]:
+        print(f"    {when:<20}{title[:52]}")
+    print("  sorted by date:")
+    for t, when, title in sorted(parsed, key=lambda x: -x[0])[:8]:
+        print(f"    {when:<20}{title[:52]}")
+    unsorted_first = parsed[0][0] if parsed else 0
+    sorted_first = max((p[0] for p in parsed), default=0)
+    print(f"\n  rows[0] {'HAPPENS to be newest' if unsorted_first == sorted_first else 'IS NOT the newest'}"
+          f"; {sum(1 for a, b in zip(parsed, parsed[1:]) if a[0] < b[0])} "
+          f"out-of-order adjacent pairs")
     return 0
 
 
