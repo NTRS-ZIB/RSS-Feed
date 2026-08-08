@@ -1,0 +1,27 @@
+name: Probe filing rate
+
+# Does a company's filing rate detect it going quiet, and does the measure
+# separate anything? Manual only, posts nothing.
+#
+# Two things are known before it runs and are recorded in the script:
+# check_staleness() already detects a source that stops publishing, and the
+# motivating case — DGXX's production reporting — is a completed sector shift.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: python -u probe_filing_rate.py
