@@ -62,7 +62,8 @@ TWO OUTCOMES THAT ARE ANSWERS, NOT GAPS
   No operator named.  The filing was read and does not say. That is OPEN, and
   OPEN must never be quoted as a weak version of a claim. BTDR's 20-F describes
   the largest US footprint of the 2026-08 additions and names no US operator
-  anywhere.
+  anywhere. Read that as a fact about miners rather than about foreign filers:
+  MARA's and CLSK's 10-Ks name none either, and only CIFR's does.
 
   No annual report.  A company that has not reached its first one cannot be
   swept by this method. That is not "unread" and it resolves on a known date.
@@ -167,9 +168,17 @@ INCORPORATION_LOOKBACK = 90
 def incorporation_state(text):
     """The state named on the cover page as the jurisdiction of incorporation.
 
-    None for a foreign private issuer, which has no such line — BTDR is Cayman
-    and files 20-F. That is the correct answer rather than a fallback: there is
-    no US incorporation state to discount.
+    None for a foreign private issuer, and that is the correct answer rather
+    than a fallback: there is no US incorporation state to discount.
+
+    NOT because the line is absent. This said so until 2026-08-08 and it was
+    wrong — BTDR's 20-F cover page carries "(Jurisdiction of incorporation or
+    organization)", verified by filer_regime.py. The pattern below requires
+    "State or other jurisdiction", which is the 10-K wording, so it does not
+    match. Same outcome, different reason, and the difference decides whether
+    relaxing the pattern would be a fix or a bug: it would start returning
+    "Cayman Islands" as a jurisdiction to discount, which is not a US state
+    and not a site anyone would confuse for one.
     """
     m = INCORPORATION_LINE.search(text)
     if not m:

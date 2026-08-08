@@ -474,7 +474,7 @@ That separation is the whole reason for the change.
 | NUAI | **none named** | New Mexico? | sites `ESTIMATE` · grid `OPEN` — New Mexico 50x against Texas 44x, which **contradicts its own Midland, Texas dateline** |
 | GLXY | ERCOT | Texas: Helios campus, West Texas panhandle | `FILED`: "ERCOT has approved over 1.6 GW of gross power capacity at our Helios campus" |
 | APLD | MISO? | North Dakota: Ellendale, Harwood, Jamestown; Louisiana | grid `ESTIMATE` · sites `FILED` — MISO appears **only** via the Base Electron generation partnership, never against a campus |
-| BTDR | **none named** | Texas: Rockdale; Ohio: Massillon, Clarington, Niles; Tennessee: Knoxville; Washington: Pangborn; Alberta: Fox Creek; Norway, Bhutan, Ethiopia, Malaysia | grid `OPEN` · sites `FILED` — a labelled capacity table, and **no US operator anywhere in the 20-F** |
+| BTDR | **none named** | Texas: Rockdale; Ohio: Massillon, Clarington, Niles; Tennessee: Knoxville; Washington: Pangborn; Alberta: Fox Creek; Norway, Bhutan, Ethiopia, Malaysia | grid `OPEN` · sites `FILED` — a labelled capacity table, and **no US operator named**; so is MARA's 10-K, see below |
 | ABTC | n/a — hosted at HUT's sites | Hut 8's Alpha (Niagara Falls NY), Medicine Hat (AB), Salt Creek (Orla TX), Vega (Amarillo TX) | sites `FILED` · grid `OPEN` — **owns and leases no real property.** Do not assign it grids; see below |
 | SPCX | — | — | `UNSWEPT` — **nothing to read yet**, not unread. No annual report exists |
 
@@ -658,9 +658,23 @@ than carrying a list.
 Same shape as `"NT "` replacing four hand-enumerated late-filing forms in
 `press_monitor.py`. A list of the cases seen so far is an assumption that no
 further case exists, and here the further case was two companies away rather
-than years. A foreign private issuer has no such line — BTDR is Cayman and files
-20-F — so the derivation finds nothing and excludes nothing, which is the
-correct answer rather than a fallback.
+than years. For BTDR the derivation finds nothing and excludes nothing, which
+is the correct answer rather than a fallback: there is no US incorporation
+state to discount.
+
+**Not because a 20-F has no such line.** This said so until 2026-08-08 and it
+was wrong — BTDR's cover page carries "(Jurisdiction of incorporation or
+organization)", verified by `filer_regime.py`. The pattern requires "State or
+other jurisdiction", the 10-K wording, so it misses on phrasing rather than on
+absence. The outcome is unchanged and the distinction still matters: relaxing
+the pattern would make the derivation return "Cayman Islands", which is not a
+US state and not a site anyone would confuse for one — so it would be a bug
+dressed as a generalisation, and the current miss is load-bearing.
+
+It is the second thing this repo assumed a 20-F lacked and measured as
+present; the other is BTDR's operational detail, in the footprint table below.
+**Both were reasoned from the form type rather than read off the filing**, and
+that is the pattern rather than either instance.
 
 Counsel and auditor cities do not generalise the same way and are still read
 rather than filtered. ABTC's single Illinois mention is a former auditor's Deer
@@ -720,13 +734,37 @@ still two estimates.
 
 **BTDR is the highest-leverage unknown on the roster.** Its US footprint is the
 largest of the five swept and among the largest anywhere here — Rockdale at 563
-MW, three Ohio sites totalling ~991 MW, Knoxville at 86 MW — and its 20-F names
-no US operator at all. Establishing its grids would plausibly move PJM from one
+MW, three Ohio sites totalling ~991 MW, Knoxville at 86 MW — and its annual
+report names no US operator at all, which is what MARA's and CLSK's 10-Ks also
+do. Establishing its grids would plausibly move PJM from one
 company to two and ERCOT from four to five, which is the single change most
 likely to alter a region decision.
 
-**Its 20-F cannot answer it, and that is a boundary rather than a task.** This
-table takes filings. Resolving BTDR needs a source that is not one.
+**Its annual report does not answer it, and that is a boundary rather than a
+task.** This table takes filings. Resolving BTDR needs a source that is not
+one.
+
+**The form type is not the reason, and this said otherwise until 2026-08-08.**
+The obvious inference from a 20-F is that a foreign private issuer discloses
+less, and it is wrong here in both directions. Measured against domestic peers
+over the same vocabulary, BTDR's 20-F runs **1,041,504 characters against
+419,979 for MARA's 10-K and 570,790 for CLSK's**, and carries **more** capacity
+and hashrate figures than any of them. And on the thing this table actually
+wants — a named grid operator — **MARA's 10-K and CLSK's 10-K name zero, the
+same as BTDR's 20-F.** Only CIFR names any.
+
+So the finding is about the roster rather than about BTDR: **miners do not
+generally name their RTO in an annual report.** The table already carried the
+counter-evidence without drawing on it — the MARA row above says its 10-K
+names five states and no operator.
+
+That matters because of what the wrong reason invites. *The 20-F is why* points
+a future reader at a better form type, or at the home-jurisdiction record
+behind it, and neither exists to be found; SEDAR+ was probed on exactly that
+reasoning and rejected — see [`rejected.md`](rejected.md). *Miners do not name
+their RTO* points at interconnection queues and operator registries, which is
+where the answer actually is. The tag was right and the reason was not, which
+is the harder failure to notice.
 
 **If that boundary is ever relaxed, it must be decided as a change to what this
 table accepts — not as an exception for one row.** The distinction is the whole
