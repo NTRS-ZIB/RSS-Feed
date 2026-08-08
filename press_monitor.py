@@ -43,7 +43,7 @@ EXTRA_CIKS = watchlist.ciks()          # {ticker: (cik, name)}
 IR_FEEDS = watchlist.ir_feeds()        # {ticker: url}, companies that have one
 
 # EVERY COMPANY ON THE ROSTER IS NOW COVERED BY SOMETHING FASTER THAN EDGAR.
-# Four different ways, because four companies publish no feed on their own
+# Five different ways, because five companies publish no feed on their own
 # newsroom, and each turned out to be a different problem:
 #
 #   own IR feed          ten companies, IR_FEEDS
@@ -51,7 +51,8 @@ IR_FEEDS = watchlist.ir_feeds()        # {ticker: url}, companies that have one
 #   separate IR host     WYFI — whitefiber.investorroom.com, found by
 #                        autodiscovery OUT of a Webflow shell that has no
 #                        headlines in it
-#   scrape               HUT — server-side HTML, scrape_hut8()
+#   scrape               HUT and GLXY — server-side HTML, scrape_hut8()
+#                        and scrape_galaxy()
 #   CMS API              DGXX — public Strapi, read_dgxx()
 #
 # The lesson that took four attempts: a newsroom with no readable HTML does not
@@ -70,6 +71,12 @@ IR_FEEDS = watchlist.ir_feeds()        # {ticker: url}, companies that have one
 # — see scrape_hut8(). That closes a latency gap rather than a blind spot;
 # everything material reaches EDGAR as an 8-K eventually, just hours later.
 HUT_PAGE = "https://www.hut8.com/news-insights/press-releases"
+
+# GLXY is the same case as HUT and was established the same way: no feed
+# anywhere — autodiscovery, footer anchors, every platform path on this roster
+# and the host roots were all tried on 2026-08-08 — and a newsroom that comes
+# back complete in a plain fetch. Scraped, see scrape_galaxy().
+GLXY_PAGE = "https://www.galaxy.com/newsroom"
 
 # DGXX publishes no feed anywhere — not on its own domain, and not on either
 # wire it has used. Its newsroom is a Next.js shell backed by a PUBLIC Strapi
@@ -904,6 +911,134 @@ def scrape_hut8():
     return items
 
 
+def scrape_galaxy():
+    """GLXY's press releases, scraped. Items shaped like collect_ir()'s.
+
+    Same case as HUT and the same failure treatment: HTTP 200 with zero items
+    is a parse failure, not a quiet week. This page carries roughly seven
+    historical releases and never empties, so zero can only mean the markup
+    moved.
+
+    THE MARKUP, read off the delivered HTML rather than guessed. Each card is
+
+        <a class="card2__link" href="/newsroom/<slug>">
+            <figure><picture> ~1,500 chars of srcset </picture></figure>
+            <p class="card2__eyebrow">August 07, 2026</p>
+            <h3 class="card2__title">Galaxy and Sharplink Launch ...</h3></a>
+
+    That image block is why this walks forward from the anchor rather than
+    pairing a date to a nearby title: both regex directions fail at any window
+    small enough to be safe, and any window large enough to span the picture
+    reaches into the next card.
+
+    DOCUMENT ORDER IS NOT DATE ORDER ON THIS PAGE, and that is observed rather
+    than defended against in the abstract. In the 2026-08-08 fetch a
+    January 15, 2026 card sat at byte 93,171 and an August 07, 2026 card at
+    99,430 — the older one FIRST. rows[0] happened to be a newest item that
+    day by luck. The sort is what makes it true on purpose.
+
+    WHAT IS DELIBERATELY NOT COLLECTED, because the page mixes four kinds of
+    card and only one is a press release:
+
+      /insights/research/<slug>     weekly research briefs, editorial
+      /newsroom/videos/<slug>       video posts
+      external wire URLs            a `newsroom-media` block whose cards link
+                                    straight out to prnewswire.com with
+                                    target="_blank"
+      /newsroom/<slug>              the releases -- KEPT
+
+    The external block is the one judgement call here and it is not a clean
+    one. It carries at least one item this repo would actively want -- "Galaxy
+    Completes ERCOT Interconnection Studies ... 830 Megawatts at Helios" -- so
+    excluding it is not free. It is excluded anyway because those cards are a
+    media-coverage list, `data-newsroom-media-type="Article"`, which mixes
+    Galaxy's own wire-hosted releases with third-party write-ups about Galaxy,
+    and nothing in the markup separates the two. Posting another outlet's
+    article as a company release is a worse failure than missing one, and the
+    material items reach EDGAR as 8-Ks regardless.
+
+    So the skipped count is LOGGED on every run rather than left implicit. A
+    reader seeing "7 items, 10 cards skipped" can see the boundary; a reader
+    seeing "7 items" would reasonably assume the page holds seven.
+
+    Never raises. One scraper must not take down fifteen feeds and the EDGAR
+    sweep with it.
+    """
+    try:
+        r = requests.get(GLXY_PAGE, headers=IR_HEADERS, timeout=(10, 30))
+    except requests.RequestException as e:
+        print(f"  GLXY: fetch failed: {type(e).__name__}")
+        return []
+    if r.status_code != 200:
+        print(f"  GLXY: HTTP {r.status_code}")
+        return []
+
+    # A release slug and nothing below it: /newsroom/videos/<slug> has a
+    # second segment and is excluded by the character class, not by a list.
+    release = re.compile(r"^/newsroom/[a-z0-9][a-z0-9\-]*$")
+    cards = list(re.finditer(r'<a[^>]+class="card2__link"[^>]*'
+                             r'href="([^"]+)"', r.text))
+    items, seen, skipped = [], set(), 0
+    for i, m in enumerate(cards):
+        href = m.group(1)
+        # Forward to the end of this card: the next card's anchor, or the end.
+        stop = cards[i + 1].start() if i + 1 < len(cards) else len(r.text)
+        block = r.text[m.end():stop]
+
+        def part(cls):
+            g = re.search(rf'class="card2__{cls}"[^>]*>(.*?)</', block, re.S)
+            if not g:
+                return None
+            return re.sub(r"\s+", " ",
+                          re.sub(r"<[^>]+>", " ", g.group(1))).strip()
+
+        title = part("title")
+        if not title:
+            continue
+        if not release.match(href):
+            skipped += 1
+            continue
+        link = urljoin(GLXY_PAGE, href)
+        if link in seen:
+            continue
+        seen.add(link)
+
+        # The eyebrow carries an optional category span before the date, so the
+        # date is extracted from the text rather than being the whole of it.
+        published = 0
+        eyebrow = part("eyebrow") or ""
+        d = re.search(r"(?:January|February|March|April|May|June|July|August|"
+                      r"September|October|November|December)\s+\d{1,2},\s+"
+                      r"\d{4}", eyebrow)
+        if d:
+            try:
+                published = timegm(time.strptime(d.group(0), "%B %d, %Y"))
+            except ValueError:
+                pass
+        items.append({
+            "uid": link,
+            "source": "GLXY \u00b7 IR newsroom",
+            "title": html.unescape(title),
+            "link": link,
+            "published": published,
+            "is_edgar": False,
+        })
+
+    if not items:
+        print(f"  GLXY: PARSE FAILURE \u2014 HTTP 200 but 0 releases from "
+              f"{len(cards)} cards. This page lists ~7 historical releases and "
+              f"never empties, so this is the markup moving, not a quiet week.")
+        return []
+
+    # Observed, not defensive: see the docstring. An older card really does
+    # come first in this page's markup.
+    items.sort(key=lambda i: i["published"], reverse=True)
+    print(f"  GLXY: {len(items)} items (scraped), {skipped} non-release cards "
+          f"skipped \u2014 research, videos and wire-hosted media")
+    check_staleness("GLXY", [i["published"] for i in items])
+    return items
+
+
 def check_staleness(label, published, override_days=None):
     """Warn when a source parses cleanly but has stopped producing anything new.
 
@@ -1100,6 +1235,7 @@ def collect_ir():
     # Two companies publish no feed at all and are covered another way, both
     # yielding the same item shape so nothing downstream knows the difference.
     items += scrape_hut8()   # server-side HTML, scraped
+    items += scrape_galaxy() # server-side HTML, scraped
     items += read_dgxx()     # public CMS, read as JSON
     return items
 
