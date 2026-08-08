@@ -794,3 +794,86 @@ on two buckets and is entirely fine — its five remaining buckets sum to its
 carrying amount exactly. Read that flag as a prompt to look, never as a verdict.
 It is the same distinction the roster already draws between a young listing and
 a failed source.
+
+---
+
+## Filing rate as a "company has gone quiet" signal
+
+**Would have added:** a per-company alert when its EDGAR filing rate falls
+against its own history — the general form of the question the monthly
+production probe raised, which was whether a company that stops reporting can
+be detected at all.
+
+**DGXX sits at the 51st percentile.**
+
+The company whose going-quiet motivated the entire question — production
+reporting stopped in autumn 2025 — falls at the **exact median of ordinary
+variation**. Its filing rate went from 5.1 a month to 4.7. Measured over
+2,266 company-months of null distribution, that is the middle of the pack.
+
+Three other events, dated from `watchlist.md` rather than from the probe:
+
+| | month | before | after | log | percentile |
+|---|---|---|---|---|---|
+| ABTC reverse merger | 2025-09 | 4.7 | 3.0 | −0.39 | 24% |
+| BGDE rename + wire migration | 2026-04 | 4.0 | 2.7 | −0.35 | 25% |
+| **DGXX production reporting stops** | 2025-10 | 5.1 | 4.7 | −0.08 | **51%** |
+| NUAI rename | 2025-08 | 3.9 | 6.0 | +0.39 | 82% |
+
+**Zero of four below the null's 5th percentile.** Median event at the 38th.
+HUT's 2023 reorganisation and VIP's rename have insufficient history either
+side to test.
+
+### Why this is final rather than a calibration problem
+
+**What went quiet was press releases. A press release only reaches EDGAR if it
+is 8-K-worthy, and a monthly production update is not.** The thing that
+stopped was never in the filing rate to begin with.
+
+That is a statement about the instrument, not the threshold. **A longer
+window, a different statistic or a tuned threshold cannot recover a signal
+that is not in the data** — which forecloses the obvious next attempt, and is
+the reason this entry is a closure rather than a deferral.
+
+### The base rate is why the null is so wide
+
+```
+month-on-month log change, company-filed only (2,756 months)
+  p05 -1.61   p25 -0.51   p50 +0.00   p75 +0.51   p95 +1.61
+```
+
+**One ordinary month in five is at least a halving.** The mean is **2.14
+company filings per month**, so the series is dominated by counting noise: 1,
+2 and 4 in consecutive months is an unremarkable sequence that reads as a 75%
+fall followed by a quadrupling.
+
+### Calendar was checked and ruled out
+
+The first thing anyone would reach for, so it is recorded as measured rather
+than assumed.
+
+```
+01:1.6  02:1.9  03:2.6  04:2.4  05:2.9  06:1.8
+07:1.6  08:2.7  09:1.9  10:2.0  11:2.5  12:1.8
+```
+
+Quarterly reporting is visible at **1.78x peak to trough**, against a **5x**
+ordinary monthly swing. Deseasonalising would not have rescued it.
+
+### Verdict
+
+**EDGAR filing counts cannot answer this question, and no amount of tuning
+changes that.**
+
+**The question itself is not closed — only this instrument.** A company going
+quiet is a real thing to want to know, and `press_monitor.check_staleness()`
+already watches the IR feed at `max(6 × median, 60 days)` calibrated per
+source. That is where the signal actually is: the press releases that stopped
+are in the feed and never reached EDGAR.
+
+### If a sector-wide shift is ever the worry
+
+The thing to reach for is a **roster-level reading of the staleness check** —
+several sources going stale at once. That uses a signal which already exists
+and already fires per source, and is a far smaller change than a component.
+The 2025 production-reporting shift would have shown as exactly that.
