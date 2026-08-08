@@ -608,19 +608,71 @@ Soluna is plain WordPress. Its press releases live in the `/news/` archive
 feed. Autodiscovery finds the latter, because the archive's own feed isn't
 declared in the page HTML — so the correct URL had to be set explicitly.
 
+SpaceX is Q4 as well, despite a newsroom URL of `updates/default.aspx` that
+reads like a fourth platform. `default.aspx` is Q4's page naming.
+
+Bitdeer is the counter-case to the conventions above. Its newsroom is
+`/news-events/news-releases`, one word away from the Equisolve shape, and
+`/news-events/news-releases/rss` **returns nothing** — the feed is the gcs-web
+one at the host root. **The newsroom path does not identify the platform.**
+
+Applied Digital's platform returns **byte-identical responses for `/rss`,
+`/rss/news-releases.xml` and `/rss/pressrelease.aspx`** — 7,741 bytes each. It
+serves the feed for anything under `/rss`, so on that platform a constructed
+URL that works today is not evidence the platform means it. Record the
+autodiscovered URL, not the one you guessed correctly.
+
+### Two rules for adding a feed
+
+Both come from failures, and both are cheap.
+
+**Never rank feed candidates by newest item.** Discovery on `ir.bitdeer.com`
+returned two feeds, and picking the freshest chose `/rss/events.xml` over
+`/rss/news-releases.xml` — because an events calendar carries **future-dated**
+entries, in that case an earnings call two days out.
+
+That is not a near miss that happened to go wrong. **An events feed will look
+newer than a press-release feed permanently, by construction**, so the metric
+is not noisy — it is inverted, and it fails hardest on exactly the companies
+that publish most regularly. The wrong URL would have entered the roster with
+a date beside it that looked like evidence. If feed selection is ever
+automated, the tiebreak must be what the feed *is*, never how fresh it looks.
+
+**Check a candidate feed against the newsroom page it claims to mirror, not
+against today's date.** One extra fetch, and it is the difference between the
+two DGXX dead feeds being caught and being adopted. A feed abandoned when a
+company changes wire keeps serving its last items at HTTP 200 forever, so
+"newest item is 30 days old" reads as healthy for the first ninety days;
+"newest item is 30 days old and the newsroom published yesterday" reads as
+dead immediately.
+
+Of the three feeds added on 2026-08-08, APLD and BTDR matched their pages to
+the day. **SPCX could not be checked** — its newsroom ships zero dates in the
+delivered HTML — so it went in with that recorded in `watchlist.py` rather
+than rounded up to the same confidence as the other two.
+
 ### Four ways a company is covered
 
-All fourteen are now read from something faster than EDGAR. Four companies
+Eighteen of nineteen are now read from something faster than EDGAR. Five
 publish no feed on their own newsroom, and each turned out to be a different
 problem, so there are four mechanisms rather than one:
 
 | Mechanism | Companies | Source |
 |---|---|---|
-| **Own IR feed** | ten | the company's own newsroom RSS |
+| **Own IR feed** | thirteen | the company's own newsroom RSS |
 | **Newswire feed** | BGDE | GlobeNewswire's organization feed |
 | **Separate IR host** | WYFI | `whitefiber.investorroom.com` |
-| **Scrape** | HUT | server-side HTML, `scrape_hut8()` |
+| **Scrape** | HUT, GLXY | server-side HTML, `scrape_hut8()`, `scrape_galaxy()` |
 | **CMS API** | DGXX | public Strapi, `read_dgxx()` |
+
+**ABTC is the nineteenth and is EDGAR-only, deliberately.** It has no feed
+anywhere, and it is not the HUT shape either: its list is a client-rendered
+infinite scroll whose first page *is* delivered in the HTML — 29 dates, 32
+news links with self-describing slugs — but with no date-adjacent-to-title
+structure, so the cheap scraper does not apply. Two things point the way if it
+is ever scoped: the slugs carry the headline text, and its sitemap has **24
+distinct `lastmod` values** rather than one rebuild stamp, so it is not the
+trap that made `digipowerx.com/sitemap.xml` useless.
 
 **The lesson took four attempts to learn: a newsroom with no readable HTML does
 not mean there is no feed.** Three of those four had a machine-readable source
@@ -828,6 +880,49 @@ Wire items are **not** deduplicated against the matching EDGAR filing, and that
 is deliberate. A wire release and its 8-K are two different things about the
 same event; the wire arrives hours earlier, and collapsing them would discard
 the latency that makes the feed worth having.
+
+### Galaxy is scraped too, and the page mixes four kinds of card
+
+`galaxy.com/newsroom` has no feed — autodiscovery, footer anchors, every
+platform path on this roster and the host roots were all tried on 2026-08-08 —
+and its releases render server-side. So it is the HUT case, and
+`scrape_galaxy()` is the HUT treatment.
+
+Two things about the page shape the code:
+
+**The card structure defeats regex pairing in both directions.** A ~1,500
+character `<picture>` block of `srcset` variants sits between each card's
+anchor and its text, so a date-to-title window small enough to be safe finds
+nothing and one large enough reaches into the next card. The scraper walks
+**forward from each anchor to the next anchor** and reads the block between.
+
+**Document order is not date order, and here that is observed rather than
+guarded against in the abstract.** In the 2026-08-08 fetch a `January 15, 2026`
+card sat at byte 93,171 and an `August 07, 2026` card at 99,430 — the older one
+first, because a media block precedes the release list. `rows[0]` was a newest
+item that day by luck.
+
+**Only `/newsroom/<slug>` is collected**, out of four kinds of card:
+
+| | kept |
+|---|---|
+| `/newsroom/<slug>` | **yes** — the releases |
+| `/newsroom/videos/<slug>` | no — excluded by the slug pattern, not a list |
+| `/insights/research/<slug>` | no — weekly research briefs, editorial |
+| external wire URLs | no — a `newsroom-media` block linking out to prnewswire |
+
+**The last one is a real judgement call rather than an obvious exclusion.**
+That block holds at least one item this repo actively wants — *"Galaxy
+Completes ERCOT Interconnection Studies … 830 Megawatts at Helios"* — so
+excluding it is not free. It is excluded because the cards are a
+media-coverage list, `data-newsroom-media-type="Article"`, mixing Galaxy's own
+wire-hosted releases with third-party write-ups about Galaxy, and **nothing in
+the markup separates the two**. Posting another outlet's article as a company
+release is the worse failure, and material items reach EDGAR as 8-Ks anyway.
+
+So the run logs the skipped count — `7 items (scraped), 10 non-release cards
+skipped` — rather than leaving it implicit. A reader seeing seven items and no
+count would reasonably conclude the page holds seven.
 
 ### Hut 8 is scraped
 
