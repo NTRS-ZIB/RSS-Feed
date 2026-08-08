@@ -28,3 +28,7 @@ jobs:
       - env:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
         run: python -u probe_disclosure.py
+      - name: Part two — verify part one's findings
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: python -u probe_disclosure2.py
