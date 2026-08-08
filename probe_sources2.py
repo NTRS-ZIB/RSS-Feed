@@ -203,7 +203,11 @@ def lead2():
     if r is None or r.status_code != 200:
         print("  news page unavailable")
         return
-    assets = sorted(set(re.findall(r'src="(/assets/[^"]+\.js)"', r.text)))
+    # Part one matched src= AND href=; this matched only src= and found zero
+    # bundles, which read as "the site changed" and was my regex. The assets
+    # are referenced by <link rel=modulepreload href=...>.
+    assets = sorted(set(re.findall(r'(?:src|href)="(/assets/[^"]+\.js)"',
+                                   r.text)))
     blob = ""
     for a in assets:
         rr = get(urljoin(ABTC_NEWS, a))
