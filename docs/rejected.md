@@ -894,3 +894,147 @@ its shareholders' behaviour rather than its own.
 It did not change the outcome above — 21% of ordinary months halve on
 company-only against 23% on everything — and it was measured both ways for
 that reason. It would have changed a component built without noticing.
+
+## SEDAR+ as a ninth source, for disclosure that never reaches EDGAR
+
+Probed 2026-08-08. **Rejected.** Every SEC-backed component keys off
+data.sec.gov, and four companies have a non-US home jurisdiction — BTDR, IREN,
+DGXX, GLXY. A 20-F is a summary and a 6-K is furnished rather than filed, so a
+company whose primary record sits with a home regulator would reach EDGAR only
+in abstract.
+
+### The gap needs two conditions at once, and this roster has never had both
+
+That is the durable finding, and the one to check first if this is re-opened.
+
+1. **The company is on the FPI regime** — furnishing 6-Ks rather than filing
+   8-Ks, annual report a 20-F rather than a 10-K.
+2. **It has a home regulator holding a record EDGAR does not.**
+
+| | condition 1 | condition 2 |
+|---|---|---|
+| **BTDR** | **yes** — 100 6-Ks, 5 20-Fs, zero domestic forms | **no** — Nasdaq-only, Cayman incorporation, Singapore HQ |
+| **DGXX** | no — last 6-K 2025-12-29 | yes — still a Canadian reporting issuer, Cboe Canada |
+| **IREN** | no — last 6-K 2025-06-30 | moot |
+| **GLXY** | **never** — zero 6-Ks and zero 20-Fs, ever | moot |
+
+**The one company still furnishing has no second regulator to furnish from,
+and the one company with a second regulator left the regime seven months
+ago.** Neither condition alone is a gap.
+
+This sits first because it is **structural rather than circumstantial**. The
+access findings below could change — a bot manager can be reconfigured, an API
+can appear. The condition either recurs or it does not, and it recurs only if a
+roster company takes a second listing in a jurisdiction with its own
+continuous-disclosure regime while remaining an FPI. `filer_regime.py` checks
+the mechanical half on demand.
+
+**GLXY should never have been a suspect**, which is a method point rather than
+a detail. Its Cayman history is real and it never produced a single FPI filing
+on EDGAR. Reading incorporation put it on the list; a census of what each
+company actually files would not have.
+
+### The named unknown dissolves rather than resolves
+
+**The sharpest result, and the one most likely to be re-attempted**, because it
+was the strongest single argument for the source.
+
+DGXX's material change reports say a press release went out through *"an
+approved Canadian newswire service"* without naming it, and the standing
+assumption was that SEDAR+ would identify which. **It would not.**
+
+That phrase is **Item 3 of the material change report itself** — and 20 of
+DGXX's 25 most recent 6-Ks furnish that report, the actual Form 51-102F3, as
+Exhibit 99.1. The 2025-12-29 filing, verbatim:
+
+> Exhibit 99.1 FORM 51-102F3 MATERIAL CHANGE REPORT Item 1 Name and Address of
+> Company Digi Power X Inc. … Item 3 News Release The press release attached
+> as Schedule "A" was released on December 24, 2025 through an approved
+> Canadian newswire service.
+
+SEDAR+ holds the same prescribed document — the same file, filed to two
+regulators. **The vagueness is inside the document, not in which copy you
+read.** The question is unanswerable by that source in principle rather than
+merely unmeasured, which is a stronger closure than a measurement would give.
+
+BTDR is the control at **0 of 25** — its exhibits are press releases, which is
+what a company with no continuous-disclosure regulator has to furnish.
+
+### The transition did not lose it either
+
+DGXX moved to 8-Ks on 2026-01-06 and is **still** a Canadian reporting issuer,
+so it still files material change reports at home. A 6-K furnishes whatever the
+issuer published; an 8-K reports enumerated items on a US template — so the
+changeover could plausibly have closed the FPI gap and opened a document gap in
+the same week. It was checked for that reason, not because anything suggested
+it had.
+
+| DGXX | period | MCR present |
+|---|---|---|
+| 6-K era | 2025-09-04 → 2025-12-29 | **12 of 15** |
+| 8-K era | 2026-02-23 → 2026-08-04 | **11 of 15** |
+
+Unchanged within noise. DGXX still attaches the report, now under Item 7.01
+with a 9.01 exhibit list. IREN as the control is 0 of 8 either side —
+Australian, no material change report to lose — which is what says the measure
+detects the document rather than firing on anything long enough.
+
+**So "the repo has been reading the abstract all along" is specifically
+excluded, in both regimes, for the only company it could have applied to.**
+
+### The 20-F is not a summary — a corrected premise, not a supporting point
+
+Counted over the vocabulary an Item 2 Properties section cannot avoid, same
+measure both sides:
+
+| | form | chars | MW figures | hashrate | site/facility | **named grid** |
+|---|---|---|---|---|---|---|
+| **BTDR** | 20-F | **1,041,504** | **36** | **19** | 141 | **0** |
+| MARA | 10-K | 419,979 | 24 | 6 | 135 | **0** |
+| CLSK | 10-K | 570,790 | 15 | 8 | 235 | **0** |
+| CIFR | 10-K | 485,042 | 28 | 0 | 470 | 30 |
+
+**BTDR's 20-F is twice the length of the peer 10-Ks and carries more capacity
+and hashrate figures than any of them.** Whatever a 20-F is, on this roster it
+is not the shorter document.
+
+The only structural difference found is the heading — a 20-F uses Item 4.D
+where a 10-K uses Item 2 — which is different signposting over the same
+material. This corrected the stated reason for BTDR's `OPEN` grid tag in
+[`watchlist.md`](watchlist.md); the tag itself was right.
+
+### SEDAR+ as a source — independently sufficient, and a category not a cost
+
+Three findings, in increasing order of how decisive they are:
+
+1. **No official API.** The CSA publishes none. Commercial access is via
+   FactSet or LSEG — paid redistribution, not the source.
+2. **It was in a planned maintenance window during the probe**, serving a
+   static bilingual "temporarily unavailable" page. One observation; recorded
+   because it happened, not weighted as a reliability measurement.
+3. **It is behind Radware Bot Manager.** A non-browser request to
+   `sedarplus.ca` is 302'd to `validate.perfdrive.com` with a bot-validation
+   challenge.
+
+**The third ends it, and it is a different category of work rather than a
+larger amount of it.** The four existing scrapers read sites that were merely
+awkward — a soft-404, an unsorted CMS, a rebuilt sitemap. This one is
+adversarial by design: the work is specifically evading bot detection, it
+breaks silently whenever they change anything, and there is no version of it
+that fails loudly. **Declining to attempt it is the position, not a
+limitation** — the challenge was not attempted and nothing should be built to
+it.
+
+### Verdict
+
+**Do not add SEDAR+.** No unique disclosure was found; the one company it could
+serve has its primary Canadian document on EDGAR verbatim in both regimes; the
+named unknown it was expected to resolve is unanswerable by it; and access
+would mean defeating a commercial anti-bot system. Any one of those is
+sufficient.
+
+**What is not closed** is the two-condition test, which is why
+`filer_regime.py` was kept rather than deleted with the rest of the probe. A
+company added to the roster, or one taking a second listing, can make the two
+conditions hold together for the first time. The census makes that a
+one-command check instead of a probe.
