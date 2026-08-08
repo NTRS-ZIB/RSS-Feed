@@ -32,3 +32,7 @@ jobs:
         env:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
         run: python -u probe_disclosure2.py
+      - name: Part three — did the move to 8-K lose the MCR?
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: python -u probe_disclosure3.py
