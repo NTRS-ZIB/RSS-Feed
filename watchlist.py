@@ -388,7 +388,14 @@ WATCHLIST = [
         # this window reaches, and none is recorded from the filing that lists
         # them.
         "alt_symbols": [],
-        "ir_feed": None,                  # NOT CHECKED YET — see below
+        # Autodiscovered from a <link rel="alternate"> on the newsroom page.
+        # RECORDED AS AUTODISCOVERED RATHER THAN CONSTRUCTED, deliberately:
+        # this platform returns BYTE-IDENTICAL responses for /rss,
+        # /rss/news-releases.xml and /rss/pressrelease.aspx — 7,741 bytes each
+        # — so it serves the feed for anything under /rss. A constructed URL
+        # that works today is not evidence the platform means it, and path
+        # guessing here cannot tell a real endpoint from a soft match.
+        "ir_feed": "https://ir.applieddigital.com/news-events/press-releases/rss",
     },
     {
         "ticker": "BTDR",
@@ -406,7 +413,20 @@ WATCHLIST = [
         # (Cayman Islands), operations in Singapore. So it behaves like IREN
         # and DGXX, and the earnings calendar reaches it through its 20-F/6-K
         # fallback rather than through 10-K/8-K.
-        "ir_feed": None,                  # NOT CHECKED YET — see below
+        #
+        # AT THE HOST ROOT, NOT UNDER THE NEWSROOM PATH. The newsroom is
+        # /news-events/news-releases, which looks like the Equisolve shape
+        # MARA and WULF use, and /news-events/news-releases/rss returns
+        # NOTHING. The feed is the gcs-web shape at the root, same as ANY,
+        # BKKT, CIFR, IREN and VIP. There is no <link rel="alternate"> on the
+        # page at all; a footer anchor to /rss-feeds is the only pointer.
+        #
+        # BTDR distributes through GlobeNewswire — a recent dateline names it
+        # — and still serves its own feed from its own host. That is the good
+        # case and worth distinguishing from BGDE, where only the WIRE's
+        # organisation feed existed, with an opaque token readable solely from
+        # an individual release page.
+        "ir_feed": "https://ir.bitdeer.com/rss/news-releases.xml",
     },
     {
         "ticker": "SPCX",
@@ -462,7 +482,20 @@ WATCHLIST = [
         #     days before it will judge a source. That does not bite yet
         #     because there is no feed to judge — it becomes the first thing to
         #     check if one is added.
-        "ir_feed": None,                  # NOT CHECKED YET — see below
+        # The same Q4 endpoint CLSK and NUAI already use. `default.aspx` on
+        # the newsroom URL is that platform's page naming, not a different
+        # platform — it looks like a third shape and is not.
+        #
+        # WEAKER EVIDENCE THAN THE OTHER TWO, AND THE DIFFERENCE IS RECORDED
+        # RATHER THAN ROUNDED OFF. Every feed added here is checked against
+        # the newsroom page it claims to mirror, because a dead feed matches
+        # today's date for ninety days. SPCX's newsroom ships ZERO dates in
+        # its delivered HTML, so that check could not run: the feed is fresh
+        # by absolute date and UNCONFIRMED AGAINST ITS SOURCE. Seven items is
+        # consistent with a 2026-06 listing, which is corroboration and not
+        # verification. This is the one that most wants check_staleness()
+        # watching it.
+        "ir_feed": "https://ir.spacex.com/rss/pressrelease.aspx",
     },
     {
         "ticker": "ABTC",
@@ -527,15 +560,28 @@ WATCHLIST = [
         # altogether and cannot be established from these files at any depth
         # they reach. That absence is unswept, not measured.
         "alt_symbols": ["ABTCZZZZ", "GRYP", "KERN"],
-        "ir_feed": None,                  # NOT CHECKED YET — see below
+        "ir_feed": None,                  # no feed; see the note below
     },
-    # THE FIVE `ir_feed: None` VALUES ABOVE MEAN SOMETHING DIFFERENT from the
-    # three that precede them. DGXX's None means "renders client-side, cannot
-    # be read"; HUT's means "no feed exists, so it is scraped instead". Both
-    # are measured absences. These five mean only "not looked for yet" — the
-    # companies were added on 2026-08-05 without a newsroom check. Each is
-    # EDGAR-only until someone checks, which is safe but not the same as
-    # covered. Do not read these as evidence that no feed exists.
+    # GLXY AND ABTC ARE NOW MEASURED ABSENCES, not unchecked ones. The five
+    # added on 2026-08-05 were swept on 2026-08-08: APLD, BTDR and SPCX have
+    # feeds and carry them above. Neither of these two has one anywhere —
+    # autodiscovery, footer anchors, the platform paths on this roster and the
+    # host roots were all tried.
+    #
+    # GLXY is the HUT case: no feed, server-rendered, scraped. See
+    # scrape_galaxy().
+    #
+    # ABTC is neither. Its list is a client-rendered infinite scroll whose
+    # first page IS delivered in the HTML — 29 dates and 32 news links with
+    # self-describing slugs — but with no date-adjacent-to-title structure, so
+    # the cheap scraper shape does not apply and it is deliberately left out
+    # rather than half-built. Two things point the way when it is scoped: the
+    # slugs carry the headline text, and its sitemap has 24 DISTINCT lastmod
+    # values rather than one rebuild stamp, so it is not the trap that made
+    # DGXX's sitemap useless.
+    #
+    # None of these Nones means "not looked for". That state no longer exists
+    # on this roster.
 ]
 
 # --------------------------------------------------------------- REFUSALS ---
