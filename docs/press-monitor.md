@@ -663,16 +663,28 @@ problem, so there are four mechanisms rather than one:
 | **Newswire feed** | BGDE | GlobeNewswire's organization feed |
 | **Separate IR host** | WYFI | `whitefiber.investorroom.com` |
 | **Scrape** | HUT, GLXY | server-side HTML, `scrape_hut8()`, `scrape_galaxy()` |
-| **CMS API** | DGXX | public Strapi, `read_dgxx()` |
+| **CMS API** | DGXX, ABTC | public Strapi / Sanity, `read_dgxx()`, `read_abtc()` |
 
-**ABTC is the nineteenth and is EDGAR-only, deliberately.** It has no feed
-anywhere, and it is not the HUT shape either: its list is a client-rendered
-infinite scroll whose first page *is* delivered in the HTML — 29 dates, 32
-news links with self-describing slugs — but with no date-adjacent-to-title
-structure, so the cheap scraper does not apply. Two things point the way if it
-is ever scoped: the slugs carry the headline text, and its sitemap has **24
-distinct `lastmod` values** rather than one rebuild stamp, so it is not the
-trap that made `digipowerx.com/sitemap.xml` useless.
+**All nineteen are now covered.** ABTC was the last holdout and was recorded as
+EDGAR-only for three days on a true observation with a wrong conclusion: its
+list is a client-rendered infinite scroll with no date-adjacent-to-title
+structure, so the cheap scrape does not apply. **That is a fact about the page,
+not about the source.** The list is backed by a public Sanity dataset — see
+`read_abtc()` — which is the DGXX shape and strictly better than a scrape.
+
+The two routes that did not work are worth recording, because both look
+plausible and one nearly got built:
+
+- **Slugs.** They carry the headline text, so a title is recoverable. A date is
+  not: 28 release slugs against **3 distinct dates** in the delivered markup.
+  Pairing those by proximity is guesswork rather than a hard parse.
+- **Sitemap `lastmod`.** 28 release pages with 24 distinct values, so not the
+  single-rebuild-stamp trap that makes `digipowerx.com/sitemap.xml` useless.
+  But against ABTC's own 8-K dates the median gap is 4 days and the worst is
+  21. **That cross-check is inconclusive rather than damning** — ABTC has 167
+  8-Ks, so "nearest 8-K" is too dense a baseline to be discriminating, and the
+  worst rows are earnings-*scheduling* announcements that plausibly have no
+  8-K at all. It is moot either way: Sanity supplies a real publication date.
 
 **The lesson took four attempts to learn: a newsroom with no readable HTML does
 not mean there is no feed.** Three of those four had a machine-readable source
@@ -680,6 +692,33 @@ somewhere other than the company's own domain — a newswire, an IR platform, a
 CMS backend — and checking the company domain alone is what kept concluding
 otherwise. BGDE and WYFI were both written off twice before anyone followed a
 reference off-domain.
+
+**It has now happened three times — BGDE, WYFI, GLXY — and the sharper form of
+the rule is not "check other hosts". It is that THE REFERENCE IS USUALLY
+ALREADY IN FRONT OF YOU.**
+
+Galaxy is the case that makes it concrete. `www.galaxy.com` was swept
+thoroughly and written off as having no feed, and a scraper was built. The
+release that motivated re-opening it — the ERCOT 830 MW Helios approval — was
+sitting on the page the whole time with
+`href="https://investor.galaxy.com/news-releases/..."`. The IR host was in the
+markup being parsed. `investor.galaxy.com/rss/news-releases.xml` is a standard
+gcs-web feed and had been there all along.
+
+So the check is cheap and specific: **enumerate the distinct hosts the newsroom
+links out to, and probe each one.** A company that publishes through an IR
+platform links to it from somewhere, because that is what the platform is for.
+
+**And autodiscovery is necessary, not sufficient — the rule above overstates
+it.** It says autodiscovery first because that is what found WYFI, which is
+true and is why it stays first. But on `investor.galaxy.com` autodiscovery
+finds **nothing at all** — no `<link rel="alternate">`, no RSS anchor anywhere
+on the page — and only probing the known platform host-paths found the feed.
+
+That matters because a method that worked once, stated as *the* method, is what
+stops the next person looking further. **Autodiscovery finding nothing is not
+evidence there is no feed. Run the host-path list too, and only then conclude
+absence.**
 
 #### WhiteFiber — found by autodiscovery out of a shell
 
@@ -956,6 +995,26 @@ items are in the delivered HTML. **That truncation is not worked around.** If
 "Show All" loads more via JavaScript it is the client-side case this scraper
 exists to avoid, and nine items against a fifteen-minute schedule is already
 comparable to the ten an RSS feed returns.
+
+### A probe that finds nothing looks exactly like a source that has nothing
+
+The scraper rule below — HTTP 200 with zero items is a parse failure, not a
+quiet week — applies to the tools used to investigate a source, and that is
+not obvious until it costs something. Twice in the 2026-08-08 sweep:
+
+| reported | actually | would have cost |
+|---|---|---|
+| `/all-news/announcements`: **278 cards, 0 dated** | 276 cards, **all dated** — the extractor's window fell outside the archive layout | ruling out a usable source |
+| ABTC's page: **0 bundles, 0 chars of JS** | 8 bundles, 637,688 chars — a regex matching `src=` where the assets use `href=` | ruling out the Sanity backend, the only route that worked |
+
+**Both read as findings about the source and were failures of the tool**, and
+both pointed the same way — toward *there is nothing here*, which is the
+conclusion that ends an investigation rather than continuing it.
+
+So a probe reporting zero needs the same treatment a component does: a floor
+it should clear, checked against a second signal. In both cases above the
+second signal already existed and went unread — the page obviously renders
+dates in a browser, and a React app obviously ships JavaScript.
 
 ### Critical: a scraper fails differently from a feed
 

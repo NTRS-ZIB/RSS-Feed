@@ -560,28 +560,27 @@ WATCHLIST = [
         # altogether and cannot be established from these files at any depth
         # they reach. That absence is unswept, not measured.
         "alt_symbols": ["ABTCZZZZ", "GRYP", "KERN"],
-        "ir_feed": None,                  # no feed; see the note below
+        "ir_feed": None,                  # no feed; Sanity CMS, read_abtc()
     },
-    # GLXY AND ABTC ARE NOW MEASURED ABSENCES, not unchecked ones. The five
-    # added on 2026-08-05 were swept on 2026-08-08: APLD, BTDR and SPCX have
-    # feeds and carry them above. Neither of these two has one anywhere —
-    # autodiscovery, footer anchors, the platform paths on this roster and the
-    # host roots were all tried.
+    # EVERY None ABOVE IS A MEASURED ABSENCE OF A FEED ON THE COMPANY'S OWN
+    # NEWSROOM, and every one of those companies is still covered by something
+    # faster than EDGAR. "Not looked for" no longer exists on this roster.
     #
-    # GLXY is the HUT case: no feed, server-rendered, scraped. See
-    # scrape_galaxy().
+    #   DGXX  renders client-side; public Strapi CMS, read_dgxx()
+    #   HUT   no feed; server-rendered, scrape_hut8()
+    #   GLXY  no feed on www.galaxy.com; server-rendered, scrape_galaxy()
+    #   ABTC  client-rendered scroll; public Sanity CMS, read_abtc()
     #
-    # ABTC is neither. Its list is a client-rendered infinite scroll whose
-    # first page IS delivered in the HTML — 29 dates and 32 news links with
-    # self-describing slugs — but with no date-adjacent-to-title structure, so
-    # the cheap scraper shape does not apply and it is deliberately left out
-    # rather than half-built. Two things point the way when it is scoped: the
-    # slugs carry the headline text, and its sitemap has 24 DISTINCT lastmod
-    # values rather than one rebuild stamp, so it is not the trap that made
-    # DGXX's sitemap useless.
-    #
-    # None of these Nones means "not looked for". That state no longer exists
-    # on this roster.
+    # GLXY IS THE ONE TO READ TWICE. `ir_feed: None` is true of
+    # www.galaxy.com and NOT of the company: investor.galaxy.com serves a
+    # standard gcs-web feed, found on 2026-08-08 in an href on the newsroom
+    # page that had been parsed many times. It is not recorded here as the
+    # ir_feed only because the scraper and the feed carry DIFFERENT
+    # populations — the newsroom has the corporate posts, the IR host has the
+    # financial and material releases — and wiring both in needs cross-host
+    # dedupe, since the same release appears under two URLs. Until that is
+    # settled GLXY is scraper-only and the IR feed's releases arrive via
+    # EDGAR. See docs/press-monitor.md.
 ]
 
 # --------------------------------------------------------------- REFUSALS ---
