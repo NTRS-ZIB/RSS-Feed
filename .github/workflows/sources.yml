@@ -35,3 +35,5 @@ jobs:
         run: python -u probe_sources2.py
       - name: Part three — enumerate the Sanity dataset
         run: python -u probe_sources3.py
+      - name: Measure the GLXY cross-host overlap
+        run: python -u probe_dedupe.py
