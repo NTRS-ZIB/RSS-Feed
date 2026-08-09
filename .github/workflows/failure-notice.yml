@@ -56,7 +56,6 @@ on:
       - "Press release monitor"
       - "Probe filing rate"
       - "Probe holders"
-      - "Probe large move"
       - "Probe premarket"
       - "Probe sites"
       - "Probe spike normalisation"

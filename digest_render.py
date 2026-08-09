@@ -177,7 +177,15 @@ def silent(record):
         cv = record["convergence"][t]
         if cv["count"] or cv["source_failed"]:
             continue
-        detail = record["verdicts"].get(t, {}).get("filings", {}).get("detail") or {}
+        # Level first, for the reason in bar_figure(): a NOT_TESTABLE filings
+        # verdict carries no detail, so `filings_in_week` is absent and the
+        # company would be reported as having filed NOTHING when the truth is
+        # that nothing looked. Silence is the one claim that turns a gap into
+        # a lie, so it gets the strictest reading available.
+        fv = record["verdicts"].get(t, {}).get("filings") or {}
+        if fv.get("level") == wd.NOT_TESTABLE:
+            continue
+        detail = fv.get("detail") or {}
         if detail.get("filings_in_week"):
             continue
         out.append(t)
@@ -202,14 +210,40 @@ def failed_sources(record):
 
 
 def bar_figure(record, ticker):
-    """Close, week return and volume multiple, from the market contributors."""
+    """Close, week return and volume multiple, from the market contributors.
+
+    THE LEVEL IS READ BEFORE THE DETAIL, AND THAT IS THE FIX FOR A REAL BUG.
+    Until 2026-08-09 this asked `cross.get("short_window")` and nothing else.
+    A NOT_TESTABLE verdict carries an EMPTY detail dict, so the flag came back
+    False and the cell rendered `·` — "measured, routine".
+
+    The result inverted the convention in CLAUDE.md, which puts the mark on
+    the affected column. In 2026-W32:
+
+        SPCX  crossings not-testable, 34/60 bars   ->  rendered `·`
+        WYFI  crossings measured on 247 bars       ->  rendered `~`
+
+    The company that could not be tested read as routine, and the company that
+    WAS tested carried the caveat. A not-testable verdict is the strongest
+    case for the mark, not the absence of one.
+
+    The shape generalises and is worth stating once: **reading a detail field
+    to infer a state, when a not-testable verdict populates no detail at all,
+    silently returns the falsy answer.** silent() had the same bug against the
+    filings detail. Check the level; the detail is for figures.
+    """
     vs = record["verdicts"].get(ticker, {})
-    price = (vs.get("price") or {}).get("detail") or {}
-    vol = (vs.get("volume") or {}).get("detail") or {}
-    cross = (vs.get("crossings") or {}).get("detail") or {}
+    price_v = vs.get("price") or {}
+    vol_v = vs.get("volume") or {}
+    cross_v = vs.get("crossings") or {}
+    price = price_v.get("detail") or {}
+    vol = vol_v.get("detail") or {}
+    cross = cross_v.get("detail") or {}
     return {
         "ret": price.get("week_return_pct"),
         "volx": vol.get("peak_multiple"),
+        "close": price.get("close"),
+        "cross_untestable": cross_v.get("level") == wd.NOT_TESTABLE,
         "short_window": bool(cross.get("short_window")),
         "high": bool(cross.get("new_highs")),
         "low": bool(cross.get("new_lows")),
@@ -239,10 +273,29 @@ def mono_table(record):
         rows.append((t, f))
     for t, f in sorted(rows, key=lambda r: -abs(r[1]["ret"])):
         volx = f"{f['volx']:.1f}x" if f["volx"] is not None else "  n/a"
+        # Same precedence as the markdown table, and it had the same bug: a
+        # not-testable crossings verdict populates no detail, so short_window
+        # came back False and the cell read as measured-and-routine. `~` marks
+        # both states here because 28 characters has no room to distinguish
+        # them; the file does, and "Not measurable this week" names which.
         mark = "hi" if f["high"] else ("lo" if f["low"] else "")
-        lines.append(f"{t:<5}{f['ret']:>+6.1f}%{volx:>6}{mark:>4}"
-                     + ("~" if f["short_window"] else ""))
+        tilde = "~" if (f["cross_untestable"] or f["short_window"]) else ""
+        lines.append(f"{t:<5}{f['ret']:>+6.1f}%{volx:>6}{mark:>3}{tilde}")
     return lines
+
+
+# The committed file, so the post can point at it. Raw would render as text;
+# blob is the reading view.
+REPO_BLOB = "https://github.com/NTRS-ZIB/RSS-Feed/blob/main/digest"
+
+
+def week_url(record):
+    return f"{REPO_BLOB}/{record['week']}.md"
+
+
+def movers(record):
+    """The large-move view. Empty list when the record predates the section."""
+    return (record.get("large_moves") or {}).get("movers") or []
 
 
 def render_post(records):
@@ -257,6 +310,29 @@ def render_post(records):
         return text + "\n\n"
 
     body = ""
+    # --- LARGE MOVES ------------------------------------------------------
+    # ABOVE convergence, and the reason is the empty rate rather than
+    # importance. Convergence is empty in 6 of 10 backfill weeks; this fires
+    # in 48 of 53. With convergence first, three posts in five open with
+    # "nothing converged", which teaches a reader to scroll past the top. It
+    # also answers a different question: this is "what happened", convergence
+    # is "what might I have missed", and that is the order they are wanted in.
+    lm = rec.get("large_moves") or {}
+    mv = movers(rec)
+    if mv:
+        med = lm.get("roster_median_abs_return")
+        body += para(
+            f"__**Large moves**__ · >={lm.get('threshold_pct')}% and "
+            f">={lm.get('roster_multiple')}x the roster median of {med}%")
+        for m in mv:
+            close = (f" to ${m['close']:,.2f}" if m.get("close") is not None
+                     else "")
+            body += (f"**{m['ticker']}** {m['return_pct']:+.1f}%{close} — "
+                     f"{m['roster_multiple']:.1f}x the roster"
+                     + (f", {m['peak_volume_multiple']}x peak volume"
+                        if m.get("peak_volume_multiple") else "") + "\n")
+        body += "\n"
+
     # --- CONVERGENCE ------------------------------------------------------
     body += para(
         f"__**Convergence**__ · a company in "
@@ -366,6 +442,18 @@ def render_post(records):
                        "value": "\n".join(material)[:FIELD_LIMIT]})
 
     den = rec["denominator"]
+    # THE LINK GOES IN THE DESCRIPTION, NOT THE FOOTER, and width is not the
+    # reason. Discord does not linkify footer text at all — the old footer
+    # carried the bare path `digest/<week>.md`, which was unreachable from the
+    # channel and read as though it were one. An embed DESCRIPTION does render
+    # markdown links, so that is where it belongs. Added last so it survives
+    # the DESC_BUDGET truncation above rather than competing with findings.
+    link = f"[Full derivation → {rec['week']}.md]({week_url(rec)})"
+    if len(body) + len(link) <= DESC_LIMIT:
+        body = body.rstrip() + "\n\n" + link
+    else:
+        print("WARNING: no room for the file link in the description")
+
     return {
         "title": f"Weekly digest · {rec['week']} · {week_title(rec)}",
         "description": body.rstrip(),
@@ -375,7 +463,7 @@ def render_post(records):
             f"Re-derived from source, not from posts · "
             f"{den['families']} source families counted · "
             f"filings <1d, short volume T+1, short interest ~2wk, "
-            f"FTD 2-6wk · digest/{rec['week']}.md")},
+            f"FTD 2-6wk")},
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -536,6 +624,48 @@ def render_markdown(records):
     A("")
 
     # ------------------------------------------------------------ FILTER --
+    A("## The week's largest moves")
+    A("")
+    lm = rec.get("large_moves") or {}
+    mv = movers(rec)
+    med = lm.get("roster_median_abs_return")
+    A(f"Against the roster's own week. A move qualifies at "
+      f"**>={lm.get('threshold_pct')}%** *and* "
+      f"**>={lm.get('roster_multiple')}x** the roster's median absolute "
+      f"return, which was **{med}%** across {lm.get('measured')} companies.")
+    A("")
+    if mv:
+        A("| | week % | close | vs roster | peak volume |")
+        A("|---|---|---|---|---|")
+        for m in mv:
+            close = (f"${m['close']:,.2f}" if m.get("close") is not None
+                     else "—")
+            pv = (f"{m['peak_volume_multiple']}x"
+                  if m.get("peak_volume_multiple") else "—")
+            A(f"| **{m['ticker']}** | {m['return_pct']:+.1f}% | {close} | "
+              f"{m['roster_multiple']:.2f}x | {pv} |")
+    else:
+        A("**No move cleared both tests this week.**")
+    A("")
+    A("*Both halves are load-bearing. An absolute threshold alone cannot "
+      "separate a company having news from the whole sector moving: across 53 "
+      "weeks every value from 10% to 25% has a maximum of 9-17 names of 19, "
+      "and those maxima are sector weeks whose roster median is 22.1% against "
+      "7.8% overall. Raising the bar empties the ordinary weeks and leaves "
+      "the sector weeks naming three quarters of the roster.*")
+    A("")
+    A("*Ranked by magnitude with the sign shown rather than split by "
+      "direction: down moves are 3.6x more common than up in "
+      "2026-W22..W31 and 1.04x across the full 53 weeks, so the asymmetry "
+      "belongs to that ten-week stretch and not to the roster.*")
+    A("")
+    A("*This is a view over the `price` and `volume` verdicts, not a "
+      "contributor. It adds no source family and does not enter the "
+      "convergence count — a large move on heavy volume through a 52-week "
+      "high is already three market-family contributors, and the family "
+      "collapse exists so that reads as one.*")
+    A("")
+
     A("## The filter")
     A("")
     A(f"### Convergence — {wd.CONVERGENCE_THRESHOLD}+ source families")
@@ -654,20 +784,24 @@ def render_markdown(records):
           f"every cell below is unmeasured rather than flat.** A dash here is "
           f"not a zero.")
         A("")
-    A("| | week % | peak volume | 52w | close |")
+    A("| | week % | close | peak volume | 52w |")
     A("|---|---|---|---|---|")
     for t in rec["roster"]:
         f = bar_figure(rec, t)
         if f["ret"] is None:
             A(f"| **{t}** | — | — | — | — |")
             continue
-        pos = "new high" if f["high"] else ("new low" if f["low"] else "")
-        if f["short_window"]:
-            pos += " (short window)"
-        px = ((rec["verdicts"][t].get("price") or {}).get("detail") or {})
-        A(f"| **{t}** | {f['ret']:+.1f}% | "
-          f"{f['volx']}x | {pos or '·'} | "
-          f"{px.get('sessions_in_week', '—')} sessions |")
+        # `~` on the affected column, per CLAUDE.md. not-testable outranks
+        # short-window: one means the rule could not be applied at all.
+        if f["cross_untestable"]:
+            pos = "~ not testable"
+        else:
+            pos = "new high" if f["high"] else ("new low" if f["low"] else "")
+            if f["short_window"]:
+                pos = (pos + " ~ short window").strip()
+        close = f"${f['close']:,.2f}" if f["close"] is not None else "—"
+        A(f"| **{t}** | {f['ret']:+.1f}% | {close} | "
+          f"{f['volx']}x | {pos or '·'} |")
     A("")
 
     A("### Material filings")

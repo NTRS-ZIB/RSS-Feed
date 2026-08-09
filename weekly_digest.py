@@ -834,6 +834,12 @@ def derive_price(c, ctx, week, sessions):
             continue
         sd = statistics.pstdev(weekly)
         detail = {"week_return_pct": round(ret, 1),
+                  # ABSOLUTES, so the file can say "fell 23% to $4.18" rather
+                  # than only the first half. The record carried percentages
+                  # and multiples and no levels at all until 2026-08-09, which
+                  # made it unusable as article source.
+                  "close": round(close_px, 4),
+                  "prior_close": round(open_px, 4),
                   "baseline_sd_pct": round(sd, 1),
                   "baseline_weeks": len(weekly),
                   "sd_multiple": round(abs(ret) / sd, 2) if sd else None,
@@ -892,6 +898,11 @@ def derive_volume(c, ctx, week, sessions):
         # are a shared namespace across contributors even though the dicts are
         # not, so they carry the quantity in the name.
         detail = {"baseline_volume_median": int(base),
+                  # Absolutes beside the multiple, same reason as close:
+                  # "3.5x its 30-session median" cannot become a sentence
+                  # without the median and the peak in shares.
+                  "peak_volume": int(max(v for _, v in inside)),
+                  "week_volume": int(sum(v for _, v in inside)),
                   "baseline_sessions": len(prior),
                   "peak_multiple": round(peak, 1),
                   "daily_multiple": [(d, round(m, 1)) for d, m in mult]}
@@ -1520,6 +1531,43 @@ SOURCE_FAMILY = {
 # EMPTY IN SIX OF THE TEN WEEKS. That is the intended behaviour and not a
 # failure: a renderer must print "nothing converged this week" rather than
 # dropping the section, because absence is a measurement.
+# A LARGE MOVE IS ABSOLUTE **AND** RELATIVE, AND THE SECOND HALF IS NOT
+# DECORATION. Derived 2026-08-09 over 53 complete weeks, 959 ticker-weeks, on
+# this module's own prior-close-to-last-close return.
+#
+# AN ABSOLUTE THRESHOLD CANNOT WORK AT ANY VALUE. The mean count is fine
+# everywhere and every maximum is a firehose:
+#
+#     >=10%  mean 8.2/wk  max 17      >=18%  mean 3.6/wk  max 14
+#     >=15%  mean 4.8/wk  max 16      >=25%  mean 1.7/wk  max  9
+#
+# Those maxima are SECTOR WEEKS. The five weeks firing >=8 names have a roster
+# median |return| of 22.1% against 7.8% overall — when bitcoin moves 30% every
+# miner moves with it, and no absolute number separates "this company had
+# news" from "everything moved". Raising the bar makes it worse: it empties
+# the ordinary weeks while the sector weeks still name three quarters of the
+# roster. That is the same firehose the persistence rule was rejected for,
+# arriving from the opposite direction.
+#
+# The ratio to the roster's own median that week is what differs between the
+# two cases. At 18% and 2.0x: mean 2.0/wk, max 6 across 53 weeks, fires in 48
+# of them, and names five or more in 2.
+#
+# IT BEHAVES ON WEEKS IT WAS NOT TUNED FOR, which is the reason to trust it.
+# 2026-W27 fired 15 of 19 on a plain 15% rule and fires ZERO here — a sector
+# week where nothing stood out. 2026-W16 was a bigger sector week, median
+# 19.4%, and still surfaces two: BGDE +66.7% and SLNH +59.2% stood out even
+# against that.
+#
+# NOT SPLIT BY DIRECTION. Down moves are 3.6x more common than up in
+# 2026-W22..W31 and 1.04x over the full 53 weeks — the ten-week window was a
+# falling stretch, and an asymmetric rule built on it would encode a bear
+# market into a permanent constant. The sign sits next to the number instead.
+LARGE_MOVE_PCT = 18.0
+LARGE_MOVE_ROSTER_MULTIPLE = 2.0
+LARGE_MOVE_BASIS = ("53 complete weeks, 959 ticker-weeks; >=18% and >=2.0x "
+                    "the roster median fires 2.0/wk, max 6")
+
 CONVERGENCE_THRESHOLD = 3
 CONVERGENCE_BASIS = ("10 complete ISO weeks, 2026-W22..2026-W31, 190 "
                      "ticker-weeks; >=3 families = 5 ticker-weeks, 0.5/wk")
@@ -1631,6 +1679,53 @@ def build_week(ctx, monday):
         verdicts = c["derive"](c, ctx, monday, sessions)
         for ticker, v in verdicts.items():
             record["verdicts"].setdefault(ticker, {})[c["key"]] = v
+
+    # LARGE MOVES. Computed here rather than registered as a contributor, and
+    # that is the whole design: a large move on heavy volume through a 52-week
+    # high is ALREADY three market-family contributors, and SOURCE_FAMILY
+    # collapses them precisely so it reads as one family. Adding a
+    # `large_move` key would reintroduce the double-count the collapse exists
+    # to prevent — the same event would be one family in the grid and two in
+    # the arithmetic. So this is a VIEW over verdicts that already exist: no
+    # contributor, no family, no effect on `convergence` below.
+    #
+    # THE ROSTER MEDIAN IS RECORDED, NOT JUST USED. The rule is relative, so a
+    # reader cannot reproduce why a name fired without knowing what the rest
+    # of the roster did that week. A threshold that lives only in the code is
+    # not a threshold a future article can cite.
+    week_returns = {}
+    for t in TICKERS:
+        d = ((record["verdicts"].get(t, {}).get("price") or {})
+             .get("detail") or {})
+        if d.get("week_return_pct") is not None:
+            week_returns[t] = d["week_return_pct"]
+    roster_median = (statistics.median(abs(v) for v in week_returns.values())
+                     if week_returns else None)
+    record["large_moves"] = {
+        "threshold_pct": LARGE_MOVE_PCT,
+        "roster_multiple": LARGE_MOVE_ROSTER_MULTIPLE,
+        "roster_median_abs_return": (round(roster_median, 1)
+                                     if roster_median is not None else None),
+        "basis": LARGE_MOVE_BASIS,
+        "measured": len(week_returns),
+        "movers": [],
+    }
+    if roster_median:
+        for t, r in sorted(week_returns.items(), key=lambda kv: -abs(kv[1])):
+            if abs(r) >= LARGE_MOVE_PCT and \
+                    abs(r) / roster_median >= LARGE_MOVE_ROSTER_MULTIPLE:
+                px = ((record["verdicts"][t].get("price") or {})
+                      .get("detail") or {})
+                vol = ((record["verdicts"][t].get("volume") or {})
+                       .get("detail") or {})
+                record["large_moves"]["movers"].append({
+                    "ticker": t,
+                    "return_pct": r,
+                    "roster_multiple": round(abs(r) / roster_median, 2),
+                    "close": px.get("close"),
+                    "prior_close": px.get("prior_close"),
+                    "peak_volume_multiple": vol.get("peak_multiple"),
+                })
 
     # The convergence count, recorded WITHOUT a threshold applied. The
     # threshold is set from the backfill distribution, not chosen here.

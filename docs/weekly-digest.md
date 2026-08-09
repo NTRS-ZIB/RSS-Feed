@@ -546,3 +546,37 @@ run that wrote that file would close the gate and suppress the real post
 permanently, with no error anywhere — the same shape as the state-file races
 this repo already carries scars from. Backfilling an older week is harmless
 and allowed.
+
+## A company added mid-week is reported for the whole week
+
+**Deliberate, and the exact opposite of what `press_monitor.py` does. Neither
+is a bug.**
+
+Five companies joined the roster on 2026-08-05, a Wednesday. The 2026-W32
+digest reports all five across the full Monday-to-Friday week — GLXY's notable
+verdict that week is a `SCHEDULE 13G/A` filed before it was on the roster at
+all. Meanwhile `press_monitor.baseline_companies()`, added 2026-08-09,
+suppresses **everything** from before a company joined, on the rule that
+adding a ticker must produce no backdated posts.
+
+The two rules disagree because the two components answer different questions.
+
+| | |
+|---|---|
+| `press_monitor` | an **event feed**. A backdated post is noise: it announces as news something that already happened, hours or days late, to a reader who watches the channel continuously. |
+| `weekly_digest` | a **summary of a week**. A week that omitted its first two days for five companies would be wrong about the week, and the omission would be invisible in the output. |
+
+**It costs nothing to keep them different because the digest re-derives.** It
+queries Alpaca, FINRA and EDGAR by symbol and CIK for the whole week rather
+than accumulating what the repo saw, so a company joining on Wednesday has a
+complete five-session week with full trailing baselines — verified on W32,
+where all nineteen companies show five sessions and identical 12-week,
+30-session and 20-session baselines. There is no partial-coverage state to
+report because none arises.
+
+**This is written down because the next person to notice it will reasonably
+conclude one of the two is wrong and change it.** Changing the digest to
+respect join dates would make weekly figures silently incomplete; changing the
+monitor to post pre-join items would reintroduce the seventeen backdated posts
+of 2026-08-05. See [`press-monitor.md`](press-monitor.md) for the monitor's
+side.
