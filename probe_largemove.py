@@ -1,32 +1,24 @@
 #!/usr/bin/env python3
 """
-Part two: an absolute threshold cannot work, so measure the alternative.
+Part three: re-derive the constant against the digest's own return definition.
 
 TEMPORARY. Posts nothing, decides nothing.
 
-WHAT PART ONE FOUND, AND WHY IT KILLS THE OBVIOUS DESIGN. Across 53 complete
-weeks the count firing at each absolute threshold has a max of 14-17 tickers
-of 19 at EVERY candidate from 10% to 25%:
+PARTS ONE AND TWO USED FIRST-OPEN -> LAST-CLOSE. The digest uses PRIOR CLOSE ->
+LAST CLOSE:
 
-    >=15%  mean 4.7/wk  max 17     >=20%  mean 3.0/wk  max 16
-    >=18%  mean 3.5/wk  max 17     >=25%  mean 1.8/wk  max 14
+    open_px, close_px = before[-1][1], inside[-1][1]
 
-The mean is fine and the max is the firehose. Those maxima are not noise: they
-are SECTOR-WIDE WEEKS. When bitcoin moves 30% every miner on the roster moves
-with it, and an absolute threshold cannot tell "this company had news" from
-"everything moved". **Raising the bar does not fix it** — it empties the
-ordinary weeks while the crash weeks still name three quarters of the roster,
-which is the worst of both.
+which includes the weekend gap and the Monday open, and excludes Monday's
+intraday move from the open. On W32 the two disagree by about two points —
+CIFR -23.0 against -21.2, SPCX +22.8 against +25.1 — and a threshold derived
+on one and applied to the other is the adjacent-population mistake in a new
+place. So every table below is recomputed on the digest's definition, and the
+two are printed side by side so the size of the difference is visible rather
+than asserted.
 
-So this measures the rule that can separate them: LARGE IN ABSOLUTE TERMS AND
-LARGE RELATIVE TO WHAT THE REST OF THE ROSTER DID THAT WEEK. On a sector week
-the roster median rises with everything else and the relative test closes; on
-an idiosyncratic week it stays low and the mover stands out.
-
-Also measured: whether the price contributor already covers this. It flags a
-move against the company's OWN 12-week return SD, which is a different
-question — CIFR at -23.0% was routine there because CIFR is always volatile,
-and that is exactly the case that motivated the section.
+The candidate to confirm or move: |return| >= 18% AND >= 2.0x the roster's
+median |return| that week.
 """
 
 import os
@@ -47,7 +39,6 @@ if not (KEY and SECRET):
 
 BARS = "https://data.alpaca.markets/v2/stocks/bars"
 FEED = "sip"
-WEEKS_LONG = 52
 
 
 def fetch(symbols, start):
@@ -80,118 +71,115 @@ def iso_week(day):
 
 def main():
     roster = sorted(watchlist.ciks())
-    start = (date.today() - timedelta(weeks=WEEKS_LONG + 14)).isoformat()
+    start = (date.today() - timedelta(weeks=66)).isoformat()
     bars = fetch(roster, start)
 
-    weekly = defaultdict(dict)
+    # Per ticker, an ordered (date, close) series — the shape the digest reads.
+    series = {}
     for sym, rows in bars.items():
+        rows.sort(key=lambda x: x["t"])
+        series[sym] = [(datetime.fromisoformat(
+            b["t"].replace("Z", "+00:00")).date(), b["c"], b["o"]) for b in rows]
+
+    digest_r = defaultdict(dict)     # prior close -> last close
+    probe_r = defaultdict(dict)      # first open  -> last close
+    for sym, rows in series.items():
         byweek = defaultdict(list)
-        for b in rows:
-            d = datetime.fromisoformat(b["t"].replace("Z", "+00:00")).date()
-            byweek[iso_week(d)].append(b)
-        for wk, rs in byweek.items():
-            rs.sort(key=lambda x: x["t"])
-            if len(rs) < 2:
+        for d, c, o in rows:
+            byweek[iso_week(d)].append((d, c, o))
+        for wk, seg in byweek.items():
+            if len(seg) < 2:
                 continue
-            if rs[0]["o"]:
-                weekly[wk][sym] = (rs[-1]["c"] - rs[0]["o"]) / rs[0]["o"] * 100
+            first = seg[0][0]
+            before = [r for r in rows if r[0] < first]
+            if before and before[-1][1]:
+                digest_r[wk][sym] = (seg[-1][1] - before[-1][1]) \
+                    / before[-1][1] * 100
+            if seg[0][2]:
+                probe_r[wk][sym] = (seg[-1][1] - seg[0][2]) / seg[0][2] * 100
 
     this = iso_week(date.today())
-    weeks = sorted(w for w in weekly if w < this)[-53:]
+    weeks = sorted(w for w in digest_r if w < this)[-53:]
 
     print("=" * 78)
-    print("1. THE SECTOR WEEKS — what the maxima in part one actually are")
+    print("1. HOW FAR APART THE TWO DEFINITIONS ARE")
     print("=" * 78)
-    rows = []
-    for w in weeks:
-        v = weekly[w]
-        med = statistics.median(abs(x) for x in v.values())
-        n20 = sum(1 for x in v.values() if abs(x) >= 20)
-        rows.append((n20, med, w, len(v)))
-    rows.sort(reverse=True)
-    print(f"  {'week':<10}{'n>=20%':>8}{'roster median |ret|':>22}")
-    for n20, med, w, n in rows[:8]:
-        print(f"  {w:<10}{n20:>8}{med:>21.1f}%")
-    print("  ...")
-    for n20, med, w, n in rows[-4:]:
-        print(f"  {w:<10}{n20:>8}{med:>21.1f}%")
-    top = [r for r in rows if r[0] >= 8]
-    print(f"\n  The {len(top)} weeks firing >=8 tickers at 20% have a roster "
-          f"median |return| of "
-          f"{statistics.median([r[1] for r in top]):.1f}% against "
-          f"{statistics.median([r[1] for r in rows]):.1f}% overall.")
-    print("  A sector week is visible in the roster median, which is what the")
-    print("  relative test below keys on.")
+    diffs = [abs(digest_r[w][t] - probe_r[w][t])
+             for w in weeks for t in digest_r[w] if t in probe_r.get(w, {})]
+    diffs.sort()
+    print(f"  {len(diffs)} ticker-weeks measured both ways")
+    print(f"  |difference|  p50 {diffs[len(diffs)//2]:.1f}pts  "
+          f"p90 {diffs[int(len(diffs)*.9)]:.1f}  "
+          f"p99 {diffs[int(len(diffs)*.99)]:.1f}  max {diffs[-1]:.1f}")
 
     print("\n" + "=" * 78)
-    print("2. ABSOLUTE AND RELATIVE TOGETHER")
+    print("2. THE CANDIDATE GRID, ON THE DIGEST'S DEFINITION")
     print("=" * 78)
-    print("  fires when |return| >= ABS and |return| >= REL x the roster's")
-    print("  own median |return| that week.\n")
     print(f"  {'rule':<18}{'mean/wk':>9}{'median':>8}{'max':>6}"
           f"{'wks>=1':>8}{'wks>=5':>8}{'total':>7}")
-    best = []
     for abs_t in (15, 18, 20):
         for rel in (1.5, 2.0, 2.5):
             per = []
             for w in weeks:
-                v = weekly[w]
+                v = digest_r[w]
                 med = statistics.median(abs(x) for x in v.values()) or 0.01
                 per.append(sum(1 for x in v.values()
                                if abs(x) >= abs_t and abs(x) / med >= rel))
-            label = f">={abs_t}% & >={rel}x"
-            print(f"  {label:<18}{statistics.mean(per):>9.1f}"
-                  f"{statistics.median(per):>8.1f}{max(per):>6}"
-                  f"{sum(1 for p in per if p):>8}"
+            print(f"  {'>=%d%% & >=%.1fx' % (abs_t, rel):<18}"
+                  f"{statistics.mean(per):>9.1f}{statistics.median(per):>8.1f}"
+                  f"{max(per):>6}{sum(1 for p in per if p):>8}"
                   f"{sum(1 for p in per if p >= 5):>8}{sum(per):>7}")
-            best.append((abs_t, rel, max(per), statistics.mean(per)))
+
+    print("\n  the same grid on the PROBE definition, for comparison")
+    for abs_t in (18,):
+        for rel in (2.0,):
+            per = []
+            for w in weeks:
+                v = probe_r[w]
+                med = statistics.median(abs(x) for x in v.values()) or 0.01
+                per.append(sum(1 for x in v.values()
+                               if abs(x) >= abs_t and abs(x) / med >= rel))
+            print(f"  {'>=%d%% & >=%.1fx' % (abs_t, rel):<18}"
+                  f"{statistics.mean(per):>9.1f}{statistics.median(per):>8.1f}"
+                  f"{max(per):>6}{sum(1 for p in per if p):>8}"
+                  f"{sum(1 for p in per if p >= 5):>8}{sum(per):>7}")
 
     print("\n" + "=" * 78)
-    print("3. THE CANDIDATE ON EVERY WEEK — >=18% and >=2.0x the roster median")
+    print("3. ABSOLUTE-ONLY, RECONFIRMED ON THE DIGEST'S DEFINITION")
+    print("=" * 78)
+    print("  the finding that killed it must survive the redefinition too\n")
+    for c in (10, 15, 18, 20, 25):
+        per = [sum(1 for x in digest_r[w].values() if abs(x) >= c)
+               for w in weeks]
+        print(f"  >={c:>2}%  mean {statistics.mean(per):4.1f}/wk  "
+              f"max {max(per):>2}  weeks naming >=5: "
+              f"{sum(1 for p in per if p >= 5)}/{len(weeks)}")
+
+    print("\n" + "=" * 78)
+    print("4. THE CANDIDATE WEEK BY WEEK, DIGEST DEFINITION")
     print("=" * 78)
     for w in weeks[-16:]:
-        v = weekly[w]
+        v = digest_r[w]
         med = statistics.median(abs(x) for x in v.values()) or 0.01
         hits = sorted(((x, t) for t, x in v.items()
                        if abs(x) >= 18 and abs(x) / med >= 2.0),
                       key=lambda z: -abs(z[0]))
-        print(f"  {w}  roster median {med:5.1f}%  ->  {len(hits)}  "
+        print(f"  {w}  median {med:5.1f}%  {len(hits)}  "
               + ", ".join(f"{t} {x:+.1f}%" for x, t in hits))
 
     print("\n" + "=" * 78)
-    print("4. DOES THE PRICE CONTRIBUTOR ALREADY COVER IT?")
+    print("5. W32 UNDER BOTH DEFINITIONS")
     print("=" * 78)
-    print("  price fires at >=2.0x the company's OWN 12-week return SD.")
-    print("  Overlap with the candidate, over the same weeks:\n")
-    both = only_lm = only_px = 0
-    for w in weeks:
-        v = weekly[w]
-        med = statistics.median(abs(x) for x in v.values()) or 0.01
-        prior = [x for x in weeks if x < w][-12:]
-        for t, x in v.items():
-            hist = [weekly[p][t] for p in prior if t in weekly[p]]
-            if len(hist) < 8:
-                continue
-            sd = statistics.pstdev(hist) or 0.01
-            lm = abs(x) >= 18 and abs(x) / med >= 2.0
-            px = abs(x) / sd >= 2.0
-            both += lm and px
-            only_lm += lm and not px
-            only_px += px and not lm
-    print(f"  both: {both}   large-move only: {only_lm}   price only: {only_px}")
-    print(f"  -> the section adds {only_lm} findings the price contributor")
-    print(f"     does not make, and {both} it duplicates.")
-
-    print("\n" + "=" * 78)
-    print("5. W32 UNDER THE CANDIDATE")
-    print("=" * 78)
-    v = weekly.get("2026-W32", {})
-    med = statistics.median(abs(x) for x in v.values()) or 0.01
-    print(f"  roster median |return| {med:.1f}%")
-    for t, x in sorted(v.items(), key=lambda z: -abs(z[1])):
-        fires = abs(x) >= 18 and abs(x) / med >= 2.0
-        print(f"    {t:<6}{x:+7.1f}%  {abs(x)/med:5.2f}x  "
-              f"{'FIRES' if fires else ''}")
+    dv, pv = digest_r.get("2026-W32", {}), probe_r.get("2026-W32", {})
+    dmed = statistics.median(abs(x) for x in dv.values())
+    pmed = statistics.median(abs(x) for x in pv.values())
+    print(f"  roster median  digest {dmed:.1f}%   probe {pmed:.1f}%\n")
+    print(f"  {'':6}{'digest':>9}{'x':>7}{'fires':>7}   {'probe':>8}{'x':>7}")
+    for t in sorted(dv, key=lambda k: -abs(dv[k])):
+        d, p = dv[t], pv.get(t, 0)
+        f = abs(d) >= 18 and abs(d) / dmed >= 2.0
+        print(f"  {t:<6}{d:>+9.1f}{abs(d)/dmed:>7.2f}{'  FIRES' if f else '':>7}"
+              f"   {p:>+8.1f}{abs(p)/pmed:>7.2f}")
     return 0
 
 
