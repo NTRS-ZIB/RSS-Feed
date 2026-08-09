@@ -352,7 +352,20 @@ WATCHLIST = [
         # absence rather than an unswept one.
         "cusips": ["36317J209"],
         "alt_symbols": [],
-        "ir_feed": None,                  # no feed; scraped, see scrape_galaxy()
+        # ON THE IR HOST, NOT www.galaxy.com — and the company newsroom is
+        # ALSO read, by scrape_galaxy(). GLXY is the only company on this
+        # roster covered two ways at once, because the two carry different
+        # populations: this feed has the financial and material releases (Q2
+        # results, the $3.507bn notes pricing, the ERCOT 830 MW Helios
+        # approval), and the newsroom has the on-domain corporate
+        # announcements. Neither is a superset.
+        #
+        # The overlap is deduped per run by suppress_cross_host(); six of ten
+        # feed items had a newsroom twin when this was measured.
+        #
+        # Found on 2026-08-08 in an href on the newsroom page that had already
+        # been parsed many times. Autodiscovery finds NOTHING on this host.
+        "ir_feed": "https://investor.galaxy.com/rss/news-releases.xml",
     },
     {
         "ticker": "APLD",
@@ -568,19 +581,13 @@ WATCHLIST = [
     #
     #   DGXX  renders client-side; public Strapi CMS, read_dgxx()
     #   HUT   no feed; server-rendered, scrape_hut8()
-    #   GLXY  no feed on www.galaxy.com; server-rendered, scrape_galaxy()
+    #   GLXY  no feed on www.galaxy.com; server-rendered, scrape_galaxy() —
+    #         but SEE ITS ir_feed ABOVE: the IR host has one, and both are
+    #         read
     #   ABTC  client-rendered scroll; public Sanity CMS, read_abtc()
     #
-    # GLXY IS THE ONE TO READ TWICE. `ir_feed: None` is true of
-    # www.galaxy.com and NOT of the company: investor.galaxy.com serves a
-    # standard gcs-web feed, found on 2026-08-08 in an href on the newsroom
-    # page that had been parsed many times. It is not recorded here as the
-    # ir_feed only because the scraper and the feed carry DIFFERENT
-    # populations — the newsroom has the corporate posts, the IR host has the
-    # financial and material releases — and wiring both in needs cross-host
-    # dedupe, since the same release appears under two URLs. Until that is
-    # settled GLXY is scraper-only and the IR feed's releases arrive via
-    # EDGAR. See docs/press-monitor.md.
+    # GLXY is covered BOTH ways and is the only company that is — its
+    # ir_feed is set and scrape_galaxy() also runs. See the note on its entry.
 ]
 
 # --------------------------------------------------------------- REFUSALS ---

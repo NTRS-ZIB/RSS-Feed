@@ -53,7 +53,9 @@ IR_FEEDS = watchlist.ir_feeds()        # {ticker: url}, companies that have one
 #                        autodiscovery OUT of a Webflow shell that has no
 #                        headlines in it
 #   scrape               HUT and GLXY — server-side HTML, scrape_hut8()
-#                        and scrape_galaxy()
+#                        and scrape_galaxy(). GLXY ALSO has a feed, on its IR
+#                        host; it is the only company read two ways, and the
+#                        overlap is deduped by suppress_cross_host()
 #   CMS API              DGXX — public Strapi, read_dgxx()
 #                        ABTC — public Sanity, read_abtc()
 #
@@ -984,8 +986,23 @@ def scrape_galaxy():
     announcements, and nothing here would say so.
 
     Selecting on the class rather than on a `/newsroom/<slug>` path match is
-    deliberate: the two are equivalent today, and the class survives a change
-    to the slug scheme while the path match does not.
+    deliberate — the class survives a change to the slug scheme. **The two are
+    NOT equivalent, and the difference was a scope change rather than a
+    refactor.** The path match also caught `newsroom-our-stories`, which lives
+    under the same path, and swapping to the class took the run from 7 items
+    to 4.
+
+    **`newsroom-our-stories` IS EXCLUDED ON PURPOSE.** It is editorial — CEO
+    letters, "Written in Code: This code is building rails for the world's
+    banks" — and this is a press-release channel, so company announcements
+    only. Approved 2026-08-09.
+
+    That is written down because the class filter now does it silently, and
+    the narrowing looks exactly like a side effect of the selector. It is not.
+    **GLXY is the only company on this roster whose newsroom separates
+    announcements from editorial in markup**, so the decision exists here and
+    nowhere else, and there is no precedent elsewhere in the repo to point at
+    or to argue from.
 
     Never raises. One scraper must not take down fifteen feeds and the EDGAR
     sweep with it.
@@ -1352,8 +1369,106 @@ def read_dgxx():
     return items
 
 
+# GLXY is read twice — investor.galaxy.com's feed and www.galaxy.com's
+# newsroom — so the same release can arrive under two URLs. Seven days, and
+# the window is doing more work than it looks like it is; see
+# suppress_cross_host().
+CROSS_HOST_DAYS = 7
+_TITLE_STOP = re.compile(r"\b(?:a|an|the|and|of|to|for|in|on|with|its|at)\b")
+
+
+def norm_title(t):
+    """Lowercase, punctuation and stopwords out. For EXACT comparison only."""
+    t = re.sub(r"&[a-z]+;|&#\d+;", " ", (t or "").lower())
+    t = re.sub(r"[^a-z0-9 ]+", " ", t)
+    return re.sub(r"\s+", " ", _TITLE_STOP.sub(" ", t)).strip()
+
+
+def suppress_cross_host(feed_items, newsroom_items, label):
+    """Drop feed items the newsroom already yielded in THIS run.
+
+    WHAT MAKES THIS SAFE IS THE SCOPE, NOT THE MATCHING. Same run, same
+    company, two known sources, exact normalised title, and within
+    CROSS_HOST_DAYS. Every one of those narrows the population being compared
+    until an accidental match cannot happen — and the bias throughout is to
+    post twice rather than to suppress.
+
+    THE REASON NOTHING FUZZY IS USED HERE, measured over 23,771 pairs of
+    Galaxy releases on 2026-08-08:
+
+        0.984   "Galaxy Digital Announces First Quarter 2022 Financial Results"
+                "Galaxy Digital Announces First Quarter 2021 Financial Results"
+        0.951   Third Quarter 2021 against First Quarter 2021
+
+    Two genuinely DIFFERENT releases at 98.4% similarity, and the
+    near-collisions cluster in quarterly results — the highest-value items the
+    channel carries. **A similarity threshold anywhere below 1.000 suppresses
+    Q1 2027 as a duplicate of Q1 2026, silently, once a quarter.** The probe
+    that measured this reported "worst true match 1.000 vs closest false pair
+    0.984 -> a threshold exists", which was a 0.016 margin in one sample
+    presented as a finding. It is not a threshold and nothing here uses one.
+
+    THE DATE WINDOW IS WHAT KILLS THAT HAZARD, and it does so BY CONSTRUCTION
+    rather than by tuning: Q1 2021 and Q1 2022 are a year apart, so they can
+    never both be inside seven days of each other whatever their titles say.
+
+    ONE THING WAS NOT MEASURED AND SHOULD BE SAID PLAINLY. The false-positive
+    rate of EXACT title matching is unknown. The probe excluded pairs with
+    identical normalised titles as archive duplicates — an assumption, not a
+    check — so a pair of genuinely distinct releases sharing a title would not
+    have shown up. **The seven-day window is what makes that moot in
+    practice**, because two distinct releases would have to share a title
+    within a week. Widening the window reintroduces the hole, and that is the
+    reason not to.
+
+    DEGRADES TO POSTING TWICE, NEVER TO SUPPRESSING. If the newsroom produced
+    nothing this run — fetch failure, parse failure, markup moved — matching
+    against it would be matching against an empty set, so it is SKIPPED
+    entirely and every feed item posts. A partial scrape is left to run: it
+    can only fail to match, which posts a duplicate, and a duplicate is
+    visible where a suppression is not.
+    """
+    if not newsroom_items:
+        print(f"  {label}: cross-host dedupe SKIPPED — the newsroom produced "
+              f"0 items, so all {len(feed_items)} feed items post. This is "
+              f"not {len(feed_items)} unique releases; it is the newsroom "
+              f"being unavailable, and duplicates are expected.")
+        return feed_items
+
+    index = {}
+    for it in newsroom_items:
+        index.setdefault(norm_title(it["title"]), []).append(it["published"])
+
+    kept, dropped = [], []
+    for it in feed_items:
+        when = it["published"]
+        twins = index.get(norm_title(it["title"]), [])
+        # A missing timestamp on either side cannot satisfy the window, so it
+        # falls through to posting. That is the intended direction.
+        near = [p for p in twins if when and p
+                and abs(p - when) <= CROSS_HOST_DAYS * 86400]
+        (dropped if near else kept).append(it)
+
+    print(f"  {label}: cross-host dedupe kept {len(kept)}, suppressed "
+          f"{len(dropped)} already carried by the newsroom "
+          f"(of {len(newsroom_items)} newsroom items)")
+    for it in dropped:
+        print(f"    suppressed: {it['title'][:64]}")
+    return kept
+
+
 def collect_ir():
     items = []
+    # The scrapers and CMS readers run FIRST because one feed is deduped
+    # against one of them: GLXY is read both from investor.galaxy.com's feed
+    # and from www.galaxy.com's newsroom. Nothing else depends on the order.
+    scraped = []
+    scraped += scrape_hut8()      # server-side HTML, scraped
+    glxy_newsroom = scrape_galaxy()
+    scraped += glxy_newsroom      # server-side HTML, scraped
+    scraped += read_dgxx()        # public Strapi, read as JSON
+    scraped += read_abtc()        # public Sanity, read as JSON
+
     for label, url in IR_FEEDS.items():
         print(f"  {label}...")
         entries = parse_feed(url)
@@ -1374,23 +1489,19 @@ def collect_ir():
 
         print(f"  {label}: {len(entries)} items")
         check_staleness(label, [entry_time(e) for e in entries])
-        for entry in entries:
-            items.append({
-                "uid": entry.get("id") or entry.get("link"),
-                "source": f"{label} · IR newsroom",
-                "title": entry.get("title", "Untitled"),
-                "link": entry.get("link", ""),
-                "published": entry_time(entry),
-                "is_edgar": False,
-            })
+        batch = [{
+            "uid": entry.get("id") or entry.get("link"),
+            "source": f"{label} · IR newsroom",
+            "title": entry.get("title", "Untitled"),
+            "link": entry.get("link", ""),
+            "published": entry_time(entry),
+            "is_edgar": False,
+        } for entry in entries]
+        if label == "GLXY":
+            batch = suppress_cross_host(batch, glxy_newsroom, label)
+        items += batch
 
-    # Two companies publish no feed at all and are covered another way, both
-    # yielding the same item shape so nothing downstream knows the difference.
-    items += scrape_hut8()   # server-side HTML, scraped
-    items += scrape_galaxy() # server-side HTML, scraped
-    items += read_dgxx()     # public CMS, read as JSON
-    items += read_abtc()     # public CMS, read as JSON
-    return items
+    return items + scraped
 
 
 def entry_time(entry):
