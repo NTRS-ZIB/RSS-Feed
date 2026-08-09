@@ -58,7 +58,6 @@ on:
       - "Probe holders"
       - "Probe premarket"
       - "Probe sites"
-      - "Probe sources"
       - "Probe spike normalisation"
       - "Reg SHO threshold list"
       - "SEC comment letters"
