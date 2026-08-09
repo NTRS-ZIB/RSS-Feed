@@ -42,6 +42,7 @@ on:
       - "52-week crossings"
       - "Audit 8-K items"
       - "Audit identifiers"
+      - "Baseline rule test"
       - "Bitcoin network context"
       - "Build snapshot"
       - "Calibrate staleness"
