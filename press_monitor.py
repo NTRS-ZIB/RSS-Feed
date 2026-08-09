@@ -17,6 +17,7 @@ import socket
 import sys
 import time
 from calendar import timegm
+from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urljoin
@@ -43,7 +44,7 @@ EXTRA_CIKS = watchlist.ciks()          # {ticker: (cik, name)}
 IR_FEEDS = watchlist.ir_feeds()        # {ticker: url}, companies that have one
 
 # EVERY COMPANY ON THE ROSTER IS NOW COVERED BY SOMETHING FASTER THAN EDGAR.
-# Five different ways, because five companies publish no feed on their own
+# Five different ways, because six companies publish no feed on their own
 # newsroom, and each turned out to be a different problem:
 #
 #   own IR feed          ten companies, IR_FEEDS
@@ -54,6 +55,7 @@ IR_FEEDS = watchlist.ir_feeds()        # {ticker: url}, companies that have one
 #   scrape               HUT and GLXY — server-side HTML, scrape_hut8()
 #                        and scrape_galaxy()
 #   CMS API              DGXX — public Strapi, read_dgxx()
+#                        ABTC — public Sanity, read_abtc()
 #
 # The lesson that took four attempts: a newsroom with no readable HTML does not
 # mean no feed. Three of the four had a machine-readable source somewhere other
@@ -85,6 +87,21 @@ GLXY_PAGE = "https://www.galaxy.com/newsroom"
 DGXX_API = ("https://thankful-miracle-1ed8bdfdaf.strapiapp.com"
             "/api/press-releases")
 DGXX_PAGE = "https://www.digipowerx.com/press-releases"
+
+# ABTC publishes no feed either, and is NOT the HUT shape: abtc.com/news is a
+# client-rendered infinite scroll. Its first page IS delivered in the HTML, but
+# with no date-adjacent-to-title structure, so a cheap scrape does not apply —
+# 28 release slugs against 3 loose dates in the markup, which is guesswork
+# rather than a hard parse. The list is backed by a PUBLIC SANITY DATASET,
+# which is read directly. Same shape as DGXX, same vendor-host caveat: see
+# read_abtc().
+ABTC_API = ("https://6zk22fw5.apicdn.sanity.io/v2024-01-01"
+            "/data/query/production")
+ABTC_PAGE = "https://www.abtc.com/news"
+ABTC_RELEASE = "https://www.abtc.com/news-and-insights/{slug}"
+# 22 pressRelease documents on 2026-08-08. The floor is the failure treatment,
+# not a statistic — see read_abtc().
+ABTC_FLOOR = 5
 
 # An explicit horizon for DGXX, passed to check_staleness() as a floor. The
 # shared check would compute 60d from the 25 items it fetches; this comes from
@@ -912,16 +929,17 @@ def scrape_hut8():
 
 
 def scrape_galaxy():
-    """GLXY's press releases, scraped. Items shaped like collect_ir()'s.
+    """GLXY's newsroom posts, scraped. Items shaped like collect_ir()'s.
 
     Same case as HUT and the same failure treatment: HTTP 200 with zero items
-    is a parse failure, not a quiet week. This page carries roughly seven
-    historical releases and never empties, so zero can only mean the markup
-    moved.
+    is a parse failure, not a quiet week. This page carries roughly six
+    historical announcements and never empties, so zero can only mean the
+    markup moved.
 
     THE MARKUP, read off the delivered HTML rather than guessed. Each card is
 
-        <a class="card2__link" href="/newsroom/<slug>">
+        <li class="post-list2__item grid__item newsroom-announcements newsroom">
+          <a class="card2__link" href="/newsroom/<slug>">
             <figure><picture> ~1,500 chars of srcset </picture></figure>
             <p class="card2__eyebrow">August 07, 2026</p>
             <h3 class="card2__title">Galaxy and Sharplink Launch ...</h3></a>
@@ -937,29 +955,37 @@ def scrape_galaxy():
     99,430 — the older one FIRST. rows[0] happened to be a newest item that
     day by luck. The sort is what makes it true on purpose.
 
-    WHAT IS DELIBERATELY NOT COLLECTED, because the page mixes four kinds of
-    card and only one is a press release:
+    THE <li> CLASS IS THE FILTER, and an earlier version of this comment said
+    the opposite. It claimed nothing in the markup separated Galaxy's own
+    releases from third-party write-ups, which is FALSE and was load-bearing
+    for the filter below. The class list does it cleanly, measured over the
+    276-card archive on 2026-08-08:
 
-      /insights/research/<slug>     weekly research briefs, editorial
-      /newsroom/videos/<slug>       video posts
-      external wire URLs            a `newsroom-media` block whose cards link
-                                    straight out to prnewswire.com with
-                                    target="_blank"
-      /newsroom/<slug>              the releases -- KEPT
+        newsroom-announcements   200 cards, 200 dated,   0 off-domain
+        newsroom-media            19 cards,  19 dated,  19 off-domain
+        newsroom-our-stories      38 cards,  38 dated,   0 off-domain
+        newsroom-video            18 cards,  18 dated,   0 off-domain
+        research                   1 card
 
-    The external block is the one judgement call here and it is not a clean
-    one. It carries at least one item this repo would actively want -- "Galaxy
-    Completes ERCOT Interconnection Studies ... 830 Megawatts at Helios" -- so
-    excluding it is not free. It is excluded anyway because those cards are a
-    media-coverage list, `data-newsroom-media-type="Article"`, which mixes
-    Galaxy's own wire-hosted releases with third-party write-ups about Galaxy,
-    and nothing in the markup separates the two. Posting another outlet's
-    article as a company release is a worse failure than missing one, and the
-    material items reach EDGAR as 8-Ks regardless.
+    The mistake was reading `data-newsroom-media-type` and never looking at the
+    class two attributes to its left.
 
-    So the skipped count is LOGGED on every run rather than left implicit. A
-    reader seeing "7 items, 10 cards skipped" can see the boundary; a reader
-    seeing "7 items" would reasonably assume the page holds seven.
+    WHAT THE CLASS ACTUALLY MEANS IS NOT WHAT IT LOOKS LIKE, and this is the
+    part to keep. `newsroom-announcements` is a reliable ON-DOMAIN CORPORATE
+    POST filter and NOT a reliable "company announcement" filter. Galaxy files
+    its own IR releases under `newsroom-media`, because they are hosted on
+    investor.galaxy.com — so the ERCOT 830 MW Helios approval, a genuine
+    company announcement and one of the most relevant items on the roster,
+    sits in the media bucket beside third-party write-ups.
+
+    **That exclusion is only harmless because investor.galaxy.com has its own
+    feed**, found on 2026-08-08, which carries those releases directly. If that
+    feed is ever removed this filter silently stops covering GLXY's material
+    announcements, and nothing here would say so.
+
+    Selecting on the class rather than on a `/newsroom/<slug>` path match is
+    deliberate: the two are equivalent today, and the class survives a change
+    to the slug scheme while the path match does not.
 
     Never raises. One scraper must not take down fifteen feeds and the EDGAR
     sweep with it.
@@ -973,20 +999,13 @@ def scrape_galaxy():
         print(f"  GLXY: HTTP {r.status_code}")
         return []
 
-    # A release slug and nothing below it: /newsroom/videos/<slug> has a
-    # second segment and is excluded by the character class, not by a list.
-    release = re.compile(r"^/newsroom/[a-z0-9][a-z0-9\-]*$")
-    cards = list(re.finditer(r'<a[^>]+class="card2__link"[^>]*'
-                             r'href="([^"]+)"', r.text))
-    items, seen, skipped = [], set(), 0
-    for i, m in enumerate(cards):
-        href = m.group(1)
-        # Forward to the end of this card: the next card's anchor, or the end.
-        stop = cards[i + 1].start() if i + 1 < len(cards) else len(r.text)
-        block = r.text[m.end():stop]
+    items, seen, skipped = [], set(), Counter()
+    for cls, body in re.findall(
+            r'(?is)<li[^>]*class="([^"]*post-list2__item[^"]*)"[^>]*>'
+            r'(.*?)</li>', r.text):
 
-        def part(cls):
-            g = re.search(rf'class="card2__{cls}"[^>]*>(.*?)</', block, re.S)
+        def part(name):
+            g = re.search(rf'class="card2__{name}"[^>]*>(.*?)</', body, re.S)
             if not g:
                 return None
             return re.sub(r"\s+", " ",
@@ -995,10 +1014,18 @@ def scrape_galaxy():
         title = part("title")
         if not title:
             continue
-        if not release.match(href):
-            skipped += 1
+        if "newsroom-announcements" not in cls:
+            kind = next((k for k in ("newsroom-media", "newsroom-our-stories",
+                                     "newsroom-video", "research")
+                         if k in cls), "other")
+            skipped[kind] += 1
             continue
-        link = urljoin(GLXY_PAGE, href)
+
+        href = re.search(r'href="([^"]+)"', body)
+        if not href:
+            skipped["no href"] += 1
+            continue
+        link = urljoin(GLXY_PAGE, href.group(1))
         if link in seen:
             continue
         seen.add(link)
@@ -1006,10 +1033,9 @@ def scrape_galaxy():
         # The eyebrow carries an optional category span before the date, so the
         # date is extracted from the text rather than being the whole of it.
         published = 0
-        eyebrow = part("eyebrow") or ""
         d = re.search(r"(?:January|February|March|April|May|June|July|August|"
                       r"September|October|November|December)\s+\d{1,2},\s+"
-                      r"\d{4}", eyebrow)
+                      r"\d{4}", part("eyebrow") or "")
         if d:
             try:
                 published = timegm(time.strptime(d.group(0), "%B %d, %Y"))
@@ -1025,17 +1051,143 @@ def scrape_galaxy():
         })
 
     if not items:
-        print(f"  GLXY: PARSE FAILURE \u2014 HTTP 200 but 0 releases from "
-              f"{len(cards)} cards. This page lists ~7 historical releases and "
-              f"never empties, so this is the markup moving, not a quiet week.")
+        print(f"  GLXY: PARSE FAILURE \u2014 HTTP 200 but 0 announcements from "
+              f"{sum(skipped.values())} other cards. This page lists ~6 "
+              f"historical announcements and never empties, so this is the "
+              f"markup moving, not a quiet week.")
         return []
 
     # Observed, not defensive: see the docstring. An older card really does
     # come first in this page's markup.
     items.sort(key=lambda i: i["published"], reverse=True)
-    print(f"  GLXY: {len(items)} items (scraped), {skipped} non-release cards "
-          f"skipped \u2014 research, videos and wire-hosted media")
+    print(f"  GLXY: {len(items)} items (scraped); skipped "
+          + ", ".join(f"{v} {k}" for k, v in sorted(skipped.items())))
     check_staleness("GLXY", [i["published"] for i in items])
+    return items
+
+
+def read_abtc():
+    """ABTC's releases, read from its Sanity dataset. collect_ir()'s shape.
+
+    THE DATE FIELD IS `date`, NOT `_createdAt`, AND THAT IS NOT A STYLE CHOICE.
+    Sanity stamps `_createdAt` and `_updatedAt` mechanically; `date` is the
+    editorial publication date the site displays. One document observed on
+    2026-08-08 settles it:
+
+        _createdAt  2026-06-03T23:36:38Z
+        _updatedAt  2026-06-26T19:22:03Z
+        date        2026-04-22T11:37:00.000Z
+
+    Created in June, edited in June, published in April. **Using `_createdAt`
+    would have been six weeks wrong on that release**, and it is the field that
+    looks more canonical, so this is exactly the substitution a later reader
+    makes while tidying. It is recorded here so that reader has the case rather
+    than the preference.
+
+    COMPLETENESS IS ESTABLISHED BY THREE INDEPENDENT COUNTS AGREEING, which is
+    worth more than any single check because a paginated endpoint returning a
+    page looks identical to a complete one returning everything:
+
+        22 pressRelease  +  6 investorPresentation   = 28   (Sanity)
+        28 /news-and-insights/ slugs                        (delivered HTML)
+        28 release pages with lastmod                       (sitemap.xml)
+
+    So the dataset is the whole set, not a page of it, and no pagination
+    parameter is needed or used.
+
+    THE COUNT FLOOR IS THE FAILURE TREATMENT. Twenty-two documents that never
+    empty means a zero-length result can only be a renamed type, a moved
+    dataset or a project made private — never a quiet month. That matters
+    because ABTC publishes irregularly and a silent zero would otherwise sit
+    indefinitely looking like no news. Same reasoning as scrape_hut8(), and
+    stronger: this is a count from a JSON contract rather than an assumption
+    about page furniture.
+
+    VENDOR HOST, SAME CAVEAT AS DGXX. `6zk22fw5.apicdn.sanity.io` is a hosted
+    CMS endpoint, undocumented and belonging to a third party. It is a JSON
+    contract, so more stable than a scrape — but ABTC could make the project
+    private, rename the type or move the dataset without any idea they had
+    broken anything downstream. The three states below get three distinct log
+    lines for that reason.
+
+    Never raises. One vendor hostname must not take down fifteen feeds, two
+    scrapers and the EDGAR sweep.
+    """
+    query = ('*[_type == "pressRelease"] | order(date desc) [0...25]'
+             '{_id, title, "slug": slug.current, date, _createdAt}')
+    headers = dict(IR_HEADERS, Accept="application/json")
+    try:
+        r = requests.get(ABTC_API, params={"query": query}, headers=headers,
+                         timeout=(10, 30))
+    except requests.RequestException as e:
+        # State 1: did not resolve. What a project deletion or a DNS change
+        # looks like from here.
+        print(f"  ABTC: FETCH FAILED ({type(e).__name__}) — the Sanity host "
+              f"did not respond. If this persists the project has moved or "
+              f"been made private; it is not a contract on abtc.com.")
+        return []
+    if r.status_code != 200:
+        # State 2: answered and refused. A project switched to private returns
+        # 401/403 here rather than an empty result, so it is separable.
+        print(f"  ABTC: HTTP {r.status_code} from the Sanity API — "
+              f"{'the dataset is no longer public' if r.status_code in (401, 403) else 'unexpected status'}")
+        return []
+    try:
+        rows = (r.json() or {}).get("result") or []
+    except ValueError:
+        print("  ABTC: non-JSON response from the Sanity API")
+        return []
+
+    if len(rows) < ABTC_FLOOR:
+        # State 3: answered with too little. The type held 22 documents when
+        # this was written and the archive only grows, so a handful means the
+        # type was renamed or the dataset moved — NOT a quiet month.
+        print(f"  ABTC: FLOOR BREACHED — {len(rows)} document(s), expected at "
+              f"least {ABTC_FLOOR}. This type held 22 and an archive does not "
+              f"shrink, so the schema moved rather than the company going "
+              f"quiet.")
+        return []
+
+    items, no_slug = [], 0
+    for row in rows:
+        title = str(row.get("title") or "").strip()
+        if not title:
+            continue
+        slug = str(row.get("slug") or "").strip()
+        if slug:
+            link = ABTC_RELEASE.format(slug=slug)
+        else:
+            # Not constructed-and-hoped: the 28 slugs in the delivered HTML are
+            # exactly these paths, which is what makes the URL verified rather
+            # than derived. With no slug there is nothing per-release to point
+            # at, and the list page is the honest fallback.
+            no_slug += 1
+            link = ABTC_PAGE
+
+        published = 0
+        when = str(row.get("date") or "")[:10]
+        if when:
+            try:
+                published = timegm(time.strptime(when, "%Y-%m-%d"))
+            except ValueError:
+                pass
+        items.append({
+            # The document id, not the link: a slug can be edited after
+            # publication and the id cannot, so a retitled release does not
+            # repost.
+            "uid": f"abtc:{row.get('_id')}",
+            "source": "ABTC \u00b7 IR newsroom",
+            "title": html.unescape(title),
+            "link": link,
+            "published": published,
+            "is_edgar": False,
+        })
+
+    if no_slug:
+        print(f"  ABTC: {no_slug} item(s) had no slug and link to the list "
+              f"page")
+    print(f"  ABTC: {len(items)} items (Sanity CMS)")
+    check_staleness("ABTC", [i["published"] for i in items])
     return items
 
 
@@ -1237,6 +1389,7 @@ def collect_ir():
     items += scrape_hut8()   # server-side HTML, scraped
     items += scrape_galaxy() # server-side HTML, scraped
     items += read_dgxx()     # public CMS, read as JSON
+    items += read_abtc()     # public CMS, read as JSON
     return items
 
 
