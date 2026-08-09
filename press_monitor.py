@@ -1421,6 +1421,12 @@ def suppress_cross_host(feed_items, newsroom_items, label):
     within a week. Widening the window reintroduces the hole, and that is the
     reason not to.
 
+    HOW BIG THE OVERLAP ACTUALLY IS: 2 of 10 feed items on the live run of
+    2026-08-09, against 4 newsroom items. Six of ten was measured against the
+    276-card archive at /all-news/announcements, which is NOT what the scraper
+    reads — a number true about an adjacent population, and the third time
+    this repo has been caught by one.
+
     DEGRADES TO POSTING TWICE, NEVER TO SUPPRESSING. If the newsroom produced
     nothing this run — fetch failure, parse failure, markup moved — matching
     against it would be matching against an empty set, so it is SKIPPED

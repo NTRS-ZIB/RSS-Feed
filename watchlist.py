@@ -360,8 +360,12 @@ WATCHLIST = [
         # approval), and the newsroom has the on-domain corporate
         # announcements. Neither is a superset.
         #
-        # The overlap is deduped per run by suppress_cross_host(); six of ten
-        # feed items had a newsroom twin when this was measured.
+        # The overlap is deduped per run by suppress_cross_host(). TWO of ten
+        # feed items had a twin on the live run of 2026-08-09. An earlier
+        # figure of six of ten was measured against the 276-card ARCHIVE at
+        # /all-news/announcements, which is not what the scraper reads — the
+        # newsroom page carries four announcements. The archive number is true
+        # and answers a different question.
         #
         # Found on 2026-08-08 in an href on the newsroom page that had already
         # been parsed many times. Autodiscovery finds NOTHING on this host.
