@@ -246,6 +246,24 @@ KEYWORDS = []
 #
 # An age floor is independent of state, so backfill can never be mistaken for
 # news. Keep it comfortably above the run interval.
+# ITS JOB CHANGED ON 2026-08-09 AND THE VALUE DID NOT. It used to be the only
+# thing standing between a roster addition and a wall of backdated posts;
+# baseline_companies() now does that completely and by company, so the floor
+# no longer has anything to do with adding a ticker.
+#
+# What it still does is narrower and is NOT the outage case. A SOURCE THAT
+# CHANGES WHAT IT SERVES is the demonstrated risk: read_dgxx() asks for 25 of
+# the 197 releases its CMS holds, and a pageSize or default that moved would
+# make every one of the other 172 unseen, old, and eligible. The floor records
+# them silently instead. Feeds do this too — BGDE's serves 20 where most serve
+# 10.
+#
+# The cost is real and is worth stating rather than leaving implicit: an
+# outage longer than seven days would drop everything older than the window,
+# silently. That has never happened — it needs seven days of silence against a
+# measured maximum gap of about five hours — and it is visible from the run
+# history in a way a suppressed post is not. Kept on that trade, not because
+# it was already here.
 MAX_AGE_DAYS = 7
 
 # Only EDGAR filings from the last N days enter the dedupe set at all.
@@ -769,6 +787,10 @@ def collect_all(resolved):
                 "link": filing_url(cik, acc),
                 "published": filed_time(f["filed"], f.get("accepted")),
                 "is_edgar": True,
+                # Explicit rather than parsed back out of `source`, because
+                # baseline_companies() keys on it and a display string is not
+                # an identifier.
+                "ticker": ticker,
             }
             title = filing_title(form, f["items"], f["description"])
 
@@ -909,6 +931,7 @@ def scrape_hut8():
                 pass
         items.append({
             "uid": link,
+            "ticker": "HUT",
             "source": "HUT · IR newsroom",
             "title": html.unescape(title),
             "link": link,
@@ -1060,6 +1083,7 @@ def scrape_galaxy():
                 pass
         items.append({
             "uid": link,
+            "ticker": "GLXY",
             "source": "GLXY \u00b7 IR newsroom",
             "title": html.unescape(title),
             "link": link,
@@ -1193,6 +1217,7 @@ def read_abtc():
             # publication and the id cannot, so a retitled release does not
             # repost.
             "uid": f"abtc:{row.get('_id')}",
+            "ticker": "ABTC",
             "source": "ABTC \u00b7 IR newsroom",
             "title": html.unescape(title),
             "link": link,
@@ -1346,6 +1371,7 @@ def read_dgxx():
             # The label says PDF because the link is one. Every other item in
             # the channel opens a web page; a reader should know before
             # clicking, not after.
+            "ticker": "DGXX",
             "source": "DGXX · IR newsroom (PDF)",
             "title": html.unescape(title),
             "link": link,
@@ -1463,6 +1489,71 @@ def suppress_cross_host(feed_items, newsroom_items, label):
     return kept
 
 
+def baseline_companies(state, roster, items, today=None):
+    """Suppress everything from a company appearing for the first time.
+
+    ADDING A TICKER MUST PRODUCE NO BACKDATED POSTS AT ALL. Filings and press
+    releases arrive as they happen and never retroactively. MAX_AGE_DAYS
+    almost did that and not quite: an item published six days before a roster
+    addition is unseen and inside the window, so it posted. On 2026-08-05 that
+    produced a handful of backdated posts alongside the twenty items the age
+    floor correctly swallowed.
+
+    THE RECORD IS A DICT IN state.json, `baselined`, AND THE REASON IT IS NOT
+    "the company has no ids in `seen`" IS MEASURABLE. `seen` is capped at
+    max(1000, items_this_run * 3) and is SATURATED at exactly 1000 today, so
+    ids are actively being evicted. Worse, a uid is a bare accession number
+    and carries no company, so "does this company have ids in seen" cannot be
+    asked of the file at all — only of an intersection with the current run,
+    which an eviction would silently empty. A company whose ids had aged out
+    would look brand new and its real backlog would be suppressed without a
+    word. That is the exact failure this function exists to avoid, arriving
+    through the mechanism meant to prevent it.
+
+    IT IS ALSO NOT A NEW FILE. `baselined` lives beside `initialized` because
+    it is the same kind of fact — this thing has been baselined — and
+    state.json is already committed by the workflow, already has a merge
+    driver, and is already never hand-edited. A second artefact would need all
+    three built again.
+
+    IT SELF-BACKFILLS, so no dates are hand-written for the eighteen companies
+    already running. If the key is ABSENT this is the first run under the rule
+    and every roster company is established by definition — they have been
+    posting for weeks — so all are recorded and NOTHING is suppressed. Only a
+    company missing from a PRESENT dict is new.
+
+    IF state.json IS LOST ENTIRELY, `baselined` is empty and `initialized` is
+    false, so the whole-file first-run path fires first and posts nothing.
+    Degrades exactly as today rather than into a new behaviour.
+
+    Returns (new_companies, suppressed_items). Mutates `state`.
+    """
+    today = today or date.today().isoformat()
+    known = state.get("baselined")
+    if known is None:
+        state["baselined"] = {t: today for t in sorted(roster)}
+        print(f"Per-company baseline: recording {len(roster)} established "
+              f"company/companies. Nothing suppressed — the key was absent, "
+              f"so this is the backfill run and every company on the roster "
+              f"is already running.")
+        return [], []
+
+    new = sorted(t for t in roster if t not in known)
+    if not new:
+        return [], []
+
+    suppressed = [i for i in items if i.get("ticker") in set(new)]
+    for t in new:
+        state["baselined"][t] = today
+    per = Counter(i.get("ticker") for i in suppressed)
+    print(f"FIRST RUN for {', '.join(new)} — everything they have is marked "
+          f"seen and NOTHING posts. This is the intended behaviour of adding a "
+          f"ticker, not a loss:")
+    for t in new:
+        print(f"    {t}: {per.get(t, 0)} item(s) suppressed")
+    return new, suppressed
+
+
 def collect_ir():
     items = []
     # The scrapers and CMS readers run FIRST because one feed is deduped
@@ -1497,6 +1588,7 @@ def collect_ir():
         check_staleness(label, [entry_time(e) for e in entries])
         batch = [{
             "uid": entry.get("id") or entry.get("link"),
+            "ticker": label,
             "source": f"{label} · IR newsroom",
             "title": entry.get("title", "Untitled"),
             "link": entry.get("link", ""),
@@ -1649,6 +1741,17 @@ def main():
     for item in fresh + insider_fresh:
         seen.add(item["uid"])
         state["seen"].append(item["uid"])
+
+    # A company appearing for the first time posts nothing at all, press or
+    # insider. This runs AFTER the marking above, so its items are recorded as
+    # seen exactly like any other suppressed item and cannot return next run.
+    new_companies, _suppressed = baseline_companies(
+        state, list(EXTRA_CIKS), fresh + insider_fresh)
+    if new_companies:
+        blocked = set(new_companies)
+        fresh = [i for i in fresh if i.get("ticker") not in blocked]
+        insider_fresh = [i for i in insider_fresh
+                         if i.get("ticker") not in blocked]
 
     # Age floor first: old filings are already marked seen, and are dropped
     # here regardless of how many there are.

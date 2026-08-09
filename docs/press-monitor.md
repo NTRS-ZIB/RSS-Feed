@@ -1181,30 +1181,93 @@ Lines worth reacting to:
 | `rate limited, waiting Ns` | Discord 429. Normal during heavy bursts; the item is retried automatically. |
 | `N item(s) failed to post; will retry next run` | Those items were removed from state and will be re-attempted in 15 minutes. Not a loss. |
 
-## Filings lost to a roster change
+## Filings from before a company was added
 
 The age floor is irreversible by design. Items are added to `seen` **before**
 `MAX_AGE_DAYS` is applied, so a filing already older than seven days when a run
 reads it is recorded and never posted. That is what stops a backlog re-flooding
 the channel, and it is the right trade.
 
-The loss it produces is not caused by the monitor failing to run. It is caused
-by **adding a company whose recent filings are already stale**. On 2026-08-05
-five companies were added and twenty filings were lost that way, across both
-channels. Every one had expired before the roster commit landed:
+**This was reframed on 2026-08-09 and is no longer a loss.** It was recorded
+here as filings *lost* to a roster change, and the question asked of it was how
+to recover them. That was the wrong question. **Adding a ticker should produce
+no backdated posts at all** — filings and press releases arrive as they happen
+and never retroactively — so the twenty items were never lost, they were the
+intended behaviour arriving by accident.
+
+What was actually broken was that the age floor did the job **incompletely**.
+`MAX_AGE_DAYS` is seven days rather than *since this company was added*, so an
+item published inside that window but before the roster commit was unseen,
+eligible, and posted. Rebuilt from EDGAR at the exact moment of the
+2026-08-05 addition:
 
 | | |
 |---|---|
-| APLD 10-K filed | 2026-07-29 |
-| passed the age floor | 2026-08-05 00:00Z |
-| roster commit `946e303` landed | 2026-08-05 13:36Z |
+| items the five companies had in the `RETAIN_DAYS` window | **30** |
+| silently recorded by the age floor, never posted | 13 |
+| **posted, every one of them backdated** | **17** |
 
-Thirteen hours and thirty-six minutes out of reach before the company was on
-the roster. No amount of running would have caught it.
+Nine of the seventeen were Form 4s, so the insider channel had the same
+problem. `baseline_companies()` now suppresses all thirty, and the same
+reconstruction confirms it: 0 posted, 30 recorded.
 
-[`audit_pending.py`](../audit_pending.py) reports these, triggered by a push
-touching `watchlist.py` rather than by a schedule. It is silent unless a
-company was added and some of its filings had already expired.
+### How a first run is recognised
+
+The record is a `baselined` dict in `state.json`, written once per company.
+**Two other shapes were considered and one of them is a trap.**
+
+*The company has no ids in `seen`* is the obvious test and it cannot be used.
+`seen` is capped at `max(1000, items_this_run * 3)` and is **saturated at
+exactly 1000**, so ids are actively evicted; and a uid is a bare accession
+number carrying no company, so the question cannot be asked of the file at all
+— only of an intersection with the current run, which an eviction silently
+empties. **A company whose ids had aged out would look brand new and its real
+backlog would be suppressed without a word** — the exact failure the rule
+exists to prevent, arriving through the mechanism meant to prevent it.
+
+*A separate file* is immune to that but needs a merge driver, a place in the
+commit flow and a hand-written date for every company already running.
+`state.json` has all three already, and `baselined` sits beside `initialized`
+because it is the same kind of fact.
+
+It **self-backfills**: if the key is absent, every company on the roster is
+established by definition, so all are recorded and nothing is suppressed. And
+if `state.json` is lost entirely, `initialized` is false too, so the
+whole-file first-run path fires first — the behaviour degrades to exactly
+what it is today rather than into something new.
+
+### What `MAX_AGE_DAYS` still does
+
+Its job changed and its value did not. It is no longer what stands between a
+roster addition and a wall of backdated posts — `baseline_companies()` does
+that completely.
+
+What remains is narrower and is **not** the outage case: **a source that
+changes what it serves.** `read_dgxx()` asks for 25 of the 197 releases its
+CMS holds, and a default that moved would make the other 172 unseen, old and
+eligible at once. Feeds do it too — BGDE's serves 20 where most serve 10.
+
+The cost is worth stating rather than leaving implicit: an outage longer than
+seven days would drop everything older than the window, silently. That has
+never happened — it needs seven days of silence against a measured maximum gap
+of about five hours — and an absent run is visible in the run history in a way
+a suppressed post is not. Kept on that trade.
+
+### `audit_pending.py` was deleted with this change
+
+It existed to report items lost to the age floor on a roster addition, which
+is now exactly what the monitor suppresses on purpose. A tool reporting
+intended behaviour trains the reader to ignore it.
+
+Its residual case — an outage long enough to lose filings — is real but it was
+triggered by a push touching `watchlist.py`, which is the roster-addition
+moment and the wrong trigger for an outage entirely. Building that would be a
+different tool for a case with no demonstrated instance.
+
+**The two things worth keeping from it are below**, and they are the reason it
+is summarised here rather than only deleted: the audit of which components
+share the failure mode, and the eviction measurement, which is now the
+argument for how `baselined` is stored rather than an argument about `seen`.
 
 ### Which components share this failure mode
 
@@ -1226,10 +1289,10 @@ window to the cadence.
 | `ftd_monitor.py` | `BASELINE_PERIODS` | no | Absence is stored as a literal zero rather than skipped |
 | `daily_recap.py`, `btc_context.py`, `grid_context.py`, `volume_spike.py`, `build_snapshot.py`, `earnings_calendar.py` | none | no | Snapshots recomputed from source every run |
 
-**One at risk, two lesser and recoverable from source data, eleven not.** That
-is why `audit_pending.py` is one tool bound to one component and not a
-framework: a population of one does not want one, and the two lesser cases can
-be repaired by reading the sources again rather than by being watched.
+**One at risk, two lesser and recoverable from source data, eleven not.** The
+conclusion drawn from it at the time — that a population of one does not want
+a framework — held, and the eventual fix was smaller still: a rule inside the
+one component rather than a tool watching it.
 
 ### Why `seen` cannot produce a false positive here
 
