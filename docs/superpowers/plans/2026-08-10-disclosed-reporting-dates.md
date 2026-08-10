@@ -28,7 +28,8 @@ Every task's requirements implicitly include these.
 - **Key companies by CIK, never by ticker.** A ticker is a display label. Six of nineteen have renamed in eighteen months and one was previously a different company's.
 - **`earnings_dates.json` is an output file.** Written by the press monitor workflow and by nothing else. Never hand-edited, never committed from a local clone.
 - **`earnings_dates.py` is stdlib only and makes no network calls**, so it is safe to run and test locally. `watchlist.py` is the precedent.
-- **Do not run the component scripts locally.** They read secrets that exist only in Actions and several post to live Discord channels. Verify with `gh workflow run "<name>" -f dry_run=true`.
+- **Do not run the component scripts locally.** They read secrets that exist only in Actions and several post to live Discord channels.
+- **Every dispatch carries `--ref <branch>`.** A dispatch tests the code on GitHub, not local edits, and without `--ref` it runs `main` and reports a clean pass for a change it never loaded. The branch must be pushed first. `workflow_dispatch` only registers on the default branch, so this works only because `monitor.yml` and `earnings.yml` already exist on `main`; a brand new workflow could not be dispatched from a branch at all.
 - **Tests are standalone scripts**, run as `python test_earnings_dates.py`, stdlib only, printing `[PASS]`/`[FAIL]` per check and exiting non-zero if any failed. Match `test_loop_verdict.py`.
 - **"Missing" and "empty" are different measurements and must never share a log line.**
 - **A guard is not accepted until it has been shown to fire with the guard removed.**
@@ -310,7 +311,7 @@ def extract(title, today):
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `python test_earnings_dates.py`
-Expected: PASS on every check, `18/18 checks passed`, exit 0
+Expected: PASS on every check, `17/17 checks passed`, exit 0 (7 recognition, 5 date parsing, 5 guard)
 
 - [ ] **Step 5: Demonstrate the guard fires**
 
@@ -590,7 +591,7 @@ add:
 
 The script reads secrets that exist only in Actions and posts to live Discord channels. Do not run it here.
 
-Run: `gh workflow run "Press release monitor" -f dry_run=true`
+Run: `gh workflow run "Press release monitor" --ref "$(git rev-parse --abbrev-ref HEAD)" -f dry_run=true`
 
 Then, once it completes:
 
@@ -772,7 +773,7 @@ Then, after the `if not rows:` guard and before `text = build_message(rows)`, ad
 
 - [ ] **Step 6: Verify by dispatch**
 
-Run: `gh workflow run "Earnings calendar" -f dry_run=true`
+Run: `gh workflow run "Earnings calendar" --ref "$(git rev-parse --abbrev-ref HEAD)" -f dry_run=true`
 
 Then check the log for the new lines. Expected on the first run, before the press monitor has written anything: `No earnings_dates.json — the press monitor has not written one yet.` and `0 row(s) use an announced date.` Every projected date must be unchanged from the previous run.
 
@@ -858,7 +859,7 @@ In the key block, after the three existing `if any(...)` clauses and before `if 
 
 - [ ] **Step 5: Verify by dispatch**
 
-Run: `gh workflow run "Earnings calendar" -f dry_run=true`
+Run: `gh workflow run "Earnings calendar" --ref "$(git rev-parse --abbrev-ref HEAD)" -f dry_run=true`
 
 Expected while the store is still empty: output byte-identical to the previous run, no `!` marker and no new key line. That is the correct result and confirms the change is inert until a date is recorded.
 
@@ -968,7 +969,7 @@ Replace the first known-quirks bullet with:
 
 - [ ] **Step 4: Verify by dispatch**
 
-Run: `gh workflow run "Earnings calendar" -f dry_run=true`
+Run: `gh workflow run "Earnings calendar" --ref "$(git rev-parse --abbrev-ref HEAD)" -f dry_run=true`
 
 Expected: the section that read `Past estimate` now reads `Overdue`, and BTDR still appears in it as `BTDR? est 20 Jul  NNd ago`, unchanged apart from the header. BTDR is a projection, not an announcement, so it must keep `est` and keep its grace.
 
@@ -1040,7 +1041,10 @@ Replace `persist_state()` in full with:
                 echo "State already current on origin; nothing to push."
                 return 0
               fi
-              git add state.json earnings_dates.json || return 1
+              # Guarded: on any run before the first write the file does not
+              # exist, and an unconditional `git add` of a missing path fails.
+              git add state.json || return 1
+              [[ -f earnings_dates.json ]] && { git add earnings_dates.json || return 1; }
               git commit -q -m "Update seen items [skip ci]" || return 1
               if git push -q origin "HEAD:$GITHUB_REF_NAME"; then
                 echo "State pushed on attempt $attempt."
@@ -1052,13 +1056,6 @@ Replace `persist_state()` in full with:
             echo "Could not persist state.json after 5 attempts." >&2
             return 1
           }
-```
-
-Note that `git add earnings_dates.json` is safe when the file does not exist only if it is not passed to `git add` unconditionally. It is guarded by the `-f` check above producing the file, but on a run before the first write the file will not exist and `git add` would fail. Change the add line to:
-
-```bash
-              git add state.json || return 1
-              [[ -f earnings_dates.json ]] && { git add earnings_dates.json || return 1; }
 ```
 
 - [ ] **Step 3: Confirm the pre-commit hook does not block it**
@@ -1076,7 +1073,7 @@ Expected: `0`. If it is non-zero, the hook has been changed elsewhere and this t
 A dry run saves no state and will not exercise the push. Dispatch a live single pass only when you are ready for real posts:
 
 ```bash
-gh workflow run "Press release monitor" -f dry_run=true
+gh workflow run "Press release monitor" --ref "$(git rev-parse --abbrev-ref HEAD)" -f dry_run=true
 ```
 
 Expected in the log: `No earnings_dates.json on origin yet.` from `refresh_state`, and `No state change.` or a normal push from `persist_state`. The dry run proves the refresh half and cannot prove the persist half.
