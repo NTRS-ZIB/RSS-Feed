@@ -100,14 +100,36 @@ findings about the source, and each would have ruled out a usable route.
 Does this report contradict a claim in an earlier report **from this same
 project**?
 
-Read the earlier reports for figures, verdicts and recommendations. If a number
-or conclusion has changed, decide whether the report **acknowledges and
-reconciles** the change.
+**Go looking. This rule is not met by reading the current report and noticing
+nothing.** Work through the earlier reports, list their figures, verdicts and
+recommendations, and find each one's counterpart in the current report. A
+contradiction is only visible from the pair, so a gate that never builds the
+pair cannot see one.
 
-- **Acknowledged and reconciled** — the report says what changed, why, and what
-  it means for decisions already taken: `pass`.
-- **Silently different** — the number changed and the report does not say so:
-  `fail`.
+Count figures the current report implies but does not state. "kept 8,
+suppressed 2" is a claim about ten items of which two had a counterpart, and it
+contradicts an earlier "6 of 10" whether or not either report sets them side by
+side.
+
+Then judge:
+
+- **A figure changed and the report says what changed, why, and what it means
+  for decisions already taken:** `pass`. Quote the acknowledgement.
+- **A figure changed and the report does not say so:** `fail`. Quote the
+  changed figure as the current report states it.
+- **No figure changed:** `n/a`.
+
+**A figure the two reports agree on is not evidence for this rule.** Quoting
+one as a pass gives a rule 5 that can never fail, because agreement is the
+normal case and there is always some agreeing figure available to quote. The
+only thing that passes this rule is the report owning a change.
+
+*The case:* the positive-control fixture implies 2 of 10 where the earlier
+report said 6 of 10, and never mentions it. It has been judged twice. Once it
+failed, citing a different figure that had also changed, a feed count, which
+was the right verdict on a reason the negative control shared and would have
+failed that too. Once it passed, quoting a similarity score both reports
+agreed on. Neither judgement went looking for the figure that moved.
 
 **A changed number is not automatically a contradiction.** Re-measurement,
 refinement and correction are the work going well. What fails is a change that

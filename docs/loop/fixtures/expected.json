@@ -21,7 +21,7 @@
    "expect_rule_fails": [
     5
    ],
-   "why": "THE POSITIVE CONTROL. silent-b is owned-b with the 920-character acknowledgement section deleted and nothing else changed. It still reports 'kept 8, suppressed 2' \u2014 eight plus two is ten, of which two had a twin, contradicting owned-a's 6 of 10 \u2014 and never says so. One variable removed from a real report, which is the same technique used to validate the drift detector by taking SCHEDULE 13D back out of FORM_TYPES. Rule 5 must FAIL."
+   "why": "THE POSITIVE CONTROL. silent-b is owned-b with the 920-character acknowledgement section deleted and nothing else changed. It still reports 'kept 8, suppressed 2' \u2014 eight plus two is ten, of which two had a twin, contradicting owned-a's 6 of 10 \u2014 and never says so. One variable removed from a real report, which is the same technique used to validate the drift detector by taking SCHEDULE 13D back out of FORM_TYPES. Rule 5 must FAIL. owned-a deliberately states no IR-feed count. It used to say '15 IR feeds' against the '16 IR feeds' in owned-b AND silent-b, so that unowned change sat in BOTH arms and a gate could fail this case on a difference that does not distinguish it from the owned case. The 2026-08-09 run did exactly that: it failed silent citing the feed count, a reason that would also have failed owned, which it passed. Do not reintroduce a figure here that owned-b restates."
   },
   {
    "name": "reconciled",
