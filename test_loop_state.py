@@ -115,6 +115,17 @@ def main():
     check("clear_pending unblocks", g["status"] == "running")
     check("clear_pending drops the question", g["pending"] is None)
 
+    h = ls.advance(ls.new_state("demo", 4, "r"), "replan")
+    check("replan sets status to replan", h["status"] == "replan")
+
+    i = ls.advance(ls.new_state("demo", 4, "r"), "ask-user")
+    check("ask-user sets status to blocked", i["status"] == "blocked")
+    check("ask-user sets blocked_reason", i["blocked_reason"] == "ask-user")
+
+    j = ls.advance(ls.new_state("demo", 4, "r"), "stop")
+    check("stop sets status to stopped", j["status"] == "stopped")
+    check("stop sets blocked_reason", j["blocked_reason"] == "stop")
+
     print("=" * 78)
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"{len(results) - bad}/{len(results)} passed")
