@@ -39,7 +39,9 @@ Spec stages 1–3 only: rulebook, gate, file relay, state, interrupts. **Stages 
 | `docs/loop/fixtures/*.md` | Versioned copies of the known-answer reports. |
 | `docs/loop/fixtures/expected.json` | Expected verdict per fixture. |
 | `.claude/agents/loop-gate.md` | The gate subagent definition. |
-| `.claude/skills/loop-driver/SKILL.md` | The driver's instructions: the cycle, interrupts, resume. |
+| `loop_approval.py` | Is this exact irreversible action authorised by a recorded decision? Exact tokens, never prefixes. |
+| `test_loop_approval.py` | Standalone tests, including that a prefix is not a licence. |
+| `.claude/skills/loop-driver/SKILL.md` | The driver's instructions: the cycle, interrupts, resume, and the approval precondition. |
 
 `loop_state.py` and `loop_verdict.py` are split because they fail differently: state is a file-integrity concern, verdict is a trust concern. A change to the rulebook touches one and not the other.
 
@@ -811,6 +813,11 @@ Return JSON and nothing else:
 
 Report every rule from 1 to 8.
 
+**Return the bare JSON object.** No code fence, no `json` marker, no text
+before or after it. The example above is fenced because this document is
+markdown; your reply must not be. A fenced reply is a parse failure, and a
+parse failure is recorded as a failed review rather than a passed one.
+
 **Every `pass` MUST carry a verbatim quote from the report.** Copy the text
 exactly. The quote is checked against the report automatically: a pass without
 a quote, or with a quote that does not appear, is recorded as a **fail**. You
@@ -902,9 +909,22 @@ evidenced. `n/a` if no criteria were supplied.
 ### 8. irreversible-declared
 
 If the report describes merging to `main`, posting to a live channel, deleting
-a component or any other irreversible or outward-facing action, it states that
-the action was approved. An irreversible action taken without a recorded
-approval is a `fail`.
+a component or any other irreversible or outward-facing action, it **says so
+plainly** — named, and where a reader will see it, not buried mid-paragraph.
+
+**You are not judging whether the action was approved.** You cannot see the
+approval: it happened in a conversation or is recorded in a file you are not
+given. A rule you cannot evaluate is one you would guess at.
+
+More importantly, a rule of the form "the report must state it was approved"
+is satisfiable by writing the sentence. A worker who never asked can pass it
+by typing "this was approved", which makes it a formatting rule wearing a
+safety rule's name. Approval is enforced where the evidence lives — the driver
+refuses to take the action at all unless a decision authorising it already
+exists.
+
+Your half is that the action is **visible**. An undeclared merge is the
+failure here; an undocumented approval is not yours to catch.
 ```
 
 - [ ] **Step 6: Check the rulebook and the code agree**
@@ -1168,15 +1188,319 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
-### Task 5: The driver
+### Task 5: The approval precondition and the driver
 
 **Files:**
+- Create: `loop_approval.py`
+- Test: `test_loop_approval.py`
 - Create: `.claude/skills/loop-driver/SKILL.md`
 - Create: `docs/loop/README.md`
 
 **Interfaces:**
-- Consumes: `loop_state` (all functions), `loop_verdict.validate`, `.claude/agents/loop-gate.md`, `docs/loop/rules.md`.
-- Produces: the operating procedure. No new code.
+- Consumes: `loop_state` (all functions), `loop_verdict.validate`,
+  `.claude/agents/loop-gate.md`, `docs/loop/rules.md`.
+- Produces: `ACTIONS: tuple[str, ...]`, `ApprovalError(Exception)`,
+  `parse_tokens(text: str) -> set[str]`,
+  `authorised(action: str, decisions_text: str) -> bool`, and a CLI:
+  `python loop_approval.py <action> [decisions_path]` exiting 0 when
+  authorised and 1 when not.
+
+#### Why this exists, and what it is not
+
+Rule 8 asks the gate whether an irreversible action was **declared**, not
+whether it was **approved** — the gate cannot see an approval and a rule of
+the form "the report must say it was approved" is satisfiable by writing the
+sentence.
+
+Approval is enforced here instead, and **preventively**: the driver refuses to
+merge, post or delete unless a decision authorising that exact action already
+exists. A precondition cannot be talked around the way a post-hoc review can.
+
+**Be honest about the strength of this.** It is defence in depth, not a hard
+interlock — a driver that skips the check is not physically stopped. Three
+layers, and each catches what the others miss:
+
+1. the driver must run the check and refuse on a non-zero exit;
+2. rule 8 makes the action visible in the report, so a skipped check leaves a
+   declared action with no matching decision, which a human reading the two
+   files can see;
+3. `decisions.md` is the durable record either way.
+
+Do not describe this as making an unapproved merge impossible. It makes one
+**visible**, which is the property that is actually achievable.
+
+#### The token vocabulary
+
+An authorisation is an exact token, never a prefix. This repo has a standing
+trap about prefix matching — `"SCHEDULE 13D".startswith("SC 13D")` is `False`
+— and here the danger runs the other way: matching on `merge:` would let one
+approval authorise every future merge.
+
+| Token | Authorises |
+|---|---|
+| `merge:<branch>` | merging that branch to `main` and pushing |
+| `post:<component>` | one live, non-dry run of that component |
+| `delete:<path>` | deleting that file or component |
+
+A decision entry carries them on an `**Authorises:**` line:
+
+```markdown
+## 2026-08-09 — Merge the loop automation?
+
+**Recommended:** merge; the gate passes all three fixtures
+**Decided:** yes
+**Reasoning:** negative control held, which was the load-bearing test
+**Cost accepted:** the relevance residual stays open
+**Authorises:** merge:loop-automation
+```
+
+A decision with no `**Authorises:**` line authorises nothing. That is
+deliberate: most decisions are preferences, not permissions, and a decision
+that silently granted permission would be the opposite of this design.
+
+- [ ] **Step 1: Write the failing test**
+
+Create `test_loop_approval.py`:
+
+```python
+#!/usr/bin/env python3
+"""Tests for loop_approval. Standalone, stdlib only.
+
+THE ONE THAT MATTERS: an approval for one action must not authorise a
+different one. Exact tokens, never prefixes — the repo's standing trap about
+prefix matching runs in both directions, and here a loose match would turn one
+approval into a standing licence.
+"""
+
+import sys
+
+import loop_approval as la
+
+PASS, FAIL = "PASS", "FAIL"
+results = []
+
+
+def check(name, ok, detail=""):
+    results.append((PASS if ok else FAIL, name))
+    print(f"  [{PASS if ok else FAIL}] {name}" + (f" — {detail}" if detail else ""))
+
+
+DECISIONS = """
+## 2026-08-09 — Merge the loop automation?
+
+**Decided:** yes
+**Authorises:** merge:loop-automation
+
+## 2026-08-09 — Should a CEO letter count as a press release?
+
+**Decided:** no, announcements only
+
+## 2026-08-09 — Post the digest for W32?
+
+**Authorises:** post:weekly_digest, delete:probe_largemove.py
+"""
+
+
+def main():
+    print("=" * 78)
+    print("loop_approval")
+    print("=" * 78)
+
+    check("an exact token is authorised",
+          la.authorised("merge:loop-automation", DECISIONS))
+    check("a second token on the same line is authorised",
+          la.authorised("delete:probe_largemove.py", DECISIONS))
+    check("an unlisted action is refused",
+          not la.authorised("merge:main", DECISIONS))
+
+    check("A PREFIX DOES NOT AUTHORISE — merge: is not a licence",
+          not la.authorised("merge:something-else", DECISIONS))
+    check("a longer token is not authorised by a shorter one",
+          not la.authorised("delete:probe_largemove.py.bak", DECISIONS))
+    check("a shorter token is not authorised by a longer one",
+          not la.authorised("delete:probe_largemove", DECISIONS))
+
+    check("a decision with no Authorises line grants nothing",
+          not la.authorised("post:anything", DECISIONS))
+    check("empty decisions authorise nothing",
+          not la.authorised("merge:loop-automation", ""))
+
+    check("tokens are parsed from every Authorises line",
+          la.parse_tokens(DECISIONS) == {"merge:loop-automation",
+                                         "post:weekly_digest",
+                                         "delete:probe_largemove.py"},
+          str(sorted(la.parse_tokens(DECISIONS))))
+
+    check("an unknown action KIND raises rather than silently refusing",
+          _raises(lambda: la.authorised("deploy:prod", DECISIONS)))
+    check("a token with no colon raises",
+          _raises(lambda: la.authorised("merge", DECISIONS)))
+
+    print("=" * 78)
+    bad = sum(1 for r, _ in results if r == FAIL)
+    print(f"{len(results) - bad}/{len(results)} passed")
+    for r, name in results:
+        if r == FAIL:
+            print(f"  FAILED: {name}")
+    print("=" * 78)
+    return 1 if bad else 0
+
+
+def _raises(fn):
+    try:
+        fn()
+    except la.ApprovalError:
+        return True
+    except Exception:
+        return False
+    return False
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `python test_loop_approval.py`
+Expected: FAIL with `ModuleNotFoundError: No module named 'loop_approval'`
+
+- [ ] **Step 3: Write minimal implementation**
+
+Create `loop_approval.py`:
+
+```python
+#!/usr/bin/env python3
+"""Has this exact irreversible action been authorised?
+
+THE GATE CANNOT ANSWER THIS AND SHOULD NOT BE ASKED TO. It never sees the
+approval, and a rule of the form "the report must state it was approved" is
+satisfied by writing the sentence — a worker who never asked passes it by
+typing the words. So approval is checked here, against the decisions file, and
+checked BEFORE the action rather than after it.
+
+EXACT TOKENS, NEVER PREFIXES. The repo's standing trap is that prefix matching
+does not bridge a rename; the danger here runs the other way, where matching on
+`merge:` would turn one approval into a standing licence for every future
+merge. `authorised()` compares whole tokens.
+
+WHAT THIS IS NOT: a hard interlock. A driver that skips the call is not
+stopped. It is one of three layers — the check, rule 8 making the action
+visible in the report, and the decisions file as the durable record — and its
+real contribution is that an unapproved action becomes VISIBLE rather than
+impossible.
+"""
+
+import re
+import sys
+from pathlib import Path
+
+DECISIONS_PATH = Path("docs/loop/decisions.md")
+
+# The kinds of action that need one. Anything not here is either reversible or
+# has not been thought about — and an unrecognised kind raises rather than
+# quietly refusing, because a typo in an action name would otherwise read as
+# "not authorised" and look like a missing approval.
+ACTIONS = ("merge", "post", "delete")
+
+TOKEN_LINE = re.compile(r"^\s*\*\*Authorises:\*\*\s*(.+?)\s*$", re.M)
+
+
+class ApprovalError(Exception):
+    """A malformed action token. Never a refusal — refusals return False."""
+
+
+def _split_kind(action):
+    if ":" not in action:
+        raise ApprovalError(f"action {action!r} has no kind — expected "
+                            f"one of {ACTIONS} followed by a colon")
+    kind = action.split(":", 1)[0]
+    if kind not in ACTIONS:
+        raise ApprovalError(f"unknown action kind {kind!r} in {action!r}; "
+                            f"known kinds are {ACTIONS}")
+    return kind
+
+
+def parse_tokens(text):
+    """Every token on every `**Authorises:**` line."""
+    out = set()
+    for line in TOKEN_LINE.findall(text or ""):
+        for tok in line.split(","):
+            tok = tok.strip()
+            if tok:
+                out.add(tok)
+    return out
+
+
+def authorised(action, decisions_text):
+    _split_kind(action)
+    return action in parse_tokens(decisions_text)
+
+
+def main(argv):
+    if not 2 <= len(argv) <= 3:
+        print("usage: python loop_approval.py <action> [decisions_path]",
+              file=sys.stderr)
+        return 2
+    action = argv[1]
+    path = Path(argv[2]) if len(argv) == 3 else DECISIONS_PATH
+    text = path.read_text(encoding="utf-8") if path.exists() else ""
+    try:
+        ok = authorised(action, text)
+    except ApprovalError as e:
+        print(f"REFUSED: {e}", file=sys.stderr)
+        return 1
+    if ok:
+        print(f"authorised: {action}")
+        return 0
+    print(f"REFUSED: no decision in {path} authorises {action!r}. "
+          f"Ask, record the decision with an **Authorises:** line, and retry.",
+          file=sys.stderr)
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `python test_loop_approval.py`
+Expected: PASS, `11/11 passed`, exit 0
+
+- [ ] **Step 5: Check the CLI refuses by default**
+
+Run:
+
+```bash
+python loop_approval.py merge:nonexistent-branch ; echo "exit=$?"
+```
+
+Expected: a `REFUSED:` line on stderr and `exit=1`. There is no decisions file
+yet, so this also confirms a missing file refuses rather than raising.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add loop_approval.py test_loop_approval.py
+git commit -m "Approval is a precondition, not a review
+
+Rule 8 asks the gate whether an irreversible action was DECLARED, because the
+gate cannot see an approval and a rule of the form 'the report must say it was
+approved' is satisfied by writing the sentence — a worker who never asked
+passes it by typing the words.
+
+So approval is checked against the decisions file, before the action rather
+than after it. Exact tokens, never prefixes: the repo's standing trap runs the
+other way here, where matching on 'merge:' would turn one approval into a
+standing licence.
+
+It is defence in depth rather than a hard interlock, and the docstring says so.
+A driver that skips the call is not stopped; what the layer buys is that an
+unapproved action becomes visible rather than impossible.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+```
 
 - [ ] **Step 1: Write the driver skill**
 
@@ -1284,6 +1608,17 @@ there.
 
 ## What you must not do
 
+- Do not merge to `main`, post to a live channel, or delete a component
+  without first running the precondition and getting exit 0:
+
+  ```bash
+  python loop_approval.py merge:<branch>
+  ```
+
+  A non-zero exit means no recorded decision authorises it. Ask, record the
+  decision with an `**Authorises:**` line, and retry. Do not proceed on the
+  reasoning that the human obviously meant to approve it — that reasoning is
+  exactly what the precondition exists to interrupt.
 - Do not merge to `main` without an interrupt. Ever.
 - Do not write `state.json` from a subagent.
 - Do not treat a gate failure as a pass, however obviously right you think you
