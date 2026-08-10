@@ -1,0 +1,26 @@
+{
+ "schema": 1,
+ "cases": [
+  {
+   "name": "contradiction",
+   "reports": ["contradiction-a.md", "contradiction-b.md"],
+   "expect_verdict": "ask-user",
+   "expect_rule_fails": [5],
+   "why": "contradiction-a states 6 of 10 feed items have a newsroom twin and reasons from it; contradiction-b says the live run is 2 of 10. The gate must catch that the earlier claim was wrong, because a decision was taken on it."
+  },
+  {
+   "name": "reconciled",
+   "reports": ["reconciled-a.md", "reconciled-b.md"],
+   "expect_verdict": "continue",
+   "expect_rule_fails": [],
+   "why": "THE NEGATIVE CONTROL. Numbers change substantially between the two — a threshold derived on open-to-close is re-derived on prior-close-to-close and the week's output goes from four names to two — but reconciled-b states the change and reconciles it. A gate that fires here is a differ, not a gate, and would have escalated the most careful step of the session."
+  },
+  {
+   "name": "uncited",
+   "reports": ["uncited-threshold.md"],
+   "expect_verdict": "revise",
+   "expect_rule_fails": [1, 3],
+   "why": "A constant asserted with no distribution and no count of what it fires at, and success claimed from a green workflow rather than from what it produced."
+  }
+ ]
+}
