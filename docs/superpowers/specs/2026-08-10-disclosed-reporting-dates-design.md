@@ -28,7 +28,7 @@ the announcement.
 | Source of the disclosed date | The press monitor extracts it from release titles |
 | Storage | Its own file, `earnings_dates.json`, written by the press monitor |
 | Display | Announced date replaces the projection, marked, spread blanked |
-| Guard | One hard test: the parsed date must be in the future |
+| Guard | One hard test: the parsed date is not before today |
 | Overdue | A passed announced date goes overdue with no grace |
 
 The guard was argued to a different answer than the one first proposed, and the
@@ -66,7 +66,7 @@ the issuer being unreliable:
   nothing newer than 2025-12-24 at HTTP 200, and a default sort that is not a
   date sort put an eight-month-old item at `rows[0]`.
 
-The future test kills the second and third outright. Provenance handles the
+The guard kills the second and third outright. Provenance handles the
 first, by making a wrong extraction diagnosable instead of mysterious.
 
 ## Architecture
@@ -200,7 +200,7 @@ named. Neither aborts the run: the calendar posts its projections either way.
 ## Verification
 
 **The guard is validated by removing it.** A test that has never failed proves
-nothing, so the future test is confirmed by taking it out and demonstrating
+nothing, so the guard is confirmed by taking it out and demonstrating
 that a results-release title and a stale re-read both yield a date, then
 putting it back. Same technique that validated the drift detector by taking
 `SCHEDULE 13D` back out of `FORM_TYPES`.
