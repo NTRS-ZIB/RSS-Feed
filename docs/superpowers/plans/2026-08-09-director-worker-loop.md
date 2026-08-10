@@ -695,13 +695,26 @@ cp "$SP/response-40-five-changes.md"           docs/loop/fixtures/reconciled-b.m
 Run:
 
 ```bash
-grep -c "6 of 10" docs/loop/fixtures/contradiction-a.md
-grep -c "2 of 10" docs/loop/fixtures/contradiction-b.md
-grep -c "18% and 2.0" docs/loop/fixtures/reconciled-a.md
-grep -c "hold" docs/loop/fixtures/reconciled-b.md
+grep -c "6 of 10"      docs/loop/fixtures/contradiction-a.md
+grep -c "2 of 10"      docs/loop/fixtures/contradiction-b.md
+grep -c "sector week"  docs/loop/fixtures/reconciled-a.md
+grep -c "close column" docs/loop/fixtures/reconciled-b.md
 ```
 
-Expected: all non-zero. If any is zero the fixture is wrong and the whole test suite is measuring nothing — stop and re-identify the file.
+Expected: all non-zero. If any is zero the fixture is wrong and the whole test
+suite is measuring nothing — stop and re-identify the file.
+
+**Each pattern is chosen to be absent from the other file of its pair**, so a
+swapped copy fails rather than passing on a word both reports happen to share.
+`sector week` appears 3 times in `reconciled-a` and never in `reconciled-b`;
+`close column` the reverse.
+
+An earlier version of this step used `18% and 2.0` for `reconciled-a` and it
+**could never match**: the report writes `>=18% and >=2.0x` with Unicode
+`≥` and `×`, so the ASCII string is absent from a file that is
+otherwise exactly right. A verification pattern that cannot match looks
+identical to a wrong fixture, which is the failure this very step exists to
+catch — corrected 2026-08-09 after it blocked the implementer.
 
 - [ ] **Step 3: Write the uncited fixture by hand**
 
