@@ -1,9 +1,9 @@
 {
-  "generated": "2026-08-07T11:38:27+00:00",
+  "generated": "2026-08-10T11:41:25+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
-      "filing_count": 671,
+      "filing_count": 673,
       "filings": {
         "10-K": {
           "accession": "0001193125-26-127278",
@@ -23,20 +23,20 @@
         },
         "20-F": null,
         "3": {
-          "accession": "0001104659-25-089602",
-          "count": 33,
-          "filed": "2025-09-12",
+          "accession": "0001193125-26-340447",
+          "count": 34,
+          "filed": "2026-08-07",
           "form": "3",
-          "period": "2025-09-03",
-          "url": "https://www.sec.gov/Archives/edgar/data/1755953/000110465925089602/xslF345X02/tm2525948-7_3seq1.xml"
+          "period": "2026-08-04",
+          "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526340447/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001193125-26-326457",
-          "count": 132,
-          "filed": "2026-07-30",
+          "accession": "0001193125-26-340270",
+          "count": 133,
+          "filed": "2026-08-07",
           "form": "4",
-          "period": "2026-07-29",
-          "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526326457/xslF345X06/ownership.xml"
+          "period": "2026-08-05",
+          "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526340270/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -137,7 +137,7 @@
         "Akerna Corp.",
         "MTech Acquisition Holdings Inc."
       ],
-      "latest_filing_date": "2026-08-03",
+      "latest_filing_date": "2026-08-07",
       "name": "American Bitcoin Corp.",
       "projection": {
         "confidence": "normal",
@@ -152,7 +152,7 @@
     },
     "ANY": {
       "cik": "0001591956",
-      "filing_count": 804,
+      "filing_count": 805,
       "filings": {
         "10-K": {
           "accession": "0001591956-26-000004",
@@ -290,7 +290,7 @@
       "former_names": [
         "Sphere 3D Corp"
       ],
-      "latest_filing_date": "2026-07-31",
+      "latest_filing_date": "2026-08-07",
       "name": "Sphere 3D Corp.",
       "projection": {
         "confidence": "normal",
@@ -590,7 +590,7 @@
     },
     "BKKT": {
       "cik": "0001820302",
-      "filing_count": 754,
+      "filing_count": 755,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019870",
@@ -636,12 +636,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001628280-26-048523",
-          "count": 120,
-          "filed": "2026-07-16",
+          "accession": "0001628280-26-054892",
+          "count": 121,
+          "filed": "2026-08-07",
           "form": "8-K/A",
-          "period": "2026-07-16",
-          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026048523/bakkt-20260716.htm"
+          "period": "2026-08-07",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026054892/bakkt-20260807.htm"
         },
         "DEF 14A": {
           "accession": "0001628280-26-029018",
@@ -722,7 +722,7 @@
         "Bakkt Holdings, Inc.",
         "VPC Impact Acquisition Holdings"
       ],
-      "latest_filing_date": "2026-07-27",
+      "latest_filing_date": "2026-08-07",
       "name": "Bakkt, Inc.",
       "projection": {
         "confidence": "normal",
@@ -737,7 +737,7 @@
     },
     "BTDR": {
       "cik": "0001899123",
-      "filing_count": 268,
+      "filing_count": 269,
       "filings": {
         "10-K": null,
         "10-Q": null,
@@ -775,12 +775,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026019332/ea0277924-424b5_bitdeer.htm"
         },
         "6-K": {
-          "accession": "0001213900-26-085655",
-          "count": 100,
-          "filed": "2026-08-05",
+          "accession": "0001213900-26-086938",
+          "count": 101,
+          "filed": "2026-08-10",
           "form": "6-K",
-          "period": "2026-08-05",
-          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026085655/ea0300752-6k_bitdeer.htm"
+          "period": "2026-08-10",
+          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026086938/ea0301313-6k_bitdeer.htm"
         },
         "8-K": null,
         "DEF 14A": null,
@@ -824,7 +824,7 @@
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-08-05",
+      "latest_filing_date": "2026-08-10",
       "name": "Bitdeer Technologies Group",
       "projection": {
         "confidence": "low",
@@ -1237,7 +1237,7 @@
     },
     "GLXY": {
       "cik": "0001859392",
-      "filing_count": 260,
+      "filing_count": 261,
       "filings": {
         "10-K": {
           "accession": "0001859392-26-000016",
@@ -1265,12 +1265,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1859392/000140703626000002/xslF345X06/wk-form3_1783974970.xml"
         },
         "4": {
-          "accession": "0002067267-26-000009",
-          "count": 49,
-          "filed": "2026-06-16",
+          "accession": "0002052994-26-000003",
+          "count": 50,
+          "filed": "2026-08-07",
           "form": "4",
-          "period": "2026-06-15",
-          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000206726726000009/xslF345X06/wk-form4_1781640379.xml"
+          "period": "2026-08-06",
+          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000205299426000003/xslF345X06/wk-form4_1786107415.xml"
         },
         "40-F": null,
         "424": {
@@ -1333,7 +1333,7 @@
       "former_names": [
         "Galaxy Digital Pubco Inc."
       ],
-      "latest_filing_date": "2026-08-06",
+      "latest_filing_date": "2026-08-07",
       "name": "Galaxy Digital Inc.",
       "projection": {
         "confidence": "normal",
