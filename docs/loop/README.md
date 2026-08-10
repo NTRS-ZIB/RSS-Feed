@@ -68,3 +68,38 @@ python test_loop_state.py
 python test_loop_verdict.py
 python score_gate.py
 ```
+
+## Dry run, 2026-08-09
+
+Replayed the digest large-move project — three real reports, worker stubbed,
+gate and state machine live. A separate state file (`dry-run-state.json`) so it
+cannot disturb a live project.
+
+| step | verdict | rules failed | rule 7 |
+|---|---|---|---|
+| 1 — review the first live digest | `continue` | none | pass |
+| 2 — derive a large-move threshold | `continue` | none | pass |
+| 3 — build the five changes | `continue` | none | pass |
+
+Final state: **`done`**.
+
+**Two things this run establishes that the fixtures could not.**
+
+Rule 7 had returned `n/a` in every fixture, because no fixture supplies
+acceptance criteria. Here they are supplied and it is live on all three steps.
+A rule that has only ever returned `n/a` is indistinguishable from one that is
+broken — the same trap this repo records about an EDGAR form type matching
+nothing.
+
+And step 3 corrects step 2's own figures: the threshold survives being
+re-derived on a different return definition but the week's output goes from
+four names to two, and the report says so. **Rule 5 passed.** That is the gate
+distinguishing an owned correction from a silent one, on a real sequence rather
+than a constructed pair — the property the whole design rests on, checked twice
+now by different means.
+
+**What it does not establish.** The worker was stubbed, so nothing here
+exercises a `revise`, `replan` or `ask-user` path end to end; those are covered
+only by `test_loop_state.py`. And the reports were written for a human rather
+than against acceptance criteria, so rule 7 passing says the criteria were
+satisfiable in hindsight, not that a worker aiming at them would satisfy them.

@@ -1,0 +1,15 @@
+{
+ "schema": 1,
+ "project": "dry-run",
+ "step": 4,
+ "total_steps": 3,
+ "status": "done",
+ "run_id": "run-dry",
+ "heartbeat": 0.0,
+ "pending": null,
+ "blocked_reason": null,
+ "revise_streak": {
+  "rule": null,
+  "count": 0
+ }
+}
