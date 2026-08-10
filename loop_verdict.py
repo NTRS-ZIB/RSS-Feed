@@ -125,5 +125,12 @@ def validate(verdict, report_texts):
             r["coerced"] = "the quote does not appear in the report"
             notes.append(f"rule {rid}: quote not found")
 
+    missing = sorted(set(RULES) - seen)
+    if missing:
+        raise VerdictError(f"verdict omits rule(s) {missing}; the rulebook "
+                           f"requires all of {sorted(RULES)}. A dropped rule "
+                           f"is a missing field, and a missing field must not "
+                           f"resolve to a pass.")
+
     verdict["verdict"] = derive_verdict(rules)
     return verdict, notes

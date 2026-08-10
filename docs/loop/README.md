@@ -66,6 +66,7 @@ escalates the `reconciled` pair is a differ, not a gate.
 ```bash
 python test_loop_state.py
 python test_loop_verdict.py
+python test_loop_approval.py
 python score_gate.py
 ```
 

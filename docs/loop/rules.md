@@ -151,8 +151,9 @@ More importantly, a rule of the form "the report must state it was approved"
 is satisfiable by writing the sentence. A worker who never asked can pass it
 by typing "this was approved", which makes it a formatting rule wearing a
 safety rule's name. Approval is enforced where the evidence lives — the driver
-refuses to take the action at all unless a decision authorising it already
-exists.
+is instructed to refuse the action unless a decision authorising it already
+exists. That is a check rather than an interlock, and it is still not yours to
+verify.
 
 Your half is that the action is **visible**. An undeclared merge is the
 failure here; an undocumented approval is not yours to catch.

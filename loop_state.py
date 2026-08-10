@@ -27,7 +27,7 @@ VERDICTS = ("continue", "revise", "replan", "ask-user", "stop")
 REVISE_LIMIT = 3
 
 REQUIRED = ("schema", "project", "step", "total_steps", "status", "run_id",
-            "heartbeat", "pending", "revise_streak")
+            "heartbeat", "pending", "blocked_reason", "revise_streak")
 
 
 class LoopStateError(Exception):

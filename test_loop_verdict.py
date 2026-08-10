@@ -36,13 +36,22 @@ Verified by reading the committed file: `git show HEAD:watchlist.py` lists
 """
 
 
-def v(rules, announced="continue"):
-    return {"schema": lv.SCHEMA, "verdict": announced, "rules": rules,
-            "reason": "test"}
-
-
 def rule(i, result, quote):
     return {"id": i, "name": lv.RULES[i], "result": result, "quote": quote}
+
+
+def pad(rules):
+    """Fill in any rule ids missing from `rules` with n/a entries, so a test
+    can pass one or two rules and still satisfy the rule-completeness check
+    (validate() now raises if any of the eight rule ids is absent)."""
+    present = {r["id"] for r in rules}
+    return list(rules) + [rule(i, "n/a", "") for i in lv.RULES
+                          if i not in present]
+
+
+def v(rules, announced="continue"):
+    return {"schema": lv.SCHEMA, "verdict": announced, "rules": pad(rules),
+            "reason": "test"}
 
 
 def main():
@@ -111,7 +120,15 @@ def main():
     check("an unknown result value RAISES",
           _raises(lambda: lv.validate(v([rule(1, "probably", "x")]), [REPORT])))
     check("no rules at all RAISES",
-          _raises(lambda: lv.validate(v([]), [REPORT])))
+          _raises(lambda: lv.validate(
+              {"schema": lv.SCHEMA, "verdict": "continue", "rules": [],
+               "reason": "test"}, [REPORT])))
+
+    check("a verdict omitting a rule RAISES",
+          _raises(lambda: lv.validate(
+              {"schema": lv.SCHEMA, "verdict": "continue",
+               "rules": [rule(i, "n/a", "") for i in range(1, 8)],
+               "reason": "test"}, [REPORT])))
 
     ok, _ = lv.validate(v([rule(2, "pass", "959 ticker-weeks")]),
                         ["irrelevant", REPORT])

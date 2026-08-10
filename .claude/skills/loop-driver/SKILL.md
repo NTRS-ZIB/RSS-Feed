@@ -28,6 +28,12 @@ state file is a question, not a condition to repair.
 
 If not claimable, another driver is live. Exit.
 
+- **If `status` is not `running`, stop.** Report `blocked_reason` and wait. A
+  `stop`, a `replan` or a revise-streak block leaves `pending` empty, so the
+  pending check below will not catch it — only the status will. A halted
+  project that resumes itself after the heartbeat goes stale is the failure
+  this check exists for.
+
 If `pending` is set, the loop is blocked on a human answer. Present the
 question again and wait.
 
@@ -38,12 +44,29 @@ question again and wait.
 2. **Write the result** to `docs/loop/<project>/NN-result.md`. This is the only
    channel the gate has. Anything not on the page does not exist.
 3. **Dispatch the gate.** `subagent_type: "loop-gate"`,
-   `run_in_background: false`, prompt built as in Task 4 Step 4, with the
-   step's acceptance criteria from the plan.
-4. **Validate the verdict** with `loop_verdict.validate(raw, report_texts)`.
-   If it raises, treat as `ask-user` — never as a pass.
-5. **Advance** with `ls.advance(state, verdict, rule=first_failing_rule)`,
-   save, and act:
+   `run_in_background: false`, prompt built from four blocks, in order:
+   - the contents of `docs/loop/rules.md`;
+   - the step's acceptance criteria from `plan.md`, or a note that none were
+     supplied;
+   - the project's earlier result markdowns, oldest first, or "None.";
+   - the current result markdown.
+4. **Validate and advance.** If `validate()` raises, treat as `ask-user` —
+   never as a pass.
+
+   ```python
+   corrected, notes = lv.validate(raw, report_texts)   # raises -> treat as ask-user
+   fails = [r["id"] for r in corrected["rules"] if r["result"] == "fail"]
+   state = ls.advance(state, corrected["verdict"],
+                      rule=fails[0] if fails else None)
+   ```
+
+   **Use `corrected["verdict"]`, never `raw["verdict"]`.** The gate writes an
+   advisory verdict of its own and `validate()` overwrites it; reading the raw
+   one puts the gate back in charge of its own result, which is the single
+   thing this module exists to prevent. If `advance()` raises
+   `LoopStateError: unknown verdict`, you have passed the tuple or the dict
+   instead of the string — not a reason to reach for the raw value.
+5. **Save, and act:**
 
 | Verdict | Action |
 |---|---|
