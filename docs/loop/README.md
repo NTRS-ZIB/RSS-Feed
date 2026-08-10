@@ -31,6 +31,10 @@ docs/loop/<project>/decisions.md    every human call, with its reasoning
 docs/loop/fixtures/                 known-answer tests for the gate
 ```
 
+`decisions.md` is per project, not repo-wide. `loop_approval.py` takes that
+path as a required CLI argument — there is no default, so the driver must
+name the current project's file every time it checks for authorisation.
+
 ## Running it
 
 Start or resume with the `loop-driver` skill. It reads `state.json` and

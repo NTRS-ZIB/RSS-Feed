@@ -82,7 +82,15 @@ append to `docs/loop/<project>/decisions.md`:
 **Decided:** <the answer>
 **Reasoning:** <what the human said, or what you inferred>
 **Cost accepted:** <what this rules out, if anything>
+**Authorises:** <action token, or omit this line entirely>
 ```
+
+Most decisions are preferences and carry no token; omitting the
+`**Authorises:**` line grants nothing, which is deliberate — a decision that
+silently granted permission would be the opposite of this design. Only add it
+when the decision permits an irreversible action. Tokens are
+`merge:<branch>`, `post:<component>`, `delete:<path>`, and they are matched
+exactly — a prefix never authorises.
 
 Then `ls.clear_pending(state, answer)`, save, and continue.
 
@@ -103,8 +111,11 @@ there.
   without first running the precondition and getting exit 0:
 
   ```bash
-  python loop_approval.py merge:<branch>
+  python loop_approval.py merge:<branch> docs/loop/<project>/decisions.md
   ```
+
+  The decisions path is a required argument, not optional — there is no
+  repo-wide decisions file, only the current project's.
 
   A non-zero exit means no recorded decision authorises it. Ask, record the
   decision with an `**Authorises:**` line, and retry. Do not proceed on the

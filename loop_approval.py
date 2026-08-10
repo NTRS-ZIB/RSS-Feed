@@ -23,7 +23,12 @@ import re
 import sys
 from pathlib import Path
 
-DECISIONS_PATH = Path("docs/loop/decisions.md")
+# No module-level default decisions path. Decisions are recorded PER PROJECT
+# at docs/loop/<project>/decisions.md, not at any repo-wide location — a
+# default here would silently point at a file decisions are never written to,
+# and a wrong default is worse than none: it turns a missing argument into a
+# confident wrong answer instead of a usage error. The caller must say which
+# project's decisions file to check.
 
 # The kinds of action that need one. Anything not here is either reversible or
 # has not been thought about — and an unrecognised kind raises rather than
@@ -66,12 +71,12 @@ def authorised(action, decisions_text):
 
 
 def main(argv):
-    if not 2 <= len(argv) <= 3:
-        print("usage: python loop_approval.py <action> [decisions_path]",
+    if len(argv) != 3:
+        print("usage: python loop_approval.py <action> <decisions_path>",
               file=sys.stderr)
         return 2
     action = argv[1]
-    path = Path(argv[2]) if len(argv) == 3 else DECISIONS_PATH
+    path = Path(argv[2])
     text = path.read_text(encoding="utf-8") if path.exists() else ""
     try:
         ok = authorised(action, text)
