@@ -89,6 +89,19 @@ def main():
            rule(3, "pass", "git show HEAD:watchlist.py")]), [REPORT])
     check("all passes yield continue", ok["verdict"] == "continue")
 
+    ok, notes = lv.validate(v([rule(1, "pass", "959 ticker-weeks")]), [REPORT])
+    check("a pass with a quote at or above MIN_QUOTE_CHARS that is in report passes",
+          ok["rules"][0]["result"] == "pass" and not notes)
+
+    ok, notes = lv.validate(v([rule(1, "pass", "derived")]), [REPORT])
+    check("a pass with a quote below MIN_QUOTE_CHARS becomes a fail",
+          ok["rules"][0]["result"] == "fail" and "quote too short" in str(notes))
+
+    check("a duplicate rule id RAISES",
+          _raises(lambda: lv.validate(
+              v([rule(1, "pass", "derived over 53 complete weeks"),
+                 rule(1, "fail", "")]), [REPORT])))
+
     check("a missing schema RAISES",
           _raises(lambda: lv.validate({"rules": []}, [REPORT])))
     check("an unknown rule id RAISES",

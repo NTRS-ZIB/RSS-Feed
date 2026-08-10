@@ -8,6 +8,13 @@ TWO MECHANISMS, AND NEITHER IS POLITENESS.
    for that; checking the quote against the report removes the slot for
    inventing one. Without the second half the first is theatre.
 
+   THE QUOTE IS VERIFIED TO EXIST AND BE SUBSTANTIAL, BUT NOT RELEVANT. A quote
+   is confirmed to appear in the report and to exceed a minimum length (to
+   exclude degenerate tokens like "the" or "a"), but no automatic check verifies
+   that the quote actually supports the rule's claim. A gate could cite a long,
+   real, unrelated sentence. That residual risk is handled by the rulebook's
+   instructions, not by this module.
+
 2. THE VERDICT IS DERIVED FROM THE RULE RESULTS, NOT READ OFF THE GATE. The
    gate reports per-rule outcomes and this module computes the verdict. A gate
    that fails rule 5 and announces "continue" yields "ask-user" anyway. This
@@ -45,6 +52,14 @@ ESCALATION = {
 PRECEDENCE = ["stop", "ask-user", "replan", "revise", "continue"]
 
 RESULTS = ("pass", "fail", "n/a")
+
+# Minimum length for a quote to be considered substantial. Degenerate one-word
+# tokens like "the" (3), "a" (1), "it" (2) are too short to support a claim.
+# Real short citations from these reports: "959 ticker-weeks" (16 chars),
+# "2.0x the roster" (15), "derived over 53" (15). Short ones at the floor:
+# "34/60 bars" (10, rejected). The floor of 12 kills degenerate cases while
+# keeping common short citations.
+MIN_QUOTE_CHARS = 12
 
 
 class VerdictError(Exception):
@@ -101,6 +116,10 @@ def validate(verdict, report_texts):
             r["result"] = "fail"
             r["coerced"] = "passed without quoting the report"
             notes.append(f"rule {rid}: no quote")
+        elif len(quote) < MIN_QUOTE_CHARS:
+            r["result"] = "fail"
+            r["coerced"] = "quote too short to support a claim"
+            notes.append(f"rule {rid}: quote too short")
         elif quote not in haystack:
             r["result"] = "fail"
             r["coerced"] = "the quote does not appear in the report"
