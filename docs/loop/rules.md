@@ -117,11 +117,20 @@ escalate the most careful work.
 
 ### 6. caveats-surfaced
 
-Anything the report calls unverified, assumed, not measured or uncertain
-appears in its summary or conclusion, not only buried in the body.
+Anything the report calls unverified, assumed, not measured or uncertain must
+be **findable by someone scanning** — a heading, a bolded sentence, or the
+summary. It fails only when a caveat is reachable solely by reading a
+paragraph through.
 
 *The case:* a feed added while its freshness could not be confirmed against its
 own newsroom. That belonged next to the recommendation, not in paragraph nine.
+
+*Why it is not stricter:* the first version demanded the caveat appear in the
+summary or conclusion, and it fired on **every** real report measured — each
+had a genuine caveat in a bold headed section that its closing table did not
+restate. That is a real shortfall but a small one, and a rule that fires
+always costs a revise round on every step forever. The property worth keeping
+is that a scanning reader can find the caveat, not where it sits.
 
 ### 7. acceptance-criteria
 
