@@ -110,8 +110,9 @@ but carried no parsable date, and that count is what decides whether fetching
 release bodies is worth building. Building it now would be guessing at a
 population nobody has measured.
 
-**The guard**: the parsed date must be in the future at extraction time. Not a
-trust check, a definition. A forthcoming report date cannot be in the past.
+**The guard**: the parsed date must not be before today. The calendar's own
+upcoming test is `today <= expected`, so a stricter test here would discard a
+same-day announcement the calendar would display.
 
 **Every accepted date records its provenance**: the item uid, the title, and
 the release's own published timestamp.
@@ -152,12 +153,19 @@ only when the incoming release was published after the stored one. That
 ordering is what stops an old item resurfacing in a feed from clobbering a
 newer announcement.
 
-**The writer prunes passed entries on its next pass.** The reader never writes.
+**Nothing is pruned.** The store is keyed by CIK and `upsert` overwrites in
+place, so it is bounded by the roster. Pruning a passed date would delete the
+entry the Overdue section is built on.
 
 ## The calendar side
 
-**Reading rule.** A stored date is used only when it is still in the future at
-run time. A past entry is ignored, and the row falls back to its projection.
+**Reading rule.** A stored date is used when it falls after the period end
+being projected. A report date is always after the period it covers, so this
+holds while the company has not yet reported, and keeps holding once the date
+has passed, which is what puts the row in Overdue. It stops holding by itself
+the moment the company files: `upcoming` moves to the next period end and the
+stored date is now before it. There is no expiry to run and no constant to
+choose.
 
 **Display.** The announced date replaces the projected one. The row takes a new
 marker `!`, which outranks `*`, `~` and `?`, because all three of those
