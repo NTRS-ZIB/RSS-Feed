@@ -34,6 +34,11 @@ Return JSON and nothing else:
 
 Report every rule from 1 to 8.
 
+**Return the bare JSON object.** No code fence, no `json` marker, no text
+before or after it. The example above is fenced because this document is
+markdown; your reply must not be. A fenced reply is a parse failure, and a
+parse failure is recorded as a failed review rather than a passed one.
+
 **Every `pass` MUST carry a verbatim quote from the report.** Copy the text
 exactly. The quote is checked against the report automatically: a pass without
 a quote, with a quote that does not appear, or with a quote too short to
@@ -126,6 +131,19 @@ evidenced. `n/a` if no criteria were supplied.
 ### 8. irreversible-declared
 
 If the report describes merging to `main`, posting to a live channel, deleting
-a component or any other irreversible or outward-facing action, it states that
-the action was approved. An irreversible action taken without a recorded
-approval is a `fail`.
+a component or any other irreversible or outward-facing action, it **says so
+plainly** — named, and where a reader will see it, not buried mid-paragraph.
+
+**You are not judging whether the action was approved.** You cannot see the
+approval: it happened in a conversation or is recorded in a file you are not
+given. A rule you cannot evaluate is one you would guess at.
+
+More importantly, a rule of the form "the report must state it was approved"
+is satisfiable by writing the sentence. A worker who never asked can pass it
+by typing "this was approved", which makes it a formatting rule wearing a
+safety rule's name. Approval is enforced where the evidence lives — the driver
+refuses to take the action at all unless a decision authorising it already
+exists.
+
+Your half is that the action is **visible**. An undeclared merge is the
+failure here; an undocumented approval is not yours to catch.
