@@ -17,7 +17,13 @@ __pycache__/
 # Claude Code SESSION files. Agents and skills are project configuration
 # rather than session state — they are the loop's gate and driver, and a
 # re-clone without them cannot run it — so they are negated back in.
-.claude/
+# NOT `.claude/`. Git never descends into an excluded DIRECTORY, so a negation
+# inside one can never re-include anything — `!.claude/agents/` under
+# `.claude/` silently does nothing, and the files just never get committed.
+# Excluding the CONTENTS instead leaves the directory walkable so the
+# negations bite. Verified with `git check-ignore -v`, not by reading the man
+# page.
+.claude/*
 !.claude/agents/
 !.claude/skills/
 

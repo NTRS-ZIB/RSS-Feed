@@ -211,6 +211,34 @@ git checkout -- <file>
   Caught before the push, so a `reset --soft` fixed it. Verify content, not
   exit status, whenever a commit is assembled by a script.
 
+- **A NEGATION INSIDE AN EXCLUDED DIRECTORY DOES NOTHING, silently.** Git
+  never descends into a directory the ignore rules exclude, so a later
+  `!path/inside/` can never re-include anything:
+
+  ```
+  .claude/            <- excludes the directory; the negations below are dead
+  !.claude/agents/
+  ```
+
+  The fix is to exclude the CONTENTS instead, leaving the directory walkable:
+
+  ```
+  .claude/*
+  !.claude/agents/
+  !.claude/skills/
+  ```
+
+  This bit on 2026-08-09 and it bit twice, because **the pattern is duplicated
+  in `.git/info/exclude`** — see the entry above about the deliberate
+  duplication. Fixing `.gitignore` alone changed nothing; the local copy was
+  still excluding the directory. `git check-ignore -v <path>` names the file
+  and line responsible and is the only way to tell the two apart.
+
+  **An existing clone needs `.git/info/exclude` corrected by hand.** A fresh
+  clone does not: that file is local-only, so a new clone gets the committed
+  `.gitignore` and is already right. This is the one case where the
+  duplication makes an old clone WORSE than a new one.
+
 - **The clone lives under a OneDrive-synced path.** OneDrive syncing `.git`
   can occasionally produce lock or corruption errors during git operations. It
   has not so far, but an unexplained git error is worth checking against this
