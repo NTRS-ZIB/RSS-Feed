@@ -1,1 +1,21 @@
-{"schema": 1, "verdict": "fail", "rules": [{"id": 1, "name": "derived-not-chosen", "result": "pass", "quote": "GLXY: cross-host dedupe kept 8, suppressed 2 already carried by the newsroom"}, {"id": 2, "name": "named-population", "result": "pass", "quote": "6 candidate(s) checked, 6 to post."}, {"id": 3, "name": "verified-by-content", "result": "pass", "quote": "**Suppression count: 2. No duplicate titles in the post list.**"}, {"id": 4, "name": "absence-is-a-measurement", "result": "pass", "quote": "The digest has no press contributor at all."}, {"id": 5, "name": "contradiction", "result": "fail", "quote": "`python watchlist.py` | OK, 16 IR feeds |"}, {"id": 6, "name": "caveats-surfaced", "result": "pass", "quote": "ONE THING WAS NOT MEASURED AND SHOULD BE SAID PLAINLY."}, {"id": 7, "name": "acceptance-criteria", "result": "n/a"}, {"id": 8, "name": "irreversible-declared", "result": "pass", "quote": "Ready to merge to `main` on your word. Merging is what makes it live — the"}], "reason": "The earlier report recorded python watchlist.py validating 15 IR feeds; the current report reports 16 IR feeds in its status table with no note that the count changed or why."}
+{
+ "schema": 1,
+ "verdict": "revise",
+ "rules": [
+  {"id": 1, "name": "derived-not-chosen", "result": "pass",
+   "quote": "Then the measurement that forecloses anything fuzzy — 0.984 on Q1 2022 against Q1 2021, 0.951 on Q3 against Q1, clustered in quarterly results, and the note that the probe's `a threshold exists` was a 0.016 margin in one sample presented as a finding."},
+  {"id": 2, "name": "named-population", "result": "pass",
+   "quote": "The `(of 4 newsroom items)` is there so a reader can tell \"suppressed 0 because nothing overlapped\" from \"suppressed 0 because the newsroom yielded almost nothing\"."},
+  {"id": 3, "name": "verified-by-content", "result": "pass",
+   "quote": "The two suppressed items are the feed's copies; BNY still posts, from the newsroom, which is the intended side of the pair."},
+  {"id": 4, "name": "absence-is-a-measurement", "result": "n/a", "quote": ""},
+  {"id": 5, "name": "contradiction", "result": "fail",
+   "quote": "GLXY: cross-host dedupe kept 8, suppressed 2 already carried by the newsroom"},
+  {"id": 6, "name": "caveats-surfaced", "result": "pass",
+   "quote": "ONE THING WAS NOT MEASURED AND SHOULD BE SAID PLAINLY."},
+  {"id": 7, "name": "acceptance-criteria", "result": "n/a", "quote": ""},
+  {"id": 8, "name": "irreversible-declared", "result": "pass",
+   "quote": "Ready to merge to `main` on your word. Merging is what makes it live — the press monitor runs from `main` on a cron."}
+ ],
+ "reason": "The design phase measured 6 of 10 feed items as having a newsroom counterpart, but the production dry run suppresses only 2 of 10 (against a same-run 4-item newsroom), and the report never reconciles or owns that shift, so rule 5 fails even though the rest of the report is well-evidenced."
+}

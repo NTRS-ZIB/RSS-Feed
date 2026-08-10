@@ -1,1 +1,18 @@
-{"schema": 1, "verdict": "block", "rules": [{"id": 1, "name": "derived-not-chosen", "result": "fail", "quote": "Fifty thousand is a sensible floor for this roster"}, {"id": 2, "name": "named-population", "result": "fail", "quote": "The larger names clear it every session and the smaller ones clear it most days"}, {"id": 3, "name": "verified-by-content", "result": "fail", "quote": "the workflow ran green"}, {"id": 4, "name": "absence-is-a-measurement", "result": "n/a"}, {"id": 5, "name": "contradiction", "result": "n/a"}, {"id": 6, "name": "caveats-surfaced", "result": "n/a"}, {"id": 7, "name": "acceptance-criteria", "result": "n/a"}, {"id": 8, "name": "irreversible-declared", "result": "n/a"}], "reason": "The 50,000 floor is asserted with no distribution or firing rate, no population is named, and the only verification cited is that the workflow ran green."}
+{
+ "schema": 1,
+ "verdict": "revise",
+ "rules": [
+  {"id": 1, "name": "derived-not-chosen", "result": "fail",
+   "quote": "Fifty thousand is a sensible floor for this roster — below that the ratio is dominated by a handful of odd lots and the signal is not worth posting."},
+  {"id": 2, "name": "named-population", "result": "fail",
+   "quote": "The larger names clear it every session and the smaller ones clear it most days, so it will not suppress anything that matters."},
+  {"id": 3, "name": "verified-by-content", "result": "fail",
+   "quote": "Implemented in `volume_spike.py` and the workflow ran green."},
+  {"id": 4, "name": "absence-is-a-measurement", "result": "n/a", "quote": ""},
+  {"id": 5, "name": "contradiction", "result": "n/a", "quote": ""},
+  {"id": 6, "name": "caveats-surfaced", "result": "n/a", "quote": ""},
+  {"id": 7, "name": "acceptance-criteria", "result": "n/a", "quote": ""},
+  {"id": 8, "name": "irreversible-declared", "result": "n/a", "quote": ""}
+ ],
+ "reason": "The 50,000-share floor is asserted with no distribution or firing rate, no stated population for the supporting claims, and 'the workflow ran green' only reports success rather than what was checked."
+}

@@ -274,5 +274,5 @@ obviously ships JavaScript.
 Four probe scripts and the `Probe sources` workflow deleted, and removed from
 the notifier list. Nothing recurring in them.
 
-`python watchlist.py` validates, 15 IR feeds, worktree clean, dry run posted
+`python watchlist.py` validates, 19 companies, worktree clean, dry run posted
 nothing and saved no state.
