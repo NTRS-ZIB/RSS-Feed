@@ -1,6 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0000950170-23-032674",
   "urn:tag:sec.gov,2008:accession-number=0000899243-23-017352",
   "urn:tag:sec.gov,2008:accession-number=0001873512-23-000002",
   "urn:tag:sec.gov,2008:accession-number=0001825304-23-000001",
@@ -999,7 +998,8 @@
   "https://www.hut8.com/news-insights/press-releases/hut-8-affirms-commitment-to-responsible-data-center-development-following-directive-from-texas",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-087067",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-087060",
-  "urn:tag:sec.gov,2008:accession-number=0001912609-26-000006"
+  "urn:tag:sec.gov,2008:accession-number=0001912609-26-000006",
+  "11741"
  ],
  "initialized": true,
  "baselined": {
