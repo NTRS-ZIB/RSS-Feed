@@ -17,8 +17,13 @@ Design: [`../superpowers/specs/2026-08-09-director-worker-loop-design.md`](../su
 load at session start, so the gate could not be dispatched in the session that
 created it. All four fixtures were run on a general-purpose agent with tool
 use restricted by instruction and confirmed by counting tool calls — clean in
-practice, unenforced in principle. Re-run `score_gate.py` from a session where
-`loop-gate` is registered to close this.
+practice, unenforced in principle.
+
+**Re-running `score_gate.py` alone does not close it** — that scores verdict
+JSON already on disk, which does not change. The gate must be re-dispatched
+under `subagent_type: loop-gate` first, with the reports inline because
+`tools: []` means it cannot read them. Procedure:
+[`VERIFY-ISOLATION.md`](VERIFY-ISOLATION.md).
 
 ## Layout
 
