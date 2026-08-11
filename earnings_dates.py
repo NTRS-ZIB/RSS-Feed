@@ -47,6 +47,19 @@ ANNOUNCE_VERBS = ("to report", "to announce", "to release", "announces",
                   "schedules", "sets date")
 RESULTS_WORDS = ("results", "earnings")
 
+# Words that name a FORTHCOMING EVENT. An advance notice schedules something;
+# a results release reports something. This gates body FETCHING only, never
+# storing, so a phrasing missing from this list costs one measurement sample
+# and nothing else.
+SCHEDULED_EVENT_WORDS = ("conference call", "webcast", "call for",
+                         "schedules", "to be held", "will host")
+
+
+def names_a_scheduled_event(title):
+    """Does this title announce a forthcoming event rather than report one?"""
+    t = (title or "").lower()
+    return any(w in t for w in SCHEDULED_EVENT_WORDS)
+
 MONTHS = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
           "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12}
 
