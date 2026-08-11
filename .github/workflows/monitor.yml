@@ -75,6 +75,10 @@ jobs:
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           WEBHOOK_URL_INSIDER: ${{ secrets.WEBHOOK_URL_INSIDER }}
+          # Feed-outage notices only. Same channel failure-notice.yml uses,
+          # which catches a failed run; this catches a source going dark
+          # while the run keeps succeeding.
+          WEBHOOK_URL_OPS: ${{ secrets.WEBHOOK_URL_OPS }}
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
           # Empty on scheduled runs, so those always post.
           DRY_RUN: ${{ inputs.dry_run }}
