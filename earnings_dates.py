@@ -175,6 +175,10 @@ def apply(rows, companies, today):
         rec = companies.get(r.get("cik"))
         if not rec:
             continue
+        if not isinstance(rec, dict):
+            notes.append(f"{r['label']}: stored record for CIK {r.get('cik')} "
+                         f"is not a dict ({rec!r}); keeping the projection")
+            continue
         when = parse_iso(rec.get("date"))
         if when is None:
             notes.append(f"{r['label']}: stored date {rec.get('date')!r} is "
@@ -193,8 +197,4 @@ def apply(rows, companies, today):
         r["disclosed"] = True
         applied += 1
 
-    unknown = set(companies) - {r.get("cik") for r in rows}
-    for cik in sorted(unknown):
-        notes.append(f"stored date for CIK {cik} "
-                     f"({companies[cik].get('ticker')}) is not on the roster")
     return rows, applied, notes
