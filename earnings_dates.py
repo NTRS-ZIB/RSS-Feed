@@ -85,3 +85,72 @@ def extract(title, today):
     if when < today:
         return None, "past"
     return when, "ok"
+
+
+def parse_iso(value):
+    """An ISO date string as a date, or None. Never raises."""
+    try:
+        return date.fromisoformat(str(value)[:10])
+    except (TypeError, ValueError):
+        return None
+
+
+def load(path=DEFAULT_PATH):
+    """(companies, status) where status is "missing", "unreadable", "empty"
+    or "ok".
+
+    MISSING AND EMPTY ARE DIFFERENT MEASUREMENTS and the caller logs them
+    differently. No file means the writer has never run, which is expected
+    once and a fault afterwards. An empty one means nothing is currently
+    announced. Collapsing them is how a broken writer reads as a quiet week.
+    """
+    p = Path(path)
+    if not p.exists():
+        return {}, "missing"
+    try:
+        raw = json.loads(p.read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return {}, "unreadable"
+    if not isinstance(raw, dict) or raw.get("schema") != SCHEMA:
+        return {}, "unreadable"
+    companies = raw.get("companies")
+    if not isinstance(companies, dict):
+        return {}, "unreadable"
+    return companies, ("ok" if companies else "empty")
+
+
+def save(companies, path=DEFAULT_PATH):
+    """Write the store. indent=1 matches state.json."""
+    Path(path).write_text(
+        json.dumps({"schema": SCHEMA, "companies": companies}, indent=1),
+        encoding="utf-8")
+
+
+def upsert(companies, cik, ticker, when, uid, title, published):
+    """Record a disclosed date. Returns True if the store changed.
+
+    A LATER RELEASE WINS, JUDGED BY THE RELEASE rather than by when we read
+    it. A company that moves its date issues a second release, and comparing
+    the releases' own timestamps is what stops an old item resurfacing in a
+    feed from clobbering the newer announcement. A release carrying no
+    timestamp never overwrites: unknown is not newer.
+
+    The store is keyed by CIK and overwrites in place, so it is bounded by
+    the roster. Nothing is pruned; a passed date is what the Overdue section
+    is built on.
+    """
+    cik = str(cik).zfill(10)
+    prior = companies.get(cik)
+    if prior is not None:
+        if not published:
+            return False
+        if (prior.get("source_published") or "") >= published:
+            return False
+    companies[cik] = {
+        "ticker": ticker,
+        "date": when.isoformat(),
+        "source_uid": uid,
+        "source_title": title,
+        "source_published": published,
+    }
+    return True
