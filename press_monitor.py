@@ -892,19 +892,49 @@ def discover_feed(page_url):
     return None
 
 
+# Read timeout per attempt, in seconds. The retry is deliberately generous:
+# A HOST THAT IS MERELY SLOW AND ONE THAT IS HANGING ARE INDISTINGUISHABLE AT
+# A SINGLE TIMEOUT, and which one it is decides whether a dead feed needs a
+# replacement source or just patience.
+#
+# IT WAS ADDED FOR BGDE AND THAT IS NOT WHAT WAS WRONG WITH BGDE. Its
+# GlobeNewswire feed began timing out at 2026-08-10T16:06Z after reading 20
+# items cleanly at 15:05; 90s failed exactly as 30s had, which ruled out
+# slowness, and the actual cause was the WAF stalling our browser User-Agent.
+# See HOST_HEADERS. Ruling slowness out in one run is a real result and is
+# why this stays, but nothing here fixed that outage and a later reader
+# should not infer that it did.
+#
+# What it is kept for is the next host that is genuinely slow rather than
+# blocked, which this one turned out not to be. Cost is bounded and worth
+# checking against the step's 780s budget: a feed failing both attempts takes
+# 10+30 + 2 + 10+90 = 142s rather than 82s. One hanging feed is affordable;
+# this is not a licence to add a third attempt.
+READ_TIMEOUTS = (30, 90)
+
+
 def parse_feed(url):
-    """Fetch and parse a feed. Never blocks indefinitely. Retries once."""
+    """Fetch and parse a feed. Never blocks indefinitely. Retries once, with
+    a longer read timeout on the retry."""
     r = None
-    for attempt in range(2):
+    for attempt, read_timeout in enumerate(READ_TIMEOUTS):
+        started = time.time()
         try:
-            r = requests.get(url, headers=headers_for(url), timeout=(10, 30))
+            r = requests.get(url, headers=headers_for(url),
+                             timeout=(10, read_timeout))
+            if attempt:
+                print(f"    recovered on the {read_timeout}s retry, "
+                      f"{time.time() - started:.0f}s to first byte")
             break
         except requests.RequestException as e:
-            if attempt == 0:
-                print(f"    {type(e).__name__}, retrying once")
+            waited = time.time() - started
+            if attempt + 1 < len(READ_TIMEOUTS):
+                print(f"    {type(e).__name__} after {waited:.0f}s at a "
+                      f"{read_timeout}s read timeout, retrying once")
                 time.sleep(2)
             else:
-                print(f"    fetch failed: {type(e).__name__}")
+                print(f"    fetch failed: {type(e).__name__} after "
+                      f"{waited:.0f}s at a {read_timeout}s read timeout")
                 return []
     if r is None or r.status_code != 200:
         print(f"    HTTP {r.status_code if r is not None else '?'}")
