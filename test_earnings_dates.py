@@ -323,8 +323,32 @@ def main():
     check("and the normal projection uses a quarter end",
           row["period"] == date(2026, 9, 30), row["period"])
 
-    check("below the quarterly floor AND under two annual filings: nothing",
+    # A single filing never reaches project()'s annual_only branch at all: the
+    # pre-existing MIN_PERIODIC_FILINGS guard at the top of the function
+    # returns None first. This checks that outer floor, not the new guard.
+    check("a single filing never reaches project() at all: the outer floor",
           ec.project("X", "X", [annual(2025, 111)]) is None)
+
+    # To actually exercise the NEW guard (annual_only and len(annual) < 2),
+    # the company needs >= MIN_PERIODIC_FILINGS filings in total, so the outer
+    # floor does not fire first, while staying below the quarterly floor and
+    # under two annual filings. One annual + one quarterly does exactly that:
+    # two filings total, one quarterly (annual_only True), one annual (fails
+    # the new guard's own len(annual) < 2 check).
+    thin = [annual(2025, 111), q(2026, 6)]
+    check("below the quarterly floor AND under two annual filings: "
+          "the new guard fires",
+          ec.project("X", "X", thin) is None)
+    # Proves the guard above is load-bearing rather than incidental: the same
+    # shape with a second annual filing added (still only one quarterly, so
+    # still annual_only) DOES project, because it now clears len(annual) >= 2.
+    thin_plus_one_annual = [annual(2025, 111), annual(2024, 111), q(2026, 6)]
+    row = ec.project("X", "X", thin_plus_one_annual)
+    check("a second annual filing clears the new guard and projects",
+          row is not None)
+    check("that projection is still annual_only, since quarterly count "
+          "never changed",
+          row is not None and row.get("annual_only") is True)
 
     print("\nTHE ANNUAL PERIOD STEP")
     check("twelve months on, not three",
