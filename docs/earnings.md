@@ -51,6 +51,7 @@ correctly projects an `annual` filing for its June period, not a 10-Q.
 
 | Marker | Meaning |
 |---|---|
+| `!` | The company announced this date. Not a projection, so no spread is shown. |
 | *(none)* | Projection from ≥2 same-form filings. Treat the date as real. |
 | `~` | Historical spread exceeds 30 days. Indicative only; named in a footnote. |
 | `?` | Had to fall back to a different form type — e.g. a foreign issuer with no 10-Q history. Weakest case. |
@@ -61,18 +62,22 @@ Expected dates falling on a weekend roll forward to Monday.
 
 **Expected in the next 45 days** — the actionable list.
 
-**Past estimate** — a company more than 10 days beyond its own typical lag with
-nothing filed. This corroborates the `NT 10-Q` / `NT 10-K` late-filing notices
-the press monitor watches for; seeing both is a strong signal.
+**Overdue** — a company past its own announced date with nothing filed, or
+more than 10 days beyond its typical lag. An announced date gets no grace,
+because the grace exists to allow for the spread in our projection and an
+announced date has none. This corroborates the `NT 10-Q` / `NT 10-K`
+late-filing notices the press monitor watches for; seeing both is a strong
+signal.
 
 **Later** — one-line summary of everything beyond the horizon.
 
 ## Known quirks
 
-- **These are estimates, not announced dates.** Companies announce actual dates
-  by press release, which the [press release monitor](press-monitor.md)
-already catches. This fills
-  the gap before that announcement lands.
+- **Most rows are estimates; a `!` row is not.** Companies announce actual
+  dates by press release, the [press release monitor](press-monitor.md) reads
+  the announcement out of the release title, and `earnings_dates.json` carries
+  it here. A company whose announcement puts the date in the body rather than
+  the title is still an estimate; the press monitor logs a count of those.
 - **Recent listings have thin history.** WYFI had 4 periodic filings at time of
   writing, giving ±35d. Accurate reporting of low confidence, not a bug.
 - **Validate against reality.** When a company actually files, compare to the

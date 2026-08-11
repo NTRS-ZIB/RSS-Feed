@@ -183,8 +183,14 @@ def build_message(rows):
 
     upcoming = sorted((r for r in rows if today <= r["expected"] <= horizon),
                       key=lambda r: r["expected"])
-    overdue = sorted((r for r in rows
-                      if r["expected"] < today - timedelta(days=OVERDUE_GRACE)),
+    def is_overdue(r):
+        # OVERDUE_GRACE exists to allow for the spread in OUR projection. A
+        # company's own announced date has no spread to allow for, so it gets
+        # none: announced the 12th and nothing filed by the 13th is late.
+        grace = 0 if r.get("disclosed") else OVERDUE_GRACE
+        return r["expected"] < today - timedelta(days=grace)
+
+    overdue = sorted((r for r in rows if is_overdue(r)),
                      key=lambda r: r["expected"])
     later = sorted((r for r in rows if r["expected"] > horizon),
                    key=lambda r: r["expected"])
@@ -234,12 +240,16 @@ def build_message(rows):
 
     if overdue:
         lines.append("")
-        lines.append("Past estimate")
+        # "Past estimate" stops being true once a row can be past a date the
+        # company announced rather than one we projected.
+        lines.append("Overdue")
         lines.append("-" * 26)
         for r in overdue:
             late = (today - r["expected"]).days
-            lines.append(f"{r['label']:<4}{marker(r)} est {r['expected']:%d %b}"
-                         f"{late:>4}d ago")
+            # Same width, so the column does not move between the two cases.
+            what = "due" if r.get("disclosed") else "est"
+            lines.append(f"{r['label']:<4}{marker(r)} {what} "
+                         f"{r['expected']:%d %b}{late:>4}d ago")
 
     if later:
         lines.append("")
