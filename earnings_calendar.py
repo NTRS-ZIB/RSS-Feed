@@ -228,6 +228,18 @@ def build_message(rows):
     upcoming = sorted((r for r in rows if today <= r["expected"] <= horizon),
                       key=lambda r: r["expected"])
     def is_overdue(r):
+        # A COMPANY WE CANNOT SEE REPORT IS NEVER REPORTED LATE. Overdue
+        # asserts that something should have arrived and has not, and for an
+        # annual-only company the only forms this component reads are the ones
+        # it barely files — its interim results arrive on a 6-K, which carries
+        # no period and is not in PERIODIC_FORMS. The row would go overdue and
+        # stay there for a quarter, which is what it did for 22 days before
+        # this. A claim we cannot check does not belong in the post.
+        #
+        # This is a real loss: if such a company goes genuinely silent, nothing
+        # here says so. Its releases still reach the press channel.
+        if r.get("annual_only"):
+            return False
         # OVERDUE_GRACE exists to allow for the spread in OUR projection. A
         # company's own announced date has no spread to allow for, so it gets
         # none: announced the 12th and nothing filed by the 13th is late.
