@@ -440,6 +440,15 @@ def main():
             print(f"  stored date for CIK {cik} ({ticker}) is not on the "
                   f"roster")
 
+    annual_only = [r["label"] for r in rows if r.get("annual_only")]
+    if annual_only:
+        print(f"\nProjected annually, with no quarterly estimate and no "
+              f"overdue: {', '.join(annual_only)}. Each files fewer than "
+              f"{MIN_QUARTERLY_FILINGS} quarterly reports, so no quarterly "
+              f"cadence can be measured.")
+    else:
+        print("\nNo company is below the quarterly filing floor.")
+
     text = build_message(rows)
     print(f"\n{text}\n")
     if missing:
