@@ -397,6 +397,22 @@ def probe_user_agents():
                                           "fetcher.html; like FeedFetcher-Google)"}),
         ("no User-Agent at all", {"Accept": "*/*"}),
     ]
+    # The first matrix's "no User-Agent" case did not send none: requests
+    # supplies python-requests/X.Y.Z unless the header is explicitly removed.
+    # So the winning condition is a plain non-browser UA, not the absence of
+    # one, and these cases separate the two. A polite identifying UA is
+    # preferred over both if it works — this repo already identifies itself to
+    # the SEC that way.
+    CASES += [
+        ("explicit python-requests UA",
+         {"User-Agent": "python-requests/2.34.2", "Accept": "*/*"}),
+        ("truly no User-Agent header",
+         {"User-Agent": None, "Accept": "*/*"}),
+        ("curl UA", {"User-Agent": "curl/8.5.0", "Accept": "*/*"}),
+        ("polite identifying UA",
+         {"User-Agent": "InfraMonitor/1.0 (press release monitor; contact via "
+                        "GitHub NTRS-ZIB/RSS-Feed)", "Accept": "*/*"}),
+    ]
     print("=" * 72)
     print("GLOBENEWSWIRE USER-AGENT MATRIX")
     print("=" * 72)
