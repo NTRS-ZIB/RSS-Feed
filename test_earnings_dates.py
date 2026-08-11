@@ -10,8 +10,10 @@ recognition stage must not match it, and the guard must reject it if
 recognition ever does.
 """
 
+import json
 import sys
 from datetime import date
+from pathlib import Path
 
 import earnings_dates as ed
 
@@ -82,6 +84,56 @@ def main():
         "Announces Date of Second Quarter 2026 Earnings Release", TODAY)
     check("an announcement with no parsable date is counted separately",
           when is None and reason == "no-date", f"{when} {reason}")
+
+    print("\nTHE STORE")
+    import tempfile
+    tmp = Path(tempfile.mkdtemp()) / "earnings_dates.json"
+
+    companies, status = ed.load(tmp)
+    check("a file that does not exist reports missing",
+          companies == {} and status == "missing", status)
+
+    ed.save({}, tmp)
+    companies, status = ed.load(tmp)
+    check("a file with no records reports empty, not missing",
+          companies == {} and status == "empty", status)
+
+    companies = {}
+    wrote = ed.upsert(companies, "1218683", "BGDE", date(2026, 8, 12),
+                      "uid-1", "title one", "2026-07-29T13:00:00+00:00")
+    check("upsert writes", wrote and len(companies) == 1)
+    check("the key is a zero-padded CIK",
+          "0001218683" in companies, list(companies))
+
+    wrote = ed.upsert(companies, "1218683", "BGDE", date(2026, 8, 14),
+                      "uid-2", "title two", "2026-08-01T13:00:00+00:00")
+    check("a later release overwrites",
+          wrote and companies["0001218683"]["date"] == "2026-08-14")
+
+    wrote = ed.upsert(companies, "1218683", "BGDE", date(2026, 8, 20),
+                      "uid-3", "title three", "2026-07-01T13:00:00+00:00")
+    check("an EARLIER release does not overwrite",
+          not wrote and companies["0001218683"]["date"] == "2026-08-14",
+          "a stale item resurfacing must not clobber a newer announcement")
+
+    wrote = ed.upsert(companies, "1218683", "BGDE", date(2026, 9, 1),
+                      "uid-4", "title four", None)
+    check("a release with no timestamp does not overwrite",
+          not wrote and companies["0001218683"]["date"] == "2026-08-14")
+
+    ed.save(companies, tmp)
+    reloaded, status = ed.load(tmp)
+    check("a saved store round-trips", reloaded == companies and status == "ok")
+
+    tmp.write_text("{not json", encoding="utf-8")
+    companies, status = ed.load(tmp)
+    check("unreadable is distinct from missing and empty",
+          companies == {} and status == "unreadable", status)
+
+    tmp.write_text(json.dumps({"schema": 99, "companies": {}}),
+                   encoding="utf-8")
+    companies, status = ed.load(tmp)
+    check("a wrong schema is unreadable", status == "unreadable", status)
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
