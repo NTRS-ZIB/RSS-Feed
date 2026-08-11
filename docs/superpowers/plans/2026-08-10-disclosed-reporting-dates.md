@@ -1150,3 +1150,180 @@ git commit -m "Record that the disclosed-date write path is not yet exercised"
 **Not covered, deliberately.** Fetching release bodies, gated on the count Task 3 produces. The foreign private issuer problem, which is a separate project.
 
 **Type consistency.** `extract` returns `(date | None, str)` in Tasks 1 and 3. `load` returns `(dict, str)` in Tasks 2, 3 and 4. `upsert` returns `bool` in Tasks 2 and 3. `apply` returns `(rows, int, list[str])` in Task 4 and its `"disclosed"` key is read in Tasks 5 and 6. `parse_iso` is defined in Task 2 and used in Task 4.
+
+---
+
+### Task 9: Take the missing year from the release's own date
+
+Added 2026-08-11 after Task 3's measurement. Title-only extraction recorded
+**zero** dates across 16 recognised announcements: 12 carried no date at all,
+and 3 carried a month and day rejected solely for lacking a four-digit year.
+All three were DGXX, e.g. *"Digi Power X to Announce 2026 Q2 Financial Results
+and Provide Operations Update on August 14th"*.
+
+Taking the year from the release's publication date is not a guess. The
+release date is known data, and a company does not announce a forthcoming
+event in the past, which is what disambiguates December-announcing-January.
+
+**Files:**
+- Modify: `earnings_dates.py`
+- Modify: `test_earnings_dates.py`
+- Modify: `press_monitor.py` (pass the release date into `extract`)
+
+**Interfaces:**
+- Consumes: `parse_date(title)`, `extract(title, today)` from Task 1.
+- Produces: `parse_date(title, released=None)` and
+  `extract(title, today, released=None)`. Both keep working when `released`
+  is omitted, so no existing caller breaks.
+
+- [ ] **Step 1: Write the failing tests**
+
+Add inside `main()` in `test_earnings_dates.py`, before the `bad = ...` line:
+
+```python
+    print("\nYEAR FROM THE RELEASE DATE")
+    check("year taken from the release",
+          ed.parse_date("... Results on August 14th", date(2026, 7, 29))
+          == date(2026, 8, 14))
+    check("a four-digit year in the title still wins",
+          ed.parse_date("... on August 12, 2026", date(2026, 7, 29))
+          == date(2026, 8, 12))
+    check("rolls to next year when the release is later in the year",
+          ed.parse_date("... on January 5th", date(2026, 12, 20))
+          == date(2027, 1, 5),
+          "a company does not announce a forthcoming date in the past")
+    check("without a release date it still refuses to guess",
+          ed.parse_date("... Results on August 14th") is None)
+    when, reason = ed.extract(
+        "Digi Power X to Announce 2026 Q2 Financial Results and Provide "
+        "Operations Update on August 14th", date(2026, 8, 1), date(2026, 7, 29))
+    check("the real DGXX headline now extracts",
+          when == date(2026, 8, 14) and reason == "ok", f"{when} {reason}")
+    when, reason = ed.extract(
+        "Company to Report Results on August 14th", date(2026, 8, 1))
+    check("no release date still counts as a no-date miss",
+          when is None and reason == "no-date", f"{when} {reason}")
+```
+
+- [ ] **Step 2: Run to verify it fails**
+
+Run: `python test_earnings_dates.py`
+Expected: FAIL, `parse_date() takes 1 positional argument but 2 were given`
+
+- [ ] **Step 3: Implement**
+
+In `earnings_dates.py`, add beside `DATE_RE`:
+
+```python
+# Month and day with NO four-digit year following. The negative lookahead is
+# what stops this stealing a match from DATE_RE.
+DATE_NOYEAR_RE = re.compile(
+    r"\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+"
+    r"(\d{1,2})(?:st|nd|rd|th)?\b(?!\s*,?\s*\d{4})", re.I)
+```
+
+Replace `parse_date` with:
+
+```python
+def parse_date(title, released=None):
+    """The first month-day-year in the title, or None.
+
+    A four-digit year in the title always wins. When there is none, the year
+    is taken from `released`, the release's own publication date — WHICH IS
+    NOT A GUESS. The release date is known data, and the ambiguity it leaves
+    is resolved by a fact rather than a preference: A COMPANY DOES NOT
+    ANNOUNCE A FORTHCOMING EVENT IN THE PAST, so of the two candidate years
+    the answer is the first that is not before the release.
+
+    Without `released` it still refuses. "on August 12" alone would have to be
+    guessed at, and a guessed year is wrong every time a release crosses a
+    year boundary.
+
+    The edge it gets wrong: a release published days AFTER the date it names,
+    which rolls forward a year. Recognition already requires an announcement
+    verb, so such a headline is unusual, and the stored provenance makes the
+    mistake diagnosable rather than mysterious.
+    """
+    m = DATE_RE.search(title or "")
+    if m:
+        try:
+            return date(int(m.group(3)), MONTHS[m.group(1)[:3].lower()],
+                        int(m.group(2)))
+        except (KeyError, ValueError):
+            return None
+    if released is None:
+        return None
+    m = DATE_NOYEAR_RE.search(title or "")
+    if not m:
+        return None
+    try:
+        month, day = MONTHS[m.group(1)[:3].lower()], int(m.group(2))
+    except (KeyError, ValueError):
+        return None
+    for year in (released.year, released.year + 1):
+        try:
+            candidate = date(year, month, day)
+        except ValueError:
+            continue
+        if candidate >= released:
+            return candidate
+    return None
+```
+
+And `extract`:
+
+```python
+def extract(title, today, released=None):
+    """(date, reason) for one item title. See parse_date for `released`."""
+    if not looks_like_announcement(title):
+        return None, "no-match"
+    when = parse_date(title, released)
+    if when is None:
+        return None, "no-date"
+    if when < today:
+        return None, "past"
+    return when, "ok"
+```
+
+- [ ] **Step 4: Run to verify it passes**
+
+Run: `python test_earnings_dates.py`
+Expected: every check passes, count rises by 6 to 41.
+
+- [ ] **Step 5: Pass the release date in**
+
+In `press_monitor.record_disclosed_dates`, the item's `published` is a POSIX
+timestamp. Replace:
+
+```python
+        when, reason = ed.extract(item.get("title"), today)
+```
+
+with:
+
+```python
+        published = item.get("published")
+        released = (datetime.fromtimestamp(published, timezone.utc).date()
+                    if published else None)
+        when, reason = ed.extract(item.get("title"), today, released)
+```
+
+and delete the later duplicate `published = item.get("published")` line so the
+value is read once.
+
+- [ ] **Step 6: Verify by dispatch**
+
+```bash
+gh workflow run "Press release monitor" --ref "$(git rev-parse --abbrev-ref HEAD)" -f dry_run=true
+```
+
+Expected: `earnings dates:` now reports a non-zero `recorded` count, with the
+DGXX lines that previously read "announcement with no parsable date" instead
+reporting an extracted date. The `no-date` count should fall by roughly three.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add earnings_dates.py test_earnings_dates.py press_monitor.py
+git commit -m "Take the missing year from the release's own date"
+```
