@@ -356,6 +356,23 @@ def main():
     check("29 February falls back to the 28th",
           ec.next_annual_period_end(date(2024, 2, 29)) == date(2025, 2, 28))
 
+    print("\nANNUAL-ONLY IS NEVER OVERDUE")
+    long_past = date.today() - timedelta(days=400)
+
+    def crow(label, **kw):
+        r = {"label": label, "name": label, "period": date(2025, 12, 31),
+             "expected": long_past, "lag": 111, "spread": 4, "kind": "annual",
+             "degraded": False, "cik": "0001899123"}
+        r.update(kw)
+        return r
+
+    text = ec.build_message([crow("BTDR", annual_only=True)])
+    check("an annual-only row 400 days past does not reach Overdue",
+          "Overdue" not in text, text)
+    text = ec.build_message([crow("PROJ")])
+    check("an ordinary row 400 days past still does",
+          "Overdue" in text and "PROJ" in text)
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0
