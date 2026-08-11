@@ -562,6 +562,207 @@ git commit -m "Record what an annually projected row means"
 
 ---
 
+### Task 7: An Announced section for dates that cannot be overlaid
+
+Added 2026-08-11 after Task 3's dispatch exposed an interaction Tasks 1 and 4
+create between them. **Task 4 widened the intake and Task 1 closed the outlet.**
+
+`apply()` overlays a stored date only when it falls after the period end being
+projected — a rule written so a stale date expires by itself once a company
+files and its period moves on. An annual-only row projects a period end up to
+twelve months out, so a quarterly announcement always falls before it and is
+discarded. The live run showed exactly this:
+
+```
+DGXX: stored date 2026-08-14 is not after the period end 2026-12-31 being
+projected; it belongs to a period already reported
+```
+
+DGXX published that date. BTDR's Q3 notice will meet the same fate. These are
+the two companies whose projections are worst and the ones the disclosed-date
+feature was built to help.
+
+**Overlaying it anyway was rejected, with a measured reason.** Applying an
+August date to a December-period row puts that row in the upcoming block with a
+period end no other row shares, which flips the table to mixed-period mode: the
+`· P/E Jun 2026` header goes, every row loses its weekday to buy a period
+column, and the row prints as `DGXX! 14 Aug 3d Dec` — an August date on a
+December-period report. One applied date degrades every other row and prints a
+self-contradiction.
+
+So the announced date gets its own block, where it can be stated as what it is.
+
+**Files:**
+- Modify: `earnings_dates.py`
+- Modify: `earnings_calendar.py`
+- Modify: `test_earnings_dates.py`
+
+**Interfaces:**
+- Consumes: `apply(rows, companies, today)`, `parse_iso`, and rows carrying
+  `annual_only` from Task 1.
+- Produces: `announced_elsewhere(rows, companies, today) -> list[tuple[str, date]]`
+  in `earnings_dates.py`, sorted by date, and an `Announced` block in
+  `build_message`.
+
+- [ ] **Step 1: Write the failing tests**
+
+Add inside `main()` in `test_earnings_dates.py`, before the `bad = ...` line:
+
+```python
+    print("\nANNOUNCED BUT NOT OVERLAID")
+    soon = date.today() + timedelta(days=3)
+    store = {"0001854368": {"ticker": "DGXX", "date": soon.isoformat(),
+                            "source_uid": "u", "source_title": "t",
+                            "source_published": "2026-07-20T00:00:00+00:00"}}
+
+    # An annual-only row: its period end is a year out, so apply() refuses.
+    arow = {"label": "DGXX", "name": "Digi Power X", "cik": "0001854368",
+            "period": date.today() + timedelta(days=200),
+            "expected": date.today() + timedelta(days=290), "lag": 90,
+            "spread": 40, "kind": "annual", "degraded": False,
+            "annual_only": True}
+    rows, applied, _ = ed.apply([dict(arow)], store, date.today())
+    check("apply still refuses to overlay it", applied == 0)
+    got = ed.announced_elsewhere([dict(arow)], store, date.today())
+    check("but the date is surfaced separately",
+          got == [("DGXX", soon)], got)
+
+    # A row where the date WAS overlaid must not also appear in the section.
+    qrow = dict(arow, period=date.today() - timedelta(days=10),
+                annual_only=False)
+    rows, applied, _ = ed.apply([dict(qrow)], store, date.today())
+    check("a date that was overlaid is applied", applied == 1)
+    check("and is NOT repeated in the section",
+          ed.announced_elsewhere([dict(qrow)], store, date.today()) == [],
+          "it is already on the row")
+
+    past = {"0001854368": dict(store["0001854368"],
+                               date=(date.today() - timedelta(days=5)).isoformat())}
+    check("a date already past is not surfaced",
+          ed.announced_elsewhere([dict(arow)], past, date.today()) == [],
+          "the section is about what is coming")
+
+    text = ec.build_message([dict(arow)], announced=[("DGXX", soon)])
+    check("the section renders with its own heading",
+          "Announced" in text and "DGXX" in text, text)
+    widest = max(len(l) for l in text.splitlines())
+    check("and nothing in the block exceeds 28 characters",
+          widest <= 28, widest)
+```
+
+- [ ] **Step 2: Run to verify it fails**
+
+Run: `python test_earnings_dates.py`
+Expected: FAIL, `module 'earnings_dates' has no attribute 'announced_elsewhere'`
+
+- [ ] **Step 3: Implement the collector**
+
+Append to `earnings_dates.py`:
+
+```python
+def announced_elsewhere(rows, companies, today):
+    """Announced dates that are real, still ahead, and NOT on any row.
+
+    `apply()` overlays a stored date only when it falls after the period end
+    being projected, so a stale one expires by itself. An annual-only row's
+    period end is up to twelve months out, so a QUARTERLY announcement always
+    falls before it and is refused — correctly, because that row is about the
+    annual filing and an August date on it would be a claim about the wrong
+    report.
+
+    The date is still true and still useful, so it is surfaced here instead of
+    being dropped to a log line. Returns [(label, date), ...] sorted by date.
+    """
+    applied_ciks = {r.get("cik") for r in rows if r.get("disclosed")}
+    out = []
+    for r in rows:
+        cik = r.get("cik")
+        if cik in applied_ciks:
+            continue
+        rec = companies.get(cik)
+        if not isinstance(rec, dict):
+            continue
+        when = parse_iso(rec.get("date"))
+        if when is None or when < today:
+            continue
+        out.append((r["label"], when))
+    return sorted(out, key=lambda t: t[1])
+```
+
+Note it takes rows AFTER `apply()` has run, so `disclosed` marks the ones
+already shown. Call it in that order.
+
+- [ ] **Step 4: Render the section**
+
+Change `build_message(rows)` to `build_message(rows, announced=None)`, and add
+after the overdue block and before the `later` block:
+
+```python
+    if announced:
+        lines.append("")
+        # Its own block, because these dates describe a DIFFERENT report from
+        # the row that company has above. Overlaying one would put a row in
+        # the upcoming table with a period end no other row shares, which
+        # flips the whole table to mixed-period: the header loses its P/E
+        # line, every row drops its weekday to buy a period column, and the
+        # row itself prints an August date against a December period.
+        lines.append("Announced")
+        lines.append("-" * 26)
+        for label, when in announced:
+            days = (when - today).days
+            lines.append(f"{label:<4}  {when:%a %d %b}{days:>4}d")
+```
+
+Add to the key block, beside the other conditional lines:
+
+```python
+    if announced:
+        key.append("announced, not projected")
+```
+
+- [ ] **Step 5: Wire it in `main()`**
+
+After the `ed.apply(...)` call and its note printing, add:
+
+```python
+    announced = ed.announced_elsewhere(rows, disclosed, date.today())
+    if announced:
+        print(f"{len(announced)} announced date(s) shown separately, because "
+              f"the row for that company projects a different report: "
+              f"{', '.join(f'{l} {d}' for l, d in announced)}")
+```
+
+and pass it through: `text = build_message(rows, announced=announced)`.
+
+- [ ] **Step 6: Correct the false clause in `apply()`'s note**
+
+The rejection note currently ends "it belongs to a period already reported",
+which is false: DGXX's 2026-08-14 is a forthcoming Q2 event that has not been
+reported. Asserting a cause the data does not support is the mistake this repo
+records against `short_interest.py`. Replace that clause so the note states the
+comparison and stops, and says the date is surfaced separately instead:
+
+```python
+            notes.append(f"{r['label']}: stored date {when} is not after the "
+                         f"period end {r['period']} being projected, so it "
+                         f"describes a different report than this row; shown "
+                         f"in the Announced section instead")
+```
+
+- [ ] **Step 7: Run to verify it passes**
+
+Run: `python test_earnings_dates.py`
+Expected: every check passes, count rises by 7.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add earnings_dates.py earnings_calendar.py test_earnings_dates.py
+git commit -m "Show an announced date that belongs to no row"
+```
+
+---
+
 ## Self-review
 
 **Spec coverage.** Change 1 of the spec is Tasks 1 to 3: the annual-only
