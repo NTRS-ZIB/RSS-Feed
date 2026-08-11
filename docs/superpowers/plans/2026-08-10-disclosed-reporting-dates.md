@@ -1058,15 +1058,23 @@ Replace `persist_state()` in full with:
           }
 ```
 
-- [ ] **Step 3: Confirm the pre-commit hook does not block it**
+- [ ] **Step 3: Confirm the pre-commit hook protects it**
 
-`earnings_dates.json` is written by a workflow, not by a local clone, and the hook lists ten specific state files. It is not one of them, so the hook is not involved. Confirm the file list has not changed:
+This step originally asserted the opposite of what shipped: it expected
+`earnings_dates.json` to be absent from the hook's pattern, on the reasoning
+that only ten specific state files were protected and this was not one of
+them. **That reasoning was wrong.** `earnings_dates.json` is a bot-written
+output file exactly like the other ten, so a whole-branch review added it to
+`docs/hooks/pre-commit`'s pattern, `docs/local-workflow.md`'s file list and
+`STATES=` block, `README.md`'s auto-generated-files table, and CLAUDE.md's
+state-file rule. Confirm it is now covered, not that it is absent:
 
 ```bash
 grep -c "earnings_dates" docs/hooks/pre-commit
 ```
 
-Expected: `0`. If it is non-zero, the hook has been changed elsewhere and this task needs re-reading.
+Expected: `1`. If it is `0`, the protection has been lost and needs restoring
+before this ships.
 
 - [ ] **Step 4: Verify by dispatch**
 
