@@ -13,17 +13,28 @@ Design: [`../superpowers/specs/2026-08-09-director-worker-loop-design.md`](../su
 | **Gate** | a subagent, `tools: []` | one project's result reports and the rulebook. No repository |
 | **Planner** | not built yet | plans are written by hand |
 
-**The `tools: []` isolation is unverified as of 2026-08-09.** Agent definitions
-load at session start, so the gate could not be dispatched in the session that
-created it. All four fixtures were run on a general-purpose agent with tool
-use restricted by instruction and confirmed by counting tool calls — clean in
-practice, unenforced in principle.
+**The `tools: []` isolation was exercised on 2026-08-11 and the fixtures score
+4/4.** All four cases were re-dispatched under `subagent_type: loop-gate` with
+the rulebook and reports inline, and every dispatch reported `tool_uses: 0`.
 
-**Re-running `score_gate.py` alone does not close it** — that scores verdict
-JSON already on disk, which does not change. The gate must be re-dispatched
-under `subagent_type: loop-gate` first, with the reports inline because
-`tools: []` means it cannot read them. Procedure:
-[`VERIFY-ISOLATION.md`](VERIFY-ISOLATION.md).
+**What that does and does not establish.** Six dispatches made zero tool calls,
+including one that explicitly instructed the gate to read a file off disk —
+it made no call and replied that it had no file-reading tool. That is as far
+as this can be taken from inside a dispatch, and the residual is worth naming:
+`.claude/agents/loop-gate.md` also *tells* the gate it has no tools, so a
+well-behaved model reading its own instructions is indistinguishable from a
+platform-enforced empty tool list. No evidence against isolation; no proof of
+enforcement.
+
+**Two things the run changed.** Rule 5 was rewritten because the gate passed
+the positive control by quoting a figure both reports agreed on — agreement is
+always available to quote, so that rule could never fail. And `loop_verdict`
+now drops markdown emphasis before comparing quotes, because the `reconciled`
+case failed on a real quote whose backticks the gate had not reproduced.
+
+**Re-running `score_gate.py` alone proves nothing about the gate** — it scores
+verdict JSON already on disk. Re-dispatch the fixtures first whenever
+`rules.md` changes.
 
 ## Layout
 

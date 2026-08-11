@@ -66,9 +66,29 @@ class VerdictError(Exception):
     """A malformed verdict. The driver treats this as ask-user."""
 
 
+# Backtick and asterisk are dropped before comparison. THE QUOTE IS EVIDENCE
+# ABOUT WHAT THE REPORT SAID, NOT ABOUT HOW IT WAS FORMATTED, and these reports
+# are dense with markdown emphasis: a gate quoting a bolded sentence or an
+# inline-code span has to reproduce the markup byte for byte or be recorded as
+# having fabricated the quote.
+#
+# It has already cost a case. On 2026-08-11 the `reconciled` fixture failed
+# rule 3 because the gate quoted `SPCX still count=1, families=['market']`
+# where the report writes that span inside backticks. The quote was real, the
+# reading was right, and the checker called it invented.
+#
+# Underscore is deliberately NOT stripped. It is markdown emphasis too, but it
+# is also a character in half the identifiers these reports discuss —
+# `week_return_pct`, `SOURCE_FAMILY`, `filings_in_week` — and dropping it would
+# let a quote match text that differs in the identifier it names, which is the
+# one thing the check exists to catch.
+EMPHASIS = str.maketrans("", "", "`*")
+
+
 def normalise(text):
-    """Lowercase, collapse whitespace. For quote comparison only."""
-    return re.sub(r"\s+", " ", (text or "")).strip().lower()
+    """Lowercase, collapse whitespace, drop markdown emphasis. For quote
+    comparison only."""
+    return re.sub(r"\s+", " ", (text or "")).translate(EMPHASIS).strip().lower()
 
 
 def derive_verdict(rules):

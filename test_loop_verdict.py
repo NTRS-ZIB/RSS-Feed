@@ -135,6 +135,39 @@ def main():
     check("a quote may come from any of the supplied reports",
           ok["rules"][0]["result"] == "pass")
 
+    # MARKDOWN EMPHASIS IS NOT PART OF THE CLAIM. These reports are dense with
+    # bold and inline code, and requiring a gate to reproduce the markup byte
+    # for byte recorded real quotes as fabricated — it cost the `reconciled`
+    # fixture a case on 2026-08-11.
+    ok, _ = lv.validate(
+        v([rule(3, "pass", "git show HEAD:watchlist.py lists 16 feeds")]),
+        [REPORT])
+    check("a quote may drop the report's backticks",
+          ok["rules"][0]["result"] == "pass",
+          "the report writes that span inside `...`")
+
+    ok, _ = lv.validate(
+        v([rule(1, "pass", "**The threshold is 18%** and 2.0x the roster")]),
+        [REPORT])
+    check("a quote may ADD emphasis the report does not have",
+          ok["rules"][0]["result"] == "pass",
+          "stripped from both sides, so it cannot matter either way")
+
+    # The property that must survive the change: this is the whole mechanism.
+    ok, _ = lv.validate(
+        v([rule(1, "pass", "derived over 92 complete weeks")]), [REPORT])
+    check("A FABRICATED QUOTE IS STILL CAUGHT",
+          ok["rules"][0]["result"] == "fail"
+          and "does not appear" in ok["rules"][0].get("coerced", ""),
+          "emphasis is dropped; content is not")
+
+    ok, _ = lv.validate(
+        v([rule(1, "pass", "derived over 53 complete weeks_and_more")]),
+        [REPORT])
+    check("an underscore is NOT stripped, so an identifier still has to match",
+          ok["rules"][0]["result"] == "fail",
+          "half these reports' nouns are snake_case identifiers")
+
     print("=" * 78)
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"{len(results) - bad}/{len(results)} passed")
