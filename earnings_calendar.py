@@ -88,6 +88,64 @@ def sec_get(url):
         return None
 
 
+def probe_form_mix():
+    """Who on this roster files what, and what a 6-K filer's 6-Ks look like.
+
+    Throwaway. The question behind it: `PERIODIC_FORMS` is 10-K/20-F/40-F/10-Q,
+    so a company that reports interim results on a 6-K is invisible to this
+    component and its row can never clear. BTDR has sat overdue since 20 July
+    for exactly that reason.
+
+    The predicate worth building on is OBSERVABLE — "has no 10-Q history" —
+    not the legal classification "foreign private issuer", which is inferred.
+    So this counts forms rather than guessing status, and for the no-10-Q
+    companies it dumps recent 6-Ks with their document descriptions, because
+    whether a results 6-K can be told from the other ninety-odd decides
+    whether projecting a date is reachable at all.
+    """
+    import collections
+    print("=" * 78)
+    print("ROSTER FORM MIX")
+    print("=" * 78)
+    print(f"{'':6}{'total':>7}{'10-K':>6}{'10-Q':>6}{'20-F':>6}{'40-F':>6}"
+          f"{'6-K':>6}{'8-K':>6}  predicate")
+    no_10q = []
+    for label, (cik, _name) in COMPANIES.items():
+        data = sec_get(SUBMISSIONS.format(cik=cik))
+        recent = ((data or {}).get("filings") or {}).get("recent") or {}
+        forms = recent.get("form") or []
+        c = collections.Counter(forms)
+        quarterly = c.get("10-Q", 0)
+        verdict = "has 10-Q" if quarterly else "NO 10-Q"
+        if not quarterly:
+            no_10q.append((label, cik, recent))
+        print(f"{label:<6}{len(forms):>7}{c.get('10-K', 0):>6}{quarterly:>6}"
+              f"{c.get('20-F', 0):>6}{c.get('40-F', 0):>6}{c.get('6-K', 0):>6}"
+              f"{c.get('8-K', 0):>6}  {verdict}")
+
+    for label, cik, recent in no_10q:
+        print("\n" + "=" * 78)
+        print(f"{label} — most recent 6-K filings, with document descriptions")
+        print("=" * 78)
+        forms = recent.get("form") or []
+        filed = recent.get("filingDate") or []
+        period = recent.get("reportDate") or []
+        desc = recent.get("primaryDocDescription") or []
+        shown = 0
+        for i, form in enumerate(forms):
+            if form != "6-K":
+                continue
+            print(f"  filed {filed[i] if i < len(filed) else '?':<12}"
+                  f"period {(period[i] if i < len(period) else '') or '-':<12}"
+                  f"{(desc[i] if i < len(desc) else '') or '(no description)'}")
+            shown += 1
+            if shown >= 12:
+                break
+        if not shown:
+            print("  none in the recent block")
+    print("=" * 78 + "\n")
+
+
 def periodic_filings(cik):
     """[(reportDate, filingDate, form), ...] newest first, periodic forms only."""
     data = sec_get(SUBMISSIONS.format(cik=cik))
@@ -408,4 +466,6 @@ def main():
 
 
 if __name__ == "__main__":
+    probe_form_mix()
+    sys.exit(0)   # throwaway probe branch: measure, post nothing, stop
     main()
