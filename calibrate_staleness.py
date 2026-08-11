@@ -294,7 +294,49 @@ def probe_bgde_news():
     print("=" * 72 + "\n")
 
 
+def probe_bgde_backend():
+    """What renders the press-release shell? DGXX and ABTC were both solved
+    this way: the newsroom was unreadable HTML and the CMS behind it was a
+    public JSON endpoint. Three of the four unreadable newsrooms on this
+    roster had a machine-readable source somewhere other than the page."""
+    import re
+    headers = dict(pm.IR_HEADERS)
+    headers["Accept"] = ("text/html,application/xhtml+xml,application/xml;"
+                         "q=0.9,*/*;q=0.8")
+    url = "https://www.bigdigital.energy/news-media/press-releases/"
+    print("=" * 72)
+    print(f"BGDE BACKEND PROBE — {url}")
+    print("=" * 72)
+    try:
+        r = pm.requests.get(url, headers=headers, timeout=(10, 20))
+    except Exception as e:
+        print(f"  FAILED {type(e).__name__}")
+        return
+    text = (r.content or b"").decode("utf-8", "replace")
+
+    srcs = sorted(set(re.findall(r'<script[^>]+src="([^"]+)"', text)))
+    print(f"  {len(srcs)} script src(s):")
+    for s in srcs[:20]:
+        print(f"      {s[:110]}")
+
+    # Any absolute URL in the markup that is not the site itself. The endpoint
+    # that feeds the shell is usually one of these.
+    urls = sorted({u for u in re.findall(r'https?://[^\s"\'<>()]+', text)
+                   if "bigdigital.energy" not in u})
+    print(f"\n  {len(urls)} off-site URL(s):")
+    for u in urls[:30]:
+        print(f"      {u[:110]}")
+
+    for marker in ("__NEXT_DATA__", "wp-json", "graphql", "sanity", "strapi",
+                   "contentful", "prismic", "webflow", "hubspot", "q4inc",
+                   "gcs-web", "globenewswire", "apiUrl", "api_url", "/api/"):
+        if marker.lower() in text.lower():
+            i = text.lower().find(marker.lower())
+            print(f"\n  MARKER {marker!r} at {i}: "
+                  f"{text[max(0, i - 90):i + 130]!r}")
+    print("=" * 72 + "\n")
+
+
 if __name__ == "__main__":
-    probe_bgde()
-    probe_bgde_news()
+    probe_bgde_backend()
     sys.exit(main())
