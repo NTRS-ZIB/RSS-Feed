@@ -103,6 +103,14 @@ jobs:
             git show "origin/$GITHUB_REF_NAME:state.json" \
               > "$RUNNER_TEMP/origin_state.json" || return 1
             mv "$RUNNER_TEMP/origin_state.json" state.json || return 1
+            # The dates file may not exist on origin yet, and absent is not an
+            # error: the first run that finds an announcement creates it.
+            if git show "origin/$GITHUB_REF_NAME:earnings_dates.json" \
+                 > "$RUNNER_TEMP/origin_dates.json" 2>/dev/null; then
+              mv "$RUNNER_TEMP/origin_dates.json" earnings_dates.json || return 1
+            else
+              echo "No earnings_dates.json on origin yet."
+            fi
             after=$(sha1sum state.json | cut -d" " -f1) || return 1
             # Reported every pass, either way. "Already current" on every
             # run for weeks would mean this guard has never once been
@@ -117,20 +125,32 @@ jobs:
           }
 
           persist_state() {
-            if [[ -z "$(git status --porcelain state.json)" ]]; then
+            if [[ -z "$(git status --porcelain state.json earnings_dates.json)" ]]; then
               echo "No state change."
               return 0
             fi
             cp state.json "$RUNNER_TEMP/state.json" || return 1
+            # Copied BEFORE the reset below and restored after it, exactly like
+            # state.json. A file that is written but not carried across the
+            # reset is discarded every run, silently.
+            if [[ -f earnings_dates.json ]]; then
+              cp earnings_dates.json "$RUNNER_TEMP/earnings_dates.json" || return 1
+            fi
             for attempt in 1 2 3 4 5; do
               git fetch -q origin "$GITHUB_REF_NAME" || return 1
               git reset -q --hard "origin/$GITHUB_REF_NAME" || return 1
               cp "$RUNNER_TEMP/state.json" state.json || return 1
-              if [[ -z "$(git status --porcelain state.json)" ]]; then
+              if [[ -f "$RUNNER_TEMP/earnings_dates.json" ]]; then
+                cp "$RUNNER_TEMP/earnings_dates.json" earnings_dates.json || return 1
+              fi
+              if [[ -z "$(git status --porcelain state.json earnings_dates.json)" ]]; then
                 echo "State already current on origin; nothing to push."
                 return 0
               fi
+              # Guarded: on any run before the first write the file does not
+              # exist, and an unconditional `git add` of a missing path fails.
               git add state.json || return 1
+              [[ -f earnings_dates.json ]] && { git add earnings_dates.json || return 1; }
               git commit -q -m "Update seen items [skip ci]" || return 1
               if git push -q origin "HEAD:$GITHUB_REF_NAME"; then
                 echo "State pushed on attempt $attempt."
