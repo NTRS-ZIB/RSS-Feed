@@ -353,6 +353,76 @@ def probe_bgde_backend():
     print("=" * 72 + "\n")
 
 
+def probe_user_agents():
+    """Is GlobeNewswire stalling this runner because of WHO it looks like?
+
+    press_monitor's own comment records that IR platforms behind WAFs stall
+    non-browser User-Agents rather than erroring, which is exactly the symptom
+    here. The UA it sends is Chrome/126, roughly two years old now, and a WAF
+    scoring client reputation would treat that as bot-like.
+
+    Two URLs so a result cannot be read as being about the feed endpoint: the
+    configured feed, and an ordinary release page that has nothing to do with
+    feeds.
+    """
+    URLS = [
+        ("org feed",
+         "https://www.globenewswire.com/rssfeed/organization/z9WJvxXYqqA-t7lWEcsvqw=="),
+        ("release page",
+         "https://www.globenewswire.com/news-release/2026/07/29/3335631/0/en/"
+         "Big-Digital-Energy-to-Release-Second-Quarter-2026-Results-August-12th.html"),
+    ]
+    CHROME_140 = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                  " (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36")
+    FIREFOX = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) "
+               "Gecko/20100101 Firefox/131.0")
+    CASES = [
+        ("CONTROL current IR_HEADERS", dict(pm.IR_HEADERS)),
+        ("Chrome/140, same Accept",
+         {**pm.IR_HEADERS, "User-Agent": CHROME_140}),
+        ("Chrome/140, browser Accept, keep-alive", {
+            "User-Agent": CHROME_140,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
+                      "image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+        }),
+        ("Firefox/131, browser Accept", {
+            "User-Agent": FIREFOX,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
+                      "*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+        }),
+        ("feed reader UA", {"User-Agent": "Feedly/1.0 (+http://www.feedly.com/"
+                                          "fetcher.html; like FeedFetcher-Google)"}),
+        ("no User-Agent at all", {"Accept": "*/*"}),
+    ]
+    print("=" * 72)
+    print("GLOBENEWSWIRE USER-AGENT MATRIX")
+    print("=" * 72)
+    for label, headers in CASES:
+        for what, url in URLS:
+            started = time.time()
+            try:
+                r = pm.requests.get(url, headers=headers, timeout=(10, 15))
+                took = time.time() - started
+                body = r.content or b""
+                extra = ""
+                if what == "org feed":
+                    try:
+                        extra = f" entries={len(pm.feedparser.parse(body).entries or [])}"
+                    except Exception:
+                        extra = " entries=?"
+                print(f"  {label:<38} {what:<13} {r.status_code} "
+                      f"{took:>5.1f}s {len(body):>8}b{extra}")
+            except Exception as e:
+                print(f"  {label:<38} {what:<13} {type(e).__name__} "
+                      f"after {time.time() - started:.0f}s")
+    print("=" * 72 + "\n")
+
+
 if __name__ == "__main__":
-    probe_bgde_backend()
-    sys.exit(main())
+    # Only this probe. The full calibration re-fetches every feed and the
+    # hanging ones make the run take minutes for nothing.
+    probe_user_agents()
+    sys.exit(0)
