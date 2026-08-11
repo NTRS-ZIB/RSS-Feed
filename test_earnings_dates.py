@@ -135,6 +135,48 @@ def main():
     companies, status = ed.load(tmp)
     check("a wrong schema is unreadable", status == "unreadable", status)
 
+    print("\nTHE OVERLAY")
+
+    def row(label, cik, period, expected, spread=6):
+        return {"label": label, "cik": cik, "period": period,
+                "expected": expected, "spread": spread, "kind": "10-Q",
+                "degraded": False}
+
+    store = {"0001218683": {"ticker": "BGDE", "date": "2026-08-12",
+                            "source_uid": "u", "source_title": "t",
+                            "source_published": "2026-07-29T13:00:00+00:00"}}
+
+    rows = [row("BGDE", "0001218683", date(2026, 6, 30), date(2026, 8, 14))]
+    rows, applied, notes = ed.apply(rows, store, date(2026, 8, 10))
+    check("the announced date replaces the projection",
+          applied == 1 and rows[0]["expected"] == date(2026, 8, 12))
+    check("the replaced projection is kept for the log",
+          rows[0]["projected"] == date(2026, 8, 14))
+    check("the row is marked disclosed", rows[0].get("disclosed") is True)
+
+    rows = [row("BGDE", "0001218683", date(2026, 6, 30), date(2026, 8, 14))]
+    rows, applied, notes = ed.apply(rows, store, date(2026, 8, 20))
+    check("a date that has passed STILL applies",
+          applied == 1 and rows[0]["expected"] == date(2026, 8, 12),
+          "this is what puts the row in Overdue")
+
+    rows = [row("BGDE", "0001218683", date(2026, 9, 30), date(2026, 11, 13))]
+    rows, applied, notes = ed.apply(rows, store, date(2026, 8, 20))
+    check("once the company files, the stale entry stops applying",
+          applied == 0 and rows[0]["expected"] == date(2026, 11, 13),
+          "the disclosed date is before the new period end")
+
+    rows = [row("MARA", "0001507605", date(2026, 6, 30), date(2026, 8, 14))]
+    rows, applied, notes = ed.apply(rows, store, date(2026, 8, 10))
+    check("a company with no stored date is untouched",
+          applied == 0 and rows[0]["expected"] == date(2026, 8, 14))
+
+    bad_store = {"0001218683": {"ticker": "BGDE", "date": "not a date"}}
+    rows = [row("BGDE", "0001218683", date(2026, 6, 30), date(2026, 8, 14))]
+    rows, applied, notes = ed.apply(rows, bad_store, date(2026, 8, 10))
+    check("an unparseable stored date is skipped and noted",
+          applied == 0 and any("not a date" in n for n in notes), notes)
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0

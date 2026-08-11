@@ -23,6 +23,7 @@ from datetime import date, datetime, timedelta, timezone
 import requests
 
 import watchlist
+import earnings_dates as ed
 # ------------------------------------------------------------------ CONFIG
 
 # The watchlist lives in watchlist.py — one record per company, one edit to add
@@ -292,6 +293,7 @@ def main():
         filings = periodic_filings(cik)
         projection = project(label, name, filings)
         if projection:
+            projection["cik"] = cik
             rows.append(projection)
             print(f"    {len(filings)} periodic filing(s), "
                   f"median lag {projection['lag']}d "
@@ -302,6 +304,20 @@ def main():
 
     if not rows:
         sys.exit("No projections possible; not posting.")
+
+    disclosed, status = ed.load()
+    if status == "missing":
+        print("\nNo earnings_dates.json — the press monitor has not written "
+              "one yet. Every row below is a projection.")
+    elif status == "unreadable":
+        print("\nearnings_dates.json is unreadable — every row below is a "
+              "projection.")
+    elif status == "empty":
+        print("\nearnings_dates.json holds no announced dates.")
+    rows, applied, notes = ed.apply(rows, disclosed, date.today())
+    for note in notes:
+        print(f"  {note}")
+    print(f"{applied} row(s) use an announced date.")
 
     text = build_message(rows)
     print(f"\n{text}\n")
