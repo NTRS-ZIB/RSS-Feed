@@ -395,6 +395,19 @@ def main():
     check("but carries no date, so it stores nothing",
           when is None and reason == "no-date", f"{when} {reason}")
 
+    print("\nSCHEDULED-EVENT GATE")
+    check("an advance notice names a scheduled event",
+          ed.names_a_scheduled_event(BTDR_REAL))
+    check("so does a webcast announcement",
+          ed.names_a_scheduled_event(
+              "Company Announces Q2 Earnings Release and Webcast"))
+    check("a results release does NOT",
+          not ed.names_a_scheduled_event(RESULTS),
+          "its body is dense with dates and would poison the measurement")
+    check("nor does a bare results headline",
+          not ed.names_a_scheduled_event(
+              "American Bitcoin Reports Second Quarter 2026 Results"))
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0

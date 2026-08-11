@@ -1952,7 +1952,13 @@ def record_disclosed_dates(items, fresh_uids):
             # starve every other undated item of a fetch even when it is
             # fresh — the fetch must stay reachable for any fresh no-date
             # item, not just the first three logged as examples.
-            if item.get("uid") in fresh_uids:
+            # Widening recognition to bare "announces" made results releases
+            # recognised and undated, and A RESULTS RELEASE BODY IS DENSE WITH
+            # DATES — the period covered, prior-year comparatives, the figures
+            # themselves. Fetching those would poison the very measurement
+            # this body probe exists to produce.
+            if (item.get("uid") in fresh_uids
+                    and ed.names_a_scheduled_event(item.get("title"))):
                 text = announcement_body(item.get("link"))
                 if text is not None:
                     body_seen += 1
