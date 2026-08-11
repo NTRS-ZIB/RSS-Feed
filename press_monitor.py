@@ -1946,9 +1946,9 @@ def record_disclosed_dates(items, fresh_uids):
                     f"{item['ticker']}: {item.get('title')!r}")
             # MEASUREMENT ONLY — nothing here is stored. A later task decides
             # whether a rule over these candidates is worth trusting. Gated
-            # on freshness ALONE, deliberately independent of the 3-example
-            # cap above: EDGAR-then-feeds iterates newest-first, so a fixed
-            # cap can fill with the same recurring tickers indefinitely and
+            # on freshness, deliberately independent of the 3-example cap
+            # above: EDGAR-then-feeds iterates newest-first, so a fixed cap
+            # can fill with the same recurring tickers indefinitely and
             # starve every other undated item of a fetch even when it is
             # fresh — the fetch must stay reachable for any fresh no-date
             # item, not just the first three logged as examples.
@@ -1956,7 +1956,17 @@ def record_disclosed_dates(items, fresh_uids):
             # recognised and undated, and A RESULTS RELEASE BODY IS DENSE WITH
             # DATES — the period covered, prior-year comparatives, the figures
             # themselves. Fetching those would poison the very measurement
-            # this body probe exists to produce.
+            # this body probe exists to produce, so the fetch is also gated
+            # on the title naming a scheduled event rather than reporting one.
+            #
+            # That gate is imperfect and known to be: a title can announce
+            # results and a call in the same breath — "...Financial Results
+            # and Will Host Conference Call" — and no word list separates
+            # that from a pure advance notice, because both use the same
+            # scheduling language. Rather than chase that with more words,
+            # also_reports_results() labels what got through, so the
+            # candidates below can be filtered by the label instead of
+            # trusted wholesale.
             if (item.get("uid") in fresh_uids
                     and ed.names_a_scheduled_event(item.get("title"))):
                 text = announcement_body(item.get("link"))
@@ -1965,8 +1975,10 @@ def record_disclosed_dates(items, fresh_uids):
                     cands = ed.candidate_dates(text, released)
                     if cands:
                         body_with_dates += 1
+                    mixed = ed.also_reports_results(item.get("title"))
                     print(f"  earnings dates: BODY {item['ticker']} "
-                          f"{len(text)} chars, candidates {cands} "
+                          f"{len(text)} chars, candidates {cands}, "
+                          f"also_reports_results={mixed} "
                           f"from {item.get('title')!r}")
         if when is None:
             continue
