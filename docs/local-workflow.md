@@ -9,8 +9,8 @@ itself.
 ## Critical: the bots commit to `main` all day
 
 Fourteen workflows run on crons and commit their own state back to `main`,
-several times a day, unattended. Ten files at the repo root are written this way
-and by nothing else:
+several times a day, unattended. Eleven files at the repo root are written this
+way and by nothing else:
 
 ```
 state.json                crossings_state.json
@@ -18,6 +18,7 @@ spike_state.json          dilution_state.json
 shortinterest_state.json  ftd_state.json
 regsho_state.json         letters_state.json
 threshold_state.json      snapshot.json
+earnings_dates.json
 ```
 
 Two consequences follow, and both bite:
@@ -89,7 +90,7 @@ A merge driver only runs when **both** sides changed a file. A local-only change
 to a state file produces no conflict, so it would commit and push cleanly and
 clobber whatever the bot writes next.
 
-`.git/hooks/pre-commit` refuses any commit that stages one of the ten files
+`.git/hooks/pre-commit` refuses any commit that stages one of the eleven files
 above, including when it is mixed in with a legitimate change. Override with
 `git commit --no-verify` — which is almost never the right answer.
 
@@ -122,7 +123,8 @@ chmod +x .git/state-merge.sh .git/hooks/pre-commit
 # 2. tell git which files the driver applies to
 STATES="state.json crossings_state.json dilution_state.json ftd_state.json \
 letters_state.json regsho_state.json shortinterest_state.json \
-spike_state.json threshold_state.json snapshot.json"
+spike_state.json threshold_state.json snapshot.json \
+earnings_dates.json"
 
 for f in $STATES; do echo "/$f merge=stateremote"; done > .git/info/attributes
 

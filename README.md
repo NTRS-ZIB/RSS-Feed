@@ -110,6 +110,7 @@ dilution_state.json               auto-generated; last reported share count
 crossings_state.json              auto-generated; armed flags per ticker
 holder_state.json                 auto-generated; accessions seen, last percent per filer group
 state.json                        auto-generated; do not hand-edit except to reset
+earnings_dates.json               auto-generated; announced reporting dates by CIK
 docs/                             per-component documentation
 digest/                           auto-generated; one file per ISO week, never rewritten
 docs/local-workflow.md            working from a clone; state-file merges

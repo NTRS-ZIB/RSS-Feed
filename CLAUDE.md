@@ -135,9 +135,12 @@ see local edits.
 `sys`, makes no network calls, and its docstring says to run it. It prints and
 validates the roster — the fastest check that an edit is sound.
 
-**The `*_state.json` files and `snapshot.json` are outputs**, written by the
-workflows several times a day. Never edit, delete or reformat one; a local edit
-races the next bot commit and usually loses quietly.
+**The `*_state.json` files, `snapshot.json` and `earnings_dates.json` are
+outputs**, written by the workflows several times a day. Never edit, delete or
+reformat one; a local edit races the next bot commit and usually loses
+quietly. `earnings_dates.json` matches neither pattern by name — it is the
+press monitor's second output file, protected the same way as the rest; see
+`docs/local-workflow.md`.
 
 **Their protection does not survive a re-clone.** The merge driver and
 pre-commit hook live in `.git/`, which cannot be committed. Rebuild both from
