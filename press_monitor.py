@@ -26,6 +26,7 @@ import feedparser
 import requests
 
 import watchlist
+import earnings_dates as ed
 # ------------------------------------------------------------------ CONFIG
 
 # The watchlist lives in watchlist.py — one record per company, one edit to add
@@ -1848,6 +1849,52 @@ def post(item, webhook, color=0x1F6FEB):
     return False
 
 
+def record_disclosed_dates(items):
+    """Extract announced reporting dates from item titles and store them.
+
+    Runs over EVERY item, not only the ones that will post. An announcement
+    dropped by the age floor or by MAX_POSTS_PER_RUN is still a valid date,
+    and the calendar has no other way to learn it.
+    """
+    today = datetime.now(timezone.utc).date()
+    companies, status = ed.load()
+    if status == "unreadable":
+        print("  earnings dates: existing file unreadable — starting fresh.")
+    elif status == "missing":
+        print("  earnings dates: no file yet — this run creates it.")
+
+    counts = {"ok": 0, "no-date": 0, "past": 0, "no-match": 0}
+    for item in items:
+        entry = EXTRA_CIKS.get(item.get("ticker") or "")
+        if not entry:
+            continue
+        when, reason = ed.extract(item.get("title"), today)
+        counts[reason] += 1
+        if reason == "no-date":
+            # The informative miss: an announcement whose date is in the body
+            # rather than the title. This count is what decides whether
+            # fetching bodies is worth building.
+            print(f"  earnings dates: {item['ticker']} announcement with no "
+                  f"parsable date — {item.get('title')!r}")
+        if when is None:
+            continue
+        published = item.get("published")
+        iso = (datetime.fromtimestamp(published, timezone.utc).isoformat()
+               if published else None)
+        if ed.upsert(companies, entry[0], item["ticker"], when,
+                     item.get("uid"), item.get("title"), iso):
+            print(f"  earnings dates: {item['ticker']} -> {when} "
+                  f"from {item.get('title')!r}")
+
+    print(f"  earnings dates: {counts['ok']} recorded, {counts['no-date']} "
+          f"announcement(s) with no parsable date, {counts['past']} rejected "
+          f"as past, {len(companies)} on file.")
+    if DRY_RUN:
+        print("  earnings dates: dry run — nothing written.")
+        return
+    ed.save(companies)
+
+
 def main():
     if DRY_RUN:
         print("DRY RUN — nothing posted, state not saved.\n")
@@ -1910,6 +1957,8 @@ def main():
     # feed against, and calling every feed healthy or broken on that run
     # would either mute a real outage or invent one.
     report_feed_health(state, feed_ok)
+
+    record_disclosed_dates(all_items)
 
     # Mark everything fresh as seen up front. Items we don't post this run are
     # still recorded, so a big backlog can't re-flood on the next run.
