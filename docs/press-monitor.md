@@ -25,6 +25,15 @@ Channels:
 
 New items are deduped against `state.json` and posted once each.
 
+**A second output file.** Every non-dry run also extracts announced reporting
+dates out of item titles and writes `earnings_dates.json`, keyed by CIK. This
+runs over every item fetched, not only the ones that post, and it runs before
+the posting loop — a failure inside it is caught and logged rather than
+allowed to abort `main()`, so it can never cost a press post. The [earnings
+calendar](earnings.md) reads the file and overlays a disclosed date onto its
+own projection, marked `!`. See `record_disclosed_dates()` in
+`press_monitor.py` and `earnings_dates.py`.
+
 ## Schedule
 
 `7 10-23 * * 1-5` — **once an hour**, weekdays, 10:00–23:59 UTC. The job then
@@ -1287,7 +1296,8 @@ window to the cadence.
 | `regsho_volume.py` | `last_trade_date` | no | Same shape; a skipped day is a stale snapshot, not a lost event |
 | `dilution.py` | last share count | no | A missed run delays; the XBRL history persists |
 | `ftd_monitor.py` | `BASELINE_PERIODS` | no | Absence is stored as a literal zero rather than skipped |
-| `daily_recap.py`, `btc_context.py`, `grid_context.py`, `volume_spike.py`, `build_snapshot.py`, `earnings_calendar.py` | none | no | Snapshots recomputed from source every run |
+| `daily_recap.py`, `btc_context.py`, `grid_context.py`, `volume_spike.py`, `build_snapshot.py` | none | no | Snapshots recomputed from source every run |
+| `earnings_calendar.py` | none | no | Projections recomputed from source every run; the one persisted input, `earnings_dates.json`, is written and protected by `press_monitor.py`, not by this component — see the disclosed-dates note above |
 
 **One at risk, two lesser and recoverable from source data, eleven not.** The
 conclusion drawn from it at the time — that a population of one does not want
