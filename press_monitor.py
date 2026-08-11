@@ -306,6 +306,10 @@ socket.setdefaulttimeout(25)
 
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "").strip()
 INSIDER_WEBHOOK_URL = os.environ.get("WEBHOOK_URL_INSIDER", "").strip()
+# Operational notices only, never market content. The same channel
+# failure-notice.yml posts to, and for the reason stated there: infrastructure
+# noise in a market channel degrades the thing that makes it worth reading.
+OPS_WEBHOOK_URL = os.environ.get("WEBHOOK_URL_OPS", "").strip()
 # Dry run: fetch, evaluate, print what WOULD post — but post nothing and,
 # critically, do NOT save state. Saving would mark everything seen and the
 # next real run would then post nothing at all.
@@ -1635,7 +1639,77 @@ def baseline_companies(state, roster, items, today=None):
     return new, suppressed
 
 
+# Consecutive failed reads before a feed is called an outage rather than a
+# blip. DERIVED, over 57 successful press-monitor runs from 2026-08-04T18:25Z
+# to 2026-08-11T14:24Z, roughly a thousand feed-reads across 19 sources:
+#
+#   every TRANSIENT episode was exactly 1 run — four of them, SLNH once and
+#   BGDE three times
+#   every REAL episode was 4 runs or 24 — both BGDE, the 24 still open
+#
+# Nothing in the window landed between. Thresholds of 2, 3 and 4 therefore
+# fire on exactly the same two episodes, so the value is insensitive across
+# that range and 2 is taken for the earliest detection at no cost in false
+# alarms. WHAT IT FIRES AT: 2 notices in 7 days on this roster.
+#
+# Re-derive it if the roster gains a source that fails differently. A feed
+# that flaps in twos would make this cry wolf, and the measurement above is
+# the only thing standing behind the number.
+FEED_FAIL_ALERT = 2
+
+
+def report_feed_health(state, feed_ok):
+    """Say something out loud when a feed goes dark, once per episode.
+
+    THE OUTAGE THIS EXISTS FOR WAS SILENT. BGDE's feed stopped answering at
+    2026-08-10T16:06Z and the workflow went on succeeding, because a feed
+    returning nothing is not an error — 22 hours later it was noticed only
+    because an expected release never appeared. `failure-notice.yml` cannot
+    catch this by construction: it fires on a failed run, and these runs pass.
+
+    Once per episode, not once per run: the open BGDE outage would otherwise
+    have posted 24 times and taught the reader to mute the channel, which is
+    the failure mode that file's own header warns about.
+    """
+    health = state.setdefault("feeds", {})
+    for label in sorted(feed_ok):
+        rec = health.setdefault(label, {"fails": 0, "alerted": False})
+        if feed_ok[label]:
+            if rec["alerted"]:
+                _ops_notice(f"✅ **{label}** feed is answering again after "
+                            f"{rec['fails']} consecutive failed reads.")
+            rec["fails"], rec["alerted"] = 0, False
+            continue
+        rec["fails"] += 1
+        if rec["fails"] >= FEED_FAIL_ALERT and not rec["alerted"]:
+            rec["alerted"] = True
+            _ops_notice(f"⚠️ **{label}** feed has returned nothing on "
+                        f"{rec['fails']} consecutive runs. Its releases now "
+                        f"reach Discord only if an 8-K follows.")
+
+
+def _ops_notice(text):
+    """Post one line to the ops channel. Never raises, never blocks a run."""
+    print(f"  feed health: {text}")
+    if DRY_RUN:
+        print("  feed health: dry run — not posted.")
+        return
+    if not OPS_WEBHOOK_URL:
+        print("  feed health: WEBHOOK_URL_OPS is not set — not posted.")
+        return
+    try:
+        r = requests.post(OPS_WEBHOOK_URL, json={"content": text}, timeout=15)
+        if r.status_code >= 300:
+            print(f"  feed health: webhook returned {r.status_code}")
+    except requests.RequestException as e:
+        print(f"  feed health: webhook failed, {type(e).__name__}")
+
+
 def collect_ir():
+    """(items, feed_ok) — feed_ok maps each configured feed to whether it
+    yielded anything this run. Scrapers and CMS reads are not included: they
+    fail differently and have not been measured."""
+    feed_ok = {}
     items = []
     # The scrapers and CMS readers run FIRST because one feed is deduped
     # against one of them: GLXY is read both from investor.galaxy.com's feed
@@ -1663,8 +1737,10 @@ def collect_ir():
 
         if not entries:
             print(f"  {label}: NO FEED — needs a scraper or manual URL")
+            feed_ok[label] = False
             continue
 
+        feed_ok[label] = True
         print(f"  {label}: {len(entries)} items")
         check_staleness(label, [entry_time(e) for e in entries])
         batch = [{
@@ -1680,7 +1756,7 @@ def collect_ir():
             batch = suppress_cross_host(batch, glxy_newsroom, label)
         items += batch
 
-    return items + scraped
+    return items + scraped, feed_ok
 
 
 def entry_time(entry):
@@ -1785,7 +1861,8 @@ def main():
     print(f"Checking EDGAR for {len(resolved)} companies...")
     items, edgar_insider = collect_all(resolved)
     print(f"Checking {len(IR_FEEDS)} IR feeds...")
-    items += collect_ir()
+    ir_items, feed_ok = collect_ir()
+    items += ir_items
 
     insider_items = []
     if INSIDER_WEBHOOK_URL:
@@ -1816,6 +1893,11 @@ def main():
         save_state(state, len(all_items))
         print("First run complete — baseline recorded, nothing posted.")
         return
+
+    # After the first-run return: a baseline run has no history to judge a
+    # feed against, and calling every feed healthy or broken on that run
+    # would either mute a real outage or invent one.
+    report_feed_health(state, feed_ok)
 
     # Mark everything fresh as seen up front. Items we don't post this run are
     # still recorded, so a big backlog can't re-flood on the next run.
