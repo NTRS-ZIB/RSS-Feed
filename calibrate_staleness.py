@@ -236,6 +236,63 @@ def probe_bgde():
     print("=" * 72 + "\n")
 
 
+def probe_bgde_news():
+    """Does bigdigital.energy/news actually CARRY headlines in its HTML?
+
+    60KB of HTML is not evidence of readable content. This repo has already
+    recorded the inverse mistake twice — "278 cards, 0 dated" and "0 bundles,
+    0 chars of JS" were both broken tools reporting as findings about the
+    source. So this looks for named releases known to exist from elsewhere,
+    rather than for a count that could mean anything.
+    """
+    import re
+    # A browser Accept. The monitor's IR_HEADERS asks for feed types first and
+    # this host answers 415 to that, which is a header problem and not a
+    # missing page.
+    headers = dict(pm.IR_HEADERS)
+    headers["Accept"] = ("text/html,application/xhtml+xml,application/xml;"
+                         "q=0.9,*/*;q=0.8")
+    # Known to exist, from GlobeNewswire search results. If the HTML is
+    # server-rendered these strings are in it; if it is a JS shell they are not.
+    KNOWN = ["Hood County", "Endeavor", "Second Quarter 2026", "10NetZero"]
+
+    for url in ("https://www.bigdigital.energy/news",
+                "https://www.bigdigital.energy/news/"):
+        print("=" * 72)
+        print(f"BGDE NEWS PAGE — {url}")
+        print("=" * 72)
+        try:
+            r = pm.requests.get(url, headers=headers, timeout=(10, 20))
+        except Exception as e:
+            print(f"  FAILED {type(e).__name__}")
+            continue
+        text = (r.content or b"").decode("utf-8", "replace")
+        print(f"  HTTP {r.status_code}  {len(text)} chars  final url {r.url}")
+        for s in KNOWN:
+            print(f"    contains {s!r}: {s.lower() in text.lower()}")
+        hrefs = re.findall(r'href="([^"]+)"', text)
+        news_hrefs = sorted({h for h in hrefs if "/news" in h.lower()})
+        print(f"    {len(hrefs)} anchors, {len(news_hrefs)} pointing at /news")
+        for h in news_hrefs[:12]:
+            print(f"      {h[:96]}")
+        dates = re.findall(
+            r"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s"
+            r"+\d{1,2},?\s+20\d\d\b", text)
+        print(f"    {len(dates)} date-like strings, first few: {dates[:6]}")
+        # A JS shell is small in text and large in script. Both numbers, so
+        # neither can be read as the whole story.
+        scripts = sum(len(s) for s in re.findall(r"<script[^>]*>(.*?)</script>",
+                                                 text, re.S))
+        stripped = re.sub(r"<[^>]+>", " ", re.sub(r"<script.*?</script>", " ",
+                                                  text, flags=re.S))
+        visible = " ".join(stripped.split())
+        print(f"    {scripts} chars of inline script, {len(visible)} chars of "
+              f"visible text")
+        print(f"    visible text starts: {visible[:220]!r}")
+    print("=" * 72 + "\n")
+
+
 if __name__ == "__main__":
     probe_bgde()
+    probe_bgde_news()
     sys.exit(main())
