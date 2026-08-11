@@ -173,5 +173,69 @@ def main():
     return 0
 
 
+BGDE_CANDIDATES = [
+    # CONTROL, and the most important line here. An individual GlobeNewswire
+    # release page, taken from a search result rather than derived. If this
+    # answers while the feed hangs, the endpoint is broken; if it hangs too,
+    # GlobeNewswire is refusing this runner and no GNW path will help.
+    ("CONTROL gnw release page",
+     "https://www.globenewswire.com/news-release/2026/07/29/3335631/0/en/"
+     "Big-Digital-Energy-to-Release-Second-Quarter-2026-Results-August-12th.html"),
+    # The source in the roster, for comparison in the same run.
+    ("the configured org feed",
+     "https://www.globenewswire.com/rssfeed/organization/z9WJvxXYqqA-t7lWEcsvqw=="),
+    # DERIVED, therefore suspect. A URL that resolves is not evidence it is the
+    # right URL — digipowerx.com answers 200 with wrong content for an unknown
+    # release path, which is how a derived slug nearly shipped two dead links.
+    ("DERIVED gnw org page",
+     "https://www.globenewswire.com/en/search/organization/z9WJvxXYqqA-t7lWEcsvqw%3D%3D"),
+    # The company's own domain, post-rebrand. The roster's note that BGDE's
+    # newsroom cannot be read describes the OLD Mawson site and predates the
+    # April 2026 rename, so it is a claim about a site that no longer exists.
+    ("company site root", "https://www.bigdigital.energy/"),
+    ("company /news", "https://www.bigdigital.energy/news"),
+    ("company /press", "https://www.bigdigital.energy/press"),
+    ("company /newsroom", "https://www.bigdigital.energy/newsroom"),
+    ("company /investors", "https://www.bigdigital.energy/investors"),
+]
+
+
+def probe_bgde():
+    """Report what each candidate BGDE source actually does. Concludes nothing.
+
+    Read-only and disposable: this lives on a throwaway branch so it can be
+    dispatched through calibrate.yml, which takes no inputs and is the only
+    read-only workflow already on main. Delete the branch afterwards.
+    """
+    print("=" * 72)
+    print("BGDE SOURCE PROBE — status, elapsed, type, size, entries, feed link")
+    print("=" * 72)
+    for name, url in BGDE_CANDIDATES:
+        started = time.time()
+        try:
+            r = pm.requests.get(url, headers=pm.IR_HEADERS, timeout=(10, 20),
+                                allow_redirects=True)
+        except Exception as e:
+            print(f"  {name:<26} FAILED {type(e).__name__} "
+                  f"after {time.time() - started:.0f}s")
+            continue
+        took = time.time() - started
+        body = r.content or b""
+        try:
+            entries = len(pm.feedparser.parse(body).entries or [])
+        except Exception:
+            entries = -1
+        text = body.decode("utf-8", "replace")
+        # Autodiscovery marker: does the HTML advertise a feed at all?
+        has_link = 'rel="alternate"' in text and "rss" in text.lower()
+        print(f"  {name:<26} {r.status_code} {took:>5.1f}s "
+              f"{r.headers.get('Content-Type', '?')[:24]:<24} "
+              f"{len(body):>8}b entries={entries:<4} feedlink={has_link}")
+        if r.url != url:
+            print(f"      redirected to {r.url}")
+    print("=" * 72 + "\n")
+
+
 if __name__ == "__main__":
+    probe_bgde()
     sys.exit(main())
