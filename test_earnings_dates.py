@@ -266,12 +266,17 @@ def main():
     check("deduplicates a date repeated in the body",
           got.count(date(2026, 8, 12)) == 1, got)
     check("keeps document order",
-          got == sorted(set(got), key=got.index), got)
+          got == [date(2026, 8, 12), date(2026, 8, 19)], got)
     check("respects the limit",
           len(ed.candidate_dates(BODY, date(2026, 7, 30), limit=1)) == 1)
     check("a yearless date in prose is not inferred",
           ed.candidate_dates("the call will be held on August 12", None) == [],
           "DATE_RE only; a bare month-day in a body is usually a period")
+    check("released=None with real dates returns them all, unfiltered",
+          ed.candidate_dates(BODY, None) == [
+              date(2026, 6, 30), date(2026, 8, 12), date(2026, 8, 19),
+              date(2025, 8, 1)],
+          "no released date means no past-date filter is applied at all")
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")

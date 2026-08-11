@@ -1857,18 +1857,39 @@ BODY_MAX_BYTES = 400_000
 
 
 def announcement_body(link):
-    """The visible text of a release page, or None. Never raises."""
+    """The visible text of a release page, or None. Never raises.
+
+    Streams the response and stops reading once BODY_MAX_BYTES is reached, so
+    the cap bounds the download itself — not just how much of an already
+    fully-buffered response gets decoded. Without stream=True, requests.get
+    reads the whole body before this function ever sees it, and a slice
+    afterwards would be a cap on decoding, not on the fetch.
+    """
     if not link:
         return None
     try:
-        r = requests.get(link, headers=headers_for(link), timeout=BODY_TIMEOUT)
+        r = requests.get(link, headers=headers_for(link), timeout=BODY_TIMEOUT,
+                         stream=True)
     except requests.RequestException as e:
         print(f"    body fetch failed: {type(e).__name__} for {link[:70]}")
         return None
-    if r.status_code != 200:
-        print(f"    body fetch HTTP {r.status_code} for {link[:70]}")
-        return None
-    html = (r.content or b"")[:BODY_MAX_BYTES].decode("utf-8", "replace")
+    try:
+        if r.status_code != 200:
+            print(f"    body fetch HTTP {r.status_code} for {link[:70]}")
+            return None
+        raw = bytearray()
+        try:
+            for chunk in r.iter_content(chunk_size=65536):
+                raw.extend(chunk)
+                if len(raw) >= BODY_MAX_BYTES:
+                    break
+        except requests.RequestException as e:
+            print(f"    body fetch failed mid-read: {type(e).__name__} for "
+                  f"{link[:70]}")
+            return None
+    finally:
+        r.close()
+    html = bytes(raw[:BODY_MAX_BYTES]).decode("utf-8", "replace")
     html = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html,
                   flags=re.S | re.I)
     return " ".join(re.sub(r"<[^>]+>", " ", html).split())
@@ -1911,17 +1932,26 @@ def record_disclosed_dates(items, fresh_uids):
                     if published else None)
         when, reason = ed.extract(item.get("title"), today, released)
         counts[reason] += 1
-        if reason == "no-date" and len(no_date_examples) < 3:
-            # The informative miss: an announcement whose date is in the body
-            # rather than the title. This count is what decides whether
-            # fetching bodies is worth building. Kept to a handful of
-            # examples in the summary line rather than one line per item —
-            # per-item logging here reprinted the same unparsed title on
-            # every pass, since this runs over all items rather than new
-            # ones, roughly eight times an hour indefinitely.
-            no_date_examples.append(f"{item['ticker']}: {item.get('title')!r}")
+        if reason == "no-date":
+            if len(no_date_examples) < 3:
+                # The informative miss: an announcement whose date is in the
+                # body rather than the title. This count is what decides
+                # whether fetching bodies is worth building. Kept to a
+                # handful of examples in the summary line rather than one
+                # line per item — per-item logging here reprinted the same
+                # unparsed title on every pass, since this runs over all
+                # items rather than new ones, roughly eight times an hour
+                # indefinitely.
+                no_date_examples.append(
+                    f"{item['ticker']}: {item.get('title')!r}")
             # MEASUREMENT ONLY — nothing here is stored. A later task decides
-            # whether a rule over these candidates is worth trusting.
+            # whether a rule over these candidates is worth trusting. Gated
+            # on freshness ALONE, deliberately independent of the 3-example
+            # cap above: EDGAR-then-feeds iterates newest-first, so a fixed
+            # cap can fill with the same recurring tickers indefinitely and
+            # starve every other undated item of a fetch even when it is
+            # fresh — the fetch must stay reachable for any fresh no-date
+            # item, not just the first three logged as examples.
             if item.get("uid") in fresh_uids:
                 text = announcement_body(item.get("link"))
                 if text is not None:
