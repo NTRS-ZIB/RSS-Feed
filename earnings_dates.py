@@ -31,8 +31,20 @@ DEFAULT_PATH = Path("earnings_dates.json")
 # BOTH are required, and that is the whole recognition stage. A verb alone
 # matches operational releases; a results word alone matches the results
 # release itself, which is the case that would store a date already past.
-ANNOUNCE_VERBS = ("to report", "to announce", "to release", "announces date",
-                  "announces the date", "schedules", "sets date")
+
+# Bare "announces" is deliberate and it widens this. BTDR's real advance
+# notice — "Bitdeer Announces Second Quarter 2026 Earnings Conference Call for
+# August 10th 2026" — was missed for nine days because the list carried
+# "announces date" and not "announces", and the date was in the title the
+# whole time.
+#
+# It also makes a results release recognisable, and that is safe rather than
+# accidental: THE DATE GUARD IS THE REAL FILTER and recognition is the cheap
+# first pass. "Galaxy Announces Second Quarter 2026 Financial Results" carries
+# no date, so it is a no-date miss; one that carried a date would carry a past
+# one and be rejected.
+ANNOUNCE_VERBS = ("to report", "to announce", "to release", "announces",
+                  "schedules", "sets date")
 RESULTS_WORDS = ("results", "earnings")
 
 MONTHS = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
