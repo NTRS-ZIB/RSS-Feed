@@ -64,14 +64,41 @@ attempted.
 
 ## The predicate
 
-Everything below keys on **"has no 10-Q history"**, read from filings the
-component already fetches. Not "is a foreign private issuer", which is a legal
-status we would be inferring rather than observing, and which this repo's
-conventions say to avoid: a wrong inference is silent, and the observable
-version is free.
+Everything below keys on **"fewer than two quarterly filings"**, read from
+filings the component already fetches. Not "is a foreign private issuer", which
+is a legal status we would be inferring rather than observing, and which this
+repo's conventions say to avoid: a wrong inference is silent, and the
+observable version is free.
 
 Today it selects exactly one company. If another arrives it is handled with no
 roster edit.
+
+### Why the pool size and not "has no 10-Q"
+
+The first draft said "has no 10-Q history". That is wrong in a way only the
+transition exposes, and the transition is the case most likely to be hit next.
+
+Suppose BTDR files its first 10-Q. Under "has no 10-Q" the predicate flips
+immediately to normal treatment, and normal treatment is: the quarterly pool
+holds one filing, below the two needed to derive a lag, so `project()` takes
+its degraded path and pools the **annual** filings instead — applying a
+111-day annual lag to a **quarter** end. That is exactly the defect this
+change exists to remove, returning for the roughly three months until a second
+10-Q lands, with no warning and a plausible-looking date.
+
+Keying on the pool size covers zero and one alike, and flips to normal
+treatment at the moment a real quarterly lag can be measured, which is the
+moment normal treatment starts meaning anything. It also states something
+truer than the first draft: this was never about foreign private issuers, it
+is about whether a quarterly cadence can be measured at all.
+
+### The flip is announced, not silent
+
+A company changing treatment would otherwise do so without a word, and the row
+would simply start meaning something different. The run logs which companies
+are being projected annual-only and why, so a change of treatment is a fact in
+the output rather than an inference from a date that moved. This repo has been
+bitten repeatedly by changes that were correct and invisible.
 
 ## Three changes
 
@@ -79,7 +106,8 @@ roster edit.
 
 `project()` currently pools whatever it can find when the natural pool is thin,
 which is how an annual lag ends up applied to a quarter end. When a company has
-no 10-Q history at all, that fallback stops: it projects its **annual** cycle
+fewer than two quarterly filings, that fallback stops: it projects its
+**annual** cycle
 only, from its 20-F/40-F history, which is a real cadence the data supports.
 
 **The period step changes with it, and this is the part most easily missed.**
@@ -134,7 +162,8 @@ storing, so a word missing from it costs a measurement sample and nothing else.
 
 ## Failure handling
 
-- A company with no 10-Q and fewer than two annual filings projects nothing,
+- A company below the quarterly floor with fewer than two annual filings
+  projects nothing,
   and is named with a count against the floor, as the component already does
   for SPCX.
 - The disclosed-date overlay is unchanged and continues to apply to any row,
@@ -144,8 +173,12 @@ storing, so a word missing from it costs a measurement sample and nothing else.
 
 ## Verification
 
-- Unit tests over `project()` for the no-10-Q case: annual projection produced,
-  no quarterly projection attempted, not marked overdue at any date.
+- Unit tests over `project()` below the quarterly floor: annual projection
+  produced, no quarterly projection attempted, not marked overdue at any date.
+- **A test at the boundary, since that is where the first draft was wrong.**
+  One quarterly filing plus several annual ones must still be treated
+  annual-only; two quarterly filings must flip to normal treatment. A test
+  only at zero would have passed the broken predicate.
 - A recognition test that BTDR's real headline matches and that "Bitdeer
   Announces June 2026 Production and Operations Update" still does not.
 - A body-gate test that a results-release title is recognised but not fetched.
