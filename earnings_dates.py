@@ -234,6 +234,42 @@ def apply(rows, companies, today):
     return rows, applied, notes
 
 
+def candidate_dates(text, released, limit=6):
+    """Every plausible forthcoming date in a release body, in document order.
+
+    THIS DELIBERATELY DOES NOT PICK ONE. A body carries the period end, the
+    call date, the replay expiry and often last year's comparative, and which
+    of them is the reporting date is exactly the question this measurement
+    exists to answer with evidence rather than a guess. Returning candidates
+    lets the log show what a rule would have had to choose between.
+
+    Filtered only by facts: a date before the release cannot be a forthcoming
+    report date, and a repeat is the same date said twice.
+
+    DATE_RE only, never DATE_NOYEAR_RE. A bare "August 12" in running prose is
+    far more often a period reference than an announcement, and inferring a
+    year across a whole body multiplies that risk by every such phrase in it.
+    """
+    if not text:
+        return []
+    found, seen = [], set()
+    for m in DATE_RE.finditer(text):
+        try:
+            when = date(int(m.group(3)), MONTHS[m.group(1)[:3].lower()],
+                        int(m.group(2)))
+        except (KeyError, ValueError):
+            continue
+        if released is not None and when < released:
+            continue
+        if when in seen:
+            continue
+        seen.add(when)
+        found.append(when)
+        if len(found) >= limit:
+            break
+    return found
+
+
 def main():
     """Print what the store currently holds. No network, no writes.
 

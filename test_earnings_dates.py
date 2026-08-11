@@ -249,6 +249,30 @@ def main():
     check("a projected row inside the grace window is not marked overdue",
           "PROJ" not in overdue_section, overdue_section)
 
+    print("\nBODY DATE CANDIDATES")
+    BODY = (
+        "MARA Schedules Conference Call for Second Quarter 2026 Financial "
+        "Results. MARA Holdings will report results for the quarter ended "
+        "June 30, 2026 after market close on Tuesday, August 12, 2026. A "
+        "conference call will be held on August 12, 2026 at 5:00 PM ET. A "
+        "replay is available until August 19, 2026. In the prior year, "
+        "results were reported August 1, 2025."
+    )
+    got = ed.candidate_dates(BODY, date(2026, 7, 30))
+    check("finds the forward-looking dates",
+          date(2026, 8, 12) in got and date(2026, 8, 19) in got, got)
+    check("drops dates before the release",
+          date(2025, 8, 1) not in got and date(2026, 6, 30) not in got, got)
+    check("deduplicates a date repeated in the body",
+          got.count(date(2026, 8, 12)) == 1, got)
+    check("keeps document order",
+          got == sorted(set(got), key=got.index), got)
+    check("respects the limit",
+          len(ed.candidate_dates(BODY, date(2026, 7, 30), limit=1)) == 1)
+    check("a yearless date in prose is not inferred",
+          ed.candidate_dates("the call will be held on August 12", None) == [],
+          "DATE_RE only; a bare month-day in a body is usually a period")
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0

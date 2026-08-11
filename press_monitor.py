@@ -1849,7 +1849,32 @@ def post(item, webhook, color=0x1F6FEB):
     return False
 
 
-def record_disclosed_dates(items):
+# One body fetch per undated announcement, and ONLY for items new this run.
+# Over every item it would re-fetch the same dozen pages on each pass, about
+# eight times an hour, indefinitely, for a measurement that does not change.
+BODY_TIMEOUT = (10, 15)
+BODY_MAX_BYTES = 400_000
+
+
+def announcement_body(link):
+    """The visible text of a release page, or None. Never raises."""
+    if not link:
+        return None
+    try:
+        r = requests.get(link, headers=headers_for(link), timeout=BODY_TIMEOUT)
+    except requests.RequestException as e:
+        print(f"    body fetch failed: {type(e).__name__} for {link[:70]}")
+        return None
+    if r.status_code != 200:
+        print(f"    body fetch HTTP {r.status_code} for {link[:70]}")
+        return None
+    html = (r.content or b"")[:BODY_MAX_BYTES].decode("utf-8", "replace")
+    html = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html,
+                  flags=re.S | re.I)
+    return " ".join(re.sub(r"<[^>]+>", " ", html).split())
+
+
+def record_disclosed_dates(items, fresh_uids):
     """Extract announced reporting dates from item titles and store them.
 
     Runs over EVERY item, not only the ones that will post. An announcement
@@ -1876,6 +1901,7 @@ def record_disclosed_dates(items):
 
     counts = {"ok": 0, "no-date": 0, "past": 0, "no-match": 0}
     no_date_examples = []
+    body_seen = body_with_dates = 0
     for item in items:
         entry = EXTRA_CIKS.get(item.get("ticker") or "")
         if not entry:
@@ -1894,6 +1920,18 @@ def record_disclosed_dates(items):
             # every pass, since this runs over all items rather than new
             # ones, roughly eight times an hour indefinitely.
             no_date_examples.append(f"{item['ticker']}: {item.get('title')!r}")
+            # MEASUREMENT ONLY — nothing here is stored. A later task decides
+            # whether a rule over these candidates is worth trusting.
+            if item.get("uid") in fresh_uids:
+                text = announcement_body(item.get("link"))
+                if text is not None:
+                    body_seen += 1
+                    cands = ed.candidate_dates(text, released)
+                    if cands:
+                        body_with_dates += 1
+                    print(f"  earnings dates: BODY {item['ticker']} "
+                          f"{len(text)} chars, candidates {cands} "
+                          f"from {item.get('title')!r}")
         if when is None:
             continue
         iso = (datetime.fromtimestamp(published, timezone.utc).isoformat()
@@ -1905,7 +1943,9 @@ def record_disclosed_dates(items):
 
     print(f"  earnings dates: {counts['ok']} recorded, {counts['no-date']} "
           f"announcement(s) with no parsable date, {counts['past']} rejected "
-          f"as past, {len(companies)} on file.")
+          f"as past, {len(companies)} on file."
+          f" Bodies fetched {body_seen}, {body_with_dates} carried at least "
+          f"one forward-looking date.")
     if no_date_examples:
         print("  earnings dates: no-date example(s): "
               + "; ".join(no_date_examples))
@@ -1985,7 +2025,8 @@ def main():
     # abort main() and silence the whole channel for a failure that has
     # nothing to do with press items.
     try:
-        record_disclosed_dates(all_items)
+        record_disclosed_dates(all_items,
+                               {i["uid"] for i in fresh + insider_fresh})
     except Exception as e:
         print(f"  earnings dates: FAILED this run — {type(e).__name__}: {e}. "
               f"Dates were not recorded this run; continuing to post.",
