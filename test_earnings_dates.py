@@ -408,6 +408,20 @@ def main():
           not ed.names_a_scheduled_event(
               "American Bitcoin Reports Second Quarter 2026 Results"))
 
+    print("\nRESULTS-AND-CALL, THE MIXED CASE THE GATE CANNOT SEPARATE")
+    MIXED = ("Company Announces Third Quarter 2026 Financial Results and "
+             "Will Host Conference Call")
+    check("it still passes the scheduling gate — the gate is not the fix",
+          ed.names_a_scheduled_event(MIXED))
+    check("but the results signal flags it as mixed",
+          ed.also_reports_results(MIXED))
+    check("the pure advance notice is NOT flagged by the results signal",
+          not ed.also_reports_results(BTDR_REAL),
+          "no 'results' word — only names the call, does not report results")
+    check("nor is the webcast-only announcement",
+          not ed.also_reports_results(
+              "Company Announces Q2 Earnings Release and Webcast"))
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0

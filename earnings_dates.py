@@ -60,6 +60,29 @@ def names_a_scheduled_event(title):
     t = (title or "").lower()
     return any(w in t for w in SCHEDULED_EVENT_WORDS)
 
+
+# The gate above is not a clean split. A title can genuinely announce results
+# and a call in the same breath — "...Third Quarter 2026 Financial Results
+# and Will Host Conference Call" — and no word list separates that from a
+# pure advance notice, because both use the same scheduling language.
+# RESULTS_WORDS is too broad to use as the signal here: "earnings" alone
+# names the call itself ("Earnings Conference Call", "Earnings Release and
+# Webcast") and would flag every clean advance notice as mixed. "results" is
+# the narrower word that shows up when the release is actually reported, not
+# merely named as an event. This does not fix the gate — it labels what got
+# past it, so the body-date measurement can be filtered by the label rather
+# than trusted wholesale.
+RESULTS_RELEASE_WORDS = ("results",)
+
+
+def also_reports_results(title):
+    """Does this title ALSO read as a results release, not purely an advance
+    notice of a scheduled event?
+    """
+    t = (title or "").lower()
+    return any(w in t for w in RESULTS_RELEASE_WORDS)
+
+
 MONTHS = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
           "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12}
 
