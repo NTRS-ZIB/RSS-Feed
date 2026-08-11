@@ -41,6 +41,12 @@ PERIODIC_FORMS = ANNUAL_FORMS | QUARTERLY_FORMS
 # How many past filings to use when estimating the lag.
 LAG_SAMPLE = 8
 
+# project() needs at least this many periodic filings before it will attempt
+# a projection at all. Named so the "too little history" message can cite the
+# same number it's measured against, rather than a magic 2 duplicated in a
+# log line.
+MIN_PERIODIC_FILINGS = 2
+
 # Horizon for the "upcoming" section.
 HORIZON_DAYS = 45
 
@@ -134,7 +140,7 @@ def fiscal_year_end_month(annual):
 
 def project(label, name, filings):
     """Estimate the next report date, or None if history is too thin."""
-    if len(filings) < 2:
+    if len(filings) < MIN_PERIODIC_FILINGS:
         return None
 
     annual = [f for f in filings if f[2] in ANNUAL_FORMS]
@@ -259,19 +265,27 @@ def build_message(rows):
             lines.append(f"{r['label']:<4}{marker(r)} {r['expected']:%a %d %b}"
                          f"  later")
 
+    # Built from the markers marker() actually assigns, not from the row
+    # conditions independently — those disagree whenever a row is both
+    # disclosed and, say, erratic: marker() shows `!` for it since that
+    # outranks `~`, so a key built from "any row has a high spread" would
+    # advertise a `~` that appears nowhere in the table.
+    shown = {marker(r) for r in rows}
     key = []
-    if any(r["kind"] == "annual" for r in rows):
+    if "*" in shown:
         key.append("* annual report")
-    if any(r["spread"] > LOW_CONFIDENCE_SPREAD for r in rows):
+    if "~" in shown:
         key.append("~ erratic filer")
-    if any(r["degraded"] for r in rows):
+    if "?" in shown:
         key.append("? thin history")
-    if any(r.get("disclosed") for r in rows):
+    if "!" in shown:
         key.append("! announced by company")
     if key:
         lines.append("")
         lines.extend(key)
         lines.append("last col = +/- spread")
+        if "!" in shown:
+            lines.append("(blank on ! rows)")
 
     return "\n".join(lines)
 
@@ -311,9 +325,16 @@ def main():
         sys.exit("SEC_USER_AGENT is not set. Use: 'Your Name your@email.com'")
 
     rows, missing = [], []
+    # Kept so the "announced but not applied" note below can cite how many
+    # periodic filings were actually seen for that CIK, rather than asserting
+    # why project() returned nothing — periodic_filings() returns [] on a
+    # fetch failure exactly as it does on genuine thin history, so a stated
+    # cause would be a guess dressed as an observation.
+    filing_counts = {}
     for label, (cik, name) in COMPANIES.items():
         print(f"  {label}...")
         filings = periodic_filings(cik)
+        filing_counts[cik] = len(filings)
         projection = project(label, name, filings)
         if projection:
             projection["cik"] = cik
@@ -356,8 +377,14 @@ def main():
             continue
         label = cik_to_label.get(cik)
         if label is not None:
-            print(f"  {label} has an announced date but too little filing "
-                  f"history to project a period end yet; the announced date "
+            # What was observed, not why: periodic_filings() returns []
+            # both on genuine thin history and on an SEC fetch failure, so
+            # asserting a cause here would be right by luck rather than by
+            # evidence. The count against the floor is the useful part.
+            n = filing_counts.get(cik, 0)
+            print(f"  {label} has an announced date; {n}/"
+                  f"{MIN_PERIODIC_FILINGS} periodic filing(s) seen — not "
+                  f"enough to project a period end, so the announced date "
                   f"is not applied")
         else:
             rec = disclosed[cik]
