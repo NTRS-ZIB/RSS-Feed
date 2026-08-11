@@ -47,6 +47,19 @@ LAG_SAMPLE = 8
 # log line.
 MIN_PERIODIC_FILINGS = 2
 
+# Below this many QUARTERLY filings, a company gets no quarterly projection at
+# all. Two is not a tuning knob: it is the number needed to compute a median
+# lag, so below it there is no quarterly cadence to measure and any date
+# produced would be assembled from parts that describe no company.
+#
+# KEYED ON THE POOL, NOT ON HAVING NO 10-Q. The difference only shows at the
+# transition and that is where it matters. "Has no 10-Q" flips to normal
+# treatment the moment a first 10-Q lands, and normal treatment then finds one
+# filing in the quarterly pool, takes the degraded path, and applies an annual
+# lag to a quarter end — the exact defect this exists to remove, back for the
+# three months until a second one arrives.
+MIN_QUARTERLY_FILINGS = 2
+
 # Horizon for the "upcoming" section.
 HORIZON_DAYS = 45
 
@@ -123,6 +136,19 @@ def next_period_end(last_period):
     return date(year, month + 1, 1) - timedelta(days=1)
 
 
+def next_annual_period_end(last_period):
+    """Twelve months on, preserving the fiscal date.
+
+    next_period_end() advances three months unconditionally. Using it for an
+    annual filer produces a quarter end the company never reports on, which is
+    how BTDR came to be projected against 31 March.
+    """
+    try:
+        return last_period.replace(year=last_period.year + 1)
+    except ValueError:            # 29 February
+        return last_period.replace(year=last_period.year + 1, day=28)
+
+
 def roll_to_business_day(d):
     """Nobody files on a weekend; push Sat/Sun to the following Monday."""
     while d.weekday() >= 5:
@@ -148,24 +174,33 @@ def project(label, name, filings):
 
     last_period = max(rd for rd, _, _ in filings)
     last_filed = max(fd for _, fd, _ in filings)
-    upcoming = next_period_end(last_period)
 
-    # Is the next period end this company's fiscal year end?
-    fy_month = fiscal_year_end_month(annual)
-    is_annual = fy_month is not None and upcoming.month == fy_month
-
-    pool = annual if is_annual else quarterly
-    degraded = False
-    if len(pool) < 2:
-        # e.g. a foreign issuer with no 10-Q history at all.
-        pool = annual if len(annual) >= 2 else quarterly
-        degraded = True
-    if len(pool) < 2:
-        return None
+    # A company whose filings never described a quarterly cadence does not get
+    # one invented. It projects its annual cycle, which is real, and nothing
+    # else. See MIN_QUARTERLY_FILINGS.
+    annual_only = len(quarterly) < MIN_QUARTERLY_FILINGS
+    if annual_only:
+        if len(annual) < 2:
+            return None
+        # The last ANNUAL period, not the last of any filing: a stray 10-Q
+        # would otherwise set the cycle this projection is built on.
+        upcoming = next_annual_period_end(max(rd for rd, _, _ in annual))
+        pool, kind, degraded = annual, "annual", False
+    else:
+        upcoming = next_period_end(last_period)
+        fy_month = fiscal_year_end_month(annual)
+        is_annual = fy_month is not None and upcoming.month == fy_month
+        pool = annual if is_annual else quarterly
+        degraded = False
+        if len(pool) < 2:
+            pool = annual if len(annual) >= 2 else quarterly
+            degraded = True
+        if len(pool) < 2:
+            return None
+        kind = "annual" if (is_annual or (degraded and pool is annual)) else "10-Q"
 
     lags = [(fd - rd).days for rd, fd, _ in pool[:LAG_SAMPLE]]
     lag = int(statistics.median(lags))
-    kind = "annual" if (is_annual or (degraded and pool is annual)) else "10-Q"
 
     return {
         "label": label,
@@ -176,6 +211,7 @@ def project(label, name, filings):
         "spread": max(lags) - min(lags),
         "kind": kind,
         "degraded": degraded,
+        "annual_only": annual_only,
         "last_period": last_period,
         "last_filed": last_filed,
         "samples": len(lags),

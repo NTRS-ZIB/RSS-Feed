@@ -48,6 +48,12 @@ NOT_ANNOUNCEMENTS = [
 
 
 def main():
+    # Imported here, not just at module level: a local name makes `ec` local
+    # to this whole function under Python's scoping rules, so it must be
+    # bound before any use in main() rather than beside the checks that
+    # exercise it. A later task's tests reuse this name — keep it here.
+    import earnings_calendar as ec
+
     print("RECOGNITION")
     for t in ANNOUNCEMENTS:
         check(f"matches: {t[:44]}", ed.looks_like_announcement(t))
@@ -277,6 +283,54 @@ def main():
               date(2026, 6, 30), date(2026, 8, 12), date(2026, 8, 19),
               date(2025, 8, 1)],
           "no released date means no past-date filter is applied at all")
+
+    print("\nANNUAL-ONLY PROJECTION")
+
+    def annual(year, lag_days):
+        """One 20-F: period 31 Dec of `year`, filed `lag_days` later."""
+        p = date(year, 12, 31)
+        return (p, p + timedelta(days=lag_days), "20-F")
+
+    def q(year, month, lag_days=45):
+        p = date(year, month, 30)
+        return (p, p + timedelta(days=lag_days), "10-Q")
+
+    # BTDR's real shape: five annual filings, no quarterly ones.
+    btdr = [annual(y, 111) for y in (2025, 2024, 2023, 2022, 2021)]
+    row = ec.project("BTDR", "Bitdeer", btdr)
+    check("a company with no quarterly filings still projects",
+          row is not None)
+    check("it projects the ANNUAL period end, twelve months on",
+          row["period"] == date(2026, 12, 31), row["period"])
+    check("its lag is the annual lag, not a pooled one", row["lag"] == 111)
+    check("it is marked annual_only", row.get("annual_only") is True)
+    check("it is not marked degraded, because nothing was degraded",
+          row["degraded"] is False)
+    check("its kind is annual", row["kind"] == "annual")
+
+    # THE BOUNDARY, and where the first draft of the spec was wrong.
+    one_q = btdr + [q(2026, 6)]
+    row = ec.project("BTDR", "Bitdeer", one_q)
+    check("ONE quarterly filing is still annual-only",
+          row.get("annual_only") is True,
+          "one filing cannot yield a lag; pooling annual into a quarter end "
+          "is the bug this task removes")
+    two_q = btdr + [q(2026, 6), q(2026, 3)]
+    row = ec.project("BTDR", "Bitdeer", two_q)
+    check("TWO quarterly filings flip it to normal treatment",
+          not row.get("annual_only"),
+          "a real quarterly lag can be measured now")
+    check("and the normal projection uses a quarter end",
+          row["period"] == date(2026, 9, 30), row["period"])
+
+    check("below the quarterly floor AND under two annual filings: nothing",
+          ec.project("X", "X", [annual(2025, 111)]) is None)
+
+    print("\nTHE ANNUAL PERIOD STEP")
+    check("twelve months on, not three",
+          ec.next_annual_period_end(date(2025, 12, 31)) == date(2026, 12, 31))
+    check("29 February falls back to the 28th",
+          ec.next_annual_period_end(date(2024, 2, 29)) == date(2025, 2, 28))
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
