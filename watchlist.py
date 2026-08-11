@@ -178,6 +178,12 @@ WATCHLIST = [
         #
         # Verified first-party: all 20 items are BGDE's own releases, with no
         # third-party or paid content mixed in, so nothing needs filtering.
+        #
+        # THIS HOST REQUIRES A NON-BROWSER USER-AGENT and stalls the repo's
+        # default browser one, which reads as a dead feed rather than a
+        # refusal. It cost 22 hours of silent outage on 2026-08-10/11. The
+        # override lives in press_monitor.HOST_HEADERS; do not "fix" this feed
+        # by changing the URL.
         "ir_feed": "https://www.globenewswire.com/rssfeed/organization/z9WJvxXYqqA-t7lWEcsvqw==",
     },
     {
