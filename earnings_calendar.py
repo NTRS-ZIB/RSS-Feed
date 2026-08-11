@@ -146,6 +146,70 @@ def probe_form_mix():
     print("=" * 78 + "\n")
 
 
+def probe_btdr_announcements():
+    """Does BTDR ever pre-announce a results date, and can a results 6-K be
+    identified from its filing index?
+
+    The design rests on one or the other. If it publishes an advance notice,
+    the disclosed-date feature already covers it and almost no code is needed.
+    If it does not, that route is dead for this company and the honest answer
+    is an annual-only projection.
+
+    Two sources because either alone could mislead: the IR feed shows what it
+    publishes, the filing index shows what it files, and an advance notice
+    might exist in one and not the other.
+    """
+    import re as _re
+    import earnings_dates as _ed
+
+    print("=" * 78)
+    print("BTDR IR FEED — every title, and whether it reads as an announcement")
+    print("=" * 78)
+    feed = "https://ir.bitdeer.com/rss/news-releases.xml"
+    try:
+        r = requests.get(feed, timeout=(10, 30), headers={
+            "User-Agent": SEC_USER_AGENT, "Accept": "*/*"})
+        xml = r.text if r.status_code == 200 else ""
+        print(f"  HTTP {r.status_code}, {len(xml)} chars")
+    except requests.RequestException as e:
+        xml = ""
+        print(f"  fetch failed: {type(e).__name__}")
+    titles = _re.findall(r"<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>",
+                         xml, _re.S)
+    dates = _re.findall(r"<pubDate>(.*?)</pubDate>", xml, _re.S)
+    for i, t in enumerate(titles[1:], 0):          # [0] is the channel title
+        t = " ".join(t.split())
+        when = " ".join(dates[i].split())[:16] if i < len(dates) else "?"
+        flag = "ANNOUNCEMENT" if _ed.looks_like_announcement(t) else ""
+        print(f"  {when:<18}{flag:<13}{t[:80]}")
+
+    print("\n" + "=" * 78)
+    print("BTDR 6-K FILING INDEXES — document descriptions inside each filing")
+    print("=" * 78)
+    cik = COMPANIES["BTDR"][0]
+    data = sec_get(SUBMISSIONS.format(cik=cik))
+    recent = ((data or {}).get("filings") or {}).get("recent") or {}
+    forms = recent.get("form") or []
+    accs = recent.get("accessionNumber") or []
+    filed = recent.get("filingDate") or []
+    shown = 0
+    for i, form in enumerate(forms):
+        if form != "6-K" or i >= len(accs):
+            continue
+        acc = accs[i].replace("-", "")
+        url = (f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{acc}"
+               f"/index.json")
+        idx = sec_get(url)
+        docs = ((idx or {}).get("directory") or {}).get("item") or []
+        names = [f"{d.get('name', '')} ({d.get('type', '')})" for d in docs
+                 if not d.get("name", "").endswith((".xml", ".xsd", ".jpg"))]
+        print(f"  filed {filed[i] if i < len(filed) else '?'}  {', '.join(names)[:120]}")
+        shown += 1
+        if shown >= 8:
+            break
+    print("=" * 78 + "\n")
+
+
 def periodic_filings(cik):
     """[(reportDate, filingDate, form), ...] newest first, periodic forms only."""
     data = sec_get(SUBMISSIONS.format(cik=cik))
@@ -466,6 +530,6 @@ def main():
 
 
 if __name__ == "__main__":
-    probe_form_mix()
+    probe_btdr_announcements()
     sys.exit(0)   # throwaway probe branch: measure, post nothing, stop
     main()
