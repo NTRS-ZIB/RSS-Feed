@@ -1024,5 +1024,71 @@
   "VIP": "2026-08-10",
   "WULF": "2026-08-10",
   "WYFI": "2026-08-10"
+ },
+ "feeds": {
+  "ANY": {
+   "fails": 0,
+   "alerted": false
+  },
+  "APLD": {
+   "fails": 0,
+   "alerted": false
+  },
+  "BGDE": {
+   "fails": 0,
+   "alerted": false
+  },
+  "BKKT": {
+   "fails": 0,
+   "alerted": false
+  },
+  "BTDR": {
+   "fails": 0,
+   "alerted": false
+  },
+  "CIFR": {
+   "fails": 0,
+   "alerted": false
+  },
+  "CLSK": {
+   "fails": 0,
+   "alerted": false
+  },
+  "GLXY": {
+   "fails": 0,
+   "alerted": false
+  },
+  "IREN": {
+   "fails": 0,
+   "alerted": false
+  },
+  "MARA": {
+   "fails": 0,
+   "alerted": false
+  },
+  "NUAI": {
+   "fails": 0,
+   "alerted": false
+  },
+  "SLNH": {
+   "fails": 0,
+   "alerted": false
+  },
+  "SPCX": {
+   "fails": 0,
+   "alerted": false
+  },
+  "VIP": {
+   "fails": 0,
+   "alerted": false
+  },
+  "WULF": {
+   "fails": 0,
+   "alerted": false
+  },
+  "WYFI": {
+   "fails": 0,
+   "alerted": false
+  }
  }
 }
