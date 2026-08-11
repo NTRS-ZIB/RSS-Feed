@@ -190,6 +190,10 @@ def build_message(rows):
                    key=lambda r: r["expected"])
 
     def marker(r):
+        # First, and it outranks the rest: `*`, `~` and `?` all describe a
+        # projection, and this row no longer has one.
+        if r.get("disclosed"):
+            return "!"
         if r["degraded"]:
             return "?"
         if r["spread"] > LOW_CONFIDENCE_SPREAD:
@@ -201,8 +205,13 @@ def build_message(rows):
     def row(r, weekday=True):
         days = (r["expected"] - today).days
         when = f"{r['expected']:%a %d %b}" if weekday else f"{r['expected']:%d %b}"
+        # A spread is a property of a projection. On an announced row there is
+        # nothing for it to describe, and printing 0 would read as a claim of
+        # perfect precision rather than as absence. Four spaces keeps the
+        # column aligned against "  6d".
+        tail = "    " if r.get("disclosed") else f"{r['spread']:>3}d"
         return (f"{r['label']:<4}{marker(r)} {when}"
-                f"{days:>4}d {r['spread']:>3}d")
+                f"{days:>4}d {tail}")
 
     lines = []
     if upcoming:
@@ -245,6 +254,8 @@ def build_message(rows):
         key.append("~ erratic filer")
     if any(r["degraded"] for r in rows):
         key.append("? thin history")
+    if any(r.get("disclosed") for r in rows):
+        key.append("! announced by company")
     if key:
         lines.append("")
         lines.extend(key)
