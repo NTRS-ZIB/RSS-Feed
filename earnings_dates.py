@@ -44,6 +44,12 @@ DATE_RE = re.compile(
     r"\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+"
     r"(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})\b", re.I)
 
+# Month and day with NO four-digit year following. The negative lookahead is
+# what stops this stealing a match from DATE_RE.
+DATE_NOYEAR_RE = re.compile(
+    r"\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+"
+    r"(\d{1,2})(?:st|nd|rd|th)?\b(?!\s*,?\s*\d{4})", re.I)
+
 
 def looks_like_announcement(title):
     """Does this title look like an advance notice of a reporting date?"""
@@ -52,26 +58,53 @@ def looks_like_announcement(title):
             and any(w in t for w in RESULTS_WORDS))
 
 
-def parse_date(title):
+def parse_date(title, released=None):
     """The first month-day-year in the title, or None.
 
-    A FOUR-DIGIT YEAR IS REQUIRED. "on August 12" with no year would have to
-    be guessed at, and the guess is wrong every time a release crosses a year
-    boundary. Titles like that are counted as misses instead, and the count is
-    what decides whether reading release bodies is worth building.
+    A four-digit year in the title always wins. When there is none, the year
+    is taken from `released`, the release's own publication date — WHICH IS
+    NOT A GUESS. The release date is known data, and the ambiguity it leaves
+    is resolved by a fact rather than a preference: A COMPANY DOES NOT
+    ANNOUNCE A FORTHCOMING EVENT IN THE PAST, so of the two candidate years
+    the answer is the first that is not before the release.
+
+    Without `released` it still refuses. "on August 12" alone would have to be
+    guessed at, and a guessed year is wrong every time a release crosses a
+    year boundary.
+
+    The edge it gets wrong: a release published days AFTER the date it names,
+    which rolls forward a year. Recognition already requires an announcement
+    verb, so such a headline is unusual, and the stored provenance makes the
+    mistake diagnosable rather than mysterious.
     """
     m = DATE_RE.search(title or "")
+    if m:
+        try:
+            return date(int(m.group(3)), MONTHS[m.group(1)[:3].lower()],
+                        int(m.group(2)))
+        except (KeyError, ValueError):
+            return None
+    if released is None:
+        return None
+    m = DATE_NOYEAR_RE.search(title or "")
     if not m:
         return None
     try:
-        return date(int(m.group(3)), MONTHS[m.group(1)[:3].lower()],
-                    int(m.group(2)))
+        month, day = MONTHS[m.group(1)[:3].lower()], int(m.group(2))
     except (KeyError, ValueError):
         return None
+    for year in (released.year, released.year + 1):
+        try:
+            candidate = date(year, month, day)
+        except ValueError:
+            continue
+        if candidate >= released:
+            return candidate
+    return None
 
 
-def extract(title, today):
-    """(date, reason) for one item title.
+def extract(title, today, released=None):
+    """(date, reason) for one item title. See parse_date for `released`.
 
     reason is "no-match", "no-date", "past" or "ok". The caller counts them
     separately: "no-date" is the informative miss, "no-match" is every
@@ -79,7 +112,7 @@ def extract(title, today):
     """
     if not looks_like_announcement(title):
         return None, "no-match"
-    when = parse_date(title)
+    when = parse_date(title, released)
     if when is None:
         return None, "no-date"
     if when < today:
