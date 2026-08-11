@@ -1687,6 +1687,18 @@ def report_feed_health(state, feed_ok):
                         f"{rec['fails']} consecutive runs. Its releases now "
                         f"reach Discord only if an 8-K follows.")
 
+    # ALWAYS, even when everything is healthy. A check that prints only when
+    # it fires is indistinguishable from a check that never ran, which is the
+    # ambiguity this whole change exists to remove — and it would be absurd to
+    # reintroduce it in the fix for it. Silence here would also have hidden
+    # that a dry run can never advance the counter, because state is not saved.
+    failing = {l: r["fails"] for l, r in health.items() if r["fails"]}
+    print(f"  feed health: {len(feed_ok)} feed(s) checked, "
+          f"{sum(1 for v in feed_ok.values() if v)} answered"
+          + (f", failing: {failing}" if failing else "")
+          + (" [dry run: counters are not saved, so they cannot reach "
+             f"{FEED_FAIL_ALERT}]" if DRY_RUN else ""))
+
 
 def _ops_notice(text):
     """Post one line to the ops channel. Never raises, never blocks a run."""
