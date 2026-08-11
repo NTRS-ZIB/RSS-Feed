@@ -1335,3 +1335,203 @@ reporting an extracted date. The `no-date` count should fall by roughly three.
 git add earnings_dates.py test_earnings_dates.py press_monitor.py
 git commit -m "Take the missing year from the release's own date"
 ```
+
+---
+
+### Task 10: Measure whether release bodies carry a usable date
+
+**This task stores nothing.** It fetches, parses, logs and stops. The reason
+is the one the spec already gives: nobody has confirmed that release bodies
+carry a parsable date, and building a store path on that assumption is the
+mistake this repo keeps recording. A later task turns storing on, and only if
+the numbers here support it.
+
+Task 9 left 12 of 17 recognised announcements undated, every one of them
+because the title carries no date at all: `MARA Schedules Conference Call for
+Second Quarter 2026 Financial Results`, `Bakkt Schedules Conference Call to
+Discuss Second Quarter 2026 Results`, and similar from WULF, HUT, ABTC and
+SLNH.
+
+**Files:**
+- Modify: `earnings_dates.py`
+- Modify: `test_earnings_dates.py`
+- Modify: `press_monitor.py`
+
+**Interfaces:**
+- Consumes: `MONTHS`, `DATE_RE`, `extract` from Tasks 1 and 9;
+  `headers_for(url)` from `press_monitor`.
+- Produces: `candidate_dates(text, released, limit=6) -> list[date]`, pure and
+  stdlib-only; `press_monitor.announcement_body(link) -> str | None`;
+  `record_disclosed_dates(items, fresh_uids)` gains a second parameter.
+
+- [ ] **Step 1: Write the failing tests**
+
+Add inside `main()` in `test_earnings_dates.py`, immediately before the
+`bad = ...` line:
+
+```python
+    print("\nBODY DATE CANDIDATES")
+    BODY = (
+        "MARA Schedules Conference Call for Second Quarter 2026 Financial "
+        "Results. MARA Holdings will report results for the quarter ended "
+        "June 30, 2026 after market close on Tuesday, August 12, 2026. A "
+        "conference call will be held on August 12, 2026 at 5:00 PM ET. A "
+        "replay is available until August 19, 2026. In the prior year, "
+        "results were reported August 1, 2025."
+    )
+    got = ed.candidate_dates(BODY, date(2026, 7, 30))
+    check("finds the forward-looking dates",
+          date(2026, 8, 12) in got and date(2026, 8, 19) in got, got)
+    check("drops dates before the release",
+          date(2025, 8, 1) not in got and date(2026, 6, 30) not in got, got)
+    check("deduplicates a date repeated in the body",
+          got.count(date(2026, 8, 12)) == 1, got)
+    check("keeps document order",
+          got == sorted(set(got), key=got.index), got)
+    check("respects the limit",
+          len(ed.candidate_dates(BODY, date(2026, 7, 30), limit=1)) == 1)
+    check("a yearless date in prose is not inferred",
+          ed.candidate_dates("the call will be held on August 12", None) == [],
+          "DATE_RE only; a bare month-day in a body is usually a period")
+```
+
+- [ ] **Step 2: Run to verify it fails**
+
+Run: `python test_earnings_dates.py`
+Expected: FAIL, `module 'earnings_dates' has no attribute 'candidate_dates'`
+
+- [ ] **Step 3: Implement the parser**
+
+Append to `earnings_dates.py`:
+
+```python
+def candidate_dates(text, released, limit=6):
+    """Every plausible forthcoming date in a release body, in document order.
+
+    THIS DELIBERATELY DOES NOT PICK ONE. A body carries the period end, the
+    call date, the replay expiry and often last year's comparative, and which
+    of them is the reporting date is exactly the question this measurement
+    exists to answer with evidence rather than a guess. Returning candidates
+    lets the log show what a rule would have had to choose between.
+
+    Filtered only by facts: a date before the release cannot be a forthcoming
+    report date, and a repeat is the same date said twice.
+
+    DATE_RE only, never DATE_NOYEAR_RE. A bare "August 12" in running prose is
+    far more often a period reference than an announcement, and inferring a
+    year across a whole body multiplies that risk by every such phrase in it.
+    """
+    if not text:
+        return []
+    found, seen = [], set()
+    for m in DATE_RE.finditer(text):
+        try:
+            when = date(int(m.group(3)), MONTHS[m.group(1)[:3].lower()],
+                        int(m.group(2)))
+        except (KeyError, ValueError):
+            continue
+        if released is not None and when < released:
+            continue
+        if when in seen:
+            continue
+        seen.add(when)
+        found.append(when)
+        if len(found) >= limit:
+            break
+    return found
+```
+
+- [ ] **Step 4: Run to verify it passes**
+
+Run: `python test_earnings_dates.py`
+Expected: every check passes, the count rises by 6 to 51.
+
+- [ ] **Step 5: Fetch the body, log it, store nothing**
+
+In `press_monitor.py`, add immediately above `record_disclosed_dates`:
+
+```python
+# One body fetch per undated announcement, and ONLY for items new this run.
+# Over every item it would re-fetch the same dozen pages on each pass, about
+# eight times an hour, indefinitely, for a measurement that does not change.
+BODY_TIMEOUT = (10, 15)
+BODY_MAX_BYTES = 400_000
+
+
+def announcement_body(link):
+    """The visible text of a release page, or None. Never raises."""
+    if not link:
+        return None
+    try:
+        r = requests.get(link, headers=headers_for(link), timeout=BODY_TIMEOUT)
+    except requests.RequestException as e:
+        print(f"    body fetch failed: {type(e).__name__} for {link[:70]}")
+        return None
+    if r.status_code != 200:
+        print(f"    body fetch HTTP {r.status_code} for {link[:70]}")
+        return None
+    html = (r.content or b"")[:BODY_MAX_BYTES].decode("utf-8", "replace")
+    html = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html,
+                  flags=re.S | re.I)
+    return " ".join(re.sub(r"<[^>]+>", " ", html).split())
+```
+
+Inside `record_disclosed_dates`, in the branch that handles
+`reason == "no-date"`, after the existing example collection, add:
+
+```python
+            # MEASUREMENT ONLY — nothing here is stored. A later task decides
+            # whether a rule over these candidates is worth trusting.
+            if item.get("uid") in fresh_uids:
+                text = announcement_body(item.get("link"))
+                if text is not None:
+                    body_seen += 1
+                    cands = ed.candidate_dates(text, released)
+                    if cands:
+                        body_with_dates += 1
+                    print(f"  earnings dates: BODY {item['ticker']} "
+                          f"{len(text)} chars, candidates {cands} "
+                          f"from {item.get('title')!r}")
+```
+
+Initialise `body_seen = body_with_dates = 0` beside the other counters, and
+extend the summary line with:
+
+```python
+          f" Bodies fetched {body_seen}, {body_with_dates} carried at least "
+          f"one forward-looking date."
+```
+
+- [ ] **Step 6: Pass the fresh uids in**
+
+`record_disclosed_dates` takes a second parameter, `fresh_uids`. Change the
+signature and the call site in `main()`, which currently reads
+`record_disclosed_dates(all_items)`, to:
+
+```python
+        record_disclosed_dates(all_items,
+                               {i["uid"] for i in fresh + insider_fresh})
+```
+
+Leave the surrounding `try`/`except` exactly as it is. It now guards a network
+call as well, which is precisely why it exists: nothing in this path may cost
+a press post.
+
+- [ ] **Step 7: Verify by dispatch**
+
+```bash
+gh workflow run "Press release monitor" --ref "$(git rev-parse --abbrev-ref HEAD)" -f dry_run=true
+```
+
+**Expect few or zero `BODY` lines, and treat that as correct.** Only items new
+in that run are fetched, and by then most announcements are already seen.
+Report the counts observed rather than reading a quiet log as failure. The
+measurement accumulates across live runs; this dispatch proves the path works
+and that it costs nothing when there is nothing new.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add earnings_dates.py test_earnings_dates.py press_monitor.py
+git commit -m "Measure what a release body would have offered, storing nothing"
+```
