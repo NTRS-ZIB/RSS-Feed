@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Tests for earnings_dates. Standalone, stdlib only.
+"""Tests for earnings_dates. Standalone, stdlib only, EXCEPT the display-half
+checks at the end, which import earnings_calendar to drive build_message.
+That module only runs code on __main__, so importing it here is safe, but
+the import chain pulls in requests — the one place this file is not
+stdlib-only.
 
 THE ONE THAT MATTERS: a results release is not an announcement. "Reports
 Second Quarter 2026 Results" carries a date describing the period covered,
@@ -12,10 +16,11 @@ recognition ever does.
 
 import json
 import sys
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import earnings_dates as ed
+import earnings_calendar as ec
 
 PASS, FAIL = "PASS", "FAIL"
 results = []
@@ -206,6 +211,43 @@ def main():
         "Company to Report Results on August 14th", date(2026, 8, 1))
     check("no release date still counts as a no-date miss",
           when is None and reason == "no-date", f"{when} {reason}")
+
+    print("\nTHE DISPLAY HALF (build_message)")
+    today = date.today()
+
+    def calendar_row(label, expected, spread=6, disclosed=False, degraded=False):
+        return {"label": label, "cik": "0000000000",
+                "period": date(2026, 6, 30), "expected": expected,
+                "spread": spread, "kind": "10-Q", "degraded": degraded,
+                "disclosed": disclosed}
+
+    # (a) and (b): an announced row in the upcoming window shows the
+    # announced date and the `!` marker, and its spread column is blank
+    # rather than zero. 999 is a sentinel: if the spread ever leaked into
+    # an announced row's display, this is what would show up.
+    upcoming_date = today + timedelta(days=5)
+    disclosed_row = calendar_row("TEST", upcoming_date, spread=999,
+                                 disclosed=True)
+    text = ec.build_message([disclosed_row])
+    line = next(l for l in text.split("\n") if l.startswith("TEST"))
+    check("an announced row shows the announced date and the ! marker",
+          line.startswith(f"TEST! {upcoming_date:%a %d %b}"), line)
+    check("an announced row's spread column is blank, not zero",
+          "999d" not in line and line.endswith("    "), repr(line))
+
+    # (c) a passed announced date lands in Overdue with no grace, while a
+    # projected row the same number of days past its estimate — inside
+    # OVERDUE_GRACE — keeps its grace and is not flagged.
+    past_date = today - timedelta(days=3)
+    assert 3 < ec.OVERDUE_GRACE, "test assumes 3d is inside the grace window"
+    disclosed_overdue = calendar_row("DISC", past_date, disclosed=True)
+    projected_within_grace = calendar_row("PROJ", past_date, disclosed=False)
+    text = ec.build_message([disclosed_overdue, projected_within_grace])
+    overdue_section = text.split("Overdue")[1] if "Overdue" in text else ""
+    check("an announced date past due lands in Overdue with no grace",
+          "DISC" in overdue_section, overdue_section)
+    check("a projected row inside the grace window is not marked overdue",
+          "PROJ" not in overdue_section, overdue_section)
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
