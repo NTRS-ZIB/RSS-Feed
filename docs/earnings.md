@@ -84,3 +84,39 @@ signal.
   projection. If established filers are consistently off by a fixed amount, an
   old restatement or late filing is likely skewing the 8-sample window — reduce
   `LAG_SAMPLE` to 4.
+- **The write path is exercised only by a live run that finds an
+  announcement.** A press monitor dry run saves no state, so it logs what it
+  would record and writes nothing. Until a scheduled run has actually written
+  `earnings_dates.json` and pushed it, the store side of this feature has
+  never executed. Do not read the surrounding work looking finished as
+  evidence that it has.
+- **The persist half of the workflow change has never executed either.**
+  `persist_state` in `monitor.yml` copies `earnings_dates.json` aside before
+  `git reset --hard`, restores it after, then commits and pushes — the same
+  shape as the `state.json` handling next to it, added for the same reason.
+  But every run since it landed has been a dry dispatch, which saves no state
+  and returns before `persist_state` is ever called. Only the refresh half,
+  which reads `earnings_dates.json` from origin if present, has actually run —
+  it logged `No earnings_dates.json on origin yet.`, because no live run has
+  written one. The push side of that function is reasoned about, not
+  observed.
+- **Two branches in `main()` still have no witness.** The `status == "ok"`
+  line, printed when `earnings_dates.json` loads with at least one record, and
+  the split further down that tells a company on the roster with too little
+  filing history to project from a CIK that carries a stored date and isn't on
+  the roster at all — both only run when `earnings_dates.json` is non-empty.
+  Every local test constructs that file directly; nothing has driven it
+  through `main()` itself. A live press-monitor write is the only thing that
+  populates it for a real run to read.
+
+When the next scheduled press monitor run reports a non-zero `earnings dates:
+N recorded`, this is the check that closes the gap — nothing before it does:
+
+```bash
+git pull
+python -c "import json;print(json.load(open('earnings_dates.json'))['companies'])"
+```
+
+Expect at least one record, with `source_title` naming a release you can open
+and read. Verify the date in the file against the date in that release by
+eye.

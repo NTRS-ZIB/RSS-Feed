@@ -8,9 +8,11 @@ history. No external data provider: SEC's submissions API gives every 10-Q and
 (filingDate). The gap between them is stable per company, so the next report
 can be projected from the next period end plus that company's typical lag.
 
-These are ESTIMATES, not announced dates. Companies announce actual dates by
-press release, which the press release monitor already catches. This exists to
-tell you what's coming before that announcement lands.
+Most rows are ESTIMATES, not announced dates. Companies announce actual dates
+by press release; the press release monitor reads the date out of the release
+title and this script overlays it, marked `!`, in place of the projection for
+any row it covers. This exists to tell you what's coming before that
+announcement lands, and to show the real date once it has.
 """
 
 import json
