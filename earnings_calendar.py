@@ -166,9 +166,19 @@ def probe_btdr_announcements():
     print("BTDR IR FEED — every title, and whether it reads as an announcement")
     print("=" * 78)
     feed = "https://ir.bitdeer.com/rss/news-releases.xml"
+    # A BROWSER UA, not the SEC one. This is a gcs-web IR platform, and those
+    # stall non-browser User-Agents — the exact opposite of GlobeNewswire.
+    # Sending SEC_USER_AGENT here timed out, which is the per-host bet in
+    # CLAUDE.md's trap table being lost in the other direction.
     try:
         r = requests.get(feed, timeout=(10, 30), headers={
-            "User-Agent": SEC_USER_AGENT, "Accept": "*/*"})
+            "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                           "AppleWebKit/537.36 (KHTML, like Gecko) "
+                           "Chrome/126.0.0.0 Safari/537.36"),
+            "Accept": ("application/rss+xml, application/atom+xml, "
+                       "application/xml;q=0.9, text/html;q=0.8, */*;q=0.7"),
+            "Accept-Language": "en-US,en;q=0.9",
+            "Connection": "close"})
         xml = r.text if r.status_code == 200 else ""
         print(f"  HTTP {r.status_code}, {len(xml)} chars")
     except requests.RequestException as e:
