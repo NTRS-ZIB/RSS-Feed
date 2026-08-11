@@ -1868,7 +1868,10 @@ def record_disclosed_dates(items):
         entry = EXTRA_CIKS.get(item.get("ticker") or "")
         if not entry:
             continue
-        when, reason = ed.extract(item.get("title"), today)
+        published = item.get("published")
+        released = (datetime.fromtimestamp(published, timezone.utc).date()
+                    if published else None)
+        when, reason = ed.extract(item.get("title"), today, released)
         counts[reason] += 1
         if reason == "no-date":
             # The informative miss: an announcement whose date is in the body
@@ -1878,7 +1881,6 @@ def record_disclosed_dates(items):
                   f"parsable date — {item.get('title')!r}")
         if when is None:
             continue
-        published = item.get("published")
         iso = (datetime.fromtimestamp(published, timezone.utc).isoformat()
                if published else None)
         if ed.upsert(companies, entry[0], item["ticker"], when,

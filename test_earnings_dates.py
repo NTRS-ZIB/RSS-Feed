@@ -184,6 +184,29 @@ def main():
           applied == 0 and rows[0]["expected"] == date(2026, 8, 14)
           and any("not a dict" in n for n in notes), notes)
 
+    print("\nYEAR FROM THE RELEASE DATE")
+    check("year taken from the release",
+          ed.parse_date("... Results on August 14th", date(2026, 7, 29))
+          == date(2026, 8, 14))
+    check("a four-digit year in the title still wins",
+          ed.parse_date("... on August 12, 2026", date(2026, 7, 29))
+          == date(2026, 8, 12))
+    check("rolls to next year when the release is later in the year",
+          ed.parse_date("... on January 5th", date(2026, 12, 20))
+          == date(2027, 1, 5),
+          "a company does not announce a forthcoming date in the past")
+    check("without a release date it still refuses to guess",
+          ed.parse_date("... Results on August 14th") is None)
+    when, reason = ed.extract(
+        "Digi Power X to Announce 2026 Q2 Financial Results and Provide "
+        "Operations Update on August 14th", date(2026, 8, 1), date(2026, 7, 29))
+    check("the real DGXX headline now extracts",
+          when == date(2026, 8, 14) and reason == "ok", f"{when} {reason}")
+    when, reason = ed.extract(
+        "Company to Report Results on August 14th", date(2026, 8, 1))
+    check("no release date still counts as a no-date miss",
+          when is None and reason == "no-date", f"{when} {reason}")
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0
