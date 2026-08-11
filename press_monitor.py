@@ -1859,11 +1859,23 @@ def record_disclosed_dates(items):
     today = datetime.now(timezone.utc).date()
     companies, status = ed.load()
     if status == "unreadable":
-        print("  earnings dates: existing file unreadable — starting fresh.")
+        # An unreadable store is a SOURCE FAILURE, not a blank slate. Saving
+        # now would overwrite it with only what this run's feeds yielded,
+        # destroying records for any company whose announcement has since
+        # scrolled out of the feed window — see the CRITICAL note above
+        # save_state() for the same principle applied to state.json. Skip the
+        # write entirely and leave the file exactly as it is; nothing here
+        # recovers a corrupt file, and nothing here should make it worse.
+        print("  earnings dates: existing file is unreadable — SKIPPING the "
+              "write this run so it is not overwritten with a partial "
+              "rebuild. Dates were not recorded this run; "
+              "earnings_dates.json is left untouched.")
+        return
     elif status == "missing":
         print("  earnings dates: no file yet — this run creates it.")
 
     counts = {"ok": 0, "no-date": 0, "past": 0, "no-match": 0}
+    no_date_examples = []
     for item in items:
         entry = EXTRA_CIKS.get(item.get("ticker") or "")
         if not entry:
@@ -1873,12 +1885,15 @@ def record_disclosed_dates(items):
                     if published else None)
         when, reason = ed.extract(item.get("title"), today, released)
         counts[reason] += 1
-        if reason == "no-date":
+        if reason == "no-date" and len(no_date_examples) < 3:
             # The informative miss: an announcement whose date is in the body
             # rather than the title. This count is what decides whether
-            # fetching bodies is worth building.
-            print(f"  earnings dates: {item['ticker']} announcement with no "
-                  f"parsable date — {item.get('title')!r}")
+            # fetching bodies is worth building. Kept to a handful of
+            # examples in the summary line rather than one line per item —
+            # per-item logging here reprinted the same unparsed title on
+            # every pass, since this runs over all items rather than new
+            # ones, roughly eight times an hour indefinitely.
+            no_date_examples.append(f"{item['ticker']}: {item.get('title')!r}")
         if when is None:
             continue
         iso = (datetime.fromtimestamp(published, timezone.utc).isoformat()
@@ -1891,6 +1906,9 @@ def record_disclosed_dates(items):
     print(f"  earnings dates: {counts['ok']} recorded, {counts['no-date']} "
           f"announcement(s) with no parsable date, {counts['past']} rejected "
           f"as past, {len(companies)} on file.")
+    if no_date_examples:
+        print("  earnings dates: no-date example(s): "
+              + "; ".join(no_date_examples))
     if DRY_RUN:
         print("  earnings dates: dry run — nothing written.")
         return
@@ -1960,7 +1978,18 @@ def main():
     # would either mute a real outage or invent one.
     report_feed_health(state, feed_ok)
 
-    record_disclosed_dates(all_items)
+    # This must never be able to cost a press post. record_disclosed_dates()
+    # touches a second file that has nothing to do with whether an item
+    # posts, and it runs before the posting loop below — an unhandled
+    # exception here (an ed.save() OSError, an unexpected item shape) would
+    # abort main() and silence the whole channel for a failure that has
+    # nothing to do with press items.
+    try:
+        record_disclosed_dates(all_items)
+    except Exception as e:
+        print(f"  earnings dates: FAILED this run — {type(e).__name__}: {e}. "
+              f"Dates were not recorded this run; continuing to post.",
+              file=sys.stderr)
 
     # Mark everything fresh as seen up front. Items we don't post this run are
     # still recorded, so a big backlog can't re-flood on the next run.
