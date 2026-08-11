@@ -21,6 +21,7 @@ Stdlib only, no network. Safe to run directly:  python earnings_dates.py
 
 import json
 import re
+import sys
 from datetime import date
 from pathlib import Path
 
@@ -231,3 +232,26 @@ def apply(rows, companies, today):
         applied += 1
 
     return rows, applied, notes
+
+
+def main():
+    """Print what the store currently holds. No network, no writes.
+
+    The diagnostic `watchlist.py` offers for the roster: load the default
+    file and show what a reader would otherwise have to open and parse by
+    hand.
+    """
+    companies, status = load()
+    print(f"schema {SCHEMA}, default path {DEFAULT_PATH}")
+    print(f"status: {status}, {len(companies)} record(s)")
+    for cik, rec in sorted(companies.items()):
+        if not isinstance(rec, dict):
+            print(f"  {cik}: malformed record {rec!r}")
+            continue
+        print(f"  {cik} {rec.get('ticker')}: {rec.get('date')} "
+              f"(from {rec.get('source_title')!r})")
+    return 0 if status in ("missing", "empty", "ok") else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
