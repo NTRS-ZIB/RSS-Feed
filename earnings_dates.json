@@ -1,0 +1,19 @@
+{
+ "schema": 1,
+ "companies": {
+  "0001218683": {
+   "ticker": "BGDE",
+   "date": "2026-08-12",
+   "source_uid": "https://www.globenewswire.com/news-release/2026/07/29/3335631/0/en/big-digital-energy-to-release-second-quarter-2026-results-august-12th.html",
+   "source_title": "Big Digital Energy to Release Second Quarter 2026 Results August 12th",
+   "source_published": "2026-07-29T20:36:00+00:00"
+  },
+  "0001854368": {
+   "ticker": "DGXX",
+   "date": "2026-08-14",
+   "source_uid": "dgxx:kr0jcclqulsbf9mqho7dif7o",
+   "source_title": "Digi Power X to Announce 2026 Q2 Financial Results and Provide Operations Update on August 14th",
+   "source_published": "2026-08-04T00:00:00+00:00"
+  }
+ }
+}
