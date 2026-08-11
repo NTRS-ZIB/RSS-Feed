@@ -154,3 +154,47 @@ def upsert(companies, cik, ticker, when, uid, title, published):
         "source_published": published,
     }
     return True
+
+
+def apply(rows, companies, today):
+    """Overlay disclosed dates onto projected rows. (rows, applied, notes).
+
+    A STORED DATE APPLIES WHEN IT FALLS AFTER THE PERIOD END BEING PROJECTED.
+    A report date is always after the period it covers, so this holds while
+    the company has not reported, and keeps holding once the date has passed,
+    which is what puts the row in Overdue rather than quietly reverting it to
+    an estimate. It stops holding by itself the moment the company files:
+    `upcoming` moves to the next period end and the stored date is now before
+    it. Nothing expires and no constant is chosen.
+
+    `today` is taken for symmetry with the rest of the module and for future
+    callers; the rule above does not need it.
+    """
+    applied, notes = 0, []
+    for r in rows:
+        rec = companies.get(r.get("cik"))
+        if not rec:
+            continue
+        when = parse_iso(rec.get("date"))
+        if when is None:
+            notes.append(f"{r['label']}: stored date {rec.get('date')!r} is "
+                         f"unparseable; keeping the projection")
+            continue
+        if when <= r["period"]:
+            notes.append(f"{r['label']}: stored date {when} is not after the "
+                         f"period end {r['period']} being projected; it "
+                         f"belongs to a period already reported")
+            continue
+        if when != r["expected"]:
+            notes.append(f"{r['label']}: projected {r['expected']}, company "
+                         f"announced {when}")
+        r["projected"] = r["expected"]
+        r["expected"] = when
+        r["disclosed"] = True
+        applied += 1
+
+    unknown = set(companies) - {r.get("cik") for r in rows}
+    for cik in sorted(unknown):
+        notes.append(f"stored date for CIK {cik} "
+                     f"({companies[cik].get('ticker')}) is not on the roster")
+    return rows, applied, notes
