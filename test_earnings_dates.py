@@ -41,7 +41,6 @@ ANNOUNCEMENTS = [
 
 NOT_ANNOUNCEMENTS = [
     "American Bitcoin Reports Second Quarter 2026 Results",
-    "Galaxy Announces Second Quarter 2026 Financial Results",
     "Bitdeer Announces $4.7 Billion, 16-Year AI/HPC Data Center Lease",
     "Soluna Announces Pricing of $3.507bn Notes Offering",
 ]
@@ -372,6 +371,29 @@ def main():
     text = ec.build_message([crow("PROJ")])
     check("an ordinary row 400 days past still does",
           "Overdue" in text and "PROJ" in text)
+
+    print("\nBARE \"ANNOUNCES\"")
+    BTDR_REAL = ("Bitdeer Announces Second Quarter 2026 Earnings Conference "
+                 "Call for August 10th 2026")
+    check("BTDR's real advance notice is recognised",
+          ed.looks_like_announcement(BTDR_REAL))
+    when, reason = ed.extract(BTDR_REAL, date(2026, 8, 1), date(2026, 8, 1))
+    check("and its date parses straight from the title",
+          when == date(2026, 8, 10) and reason == "ok", f"{when} {reason}")
+    check("an operations update is still not an announcement",
+          not ed.looks_like_announcement(
+              "Bitdeer Announces June 2026 Production and Operations Update"),
+          "no results or earnings word")
+    check("a financing release is still not an announcement",
+          not ed.looks_like_announcement(
+              "Bitdeer Announces $4.7 Billion, 16-Year AI/HPC Data Center "
+              "Lease for Tydal, Norway"))
+    # Now recognised, and that is intended: the date guard is the real filter.
+    RESULTS = "Galaxy Announces Second Quarter 2026 Financial Results"
+    check("a results release is now recognised", ed.looks_like_announcement(RESULTS))
+    when, reason = ed.extract(RESULTS, date(2026, 8, 11), date(2026, 8, 11))
+    check("but carries no date, so it stores nothing",
+          when is None and reason == "no-date", f"{when} {reason}")
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
