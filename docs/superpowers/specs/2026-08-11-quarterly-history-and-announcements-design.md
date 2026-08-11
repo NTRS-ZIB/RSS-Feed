@@ -81,7 +81,13 @@ roster edit.
 which is how an annual lag ends up applied to a quarter end. When a company has
 no 10-Q history at all, that fallback stops: it projects its **annual** cycle
 only, from its 20-F/40-F history, which is a real cadence the data supports.
-For BTDR that is the next 20-F, around April 2027, shown under "later".
+
+**The period step changes with it, and this is the part most easily missed.**
+`next_period_end()` advances by three months unconditionally. An annual-only
+projection must advance by twelve, or it produces the same fabricated quarter
+end by a different route. For BTDR: last annual period 31 December 2025, next
+31 December 2026, plus its measured annual lag of 111 days, landing around 21
+April 2027 and shown under "later".
 
 **It is also never reported overdue.** Marking something overdue asserts that
 it should have arrived and has not, and this component cannot observe a 6-K
@@ -120,9 +126,11 @@ that measurement — and **a results release body is dense with dates**: the
 period covered, prior-year comparatives, the figures themselves. That would
 poison the measurement the feature's next decision rests on.
 
-So body fetching additionally requires a scheduling word in the title —
-conference call, webcast, or similar. An advance notice names a future event; a
-results release does not.
+So body fetching additionally requires a scheduling word in the title. An
+advance notice names a future event; a results release does not. **The list is
+pinned rather than left to judgement** — "conference call", "webcast", "call
+for", "schedules", "to be held" — and it is a gate on fetching only, never on
+storing, so a word missing from it costs a measurement sample and nothing else.
 
 ## Failure handling
 
