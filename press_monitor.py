@@ -20,7 +20,7 @@ from calendar import timegm
 from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import feedparser
 import requests
@@ -315,11 +315,50 @@ SEC_USER_AGENT = os.environ.get("SEC_USER_AGENT", "").strip()
 STATE_FILE = Path(os.environ.get("STATE_FILE", "state.json"))
 
 # Several IR platforms sit behind WAFs that stall non-browser User-Agents
-# instead of returning an error. A browser-like header set avoids that.
+# instead of returning an error, so this is the right default for most hosts.
+# IT IS NOT A GENERAL RULE: GlobeNewswire does exactly the reverse and stalls
+# this header set instead. See HOST_HEADERS above, and never assume a browser
+# UA is the safe choice for a new source without measuring it.
 IR_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
 )
+# A BROWSER-LIKE USER-AGENT IS A PER-HOST BET, NOT A SAFE DEFAULT, AND LOSING
+# THE BET LOOKS LIKE AN OUTAGE RATHER THAN A REJECTION.
+#
+# GlobeNewswire stalls a browser-claiming request from this runner and answers
+# a plain one in a tenth of a second. Measured 2026-08-11 against both the org
+# feed and an ordinary release page, two URLs per case so the result could not
+# be read as being about feeds:
+#
+#   Chrome/126 (what IR_AGENT sends)     ReadTimeout after 15s
+#   Chrome/140, browser Accept           ReadTimeout after 15s
+#   Firefox/131, browser Accept          ReadTimeout after 15s
+#   Feedly's UA                          ReadTimeout after 15s
+#   python-requests, curl, no UA at all  200 in 0.0-0.1s, 20 entries
+#   an identifying UA naming this tool   200 in 0.0s, 20 entries
+#
+# The reading is that a browser UA arriving from a datacenter IP with no
+# matching fingerprint scores worse than an honest non-browser client. BGDE's
+# feed was never dead: it served 20 entries throughout, to anyone not claiming
+# to be Chrome. It cost 22 hours of silent outage and five probe dispatches to
+# establish, because a stall is indistinguishable from a dead host.
+#
+# The identifying UA is chosen over curl or an absent header even though all
+# three work: it is what a host operator sees in their logs, and this repo
+# already identifies itself by name to the SEC for the same reason.
+GNW_HEADERS = {
+    "User-Agent": "InfraMonitor/1.0 (press release monitor; "
+                  "contact via github.com/NTRS-ZIB/RSS-Feed)",
+    "Accept": "*/*",
+}
+
+# One entry, because this is a bet per host and not a policy. Anything not
+# listed gets IR_HEADERS below, which several IR platforms genuinely require.
+HOST_HEADERS = {
+    "www.globenewswire.com": GNW_HEADERS,
+}
+
 IR_HEADERS = {
     "User-Agent": IR_AGENT,
     "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9,"
@@ -820,10 +859,22 @@ def collect_all(resolved):
     return press, insider
 
 
+def headers_for(url):
+    """The header set this host wants. IR_HEADERS unless it is in HOST_HEADERS.
+
+    Only the two feed-fetching paths consult this. `scrape_hut8()`,
+    `scrape_galaxy()`, `read_abtc()` and `read_dgxx()` still pass IR_HEADERS
+    directly — correct today because none of their hosts is in the table, and
+    the thing to change if one ever joins it.
+    """
+    return HOST_HEADERS.get(urlparse(url).netloc.lower(), IR_HEADERS)
+
+
 def discover_feed(page_url):
     """Find a feed URL from a page's <link rel="alternate"> tags."""
     try:
-        r = requests.get(page_url, headers=IR_HEADERS, timeout=(10, 30))
+        r = requests.get(page_url, headers=headers_for(page_url),
+                         timeout=(10, 30))
         if r.status_code != 200:
             return None
         tags = re.findall(
@@ -846,7 +897,7 @@ def parse_feed(url):
     r = None
     for attempt in range(2):
         try:
-            r = requests.get(url, headers=IR_HEADERS, timeout=(10, 30))
+            r = requests.get(url, headers=headers_for(url), timeout=(10, 30))
             break
         except requests.RequestException as e:
             if attempt == 0:
