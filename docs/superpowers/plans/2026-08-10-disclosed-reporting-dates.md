@@ -1535,3 +1535,83 @@ and that it costs nothing when there is nothing new.
 git add earnings_dates.py test_earnings_dates.py press_monitor.py
 git commit -m "Measure what a release body would have offered, storing nothing"
 ```
+
+---
+
+## Outcome, and what is still open
+
+Tasks 0 to 10 are built, reviewed and merged to `main`. This section replaces
+the execution workspace, which has been deleted; from here the git history is
+the record.
+
+### What the feature reaches today
+
+Titles yield **2 of 17** recognised announcements — BGDE 2026-08-12 and DGXX
+2026-08-14, both via Task 9's year-from-the-release-date. Task 3 measured 0 of
+16 before that. The remaining 12 carry no date in the title at all (MARA ×2,
+BKKT ×2, WULF ×2, ABTC ×4, HUT, SLNH) and depend on Task 10's measurement.
+
+### Not verified, and why no dispatch can verify it
+
+Recorded in `docs/earnings.md` as well, because that is where a reader of the
+component will look.
+
+- **The workflow's persist half has never executed.** A dry run saves no
+  state, so `persist_state`'s save/reset/restore/commit/push for
+  `earnings_dates.json` is reasoned about, not observed. The refresh half was
+  exercised and logged `No earnings_dates.json on origin yet.`
+- **The exception guard around `record_disclosed_dates` has never fired.**
+- **Two branches in `earnings_calendar.main()` are unexercised**: the `ok`
+  status line and the roster split separating a company that is on the roster
+  but not projectable from a CIK that is genuinely off-roster. Both need a
+  non-empty store, which only a live press-monitor run creates.
+
+The first live scheduled run after this merge exercises all of them. Watch it
+rather than assuming; per CLAUDE.md the `persist_state` retry loop has still
+never executed anywhere either.
+
+### The follow-on, deliberately unwritten
+
+**Turning storing on for body-extracted dates is not specified, and must not
+be until Task 10 has produced numbers.** A body carries the period end, the
+call time, the replay expiry and often last year's comparative, and which one
+is the reporting date is the question the measurement exists to answer. Write
+that task when the `BODY` log lines show what a rule would have had to choose
+between, and derive the rule from them.
+
+### Residual findings, all cosmetic, none blocking
+
+Carried from the whole-branch review and its re-review so they are not lost:
+
+- `earnings_calendar.py`'s key block is computed from the markers `marker()`
+  assigns, not from rows actually rendered. A row falling in the gap
+  `today - OVERDUE_GRACE <= expected < today` renders in no section, so its
+  marker can still be advertised by a key line with nothing in the table to
+  match. The root cause predates this work.
+- `last col = +/- spread` gains `(blank on ! rows)` when any row is announced,
+  but still claims a spread column when *every* row is announced.
+- The filing count can print `2/2 periodic filing(s) seen, not enough to
+  project`, because `project()` needs two filings **of the same form type**
+  and the count is of all periodic filings. Log-only. The pre-existing
+  `only {n} periodic filing(s), cannot project` line has the same shape.
+- The spec's sentence "it adds no fetching and cannot fail in a way that stops
+  a press post" is now true, but its stated reason is a non sequitur: the
+  safety comes from the `try`/`except`, not from the absence of fetching.
+- `docs/press-monitor.md` says every non-dry run writes `earnings_dates.json`.
+  It does not when the existing file is unreadable, which is deliberate.
+
+### Two process notes worth keeping
+
+**Three of the four defects the reviews caught were in this plan or its spec,
+not in the implementations.** A crash on a malformed record; a log line that
+would have called a young listing "not on the roster"; a step instructing the
+reader to confirm the *absence* of a state-file protection that should have
+been present; a spec sentence asserting a safety property nothing in the code
+provided; a fetch nested inside a logging cap that would have starved the
+measurement; and a test that could not fail. Per-task review caught none of
+the cross-task ones — the whole-branch review did.
+
+**Four implementers skipped their report file.** The record had to be
+reconstructed from the ledger and run logs each time. If this plan is ever
+re-run, make the report file a step with its own checkbox rather than a line
+in the closing instruction.
