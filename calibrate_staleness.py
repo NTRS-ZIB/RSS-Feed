@@ -327,6 +327,22 @@ def probe_bgde_backend():
     for u in urls[:30]:
         print(f"      {u[:110]}")
 
+    # An IR page very often embeds its releases rather than rendering them.
+    for tag in ("iframe", "embed", "object"):
+        for m in re.findall(rf"<{tag}[^>]*>", text, re.I):
+            print(f"\n  <{tag}>: {m[:200]}")
+    # Every quoted path inside inline script. The endpoint that fills the
+    # shell is a string somewhere, even when it is built at runtime.
+    inline = " ".join(re.findall(r"<script(?![^>]*src=)[^>]*>(.*?)</script>",
+                                 text, re.S))
+    paths = sorted({p for p in re.findall(r'["\'](/[A-Za-z0-9_\-./?=&]{4,})["\']',
+                                          inline)})
+    print(f"\n  {len(paths)} quoted path(s) inside inline script:")
+    for p in paths[:40]:
+        print(f"      {p[:110]}")
+    data_attrs = sorted(set(re.findall(r'(data-[a-z-]+)="[^"]{4,}"', text)))
+    print(f"\n  data-* attributes present: {data_attrs[:25]}")
+
     for marker in ("__NEXT_DATA__", "wp-json", "graphql", "sanity", "strapi",
                    "contentful", "prismic", "webflow", "hubspot", "q4inc",
                    "gcs-web", "globenewswire", "apiUrl", "api_url", "/api/"):
