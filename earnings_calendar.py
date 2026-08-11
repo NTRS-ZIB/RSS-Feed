@@ -314,10 +314,33 @@ def main():
               "projection.")
     elif status == "empty":
         print("\nearnings_dates.json holds no announced dates.")
+    elif status == "ok":
+        print(f"\nearnings_dates.json loaded: {len(disclosed)} record(s).")
     rows, applied, notes = ed.apply(rows, disclosed, date.today())
     for note in notes:
         print(f"  {note}")
     print(f"{applied} row(s) use an announced date.")
+
+    # apply() only knows the rows it was handed, which are the rows that
+    # projected — it has no view of the roster, so it cannot tell a company
+    # that's absent from watchlist.py from one that's on it but hasn't filed
+    # enough to project yet. That distinction belongs here, where COMPANIES
+    # is in scope.
+    cik_to_label = {cik: label for label, (cik, name) in COMPANIES.items()}
+    projected_ciks = {r["cik"] for r in rows}
+    for cik in sorted(disclosed):
+        if cik in projected_ciks:
+            continue
+        label = cik_to_label.get(cik)
+        if label is not None:
+            print(f"  {label} has an announced date but too little filing "
+                  f"history to project a period end yet; the announced date "
+                  f"is not applied")
+        else:
+            rec = disclosed[cik]
+            ticker = rec.get("ticker") if isinstance(rec, dict) else rec
+            print(f"  stored date for CIK {cik} ({ticker}) is not on the "
+                  f"roster")
 
     text = build_message(rows)
     print(f"\n{text}\n")

@@ -177,6 +177,13 @@ def main():
     check("an unparseable stored date is skipped and noted",
           applied == 0 and any("not a date" in n for n in notes), notes)
 
+    malformed_store = {"0001218683": "not a record"}
+    rows = [row("BGDE", "0001218683", date(2026, 6, 30), date(2026, 8, 14))]
+    rows, applied, notes = ed.apply(rows, malformed_store, date(2026, 8, 10))
+    check("a non-dict stored record is skipped and noted, not raised",
+          applied == 0 and rows[0]["expected"] == date(2026, 8, 14)
+          and any("not a dict" in n for n in notes), notes)
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0
