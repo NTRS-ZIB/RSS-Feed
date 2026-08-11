@@ -256,8 +256,10 @@ def probe_bgde_news():
     # server-rendered these strings are in it; if it is a JS shell they are not.
     KNOWN = ["Hood County", "Endeavor", "Second Quarter 2026", "10NetZero"]
 
-    for url in ("https://www.bigdigital.energy/news",
-                "https://www.bigdigital.energy/news/"):
+    for url in ("https://www.bigdigital.energy/news-media/press-releases/",
+                "https://www.bigdigital.energy/news-media/news/",
+                "https://www.bigdigital.energy/news-media/press-releases/rss",
+                "https://www.bigdigital.energy/rss"):
         print("=" * 72)
         print(f"BGDE NEWS PAGE — {url}")
         print("=" * 72)
