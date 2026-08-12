@@ -257,11 +257,15 @@ def main():
     print("\nTHE DISPLAY HALF (build_message)")
     today = date.today()
 
-    def calendar_row(label, expected, spread=6, disclosed=False, degraded=False):
-        return {"label": label, "cik": "0000000000",
-                "period": date(2026, 6, 30), "expected": expected,
-                "spread": spread, "kind": "10-Q", "degraded": degraded,
-                "disclosed": disclosed}
+    def calendar_row(label, expected, spread=6, disclosed=False,
+                     degraded=False, source="title"):
+        r = {"label": label, "cik": "0000000000",
+             "period": date(2026, 6, 30), "expected": expected,
+             "spread": spread, "kind": "10-Q", "degraded": degraded,
+             "disclosed": disclosed}
+        if disclosed:
+            r["disclosed_source"] = source
+        return r
 
     # (a) and (b): an announced row in the upcoming window shows the
     # announced date and the `!` marker, and its spread column is blank
@@ -599,6 +603,41 @@ def main():
     text = ec.build_message([only_disclosed, visible])
     check("the footnote returns as soon as one row has a spread",
           "last col = +/- spread" in text and "(blank on ! rows)" in text)
+
+    print("\nA BODY-DERIVED DATE IS MARKED APART")
+    btext = ec.build_message([calendar_row("WYFI", today + timedelta(days=5),
+                                           disclosed=True, source="body")])
+    check("a body-derived row is marked +", "WYFI+" in btext, btext)
+    check("a body-derived row is not marked !", "WYFI!" not in btext, btext)
+    check("the key explains +", "+ date read from body" in btext, btext)
+    check("the key line fits the 28-char ceiling",
+          max(len(l) for l in btext.splitlines()) <= 28, btext)
+
+    ttext = ec.build_message([calendar_row("BGDE", today + timedelta(days=5),
+                                           disclosed=True, source="title")])
+    check("a title-derived row is still marked !", "BGDE!" in ttext, ttext)
+    check("the + key is absent when no + row is shown",
+          "+ date read from body" not in ttext, ttext)
+
+    # THE ONE THAT MATTERS. Same past date, same everything else: the
+    # company's own headline date is late immediately, while a date we read
+    # out of prose gets the projection grace, because the uncertainty is
+    # OURS. If this ever collapses to one behaviour, a misreading becomes an
+    # accusation that a company missed its own date.
+    late = today - timedelta(days=3)
+    otext = ec.build_message([calendar_row("BGDE", late, disclosed=True,
+                                           source="title")])
+    check("a title-derived row past its date is overdue at once",
+          "Overdue" in otext, otext)
+    gtext = ec.build_message([calendar_row("WYFI", late, disclosed=True,
+                                           source="body")])
+    check("a body-derived row past its date keeps the grace",
+          "Overdue" not in gtext, gtext)
+    vlate = today - timedelta(days=ec.OVERDUE_GRACE + 1)
+    vtext = ec.build_message([calendar_row("WYFI", vlate, disclosed=True,
+                                           source="body")])
+    check("a body-derived row is overdue once the grace runs out",
+          "Overdue" in vtext, vtext)
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
