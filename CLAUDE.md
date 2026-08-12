@@ -73,8 +73,9 @@ is not a 52-week crossing, while `daily_recap.py` keeps the row and caveats one
 column. That is a real difference in what the number means, not an
 inconsistency to iron out.
 
-`earnings_calendar.py` is the one case still naming tickers without a count.
-It is correct, just less useful than it could be.
+`earnings_calendar.py` was the one case still naming tickers without a count.
+It now reports `SPCX 1/2` against the periodic-filing floor, so every component
+on the roster states a count. Closed 2026-08-12.
 
 ## Verification
 
