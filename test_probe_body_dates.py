@@ -176,6 +176,13 @@ def main():
           set(summary["advance notice"]) == {"one", "several", "none", "failed"},
           "a missing key reads as a gap; a zero reads as a measurement")
 
+    no_advance_notice = pb.summarise(
+        [{"scheduled": False, "mixed": False, "chars": 100,
+          "candidates": []}])
+    check("a label with no rows still appears, zeroed",
+          no_advance_notice.get("advance notice") == dict.fromkeys(pb.BUCKETS, 0),
+          f"got {no_advance_notice}")
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0
