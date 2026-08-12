@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-11T11:37:19+00:00",
+  "generated": "2026-08-12T11:39:17+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -1990,7 +1990,7 @@
     },
     "SPCX": {
       "cik": "0001181412",
-      "filing_count": 76,
+      "filing_count": 77,
       "filings": {
         "10-K": null,
         "10-Q": {
@@ -2053,10 +2053,17 @@
         "SC 13D": null,
         "SC 13G": null,
         "SCHEDULE 13D": null,
-        "SCHEDULE 13G": null
+        "SCHEDULE 13G": {
+          "accession": "0001213900-26-087780",
+          "count": 1,
+          "filed": "2026-08-11",
+          "form": "SCHEDULE 13G",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1181412/000121390026087780/xslSCHEDULE_13G_X02/primary_doc.xml"
+        }
       },
       "former_names": [],
-      "latest_filing_date": "2026-08-04",
+      "latest_filing_date": "2026-08-11",
       "name": "SPACE EXPLORATION TECHNOLOGIES CORP",
       "projection": {
         "confidence": "low",
@@ -2336,7 +2343,7 @@
     },
     "WYFI": {
       "cik": "0002042022",
-      "filing_count": 77,
+      "filing_count": 78,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-034341",
@@ -2347,12 +2354,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026034341/ea0278305-10k_white.htm"
         },
         "10-Q": {
-          "accession": "0001213900-26-056212",
-          "count": 3,
-          "filed": "2026-05-14",
+          "accession": "0001213900-26-088026",
+          "count": 4,
+          "filed": "2026-08-12",
           "form": "10-Q",
-          "period": "2026-03-31",
-          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026056212/ea0288695-10q_whitefiber.htm"
+          "period": "2026-06-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026088026/ea0300877-10q_whitefiber.htm"
         },
         "20-F": null,
         "3": {
@@ -2418,17 +2425,17 @@
       "former_names": [
         "White Fiber, Inc."
       ],
-      "latest_filing_date": "2026-08-04",
+      "latest_filing_date": "2026-08-12",
       "name": "WhiteFiber, Inc.",
       "projection": {
         "confidence": "normal",
-        "expected": "2026-08-13",
+        "expected": "2026-11-13",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 44,
-        "period_end": "2026-06-30",
-        "sample": 3,
-        "spread_days": 17
+        "period_end": "2026-09-30",
+        "sample": 4,
+        "spread_days": 18
       }
     }
   },
