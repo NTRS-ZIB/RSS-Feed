@@ -27,6 +27,7 @@ import requests
 
 import watchlist
 import earnings_dates as ed
+import page_text
 # ------------------------------------------------------------------ CONFIG
 
 # The watchlist lives in watchlist.py — one record per company, one edit to add
@@ -1858,8 +1859,9 @@ BODY_MAX_BYTES = 400_000
 
 
 def announcement_body(link):
-    """The visible text of a release page, or None. Never raises.
+    """The text of a release page, or None. Never raises.
 
+    Extraction lives in page_text so it can be tested without feedparser.
     Streams the response and stops reading once BODY_MAX_BYTES is reached, so
     the cap bounds the download itself — not just how much of an already
     fully-buffered response gets decoded. Without stream=True, requests.get
@@ -1891,9 +1893,7 @@ def announcement_body(link):
     finally:
         r.close()
     html = bytes(raw[:BODY_MAX_BYTES]).decode("utf-8", "replace")
-    html = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html,
-                  flags=re.S | re.I)
-    return " ".join(re.sub(r"<[^>]+>", " ", html).split())
+    return page_text.extract_text(html, limit=BODY_MAX_BYTES)
 
 
 def record_disclosed_dates(items, fresh_uids):
