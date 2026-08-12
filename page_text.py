@@ -55,9 +55,12 @@ def payload_strings(html):
     for m in JSON_SCRIPT.finditer(html or ""):
         try:
             data = json.loads(m.group(1))
-        except ValueError:
+            _strings(data, out)
+        except (ValueError, RecursionError):
+            # ValueError: syntactically broken JSON. RecursionError: deeply
+            # nested but syntactically valid JSON. Both must be skipped to
+            # prevent discarding visible text already extracted.
             continue
-        _strings(data, out)
     return out
 
 

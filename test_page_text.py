@@ -80,6 +80,11 @@ def main():
           pt.extract_text('<p>keep</p><script type="application/json">{oops'
                           '</script>') == "keep",
           "broken JSON costs the recovered half, never the visible half")
+    check("a deeply nested payload does not propagate RecursionError",
+          pt.extract_text('<p>keep this text</p><script type="application/json">'
+                          + '['*1000 + ']'*1000 +
+                          '</script>') == "keep this text",
+          "json.loads raises RecursionError on deeply nested but valid JSON; must not discard visible text")
     check("a page with no payload is unchanged",
           pt.extract_text("<p>hello there</p>") == "hello there")
     check("ld+json is left alone",
