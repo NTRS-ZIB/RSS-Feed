@@ -67,6 +67,10 @@ regsho_volume.py                  daily FINRA short sale volume
 weekly_digest.py                  weekly digest: derivation and verdict record
 digest_render.py                  weekly digest: the post and the file
 watchlist.py                      the roster: one record per company
+earnings_dates.py                 shared: announced reporting dates, stored by CIK
+page_text.py                      shared: a page's HTML reduced to readable text
+filer_regime.py                   shared: which regime each company files under
+build_snapshot.py                 writes snapshot.json from each issuer's filing index
 audit_identifiers.py              maintenance: what each company trades as
 calibrate_staleness.py            maintenance: publication cadence per source
 audit_8k_items.py                 maintenance: 8-K item distribution
@@ -74,6 +78,13 @@ check_metric_regime.py            maintenance: is a metric's move real or a regi
 probe_sites.py                    maintenance: grid operators and states a filing names
 probe_holders.py                  maintenance: what 13D/G filings carry
 probe_body_dates.py               maintenance: what a release body offers
+probe_filing_rate.py              maintenance: would a filing rate catch a company going quiet
+probe_premarket.py                maintenance: is a missing premarket the feed, request or venue
+probe_spike_norm.py               maintenance: reproduce the spike normalisation gain
+loop_state.py                     loop harness: the state file, one writer
+loop_approval.py                  loop harness: has this irreversible action been authorised
+loop_verdict.py                   loop harness: validate a gate verdict, trusting none of it
+score_gate.py                     loop harness: score recorded verdicts against known answers
 holder_events.py                  >5% holder arrivals, changes and exits
 ftd_monitor.py                    SEC fails-to-deliver
 threshold_list.py                 Reg SHO threshold list (exception report)
@@ -96,12 +107,20 @@ grid_context.py                   grid demand and natural gas
 .github/workflows/grid.yml        grid context schedule and runner setup
 .github/workflows/digest.yml      digest schedule and runner setup
 .github/workflows/holders-events.yml  holder event schedule and runner setup
+.github/workflows/snapshot.yml    snapshot rebuild schedule; writes a file, posts nothing
 .github/workflows/sites.yml       operating footprint sweep, manual only
 .github/workflows/audit.yml       identifier audit, manual only
 .github/workflows/calibrate.yml   staleness calibration, manual only
 .github/workflows/probe-body-dates.yml  body-date probe, manual only
 .github/workflows/items.yml       8-K item audit, manual only
 .github/workflows/metric-regime.yml  metric regime check, manual only
+.github/workflows/holders.yml     13D/G content probe, manual only
+.github/workflows/filing-rate.yml  filing rate probe, manual only
+.github/workflows/premarket.yml   premarket probe, manual only
+.github/workflows/spike-norm.yml  spike normalisation probe, manual only
+.github/workflows/baseline-test.yml  baseline rule test, manual only
+.github/workflows/failure-notice.yml  fires on a watched workflow finishing; posts failures to ops
+.github/workflows/workflow-list-gate.yml  fails a push that adds a workflow nothing watches
 spike_state.json                  auto-generated; per-day alert tiers
 shortinterest_state.json          auto-generated; last posted settlement date
 regsho_state.json                 auto-generated; last posted trade date
