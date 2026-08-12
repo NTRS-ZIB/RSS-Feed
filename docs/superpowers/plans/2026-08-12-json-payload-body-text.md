@@ -527,17 +527,23 @@ Then `gh run view <id> --log`. Compare against the table in
 | scheduled + results | 2 | 2 | 2 |
 | not scheduled | 3 | 1 | 4 |
 
-**Exactly one row may change: HUT moves from `none` to `one` carrying
+**Exactly one row may change its RESULT: HUT moves from `none` to `one` carrying
 `2026-08-04`, taking advance notice to `6 / 0 / 0`.**
 
-Any other row that changes is a **finding to investigate and report, not a bonus
-to accept.** The claim being tested is that this is additive for sources with no
-JSON payload; a second changed row falsifies that claim. The `chars` column must
-rise for HUT and stay identical for every other row.
+Compare **candidate dates and buckets**, not the `chars` column. Any other row
+whose candidates or bucket change is a **finding to investigate and report, not a
+bonus to accept.** If one does, stop and report which row, its old and new
+candidates, and what in its page carries a JSON payload. Do not adjust the
+expectation to fit the result.
 
-If a second row changes, stop and report which row, its old and new candidates,
-and what in its page carries a JSON payload. Do not adjust the expectation to fit
-the result.
+**Do not gate on `chars`, and disregard a new row appearing.** The probe reads
+live pages, so both drift for reasons that have nothing to do with this change.
+Measured on 2026-08-12: GLXY fell 89 characters and a MARA row fell 23, decreases
+that adding text cannot cause, and a BGDE release published that morning arrived
+as a twenty-first row. Expect a small positive drift on sources carrying UI
+strings in a payload, such as BKKT's `"Show All"`, `"Hide All"`,
+`"Choose from list"`, 38 characters across all three of its rows. Read `chars` to
+explain a result that moved; never to decide whether one did.
 
 - [ ] **Step 6: Record what was measured**
 

@@ -152,15 +152,28 @@ on. That is why the fix belongs here and nowhere else.
 Re-run `probe_body_dates` and diff the table against the run recorded in
 `docs/press-monitor.md`.
 
-**Exactly one row may change: HUT moves from `none` to `one` carrying
-`2026-08-04`**, taking advance notices to 6 of 6. Any other row that changes is a
-**finding to investigate and explain, not a bonus to accept.** The whole claim of
-this design is that it is additive for sources with no JSON payload, and a second
-changed row falsifies that claim rather than improving the result.
+**Exactly one row may change its RESULT: HUT moves from `none` to `one` carrying
+`2026-08-04`**, taking advance notices to 6 of 6. Any other row whose candidate
+dates or bucket change is a **finding to investigate and explain, not a bonus to
+accept.** The claim being tested is that this cannot alter what any other source
+yields, and a second changed result falsifies it rather than improving it.
 
-The `chars` column will rise for HUT and must stay identical for every other row,
-which is the cheapest way to see whether the extraction reached anything it
-should not have.
+### The `chars` column is not the check, and an earlier draft of this spec said it was
+
+That draft required `chars` to stay identical for every other row. **That check is
+unsatisfiable and was wrong to write.** The probe reads live pages, so the column
+drifts on its own between runs: the 2026-08-12 comparison showed GLXY down 89
+characters and one MARA row down 23, decreases that adding text cannot cause, and
+a BGDE release published that day appeared as a twenty-first row. A criterion that
+fires on the world changing cannot tell you whether your code changed anything.
+
+Compare candidates and buckets, which are stable unless a source publishes.
+Treat `chars` as a diagnostic to read when a result does move, not as a gate.
+
+Expect a small positive `chars` drift on sources that carry a payload of UI
+strings. Measured on BKKT: `"Show All"`, `"Hide All"`, `"Choose from list"`, 38
+characters, present on all three of its rows. Those are labels, they carry no
+date, and no filter that keeps prose can exclude them.
 
 Unit-level checks belong on the extraction itself, driven by fixtures rather than
 network: a payload holding prose, a payload that is not valid JSON, a page with no
