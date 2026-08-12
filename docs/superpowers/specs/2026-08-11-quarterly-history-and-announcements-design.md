@@ -18,18 +18,24 @@ combination describes no company.
 
 Dispatched 2026-08-11 against the live roster.
 
-**BTDR is the only company of nineteen with no 10-Q.**
+**BTDR is the only company of nineteen with no 10-Q — but the floor this
+change keys on is two, not zero, and DGXX's one 10-Q sits below that floor
+too.**
 
 ```
         total  10-K  10-Q  20-F  40-F   6-K   8-K
 BTDR      272     0     0     5     0   102     0   NO 10-Q
 IREN      312     1     3     3     0   123    29   has 10-Q
 ANY       807     7    19     3     2   150   138   has 10-Q
-DGXX      242     1     1     3     1   132    21   has 10-Q
+DGXX      242     1     1     3     1   132    21   1 10-Q, below floor
 ```
 
-IREN, ANY and DGXX file 6-Ks in volume as well, but they have quarterly
-history, so they project from it and are unaffected by any of this.
+IREN and ANY file 6-Ks in volume as well, but they clear the quarterly floor
+of two and project from their 10-Q history, so they are unaffected by any of
+this. DGXX also files 6-Ks in volume — but its single 10-Q does not clear the
+floor, so it is affected exactly as BTDR is: projected on its annual cycle
+only, named in the run log, with its announced dates shown separately when
+they describe a different report than its row.
 
 **Projecting BTDR's quarterly results from EDGAR is not reachable.** Two
 findings close it off independently:
@@ -70,8 +76,8 @@ is a legal status we would be inferring rather than observing, and which this
 repo's conventions say to avoid: a wrong inference is silent, and the
 observable version is free.
 
-Today it selects exactly one company. If another arrives it is handled with no
-roster edit.
+Today it selects two companies, BTDR and DGXX. If a third arrives it is
+handled with no roster edit.
 
 ### Why the pool size and not "has no 10-Q"
 
