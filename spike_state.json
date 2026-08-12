@@ -1,4 +1,6 @@
 {
  "date": "2026-08-12",
- "alerted": {}
+ "alerted": {
+  "DGXX": 1.5
+ }
 }
