@@ -283,6 +283,29 @@ def main():
               date(2025, 8, 1)],
           "no released date means no past-date filter is applied at all")
 
+    # Measured 2026-08-12, first probe_body_dates run: EVERY scheduled body
+    # opened with its own dateline, and it survived as candidate one because
+    # the filter dropped only dates strictly before the release. It made
+    # five of six advance notices look like they offered two dates when
+    # they offered one. See docs/press-monitor.md.
+    DATELINED = (
+        "MIAMI, Aug. 4, 2026 -- WhiteFiber today announced it will report "
+        "second quarter results on August 12, 2026."
+    )
+    check("the release-date dateline is not a candidate",
+          ed.candidate_dates(DATELINED, date(2026, 8, 4))
+          == [date(2026, 8, 12)],
+          "a body is stamped with its own date; that is never the "
+          "forthcoming report date")
+    check("a body offering only its own dateline offers nothing",
+          ed.candidate_dates("MIAMI, Aug. 4, 2026 -- no other date here",
+                             date(2026, 8, 4)) == [],
+          "an empty list is the honest answer, not the dateline")
+    check("released=None still returns a dateline, having no baseline",
+          ed.candidate_dates(DATELINED, None)
+          == [date(2026, 8, 4), date(2026, 8, 12)],
+          "with no release date there is nothing to recognise it as")
+
     print("\nANNUAL-ONLY PROJECTION")
 
     def annual(year, lag_days):

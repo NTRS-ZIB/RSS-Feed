@@ -351,7 +351,21 @@ def candidate_dates(text, released, limit=6):
     lets the log show what a rule would have had to choose between.
 
     Filtered only by facts: a date before the release cannot be a forthcoming
-    report date, and a repeat is the same date said twice.
+    report date, a date ON the release date is the body's own dateline, and a
+    repeat is the same date said twice.
+
+    THE DATELINE WAS THE EXPENSIVE ONE. The first probe_body_dates run found
+    every scheduled body opening with its own date — "MIAMI, Aug. 4, 2026 --"
+    — which survived a filter that dropped only dates strictly earlier. It
+    cost nothing in accuracy, because that date is never the forthcoming
+    report date, and everything in legibility: five of six advance notices
+    read as offering two candidates when they offered one, which is the
+    difference between "a rule is possible" and "a rule is a judgement call".
+    A measurement can be undone by one date that every document carries.
+
+    With `released=None` the dateline survives, because there is then no
+    baseline to recognise it against. That is the honest behaviour for an
+    item whose own release date is unknown, not an oversight.
 
     DATE_RE only, never DATE_NOYEAR_RE. A bare "August 12" in running prose is
     far more often a period reference than an announcement, and inferring a
@@ -366,7 +380,7 @@ def candidate_dates(text, released, limit=6):
                         int(m.group(2)))
         except (KeyError, ValueError):
             continue
-        if released is not None and when < released:
+        if released is not None and when <= released:
             continue
         if when in seen:
             continue
