@@ -26,13 +26,27 @@ Channels:
 New items are deduped against `state.json` and posted once each.
 
 **A second output file.** Every non-dry run also extracts announced reporting
-dates out of item titles and writes `earnings_dates.json`, keyed by CIK. This
-runs over every item fetched, not only the ones that post, and it runs before
-the posting loop — a failure inside it is caught and logged rather than
-allowed to abort `main()`, so it can never cost a press post. The [earnings
-calendar](earnings.md) reads the file and overlays a disclosed date onto its
-own projection, marked `!`. See `record_disclosed_dates()` in
-`press_monitor.py` and `earnings_dates.py`.
+dates and writes `earnings_dates.json`, keyed by CIK. This runs over every
+item fetched, not only the ones that post, and it runs before the posting
+loop — a failure inside it is caught and logged rather than allowed to abort
+`main()`, so it can never cost a press post. The [earnings calendar](
+earnings.md) reads the file and overlays a disclosed date onto its own
+projection, marked `!`.
+
+Most dates come straight from the title. When a title names a scheduled
+event but carries no date of its own, and the item is new this run, the
+monitor fetches the release's own page and looks for the date in its body
+instead — a company sometimes advances a "we will report on X" notice ahead
+of the release that actually names the date. It stores that date only if the
+body offers **exactly one** forward-looking date; several is an unresolvable
+ambiguity and none is nothing to store. A body-derived date is marked `+`
+rather than `!`, because the uncertainty there is in the READING, not in the
+company's own statement. **This is an extra network fetch per new advance
+notice**, gated on the item's freshness so the same page is never fetched
+twice; a host that stalls on the request shows up as a failed fetch, not as
+a body with no dates in it — the log line distinguishes the two. See
+`record_disclosed_dates()` and `announcement_body()` in `press_monitor.py`,
+and `date_from_body()` in `earnings_dates.py`.
 
 ## Schedule
 

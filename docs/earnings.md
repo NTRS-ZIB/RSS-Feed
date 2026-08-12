@@ -107,8 +107,7 @@ look like a contradiction rather than two different measurements.
   them from the release title (marked `!`) or, when found in the body only, parses
   them out (marked `+`). The company stated the date either way, so both show no
   spread; the difference is that a `+` row keeps normal overdue grace, because
-  the company stated the date either way and what is uncertain is our reading
-  rather than the company's statement.
+  what is uncertain there is our reading rather than the company's statement.
 - **Recent listings have thin history.** WYFI had 4 periodic filings at time of
   writing, giving ±35d. Accurate reporting of low confidence, not a bug.
 - **Validate against reality.** When a company actually files, compare to the
