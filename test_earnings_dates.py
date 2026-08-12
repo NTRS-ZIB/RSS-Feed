@@ -355,8 +355,15 @@ def main():
     check("29 February falls back to the 28th",
           ec.next_annual_period_end(date(2024, 2, 29)) == date(2025, 2, 28))
 
-    print("\nANNUAL-ONLY IS NEVER OVERDUE")
+    print("\nANNUAL-ONLY REACHES OVERDUE LIKE ANY OTHER ROW")
+    # The old rule exempted annual-only rows from Overdue entirely, written
+    # when the projection was a fabricated quarterly date that could never be
+    # seen satisfied. The projection is now the annual filing itself — 10-K,
+    # 20-F and 40-F are all in PERIODIC_FORMS, and DGXX files both a 10-K and
+    # a 10-Q — so the component CAN see it arrive, and the exemption is gone.
     long_past = date.today() - timedelta(days=400)
+    within_grace = date.today() - timedelta(days=3)
+    assert 3 < ec.OVERDUE_GRACE, "test assumes 3d is inside the grace window"
 
     def crow(label, **kw):
         r = {"label": label, "name": label, "period": date(2025, 12, 31),
@@ -366,7 +373,12 @@ def main():
         return r
 
     text = ec.build_message([crow("BTDR", annual_only=True)])
-    check("an annual-only row 400 days past does not reach Overdue",
+    check("an annual-only row past the grace by more than OVERDUE_GRACE "
+          "DOES reach Overdue",
+          "Overdue" in text and "BTDR" in text, text)
+    text = ec.build_message(
+        [crow("BTDR", annual_only=True, expected=within_grace)])
+    check("the ordinary OVERDUE_GRACE still applies to an annual-only row",
           "Overdue" not in text, text)
     text = ec.build_message([crow("PROJ")])
     check("an ordinary row 400 days past still does",

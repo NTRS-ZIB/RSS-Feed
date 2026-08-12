@@ -228,18 +228,12 @@ def build_message(rows, announced=None):
     upcoming = sorted((r for r in rows if today <= r["expected"] <= horizon),
                       key=lambda r: r["expected"])
     def is_overdue(r):
-        # A COMPANY WE CANNOT SEE REPORT IS NEVER REPORTED LATE. Overdue
-        # asserts that something should have arrived and has not, and for an
-        # annual-only company the only forms this component reads are the ones
-        # it barely files — its interim results arrive on a 6-K, which carries
-        # no period and is not in PERIODIC_FORMS. The row would go overdue and
-        # stay there for a quarter, which is what it did for 22 days before
-        # this. A claim we cannot check does not belong in the post.
+        # An annual-only row projects the ANNUAL filing itself — 10-K, 20-F
+        # and 40-F are all in PERIODIC_FORMS, so this component can see one
+        # arrive exactly as it can for any other row. DGXX makes this
+        # concrete: it files both a 10-K and a 10-Q. There is no longer a
+        # class of row this check cannot check, so it is not exempted.
         #
-        # This is a real loss: if such a company goes genuinely silent, nothing
-        # here says so. Its releases still reach the press channel.
-        if r.get("annual_only"):
-            return False
         # OVERDUE_GRACE exists to allow for the spread in OUR projection. A
         # company's own announced date has no spread to allow for, so it gets
         # none: announced the 12th and nothing filed by the 13th is late.
@@ -464,8 +458,8 @@ def main():
 
     annual_only = [r["label"] for r in rows if r.get("annual_only")]
     if annual_only:
-        print(f"\nProjected annually, with no quarterly estimate and no "
-              f"overdue: {', '.join(annual_only)}. Each files fewer than "
+        print(f"\nProjected annually, with no quarterly estimate: "
+              f"{', '.join(annual_only)}. Each files fewer than "
               f"{MIN_QUARTERLY_FILINGS} quarterly reports, so no quarterly "
               f"cadence can be measured.")
     else:

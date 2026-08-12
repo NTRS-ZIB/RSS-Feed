@@ -52,7 +52,7 @@ correctly projects an `annual` filing for its June period, not a 10-Q.
 | Marker | Meaning |
 |---|---|
 | `!` | The company announced this date. Not a projection, so no spread is shown. |
-| `*`/`~` on a 2027-ish date | Projected annually, because the company files fewer than two quarterly reports. It gets no quarterly estimate and is never marked overdue. Which of the two shows is decided the same way as any other row — `marker()` checks the wide-spread `~` before the annual `*`, so an annual-only company whose few samples also spread widely (BTDR, DGXX both do) renders `~`, not `*`. There is no dedicated symbol for "annual-only"; read the year, not the marker, to spot it. |
+| `*`/`~` | Projected annually, because the company files fewer than two quarterly reports. It gets no quarterly estimate, but is otherwise an ordinary row — including eligibility for Overdue against its own projection. Which of the two markers shows is decided the same way as any other row — `marker()` checks the wide-spread `~` before the annual `*`, so an annual-only company whose few samples also spread widely (BTDR, DGXX both do) renders `~`, not `*`. There is no dedicated symbol for "annual-only", and nothing in a row's printed date distinguishes it from an ordinary row whose next filing happens to be its annual one — both render `%a %d %b`, with no year. The run log names the annual-only companies explicitly every run (`Projected annually, with no quarterly estimate: ...`); that is where to look, not the post. |
 | *(none)* | Projection from ≥2 same-form filings. Treat the date as real. |
 | `~` | Historical spread exceeds 30 days. Indicative only; named in a footnote. |
 | `?` | Had to fall back to a different form type — e.g. a foreign issuer with no 10-Q history. Weakest case. |
@@ -119,15 +119,18 @@ something these dates are not.
   it logged `No earnings_dates.json on origin yet.`, because no live run has
   written one. The push side of that function is reasoned about, not
   observed.
-- **A company below the quarterly filing floor is never reported overdue, and
-  that is deliberate.** Marking something overdue claims it should have
-  arrived and has not. For a company that reports interim results on a 6-K,
-  this component cannot see it arrive at all: a 6-K is not in `PERIODIC_FORMS`
-  and carries no period covered, since `reportDate` equals `filingDate` on
-  every one of them. BTDR's row read "est 20 Jul" and climbed for 22 days on
-  exactly that. The cost is real — if such a company goes genuinely silent
-  nothing here will say so — and it is preferred to a claim that cannot be
-  checked. Its releases still reach the press channel.
+- **A company below the quarterly filing floor is projected on its annual
+  cycle only, and IS eligible for overdue against that projection.** The
+  earlier version of this rule exempted annual-only rows from Overdue
+  entirely, on the reasoning that the component could not see such a company
+  arrive. That reasoning was true of the old projection — a fabricated
+  quarterly date that could never be satisfied — but the projection is now
+  the annual filing itself, and 10-K, 20-F and 40-F are all in
+  `PERIODIC_FORMS`. DGXX makes this concrete: it files both a 10-K and a
+  10-Q, so its annual-only rows (when its 10-Q count dips below the floor)
+  are as observable as any other row. BTDR's row read "est 20 Jul" and
+  climbed for 22 days before this was fixed the first time, by exempting it;
+  it now goes overdue like any other row, with the ordinary `OVERDUE_GRACE`.
 - **Two branches in `main()` still have no witness.** The `status == "ok"`
   line, printed when `earnings_dates.json` loads with at least one record, and
   the split further down that tells a company on the roster with too little
