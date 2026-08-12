@@ -45,13 +45,13 @@ def main():
         '<script type="application/json" id="__NUXT_DATA__" data-ssr="false">'
         '["MIAMI, July 13, 2026 ",'
         ' "Date: Tuesday, August 4, 2026\\nTime: 8:30 a.m. ET",'
-        ' {"slug": "hut-8-schedules"}]'
+        ' {"slug": "hut-8-schedules", "title": "Earnings call scheduled"}]'
         '</script>'
     )
     got = pt.extract_text(HUT_SHAPE)
     check("payload prose is recovered", "August 4, 2026" in got, got)
     check("the visible half survives alongside it", "Posted Jul 13, 2026" in got)
-    check("nested object strings are recovered too", "hut-8-schedules" in got)
+    check("nested object strings with whitespace are recovered", "Earnings call scheduled" in got)
     check("newlines inside a recovered string are collapsed",
           "August 4, 2026 Time:" in got, got)
 
@@ -112,6 +112,36 @@ def main():
           both.count("August 4, 2026") == 2, both)
     check("and the two halves are separated, not run together",
           pt.PAYLOAD_SEP in both, both)
+
+    print("\nNOISE FILTERING: WHITESPACE GATE")
+    # Real payloads carry non-prose data: URLs, UUIDs, base64 blobs, single-word
+    # tokens. None of these can contain a date (dates have the form "Month D,
+    # YYYY" which requires whitespace). Strings without whitespace are noise
+    # that inflate the probe's chars column. Only recover strings containing
+    # whitespace, which cannot lose a date since any date must contain it.
+    check("URLs in a payload are not recovered",
+          pt.extract_text('<p>visible</p><script type="application/json">'
+                          '["https://example.test/a/b"]</script>') == "visible",
+          "whitespace-free strings are noise")
+    check("a UUID in a payload is not recovered",
+          pt.extract_text('<p>visible</p><script type="application/json">'
+                          '["550e8400-e29b-41d4-a716-446655440000"]</script>') == "visible",
+          "whitespace-free strings are noise")
+    check("a base64 blob in a payload is not recovered",
+          pt.extract_text('<p>visible</p><script type="application/json">'
+                          '["eJyNUQFuAyEM1B1vGUviHKQdewgqZJ0XX"]</script>') == "visible",
+          "whitespace-free strings are noise")
+    check("a mix of junk and prose keeps only the prose",
+          pt.extract_text('<p>visible</p><script type="application/json">'
+                          '["https://example.test/a/b", '
+                          '"Date: August 4, 2026", '
+                          '"550e8400-e29b-41d4-a716"]</script>') == "visible | Date: August 4, 2026",
+          "only strings with whitespace are recovered")
+    check("a bare date with no surrounding words is still recovered",
+          "August 4, 2026" in pt.extract_text(
+              '<p>visible</p><script type="application/json">'
+              '["August 4, 2026"]</script>'),
+          "the date contains whitespace, so it passes the gate")
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")

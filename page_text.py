@@ -79,5 +79,10 @@ def extract_text(html, limit=None):
     visible = " ".join(TAG.sub(" ", stripped).split())
     recovered = [" ".join(s.split()) for s in payload_strings(html)]
     recovered = [s for s in recovered if s]
+    # Only recover strings containing whitespace. A date has the form
+    # "Month D, YYYY", which requires whitespace. Filtering out whitespace-free
+    # strings cannot lose a date, and it drops URLs, UUIDs, base64 blobs and
+    # single-word tokens that are noise in the body text.
+    recovered = [s for s in recovered if any(c.isspace() for c in s)]
     text = PAYLOAD_SEP.join([visible] + recovered) if recovered else visible
     return text[:limit] if limit else text
