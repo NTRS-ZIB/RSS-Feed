@@ -1,0 +1,32 @@
+name: Probe body dates
+
+# Maintenance tool, not a component. Read-only: collects the same IR sources
+# the press monitor already collects, fetches the body of every announcement
+# whose title carried no date, prints what dates each body offered, exits.
+# No webhook, no state, no commit, no schedule, no secrets.
+#
+# Run it before writing any rule that reads a reporting date out of a body,
+# and after changing recognition in earnings_dates.py. See probe_body_dates.py
+# and docs/press-monitor.md.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install feedparser requests
+      - name: Probe
+        timeout-minutes: 10
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: python -u probe_body_dates.py
