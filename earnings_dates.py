@@ -267,10 +267,27 @@ def apply(rows, companies, today):
                          f"unparseable; keeping the projection")
             continue
         if when <= r["period"]:
-            notes.append(f"{r['label']}: stored date {when} is not after the "
-                         f"period end {r['period']} being projected, so it "
-                         f"describes a different report than this row; shown "
-                         f"in the Announced section instead")
+            # This branch catches two different populations, and the note
+            # must say which one fired. A date that is still ahead of `today`
+            # is real and useful — it just describes a different report than
+            # this row projects — so it is shown in the Announced section
+            # (see announced_elsewhere). A date that has already PASSED hits
+            # this same `when <= period` test, because a past date is always
+            # <= a future period end, but announced_elsewhere's own
+            # `when < today` guard means it is never surfaced there either.
+            # Claiming otherwise for that case is the same defect this note
+            # was rewritten to remove, just relocated to a narrower case.
+            if when < today:
+                notes.append(f"{r['label']}: stored date {when} is not after "
+                             f"the period end {r['period']} being projected; "
+                             f"it has already passed, describing a report "
+                             f"the company has since made, so it is not "
+                             f"shown anywhere")
+            else:
+                notes.append(f"{r['label']}: stored date {when} is not after "
+                             f"the period end {r['period']} being projected, "
+                             f"so it describes a different report than this "
+                             f"row; shown in the Announced section instead")
             continue
         if when != r["expected"]:
             notes.append(f"{r['label']}: projected {r['expected']}, company "
