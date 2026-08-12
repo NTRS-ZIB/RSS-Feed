@@ -302,23 +302,33 @@ def apply(rows, companies, today):
 def announced_elsewhere(rows, companies, today):
     """Announced dates that are real, still ahead, and NOT on any row.
 
-    `apply()` overlays a stored date only when it falls after the period end
-    being projected, so a stale one expires by itself. An annual-only row's
-    period end is up to twelve months out, so a QUARTERLY announcement always
-    falls before it and is refused — correctly, because that row is about the
-    annual filing and an August date on it would be a claim about the wrong
-    report.
+    `apply()` overlays a stored date onto a row only when it falls after the
+    period end being projected; a date that does not clear that bar describes
+    a different, earlier report than the one the row projects, and is left in
+    `companies` untouched rather than applied. This function is what surfaces
+    that date instead of letting it disappear into a log line — for any row
+    apply() left untouched, not only an annual-only one. There is no
+    `annual_only` condition here; the trigger is simply "apply() didn't".
+
+    The clearest case is annual-only: a row's period end is up to twelve
+    months out, so a QUARTERLY announcement always falls before it and is
+    refused by apply() — correctly, because that row is about the annual
+    filing and an August date on it would be a claim about the wrong report.
+    But the same refusal fires identically for an ordinary row whenever the
+    stored date describes an earlier period than the one currently projected.
 
     The date is still true and still useful, so it is surfaced here instead of
     being dropped to a log line. Returns [(label, date), ...] sorted by date.
     """
-    applied_ciks = {r.get("cik") for r in rows if r.get("disclosed")}
+    # One row per CIK (COMPANIES is keyed that way), so "this row's own
+    # `disclosed` flag" and "this row's CIK is in the set of disclosed CIKs"
+    # are the same test. Reading it straight off the row skips building a set
+    # that can only ever agree with what's already sitting in `rows`.
     out = []
     for r in rows:
-        cik = r.get("cik")
-        if cik in applied_ciks:
+        if r.get("disclosed"):
             continue
-        rec = companies.get(cik)
+        rec = companies.get(r.get("cik"))
         if not isinstance(rec, dict):
             continue
         when = parse_iso(rec.get("date"))
