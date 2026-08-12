@@ -63,7 +63,7 @@ components do; it only starts running tests that already exist and already pass.
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: a workflow named exactly **`Tests`**. Task 2 dispatches it by that
+- Produces: a workflow named exactly **`Tests`**. Task 2 refers to it by that
   name and `failure-notice.yml` watches it by that string; the two must match
   character for character.
 
@@ -169,9 +169,15 @@ invisible until a failure goes unannounced.
 - [ ] **Step 6: Confirm the inventory is true in both directions**
 
 ```bash
-for f in .github/workflows/*.yml; do b=$(basename "$f"); grep -q "$b" README.md || echo "MISSING: $b"; done
+for f in .github/workflows/*.yml; do grep -qF ".github/workflows/$(basename "$f")" README.md || echo "MISSING: $(basename "$f")"; done
 grep -oE "\.github/workflows/[a-z-]+\.yml" README.md | sort -u | while read p; do [ -e "$p" ] || echo "PHANTOM: $p"; done
 ```
+
+Match the full path, not the bare basename: a bare-basename `grep -q "$b"` is
+substring matching, not anchoring, and `metric-regime.yml` contains
+`regime.yml` as a substring — that exact collision let
+`.github/workflows/regime.yml` go missing from the Layout block undetected.
+Matching the full path removes the false positive.
 
 Expected: no output from either. The second loop matters as much as the first: a
 listed file that does not exist misleads exactly like an omitted one.

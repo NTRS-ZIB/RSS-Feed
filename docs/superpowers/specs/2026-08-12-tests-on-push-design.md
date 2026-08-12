@@ -102,9 +102,13 @@ set, was considered and rejected: a red push nobody notices is the same failure
 mode as a test nobody runs, and `EXEMPT` should stay a one-entry special case for
 the notifier itself rather than becoming a habit.
 
-**README's Layout block gains an entry.** That inventory was made exactly correct
-earlier today, verified in both directions. Adding a workflow without listing it
-would re-break it in the same hour.
+**README's Layout block gains an entry.** The verification behind that claim used
+substring matching (`grep -q "$b" README.md`), and substring matching is not
+anchored: `metric-regime.yml` contains `regime.yml`, so the check reported the
+inventory correct while `.github/workflows/regime.yml` ("Filing regime census")
+was genuinely absent from the Layout block. An anchored re-check — matching the
+full path rather than the bare basename — found exactly that one omission. This
+branch adds the missing entry and replaces the check with the anchored form.
 
 ## Verification
 
