@@ -1893,7 +1893,7 @@ def announcement_body(link):
     finally:
         r.close()
     html = bytes(raw[:BODY_MAX_BYTES]).decode("utf-8", "replace")
-    return page_text.extract_text(html)
+    return page_text.extract_text(html, limit=BODY_MAX_BYTES)
 
 
 def record_disclosed_dates(items, fresh_uids):
