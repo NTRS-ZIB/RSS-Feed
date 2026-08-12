@@ -61,15 +61,67 @@ def undated_announcements(items, today, roster=None):
         if not roster.get(item.get("ticker") or ""):
             continue
         title = item.get("title")
-        _when, reason = ed.extract(title, today, released_date(item))
+        released = released_date(item)
+        _when, reason = ed.extract(title, today, released)
         if reason != "no-date":
             continue
         out.append({
             "ticker": item.get("ticker"),
             "title": title,
             "link": item.get("link"),
-            "released": released_date(item),
+            "released": released,
             "scheduled": ed.names_a_scheduled_event(title),
             "mixed": ed.also_reports_results(title),
         })
+    return out
+
+
+def probe_rows(rows, fetch):
+    """Fetch each selected row's body and attach its candidate dates.
+
+    THERE IS DELIBERATELY NO SCHEDULED-EVENT GATE HERE. press_monitor fetched
+    only titles naming a forthcoming event, to keep date-dense results
+    releases out of the measurement. Whether that gate actually discriminates
+    is the question this probe exists to answer, and a probe that pre-filters
+    by the gate can only ever confirm it. Every row is fetched; the labels
+    already on the row separate the populations when the output is read.
+    """
+    for row in rows:
+        text = fetch(row["link"])
+        row["chars"] = len(text) if text is not None else None
+        row["candidates"] = (ed.candidate_dates(text, row["released"])
+                             if text is not None else [])
+    return rows
+
+
+BUCKETS = ("one", "several", "none", "failed")
+
+
+def label_of(row):
+    """Which population a row belongs to. See HOW TO READ THE OUTPUT."""
+    if not row["scheduled"]:
+        return "not scheduled"
+    return "scheduled + results" if row["mixed"] else "advance notice"
+
+
+def bucket_of(row):
+    """How usable this body's dates are.
+
+    "failed" is separate from "none" on purpose: a source that did not answer
+    has told us nothing, while a body carrying no forward date has told us
+    the date is not recoverable there. Merging them would let an outage read
+    as evidence.
+    """
+    if row["chars"] is None:
+        return "failed"
+    n = len(row["candidates"])
+    return "none" if n == 0 else ("one" if n == 1 else "several")
+
+
+def summarise(rows):
+    """{label: {bucket: count}}, every bucket present even at zero."""
+    out = {}
+    for row in rows:
+        counts = out.setdefault(label_of(row), dict.fromkeys(BUCKETS, 0))
+        counts[bucket_of(row)] += 1
     return out
