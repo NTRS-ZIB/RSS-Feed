@@ -650,9 +650,8 @@ git commit -m "Print the table, and a workflow to run it by hand"
 
 **Interfaces:**
 - Consumes: nothing new.
-- Produces: `record_disclosed_dates(items, fresh_uids)` keeps its signature
-  unchanged. `fresh_uids` becomes unused inside it; leave the parameter in place
-  and say why in the docstring, so the caller does not have to change.
+- Produces: `record_disclosed_dates(items)`. The `fresh_uids` parameter is
+  REMOVED, and so is the set comprehension the caller built to supply it.
 
 - [ ] **Step 1: Record the before state**
 
@@ -705,16 +704,40 @@ Then drop the `Bodies fetched` clause from the summary:
           f"as past, {len(companies)} on file.")
 ```
 
-- [ ] **Step 4: Explain the now-unused parameter**
+- [ ] **Step 4: Drop the now-dead parameter and the work that fed it**
 
-Add to `record_disclosed_dates`'s docstring, after the existing paragraph:
+`fresh_uids` existed only to gate the body fetch. With the fetch gone it is
+dead weight, and the caller builds a set comprehension purely to supply it, so
+keeping it would keep dead work rather than just a dead name. Repo precedent is
+commit `794d315`, "Widen `announced_elsewhere`'s docstring, drop its dead-weight
+set".
+
+Change the signature:
 
 ```python
-    `fresh_uids` is unused. It gated a body fetch that has moved to
-    probe_body_dates.py, and it is kept in the signature because the
-    freshness of an item is the natural thing for any future per-item work
-    here to gate on. The caller passes it either way.
+def record_disclosed_dates(items):
 ```
+
+And the single call site, `press_monitor.py:2076`, which becomes:
+
+```python
+    try:
+        record_disclosed_dates(all_items)
+```
+
+Leave the `try`/`except` and the comment above it exactly as they are. That
+guard is not about the body fetch: it exists so a failure writing a second
+file cannot silence the press channel, and it is still needed.
+
+Confirm the caller has no other use for what was removed:
+
+```bash
+grep -n "insider_fresh" press_monitor.py
+```
+
+Expected: `insider_fresh` is still used elsewhere (it feeds the posting loop).
+If this grep comes back with only the deleted line, say so in the report rather
+than deleting the variable, since that is a wider change than this task.
 
 - [ ] **Step 5: Confirm every trace is gone**
 
