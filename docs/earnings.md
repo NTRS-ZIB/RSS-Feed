@@ -52,6 +52,7 @@ correctly projects an `annual` filing for its June period, not a 10-Q.
 | Marker | Meaning |
 |---|---|
 | `!` | The company announced this date. Not a projection, so no spread is shown. |
+| `+` | The company announced this date in the body of a release rather than in the headline, and the calendar parsed it out. The company stated it either way, so the row shows no spread, exactly as a `!` row does. What differs is that the reading was ours, so a `+` row keeps the normal overdue grace where a `!` row gets none. The rule that produces it stores a date only when the body offers exactly one forward date; several or none stores nothing. |
 | `*`/`~` on an annual-only row | Projected annually, because the company files fewer than two quarterly reports. Neither marker *means* annual-only — `*` is any annual-kind row and `~` is any wide spread, both listed below. It gets no quarterly estimate, but is otherwise an ordinary row — including eligibility for Overdue against its own projection. Which of the two markers shows is decided the same way as any other row — `marker()` checks the wide-spread `~` before the annual `*`, so an annual-only company whose few samples also spread widely (BTDR, DGXX both do) renders `~`, not `*`. There is no dedicated symbol for "annual-only", and nothing in a row's printed date distinguishes it from an ordinary row whose next filing happens to be its annual one — no shape a row renders carries a year, in any section. The run log names the annual-only companies explicitly every run (`Projected annually, with no quarterly estimate: ...`); that is where to look, not the post. |
 | *(none)* | Projection from ≥2 same-form filings. Treat the date as real. |
 | `~` | Historical spread exceeds 30 days. Indicative only; named in a footnote. |
@@ -64,9 +65,12 @@ Expected dates falling on a weekend roll forward to Monday.
 **Expected in the next 45 days** — the actionable list.
 
 **Overdue** — a company past its own announced date with nothing filed, or
-more than 10 days beyond its typical lag. An announced date gets no grace,
-because the grace exists to allow for the spread in our projection and an
-announced date has none. This corroborates the `NT 10-Q` / `NT 10-K`
+more than 10 days beyond its typical lag. An announced date in the headline
+(marked `!`) gets no grace, because the grace exists to allow for the spread in
+our projection and an announced date has none. A date found in the body and
+parsed by us (marked `+`) keeps the normal grace, because what is uncertain
+there is our reading rather than the company's statement. This corroborates the
+`NT 10-Q` / `NT 10-K`
 late-filing notices the press monitor watches for; seeing both is a strong
 signal.
 
@@ -85,7 +89,7 @@ its next annual filing, period end 2026-12-31, while the date it announced
 (2026-08-14) belongs to some earlier report; shown together the row would
 read as a December filing due in August, contradicting itself. Rows in this
 section carry no marker and no spread column: they are neither a projection
-nor the current estimate for any row, so `!`, `~`, `?` and `*` all describe
+nor the current estimate for any row, so `!`, `+`, `~`, `?` and `*` all describe
 something these dates are not.
 
 **Later** — one line per row beyond the horizon, under its own heading. It
@@ -98,11 +102,12 @@ look like a contradiction rather than two different measurements.
 
 ## Known quirks
 
-- **Most rows are estimates; a `!` row is not.** Companies announce actual
-  dates by press release, the [press release monitor](press-monitor.md) reads
-  the announcement out of the release title, and `earnings_dates.json` carries
-  it here. A company whose announcement puts the date in the body rather than
-  the title is still an estimate; the press monitor logs a count of those.
+- **Most rows are estimates; a `!` or `+` row is not.** Companies announce actual
+  dates by press release, and the [press release monitor](press-monitor.md) reads
+  them from the release title (marked `!`) or, when found in the body only, parses
+  them out (marked `+`). The company stated the date either way, so both show no
+  spread; the difference is that a `+` row keeps normal overdue grace, because
+  what is uncertain there is our reading rather than the company's statement.
 - **Recent listings have thin history.** WYFI had 4 periodic filings at time of
   writing, giving ±35d. Accurate reporting of low confidence, not a bug.
 - **Validate against reality.** When a company actually files, compare to the

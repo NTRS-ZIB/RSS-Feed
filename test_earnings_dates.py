@@ -194,6 +194,43 @@ def main():
           applied == 0 and rows[0]["expected"] == date(2026, 8, 14)
           and any("not a dict" in n for n in notes), notes)
 
+    print("\nWHERE A STORED DATE CAME FROM")
+    fresh = {}
+    ed.upsert(fresh, "0001218683", "BGDE", date(2026, 9, 1), "u1", "t1",
+              "2026-08-01T00:00:00+00:00")
+    check("a date defaults to source 'title'",
+          fresh["0001218683"]["source"] == "title",
+          "every date stored before this change came from a headline")
+
+    body = {}
+    ed.upsert(body, "0001218683", "BGDE", date(2026, 9, 1), "u1", "t1",
+              "2026-08-01T00:00:00+00:00", source="body")
+    check("a body-derived date records source 'body'",
+          body["0001218683"]["source"] == "body")
+
+    # A record written before this change has no "source" key at all. Its
+    # absence is not unknown provenance — it is a title, because that was
+    # the only way a date could be stored.
+    LEGACY = {"0001218683": {"ticker": "BGDE", "date": "2026-09-01",
+                             "source_uid": "u", "source_title": "t",
+                             "source_published": "2026-08-01T00:00:00+00:00"}}
+    lrows = [row("BGDE", "0001218683", date(2026, 6, 30), date(2026, 9, 5))]
+    lrows, lapplied, _ = ed.apply(lrows, LEGACY, date(2026, 8, 12))
+    check("a legacy record with no source key applies", lapplied == 1)
+    check("a legacy record reads as a title", lrows[0]["disclosed_source"] == "title",
+          "absence of the key is a title, not an unknown")
+
+    BODYSTORE = {"0001218683": {"ticker": "BGDE", "date": "2026-09-01",
+                                "source_uid": "u", "source_title": "t",
+                                "source_published": "2026-08-01T00:00:00+00:00",
+                                "source": "body"}}
+    brows = [row("BGDE", "0001218683", date(2026, 6, 30), date(2026, 9, 5))]
+    brows, _, _ = ed.apply(brows, BODYSTORE, date(2026, 8, 12))
+    check("a body record carries its provenance onto the row",
+          brows[0]["disclosed_source"] == "body")
+    check("provenance rides alongside disclosed, not instead of it",
+          brows[0]["disclosed"] is True)
+
     print("\nYEAR FROM THE RELEASE DATE")
     check("year taken from the release",
           ed.parse_date("... Results on August 14th", date(2026, 7, 29))
@@ -220,11 +257,15 @@ def main():
     print("\nTHE DISPLAY HALF (build_message)")
     today = date.today()
 
-    def calendar_row(label, expected, spread=6, disclosed=False, degraded=False):
-        return {"label": label, "cik": "0000000000",
-                "period": date(2026, 6, 30), "expected": expected,
-                "spread": spread, "kind": "10-Q", "degraded": degraded,
-                "disclosed": disclosed}
+    def calendar_row(label, expected, spread=6, disclosed=False,
+                     degraded=False, source="title"):
+        r = {"label": label, "cik": "0000000000",
+             "period": date(2026, 6, 30), "expected": expected,
+             "spread": spread, "kind": "10-Q", "degraded": degraded,
+             "disclosed": disclosed}
+        if disclosed:
+            r["disclosed_source"] = source
+        return r
 
     # (a) and (b): an announced row in the upcoming window shows the
     # announced date and the `!` marker, and its spread column is blank
@@ -305,6 +346,65 @@ def main():
           ed.candidate_dates(DATELINED, None)
           == [date(2026, 8, 4), date(2026, 8, 12)],
           "with no release date there is nothing to recognise it as")
+
+    print("\nTHE RULE OVER A BODY")
+    REL = date(2026, 8, 4)
+    NOW = date(2026, 8, 5)
+    check("exactly one forward date is the date",
+          ed.date_from_body("will report on August 12, 2026", REL, NOW)
+          == (date(2026, 8, 12), "ok"))
+    check("several candidates yield nothing",
+          ed.date_from_body("report August 12, 2026, replay to August 19, 2026",
+                            REL, NOW) == (None, "several"),
+          "choosing between them is the guess this rule exists to refuse")
+    check("no candidate yields nothing",
+          ed.date_from_body("no dates here at all", REL, NOW)
+          == (None, "no-candidates"))
+    check("an empty body yields nothing",
+          ed.date_from_body("", REL, NOW) == (None, "no-candidates"))
+    check("a body that offers only its own dateline yields nothing",
+          ed.date_from_body("MIAMI, Aug. 4, 2026 -- nothing else", REL, NOW)
+          == (None, "no-candidates"),
+          "candidate_dates already drops the dateline")
+    check("a single past date is rejected, not stored",
+          ed.date_from_body("reported on August 1, 2026", date(2026, 7, 1),
+                            date(2026, 8, 20)) == (None, "past"),
+          "the guard is on our reading, not on the company")
+    check("several and no-candidates are different reasons",
+          ed.date_from_body("a August 12, 2026 b August 19, 2026", REL, NOW)[1]
+          != ed.date_from_body("nothing", REL, NOW)[1],
+          "one means we could not choose; the other means there was nothing")
+
+    # THE ONE THAT MATTERS. With no release timestamp, candidate_dates has no
+    # baseline to recognise the body's own dateline against, so the dateline
+    # itself survives as the only candidate and looks like a perfectly good
+    # answer. Stored, it becomes today's date presented as an announced date.
+    NO_BASELINE_BODY = ("MIAMI, Aug. 20, 2026 -- Acme will host its call "
+                        "next Tuesday.")
+    check("with no release date, the rule refuses rather than storing the "
+          "dateline",
+          ed.date_from_body(NO_BASELINE_BODY, None, date(2026, 8, 12))
+          == (None, "no-baseline"),
+          "released=None must not let the dateline read as a real date")
+    check("the same shape with a real release date still yields its one date",
+          ed.date_from_body(
+              "MIAMI, Aug. 20, 2026 -- Acme will host its call on "
+              "August 25, 2026.",
+              date(2026, 8, 20), date(2026, 8, 21))
+          == (date(2026, 8, 25), "ok"),
+          "the fix must not disable the rule when a release date IS known")
+
+    check("date_from_body's reasons are a closed set",
+          {ed.date_from_body(*a)[1] for a in [
+              ("will report on August 12, 2026", REL, NOW),
+              ("a August 12, 2026 b August 19, 2026", REL, NOW),
+              ("no dates here", REL, NOW),
+              ("reported on August 1, 2026", date(2026, 7, 1),
+               date(2026, 8, 20)),
+              ("MIAMI, Aug. 20, 2026 -- nothing else", None,
+               date(2026, 8, 12)),
+          ]} == {"ok", "several", "no-candidates", "past", "no-baseline"},
+          "press_monitor indexes its counter dict by these strings")
 
     print("\nANNUAL-ONLY PROJECTION")
 
@@ -562,6 +662,63 @@ def main():
     text = ec.build_message([only_disclosed, visible])
     check("the footnote returns as soon as one row has a spread",
           "last col = +/- spread" in text and "(blank on ! rows)" in text)
+
+    print("\nA BODY-DERIVED DATE IS MARKED APART")
+    btext = ec.build_message([calendar_row("WYFI", today + timedelta(days=5),
+                                           disclosed=True, source="body")])
+    check("a body-derived row is marked +", "WYFI+" in btext, btext)
+    check("a body-derived row is not marked !", "WYFI!" not in btext, btext)
+    check("the key explains +", "+ date read from body" in btext, btext)
+    check("the key line fits the 28-char ceiling",
+          max(len(l) for l in btext.splitlines()) <= 28, btext)
+
+    ttext = ec.build_message([calendar_row("BGDE", today + timedelta(days=5),
+                                           disclosed=True, source="title")])
+    check("a title-derived row is still marked !", "BGDE!" in ttext, ttext)
+    check("the + key is absent when no + row is shown",
+          "+ date read from body" not in ttext, ttext)
+
+    # A table showing BOTH markers at once is the only path that produces
+    # "(blank on ! and + rows)" — every test above shows just one, which
+    # only ever exercises "(blank on ! rows)" or "(blank on + rows)". A third,
+    # projected row is needed too: with every row disclosed there is nothing
+    # in the spread column at all, and the footnote does not print — see
+    # "no spread footnote when nothing populates that column" above.
+    both_text = ec.build_message([
+        calendar_row("BGDE", today + timedelta(days=5), disclosed=True,
+                     source="title"),
+        calendar_row("WYFI", today + timedelta(days=6), disclosed=True,
+                     source="body"),
+        calendar_row("PROJ", today + timedelta(days=7), disclosed=False),
+    ])
+    check("both markers appear together", "BGDE!" in both_text
+          and "WYFI+" in both_text, both_text)
+    check("the footnote names both markers",
+          "(blank on ! and + rows)" in both_text, both_text)
+    check("every line still fits the 28-char ceiling",
+          max(len(l) for l in both_text.splitlines()) <= 28, both_text)
+    check("the widest line for this table is 26",
+          max(len(l) for l in both_text.splitlines()) == 26, both_text)
+
+    # THE ONE THAT MATTERS. Same past date, same everything else: the
+    # company's own headline date is late immediately, while a date we read
+    # out of prose gets the projection grace, because the uncertainty is
+    # OURS. If this ever collapses to one behaviour, a misreading becomes an
+    # accusation that a company missed its own date.
+    late = today - timedelta(days=3)
+    otext = ec.build_message([calendar_row("BGDE", late, disclosed=True,
+                                           source="title")])
+    check("a title-derived row past its date is overdue at once",
+          "Overdue" in otext, otext)
+    gtext = ec.build_message([calendar_row("WYFI", late, disclosed=True,
+                                           source="body")])
+    check("a body-derived row past its date keeps the grace",
+          "Overdue" not in gtext, gtext)
+    vlate = today - timedelta(days=ec.OVERDUE_GRACE + 1)
+    vtext = ec.build_message([calendar_row("WYFI", vlate, disclosed=True,
+                                           source="body")])
+    check("a body-derived row is overdue once the grace runs out",
+          "Overdue" in vtext, vtext)
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")

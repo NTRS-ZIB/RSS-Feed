@@ -65,6 +65,10 @@ HORIZON_DAYS = 45
 
 # A company is flagged overdue this many days past its estimate.
 OVERDUE_GRACE = 10
+# Also used for a `+` row, whose date the company announced but we parsed
+# out of a release body. That is reading risk rather than projection
+# spread; the effect wanted is the same, so the constant is shared rather
+# than duplicated. See is_overdue.
 
 # Above this spread in its historical lags, a company files too erratically for
 # the projection to mean much. Shown with ~ and called out separately.
@@ -237,7 +241,14 @@ def build_message(rows, announced=None):
         # OVERDUE_GRACE exists to allow for the spread in OUR projection. A
         # company's own announced date has no spread to allow for, so it gets
         # none: announced the 12th and nothing filed by the 13th is late.
-        grace = 0 if r.get("disclosed") else OVERDUE_GRACE
+        #
+        # A `+` row is the company's own date too, but read out of prose by a
+        # rule measured over THREE companies. The uncertainty there is ours,
+        # not theirs, so it keeps the grace: a misreading must not accuse a
+        # company of missing a date it never gave us. This reuses a constant
+        # justified for projection spread to cover reading risk instead,
+        # which is deliberate and is recorded where OVERDUE_GRACE is defined.
+        grace = 0 if r.get("disclosed_source") == "title" else OVERDUE_GRACE
         return r["expected"] < today - timedelta(days=grace)
 
     overdue = sorted((r for r in rows if is_overdue(r)),
@@ -249,7 +260,12 @@ def build_message(rows, announced=None):
         # First, and it outranks the rest: `*`, `~` and `?` all describe a
         # projection, and this row no longer has one.
         if r.get("disclosed"):
-            return "!"
+            # `+` is a date the company announced in the body of a release
+            # and we parsed out; `!` is one it put in the headline. The
+            # company stated both. What differs is how much of the reading
+            # was ours, and the reader is entitled to know which they are
+            # looking at. `?` would read better than `+` and is taken.
+            return "+" if r.get("disclosed_source") == "body" else "!"
         if r["degraded"]:
             return "?"
         if r["spread"] > LOW_CONFIDENCE_SPREAD:
@@ -349,6 +365,8 @@ def build_message(rows, announced=None):
         key.append("? thin history")
     if "!" in shown:
         key.append("! announced by company")
+    if "+" in shown:
+        key.append("+ date read from body")
     if announced:
         key.append("announced, not projected")
     if key:
@@ -360,8 +378,12 @@ def build_message(rows, announced=None):
         has_spread = any(not r.get("disclosed") for r in rendered)
         if has_spread:
             lines.append("last col = +/- spread")
-            if "!" in shown:
-                lines.append("(blank on ! rows)")
+            # Both announced markers blank that column, so the note must
+            # name whichever are actually on screen. Naming `!` alone was
+            # correct only while it was the only one.
+            blanking = [m for m in ("!", "+") if m in shown]
+            if blanking:
+                lines.append(f"(blank on {' and '.join(blanking)} rows)")
 
     return "\n".join(lines)
 

@@ -211,7 +211,8 @@ def save(companies, path=DEFAULT_PATH):
         encoding="utf-8")
 
 
-def upsert(companies, cik, ticker, when, uid, title, published):
+def upsert(companies, cik, ticker, when, uid, title, published,
+           source="title"):
     """Record a disclosed date. Returns True if the store changed.
 
     A LATER RELEASE WINS, JUDGED BY THE RELEASE rather than by when we read
@@ -223,6 +224,13 @@ def upsert(companies, cik, ticker, when, uid, title, published):
     The store is keyed by CIK and overwrites in place, so it is bounded by
     the roster. Nothing is pruned; a passed date is what the Overdue section
     is built on.
+
+    `source` is "title" when the date was in the headline and "body" when it
+    was read out of the release text. It records how much of the reading was
+    ours: the company announced the date either way. PROVENANCE NEVER
+    DECIDES WHICH RECORD WINS — that is the release timestamp's job above,
+    and a body-derived date from a later release supersedes a title-derived
+    one from an earlier release exactly as it should.
     """
     cik = str(cik).zfill(10)
     prior = companies.get(cik)
@@ -237,6 +245,7 @@ def upsert(companies, cik, ticker, when, uid, title, published):
         "source_uid": uid,
         "source_title": title,
         "source_published": published,
+        "source": source,
     }
     return True
 
@@ -297,6 +306,10 @@ def apply(rows, companies, today):
         r["projected"] = r["expected"]
         r["expected"] = when
         r["disclosed"] = True
+        # Absent means "title": every date stored before provenance existed
+        # came from a headline, so the default is a fact about the old
+        # records rather than a guess about them.
+        r["disclosed_source"] = rec.get("source") or "title"
         applied += 1
 
     return rows, applied, notes
@@ -389,6 +402,44 @@ def candidate_dates(text, released, limit=6):
         if len(found) >= limit:
             break
     return found
+
+
+def date_from_body(text, released, today):
+    """(date, reason) for the ONE forward date a body offers, or (None, why).
+
+    reason is "ok", "several", "no-candidates", "past" or "no-baseline".
+
+    EXACTLY ONE IS THE WHOLE RULE. A body carrying several forward dates
+    offers no way to tell the report date from the call date, the replay
+    expiry or a period end, and picking one is the guess this repo has paid
+    for three times. Measured 2026-08-12 over the twelve announcements whose
+    titles name a scheduled event: seven carried exactly one forward date
+    and none of those was ambiguous, but they came from only THREE
+    companies, so the rule is built to yield nothing rather than to try
+    harder. See docs/superpowers/specs/2026-08-12-body-derived-reporting-date-design.md.
+
+    "several" and "no-candidates" are separate reasons because they are
+    separate measurements: one says the body was rich and we refused to
+    choose, the other says the body offered nothing. Logging them as one
+    number would hide which problem a future rule has to solve.
+    """
+    if released is None:
+        # With no release date there is nothing to recognise the body's own
+        # dateline against, so candidate_dates() returns it unfiltered along
+        # with everything else — see its "With released=None" note. Every
+        # date in the body is then a candidate, and the first one is usually
+        # the dateline itself: exactly one candidate would read as "ok" and
+        # store today's date as the company's announced date.
+        return None, "no-baseline"
+    cands = candidate_dates(text, released)
+    if not cands:
+        return None, "no-candidates"
+    if len(cands) > 1:
+        return None, "several"
+    when = cands[0]
+    if when < today:
+        return None, "past"
+    return when, "ok"
 
 
 def main():
