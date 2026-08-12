@@ -96,7 +96,12 @@ def main():
           pt.extract_text('<script>var d = "August 4, 2026";</script>') == "")
     check("empty strings do not litter the output",
           "|  |" not in pt.extract_text(
-              '<script type="application/json">["a", "", "b"]</script>'))
+              '<script type="application/json">["a phrase", "", "another phrase"]</script>') and
+          "a phrase" in pt.extract_text(
+              '<script type="application/json">["a phrase", "", "another phrase"]</script>') and
+          "another phrase" in pt.extract_text(
+              '<script type="application/json">["a phrase", "", "another phrase"]</script>'),
+          "empty strings must be dropped without creating a double-separator artefact; both phrases must survive")
 
     # A date the visible half already carries, repeated in the payload.
     # candidate_dates deduplicates, so this must not become two candidates.

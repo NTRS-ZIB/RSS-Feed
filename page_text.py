@@ -82,7 +82,9 @@ def extract_text(html, limit=None):
     # Only recover strings containing whitespace. A date has the form
     # "Month D, YYYY", which requires whitespace. Filtering out whitespace-free
     # strings cannot lose a date, and it drops URLs, UUIDs, base64 blobs and
-    # single-word tokens that are noise in the body text.
+    # single-word tokens that are noise in the body text. Note: the empty-string
+    # filter above is now redundant (empty strings also have no whitespace) but
+    # is kept for defensive clarity.
     recovered = [s for s in recovered if any(c.isspace() for c in s)]
     text = PAYLOAD_SEP.join([visible] + recovered) if recovered else visible
     return text[:limit] if limit else text
