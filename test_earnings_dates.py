@@ -347,6 +347,34 @@ def main():
           == [date(2026, 8, 4), date(2026, 8, 12)],
           "with no release date there is nothing to recognise it as")
 
+    print("\nTHE RULE OVER A BODY")
+    REL = date(2026, 8, 4)
+    NOW = date(2026, 8, 5)
+    check("exactly one forward date is the date",
+          ed.date_from_body("will report on August 12, 2026", REL, NOW)
+          == (date(2026, 8, 12), "ok"))
+    check("several candidates yield nothing",
+          ed.date_from_body("report August 12, 2026, replay to August 19, 2026",
+                            REL, NOW) == (None, "several"),
+          "choosing between them is the guess this rule exists to refuse")
+    check("no candidate yields nothing",
+          ed.date_from_body("no dates here at all", REL, NOW)
+          == (None, "no-candidates"))
+    check("an empty body yields nothing",
+          ed.date_from_body("", REL, NOW) == (None, "no-candidates"))
+    check("a body that offers only its own dateline yields nothing",
+          ed.date_from_body("MIAMI, Aug. 4, 2026 -- nothing else", REL, NOW)
+          == (None, "no-candidates"),
+          "candidate_dates already drops the dateline")
+    check("a single past date is rejected, not stored",
+          ed.date_from_body("reported on August 1, 2026", date(2026, 7, 1),
+                            date(2026, 8, 20)) == (None, "past"),
+          "the guard is on our reading, not on the company")
+    check("several and no-candidates are different reasons",
+          ed.date_from_body("a August 12, 2026 b August 19, 2026", REL, NOW)[1]
+          != ed.date_from_body("nothing", REL, NOW)[1],
+          "one means we could not choose; the other means there was nothing")
+
     print("\nANNUAL-ONLY PROJECTION")
 
     def annual(year, lag_days):

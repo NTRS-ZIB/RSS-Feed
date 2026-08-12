@@ -404,6 +404,36 @@ def candidate_dates(text, released, limit=6):
     return found
 
 
+def date_from_body(text, released, today):
+    """(date, reason) for the ONE forward date a body offers, or (None, why).
+
+    reason is "ok", "several", "no-candidates" or "past".
+
+    EXACTLY ONE IS THE WHOLE RULE. A body carrying several forward dates
+    offers no way to tell the report date from the call date, the replay
+    expiry or a period end, and picking one is the guess this repo has paid
+    for three times. Measured 2026-08-12 over the twelve announcements whose
+    titles name a scheduled event: seven carried exactly one forward date
+    and none of those was ambiguous, but they came from only THREE
+    companies, so the rule is built to yield nothing rather than to try
+    harder. See docs/superpowers/specs/2026-08-12-body-derived-reporting-date-design.md.
+
+    "several" and "no-candidates" are separate reasons because they are
+    separate measurements: one says the body was rich and we refused to
+    choose, the other says the body offered nothing. Logging them as one
+    number would hide which problem a future rule has to solve.
+    """
+    cands = candidate_dates(text, released)
+    if not cands:
+        return None, "no-candidates"
+    if len(cands) > 1:
+        return None, "several"
+    when = cands[0]
+    if when < today:
+        return None, "past"
+    return when, "ok"
+
+
 def main():
     """Print what the store currently holds. No network, no writes.
 

@@ -1895,12 +1895,19 @@ def announcement_body(link):
     return " ".join(re.sub(r"<[^>]+>", " ", html).split())
 
 
-def record_disclosed_dates(items):
+def record_disclosed_dates(items, fresh_uids):
     """Extract announced reporting dates from item titles and store them.
 
     Runs over EVERY item, not only the ones that will post. An announcement
     dropped by the age floor or by MAX_POSTS_PER_RUN is still a valid date,
     and the calendar has no other way to learn it.
+
+    `fresh_uids` gates the BODY FETCH only, never the title path. Over every
+    item it would re-fetch the same dozen pages on each pass, about eight
+    times an hour, indefinitely, for an answer that does not change. That
+    gate is also why the body measurement this rule is built on never
+    sampled anything from here: the announcements were all old. Backfilling
+    is probe_body_dates.py's job, and this is not that.
     """
     today = datetime.now(timezone.utc).date()
     companies, status = ed.load()
@@ -1921,11 +1928,14 @@ def record_disclosed_dates(items):
         print("  earnings dates: no file yet — this run creates it.")
 
     counts = {"ok": 0, "no-date": 0, "past": 0, "no-match": 0}
+    body = {"eligible": 0, "fetched": 0, "failed": 0,
+            "ok": 0, "several": 0, "no-candidates": 0, "past": 0}
     no_date_examples = []
     for item in items:
         entry = EXTRA_CIKS.get(item.get("ticker") or "")
         if not entry:
             continue
+        body_hit = False
         published = item.get("published")
         released = (datetime.fromtimestamp(published, timezone.utc).date()
                     if published else None)
@@ -1934,21 +1944,35 @@ def record_disclosed_dates(items):
         if reason == "no-date":
             if len(no_date_examples) < 3:
                 # The informative miss: an announcement whose date is in the
-                # body rather than the title. This count is what decides
-                # whether a rule over bodies is worth building, and
-                # probe_body_dates.py is what measures it — by hand, over
-                # every undated announcement at once, rather than from here
-                # over the two items that are new in a given run.
+                # body rather than the title. probe_body_dates.py measures
+                # this population in full; this is the sample in the log.
                 no_date_examples.append(
                     f"{item['ticker']}: {item.get('title')!r}")
+            # A title naming a forthcoming event is the only population the
+            # rule was measured over. A results release is dense with dates
+            # and was never in scope.
+            if ed.names_a_scheduled_event(item.get("title")):
+                body["eligible"] += 1
+                if item.get("uid") in fresh_uids:
+                    text = announcement_body(item.get("link"))
+                    if text is None:
+                        body["failed"] += 1
+                    else:
+                        body["fetched"] += 1
+                        found, why = ed.date_from_body(text, released, today)
+                        body[why] += 1
+                        if found is not None:
+                            when, reason = found, "ok"
+                            body_hit = True
         if when is None:
             continue
         iso = (datetime.fromtimestamp(published, timezone.utc).isoformat()
                if published else None)
+        source = "body" if body_hit else "title"
         if ed.upsert(companies, entry[0], item["ticker"], when,
-                     item.get("uid"), item.get("title"), iso):
+                     item.get("uid"), item.get("title"), iso, source=source):
             print(f"  earnings dates: {item['ticker']} -> {when} "
-                  f"from {item.get('title')!r}")
+                  f"({source}) from {item.get('title')!r}")
 
     print(f"  earnings dates: {counts['ok']} recorded, {counts['no-date']} "
           f"announcement(s) with no parsable date, {counts['past']} rejected "
@@ -1956,6 +1980,15 @@ def record_disclosed_dates(items):
     if no_date_examples:
         print("  earnings dates: no-date example(s): "
               + "; ".join(no_date_examples))
+    # A RUN THAT STORES NOTHING IS NOT EVIDENCE THE RULE WORKS. The previous
+    # body measurement logged "Bodies fetched 0" for months and read as
+    # working. `eligible` is the number that separates "no candidate item
+    # this run" from "fetched and found nothing", so it is printed even when
+    # every other number is zero.
+    print(f"  earnings dates: body rule — {body['eligible']} eligible, "
+          f"{body['fetched']} fetched, {body['failed']} fetch failed; "
+          f"{body['ok']} stored, {body['several']} had several dates, "
+          f"{body['no-candidates']} had none, {body['past']} were past.")
     if DRY_RUN:
         print("  earnings dates: dry run — nothing written.")
         return
@@ -2032,7 +2065,8 @@ def main():
     # abort main() and silence the whole channel for a failure that has
     # nothing to do with press items.
     try:
-        record_disclosed_dates(all_items)
+        record_disclosed_dates(all_items,
+                               {i["uid"] for i in fresh + insider_fresh})
     except Exception as e:
         print(f"  earnings dates: FAILED this run — {type(e).__name__}: {e}. "
               f"Dates were not recorded this run; continuing to post.",
