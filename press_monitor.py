@@ -1987,8 +1987,14 @@ def record_disclosed_dates(items, fresh_uids):
     # working. `eligible` is the number that separates "no candidate item
     # this run" from "fetched and found nothing", so it is printed even when
     # every other number is zero.
+    # `fetched` and `failed` are the two arms of the freshness gate, so their
+    # sum is what "new enough" means. Printing `fetched` alone said "0 new
+    # enough to fetch" on a run where items WERE new enough and every fetch
+    # failed, which points at the gate when the fault is the source. A sum
+    # cannot drift from the branches the way a third counter could.
+    tried = body["fetched"] + body["failed"]
     print(f"  earnings dates: body rule — {body['eligible']} in scope "
-          f"({body['fetched']} new enough to fetch), {body['failed']} fetch "
+          f"({tried} new enough to fetch), {body['failed']} fetch "
           f"failed; {body['ok']} stored, {body['several']} had several "
           f"dates, {body['no-candidates']} had none, {body['past']} were "
           f"past, {body['no-baseline']} had no release date to check "
