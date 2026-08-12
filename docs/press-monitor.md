@@ -902,7 +902,8 @@ not *one*. **The counts were the thing that misled.** Every scheduled body opens
 with its own dateline, and `candidate_dates` dropped a date only when
 `when < released`, so the release date itself survived as candidate one.
 
-The filter now excludes it, and the second run of the same twenty rows measured:
+The filter now excludes it, and the second run of the same twenty rows measured
+— **before payload recovery; see below for the run after**:
 
 | label | one | several | none |
 |---|---|---|---|
@@ -941,6 +942,27 @@ arithmetic done by hand on the printed rows, and it agreed with the measurement
 exactly — which is not evidence it was sound, only that it was lucky. It was
 re-measured before it decided anything, per the `CLAUDE.md` trap about numbers
 true of something adjacent to the question.
+
+**The run after payload recovery, probe run `31636891110`.** HUT moves from
+`none` to `one`, carrying `2026-08-04`; its `chars` column moves from 1,227 to
+3,060. Advance notices now read:
+
+| label | one | several | none |
+|---|---|---|---|
+| advance notice | **6** | **0** | **0** |
+
+The **5 | 0 | 1** table above is the pre-payload-recovery measurement; this
+table is what replaced it, not an additional data point sitting alongside it.
+
+Two things about the comparison are worth recording, because a reader diffing
+the two runs' `chars` columns would otherwise have to re-derive them:
+**BKKT gained 38 characters** across all three of its rows — `"Show All"`,
+`"Hide All"`, `"Choose from list"`, UI labels present in its own payload that
+carry no date, not new prose the fix invented. And **GLXY and one MARA row
+lost characters while a new BGDE row appeared** between the two runs — the
+live pages changed in the interval, which is drift the probe is exposed to on
+every run, not an effect of this change. The `chars` column is a diagnostic,
+never the check.
 
 ### Two dead sources that parse perfectly — both DGXX
 

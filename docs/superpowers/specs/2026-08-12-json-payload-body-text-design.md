@@ -107,6 +107,32 @@ Order is visible text first, then recovered text. Nothing depends on it today,
 since the rule fires only on exactly one date, but a deterministic order keeps
 `candidate_dates`' "document order" contract meaningful.
 
+### The separator protects the recovered half only, and that is asymmetric on purpose
+
+The argument above is about the **recovered** half. The **visible** half already
+joins across tag boundaries with a space — `TAG.sub(" ", stripped)` replaces
+every tag with one — and that half is not discussed above, so a reader could
+take its silence for an oversight. It is not one. Measured:
+
+```python
+extract_text('<p>Revenue grew in August</p><p>4, 2026 was a record</p>')
+#  -> 'Revenue grew in August 4, 2026 was a record'
+```
+
+which `DATE_RE` reads as `date(2026, 8, 4)` — the spec's own worked example
+from above, occurring in the half this document does not otherwise discuss.
+
+The two halves are joined by different rules because they carry different
+risk. Markup commonly splits a single real date across elements for styling —
+`<span>August</span> <span>4, 2026</span>` — and a visible-half join that
+refused to bridge tags would lose dates a reader looking at the rendered page
+would see as one. A JSON payload is instead full of **unrelated** adjacent
+strings — UI labels, other releases, page state — so bridging there manufactures
+dates that were never written, which is what the previous section exists to
+prevent. Same mechanism, opposite base rate of the thing it would produce:
+that is why one half joins with a space and the other does not, and the
+asymmetry is a decision rather than a gap in the design.
+
 ### What string-only does not need to handle
 
 None of HUT's 112 strings contains an HTML tag, so recovered text needs no second
