@@ -873,6 +873,38 @@ was gated on items new in a run and fetched nothing for as long as it lived
 there: the twenty undated announcements had all been seen already. Read-only,
 no secrets, no state, no commit.
 
+**What the first run measured, 2026-08-12.** 221 items collected, **20 undated
+announcements selected — the same 20 the monitor logs**, so the two populations
+agree. Zero failed fetches.
+
+| label | one | several | none |
+|---|---|---|---|
+| advance notice | 1 | 5 | 0 |
+| scheduled + results | 2 | 4 | 0 |
+| not scheduled | 4 | 4 | 0 |
+
+Read alone, that says a rule is not possible: advance notices sit in *several*,
+not *one*. **Read against the rows, it says the opposite, and the counts are the
+thing that misleads.** In every scheduled row the first candidate is exactly the
+release date, because `candidate_dates` drops a date only when `when < released`
+and so keeps the body's own dateline. Discount it and the same twelve rows read:
+
+| label | one | several | none |
+|---|---|---|---|
+| advance notice | **5** | **0** | 1 |
+| scheduled + results | 2 | 2 | 2 |
+
+So the scheduled-event gate does discriminate, sharply, and the raw table hid it
+behind a date every body carries. The one advance notice yielding nothing is
+HUT's, whose extracted body is 1,227 characters against ABTC's ~2,650 — a short
+extraction, not an absent date, and worth checking before any rule is written.
+
+**This second table is arithmetic on the printed rows, not a probe run.** It has
+not been produced by the code and must be re-measured before it decides anything
+— which is a one-line change to `candidate_dates` and another dispatch. That
+distinction is the whole point of the trap in `CLAUDE.md` about numbers that are
+true of something adjacent to the question.
+
 ### Two dead sources that parse perfectly — both DGXX
 
 Recorded because each looked like a solution, and one check caught both.
