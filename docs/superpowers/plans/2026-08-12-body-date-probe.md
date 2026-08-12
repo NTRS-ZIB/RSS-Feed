@@ -47,7 +47,7 @@ Tests are a standalone script with the repo's own `check()` harness, not pytest.
 | Create `probe_body_dates.py` | Select undated announcements, fetch each body, print a table and the counts. Pure functions plus a thin `main()`. |
 | Create `test_probe_body_dates.py` | Tests for the pure half, using fixture items and a fake fetcher. No network. |
 | Create `.github/workflows/probe-body-dates.yml` | Dispatch-only, `contents: read`, no secrets. |
-| Modify `press_monitor.py` | Delete `announcement_body`, `BODY_TIMEOUT`, `BODY_MAX_BYTES`, the fetch gate, the two counters and the `Bodies fetched` clause. |
+| Modify `press_monitor.py` | Delete the fetch gate, the two counters, the `BODY` log line, the `Bodies fetched` clause and the `fresh_uids` parameter. `announcement_body` and its constants STAY — the probe calls them and they depend on `headers_for`. |
 | Modify `docs/press-monitor.md` | Record the probe as the second maintenance tool beside `calibrate_staleness.py`. |
 
 `earnings_dates.py` is NOT modified. `names_a_scheduled_event`,
@@ -659,14 +659,32 @@ git commit -m "Print the table, and a workflow to run it by hand"
 grep -n "Bodies fetched\|body_seen\|body_with_dates\|announcement_body\|BODY_TIMEOUT\|BODY_MAX_BYTES" press_monitor.py
 ```
 
-Expected: 12 matches. Save this output; Step 5 confirms it is empty.
+Expected: 12 matches. Save this output; Steps 5 and 6 check what remains.
 
-- [ ] **Step 2: Delete `announcement_body` and its constants**
+- [ ] **Step 2: Retarget the comment above `announcement_body`, and keep the rest**
 
-Delete `press_monitor.py` lines 1852 to 1896 inclusive: the
-`# One body fetch per undated announcement...` comment block, `BODY_TIMEOUT`,
-`BODY_MAX_BYTES`, and the whole `announcement_body` function. Leave the two
-blank lines that separate the surrounding definitions.
+**`announcement_body`, `BODY_TIMEOUT` and `BODY_MAX_BYTES` STAY.**
+`probe_body_dates.py` calls the function through `pm.announcement_body`, and it
+depends on `headers_for`, which carries this repo's per-host header knowledge.
+Moving it would duplicate that or force a module-level `press_monitor` import in
+the probe. `press_monitor` stops calling it; it keeps defining it.
+
+Only the comment above the constants needs changing, because it describes a gate
+that is about to be deleted. Replace:
+
+```python
+# One body fetch per undated announcement, and ONLY for items new this run.
+# Over every item it would re-fetch the same dozen pages on each pass, about
+# eight times an hour, indefinitely, for a measurement that does not change.
+```
+
+with:
+
+```python
+# Used by probe_body_dates.py, not by this module. It lives here because it
+# needs headers_for(), and the per-host header knowledge that function carries
+# is not worth duplicating or splitting — see HOST_HEADERS.
+```
 
 - [ ] **Step 3: Delete the fetch gate and the counters**
 
@@ -739,22 +757,32 @@ Expected: `insider_fresh` is still used elsewhere (it feeds the posting loop).
 If this grep comes back with only the deleted line, say so in the report rather
 than deleting the variable, since that is a wider change than this task.
 
-- [ ] **Step 5: Confirm every trace is gone**
+- [ ] **Step 5: Confirm the dead half is gone**
 
 ```bash
-grep -n "Bodies fetched\|body_seen\|body_with_dates\|announcement_body\|BODY_TIMEOUT\|BODY_MAX_BYTES" press_monitor.py
+grep -n "Bodies fetched\|body_seen\|body_with_dates\|fresh_uids" press_monitor.py
 ```
 
 Expected: no output.
 
-- [ ] **Step 6: Confirm nothing else referenced what was deleted**
+- [ ] **Step 6: Confirm the kept half survived**
 
 ```bash
-grep -rn "announcement_body\|BODY_MAX_BYTES\|BODY_TIMEOUT" --include=*.py . | grep -v "^./probe_body_dates.py"
+grep -n "announcement_body\|BODY_TIMEOUT\|BODY_MAX_BYTES" press_monitor.py
 ```
 
-Expected: no output. `probe_body_dates.py` reaches `announcement_body` through
-`pm.`, so it is the one legitimate reference and it is excluded here.
+Expected: six matches, all inside the `announcement_body` definition and its two
+constants. **`press_monitor` must no longer CALL `announcement_body`** — every
+match should be the definition, the constants, or a use inside that function. If
+any match is a call from elsewhere in the module, the gate was not fully removed.
+
+Then confirm the probe still reaches it:
+
+```bash
+grep -n "pm.announcement_body" probe_body_dates.py
+```
+
+Expected: one match, inside `main()`.
 
 - [ ] **Step 7: Confirm the module still compiles and the suite passes**
 

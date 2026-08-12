@@ -149,12 +149,24 @@ bounded by `BODY_TIMEOUT`, should finish in well under a minute, so `10` matches
 
 ## What comes out of `press_monitor.py`
 
-`announcement_body`, `BODY_TIMEOUT`, `BODY_MAX_BYTES`, the fetch gate inside
-`record_disclosed_dates`, the `body_seen` / `body_with_dates` counters, and the
-`also_reports_results` field on the `BODY` log line.
+The fetch gate inside `record_disclosed_dates`, the `body_seen` /
+`body_with_dates` counters, the `BODY` log line, the `Bodies fetched` clause on
+the summary, and the `fresh_uids` parameter with the set comprehension the caller
+built to feed it.
 
-That removes a network call and a gate from the hot path of the component that
-posts. **The gate was only ever needed because the measurement lived there.**
+That takes the network call and the gate out of the run path of the component
+that posts. **The gate was only ever needed because the measurement lived there.**
+
+**`announcement_body` itself stays**, with `BODY_TIMEOUT` and `BODY_MAX_BYTES`.
+An earlier draft of this spec listed it for removal while also saying the probe
+reuses `pm.announcement_body`, which cannot both be true; the Task 4 implementer
+stopped on the contradiction rather than guessing. Keeping it is the right half
+to keep, and not only because the probe calls it: it depends on `headers_for`,
+and that is where this repo's per-host header knowledge lives. Moving the fetch
+into the probe would either duplicate that knowledge or force a module-level
+`press_monitor` import, and fragmenting it is exactly what caused the 22-hour
+BGDE outage. `press_monitor` no longer calls the function; it only defines it,
+beside the header logic it depends on.
 
 `names_a_scheduled_event`, `also_reports_results` and `candidate_dates` stay in
 `earnings_dates.py` with their tests, because the probe uses them. The no-date
