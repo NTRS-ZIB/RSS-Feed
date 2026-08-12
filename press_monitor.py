@@ -1976,9 +1976,9 @@ def record_disclosed_dates(items, fresh_uids):
             print(f"  earnings dates: {item['ticker']} -> {when} "
                   f"({source}) from {item.get('title')!r}")
 
-    print(f"  earnings dates: {counts['ok']} recorded, {counts['no-date']} "
-          f"announcement(s) with no parsable date, {counts['past']} rejected "
-          f"as past, {len(companies)} on file.")
+    print(f"  earnings dates: {counts['ok']} recorded from titles, "
+          f"{counts['no-date']} announcement(s) with no parsable date, "
+          f"{counts['past']} rejected as past, {len(companies)} on file.")
     if no_date_examples:
         print("  earnings dates: no-date example(s): "
               + "; ".join(no_date_examples))
@@ -1987,11 +1987,12 @@ def record_disclosed_dates(items, fresh_uids):
     # working. `eligible` is the number that separates "no candidate item
     # this run" from "fetched and found nothing", so it is printed even when
     # every other number is zero.
-    print(f"  earnings dates: body rule — {body['eligible']} eligible, "
-          f"{body['fetched']} fetched, {body['failed']} fetch failed; "
-          f"{body['ok']} stored, {body['several']} had several dates, "
-          f"{body['no-candidates']} had none, {body['past']} were past, "
-          f"{body['no-baseline']} had no release date to check against.")
+    print(f"  earnings dates: body rule — {body['eligible']} in scope "
+          f"({body['fetched']} new enough to fetch), {body['failed']} fetch "
+          f"failed; {body['ok']} stored, {body['several']} had several "
+          f"dates, {body['no-candidates']} had none, {body['past']} were "
+          f"past, {body['no-baseline']} had no release date to check "
+          f"against.")
     if DRY_RUN:
         print("  earnings dates: dry run — nothing written.")
         return
