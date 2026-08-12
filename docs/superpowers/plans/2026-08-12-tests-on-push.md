@@ -205,25 +205,24 @@ not land, and the log names the unwatched workflow.
 files and a README and no `.py` file at all, so the path filter correctly skips
 it. That is the filter working, not a fault. Step 10 proves the job itself runs.
 
-- [ ] **Step 10: Prove the job works, before proving the trigger works**
+- [ ] **Step 10: Do not attempt a manual dispatch. It cannot work here.**
 
-```bash
-gh workflow run "Tests" --ref tests-on-push
-```
+An earlier version of this step said to run `gh workflow run "Tests" --ref
+tests-on-push` to prove the job works before Task 2 proves the trigger works.
+**That is impossible and the step was wrong.** GitHub registers
+`workflow_dispatch` only for workflows present on the **default** branch, so a
+brand new workflow cannot be dispatched from a feature branch; `gh workflow run`
+returns *could not find any workflows named*. `docs/local-workflow.md` records
+this, and `calibrate.yml` and `probe-body-dates.yml` were both merged before they
+could first be run.
 
-Wait for it, then:
+The consequence is that Task 2 now proves both things at once, and its Step 4
+carries the diagnosis for each. Do not work around this by merging early.
 
-```bash
-gh run list --workflow="Tests" --limit 1 --json databaseId,conclusion
-```
+- [ ] **Step 11: Record the run URL in your report**
 
-Expected: `success`. Read the log and confirm all six named steps ran. This
-separates two things that would otherwise fail together: whether the job is
-correct, and whether the push trigger fires.
-
-- [ ] **Step 11: Record both run URLs in your report**
-
-The dispatched run's URL, and the list-gate run's URL from Step 9.
+The list-gate run's URL and conclusion from Step 9. There is no dispatched run to
+record.
 
 ---
 
@@ -292,9 +291,22 @@ Then confirm the step list names the suite:
 gh run view <id> --json jobs -q '.jobs[].steps[] | "\(.conclusion) \(.name)"'
 ```
 
-Expected: `failure page_text`, and the later suites `skipped`. **If `Tests` did
-not run at all, stop: the path filter is wrong**, and that is the defect this
-step exists to catch, not a reason to move on.
+Expected: `failure page_text`, and the later suites `skipped`.
+
+**If `Tests` did not run at all, stop and diagnose before doing anything else.**
+There are two causes and they need telling apart, because Task 1's manual
+dispatch could not be performed on a feature branch:
+
+- **The path filter is wrong.** Check the run list for the workflow across the
+  whole branch: `gh run list --workflow="Tests" --limit 5`. Empty means it has
+  never fired for any commit.
+- **The workflow file is invalid.** GitHub surfaces a parse failure separately
+  from a job failure. Check `gh api repos/:owner/:repo/actions/workflows --jq
+  '.workflows[] | select(.name=="Tests") | {state, path}'`; a workflow with a
+  problem does not report `active`.
+
+Either way this is the defect the step exists to catch, not a reason to move on.
+Report which cause it was.
 
 - [ ] **Step 5: Revert**
 
