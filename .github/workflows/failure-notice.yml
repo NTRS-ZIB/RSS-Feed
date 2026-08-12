@@ -54,6 +54,7 @@ on:
       - "Holder events"
       - "Metric regime check"
       - "Press release monitor"
+      - "Probe body dates"
       - "Probe filing rate"
       - "Probe holders"
       - "Probe premarket"
