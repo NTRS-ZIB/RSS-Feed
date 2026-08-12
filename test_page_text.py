@@ -116,14 +116,18 @@ def main():
           "excluded deliberately; no roster source is known to need it")
     check("a plain script is still dropped",
           pt.extract_text('<script>var d = "August 4, 2026";</script>') == "")
-    check("empty strings do not litter the output",
-          "|  |" not in pt.extract_text(
-              '<script type="application/json">["a phrase", "", "another phrase"]</script>') and
-          "a phrase" in pt.extract_text(
-              '<script type="application/json">["a phrase", "", "another phrase"]</script>') and
-          "another phrase" in pt.extract_text(
-              '<script type="application/json">["a phrase", "", "another phrase"]</script>'),
-          "empty strings must be dropped without creating a double-separator artefact; both phrases must survive")
+    # There is no dedicated empty-string filter: "" contains no whitespace,
+    # so the whitespace gate below already drops it. This check pins that
+    # the whitespace filter is what does the work -- it must fail if that
+    # filter is ever removed, which distinguishes it from a check that would
+    # pass regardless of the mechanism.
+    EMPTY_MIDDLE = '<script type="application/json">["a phrase", "", "another phrase"]</script>'
+    check("an empty payload string cannot double the separator "
+          "(the whitespace gate's doing, not a dedicated empty-string filter)",
+          "|  |" not in pt.extract_text(EMPTY_MIDDLE) and
+          "a phrase" in pt.extract_text(EMPTY_MIDDLE) and
+          "another phrase" in pt.extract_text(EMPTY_MIDDLE),
+          pt.extract_text(EMPTY_MIDDLE))
 
     # A date the visible half already carries, repeated in the payload.
     # candidate_dates deduplicates, so this must not become two candidates.
@@ -169,6 +173,50 @@ def main():
               '<p>visible</p><script type="application/json">'
               '["August 4, 2026"]</script>'),
           "the date contains whitespace, so it passes the gate")
+
+    print("\nNO LEADING SEPARATOR WHEN THE VISIBLE HALF IS EMPTY")
+    # A page whose only content is a payload (e.g. everything else is markup
+    # with no text nodes) must not open with a bare separator. " | a phrase"
+    # is harmless to the date parser but is an artefact, and it inflates the
+    # probe's chars column.
+    PAYLOAD_ONLY = '<script type="application/json">["a phrase with words"]</script>'
+    check("no visible text means no leading separator",
+          not pt.extract_text(PAYLOAD_ONLY).startswith(pt.PAYLOAD_SEP),
+          repr(pt.extract_text(PAYLOAD_ONLY)))
+    check("and the payload text is still there, unprefixed",
+          pt.extract_text(PAYLOAD_ONLY) == "a phrase with words",
+          repr(pt.extract_text(PAYLOAD_ONLY)))
+
+    print("\nTHE type= PATTERN MATCHES A BARE ATTRIBUTE ONLY")
+    # \b treats "-" as a word boundary, so a naive \btype= also matches
+    # inside data-type="..." and content-type="...". Neither is the script's
+    # MIME type, so neither should be read as one.
+    check("a data-type attribute is not mistaken for the script's type",
+          pt.extract_text('<p>visible</p><script data-type="application/json">'
+                          '["should not be recovered"]</script>') == "visible",
+          pt.extract_text('<p>visible</p><script data-type="application/json">'
+                          '["should not be recovered"]</script>'))
+    check("a content-type attribute is not mistaken for the script's type",
+          pt.extract_text('<p>visible</p><script content-type="application/json">'
+                          '["should not be recovered"]</script>') == "visible",
+          pt.extract_text('<p>visible</p><script content-type="application/json">'
+                          '["should not be recovered"]</script>'))
+    check("a genuine type= attribute is still matched",
+          "should be recovered" in pt.extract_text(
+              '<p>visible</p><script type="application/json">'
+              '["should be recovered"]</script>'))
+    check("a genuine type= attribute preceded by another attribute is still matched",
+          "should be recovered" in pt.extract_text(
+              '<p>visible</p><script id="x" type="application/json">'
+              '["should be recovered"]</script>'))
+
+    print("\nFALSY INPUT")
+    # Unreachable from announcement_body, since bytes.decode always returns a
+    # str, but correct and pinned rather than merely assumed.
+    check("extract_text(None) returns the empty string",
+          pt.extract_text(None) == "")
+    check("payload_strings(None) returns an empty list",
+          pt.payload_strings(None) == [])
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")

@@ -18,8 +18,14 @@ TAG = re.compile(r"<[^>]+>")
 # Only application/json. ld+json is schema.org metadata whose dates are
 # ISO-formatted and so invisible to the date parser anyway; including it
 # would be a guess about a source nobody has measured.
+#
+# The lookbehind is (?<![-\w]) rather than \b: \b treats "-" as a boundary,
+# so \btype= also matches inside data-type="application/json" and
+# content-type="application/json", attributes this pattern has no business
+# reading. (?<![-\w]) requires the character before "type" to be neither a
+# word character nor a hyphen, so it matches a bare type= attribute only.
 JSON_SCRIPT = re.compile(
-    r"""<script[^>]*\btype=["']?application/json["']?[^>]*>(.*?)</script>""",
+    r"""<script[^>]*(?<![-\w])type=["']?application/json["']?[^>]*>(.*?)</script>""",
     re.S | re.I)
 
 # NOT A SPACE, AND THE REASON IS NOT COSMETIC. Concatenating unrelated
@@ -88,13 +94,26 @@ def extract_text(html, limit=None):
     stripped = SCRIPT_OR_STYLE.sub(" ", html or "")
     visible = " ".join(TAG.sub(" ", stripped).split())
     recovered = [" ".join(s.split()) for s in payload_strings(html)]
-    recovered = [s for s in recovered if s]
     # Only recover strings containing whitespace. A date has the form
-    # "Month D, YYYY", which requires whitespace. Filtering out whitespace-free
-    # strings cannot lose a date, and it drops URLs, UUIDs, base64 blobs and
-    # single-word tokens that are noise in the body text. Note: the empty-string
-    # filter above is now redundant (empty strings also have no whitespace) but
-    # is kept for defensive clarity.
+    # "Month D, YYYY", which requires whitespace, so this filter cannot lose
+    # a date; it drops URLs, UUIDs, base64 blobs and single-word tokens that
+    # are noise in the body text. It also drops the empty string, since "" is
+    # a string with no characters and so has none that are whitespace -- no
+    # separate empty-string filter is needed. The claim that this cannot lose
+    # a date rests on regex \s and str.isspace() agreeing on every code
+    # point, which was checked (not merely assumed) across the full Unicode
+    # range before relying on it here.
     recovered = [s for s in recovered if any(c.isspace() for c in s)]
-    text = PAYLOAD_SEP.join([visible] + recovered) if recovered else visible
-    return text[:limit] if limit else text
+    # Only prepend `visible` when it is non-empty, so a page whose only
+    # content is a payload does not open with a bare separator (" | a
+    # phrase"). Harmless to the date parser, since PAYLOAD_SEP never matches
+    # DATE_RE, but it is an artefact and it inflates the probe's `chars`
+    # column, which the spec asks readers to use as a diagnostic.
+    text = PAYLOAD_SEP.join(([visible] if visible else []) + recovered) \
+        if recovered else visible
+    # `limit` bounds characters, not bytes, even though the constant this is
+    # sized against (BODY_MAX_BYTES, in press_monitor.py) is named in bytes.
+    # That is deliberate rather than an oversight: the byte bound is already
+    # enforced upstream on the raw download, and adding encoding-aware
+    # slicing here would duplicate that cap for no reader-visible benefit.
+    return text[:limit] if limit is not None else text
