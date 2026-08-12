@@ -218,7 +218,7 @@ def project(label, name, filings):
     }
 
 
-def build_message(rows):
+def build_message(rows, announced=None):
     """Compact layout. Discord mobile wraps code blocks past ~28 characters,
     so every column here is earning its width. Form type and period end are
     pushed into markers and a header rather than per-row columns."""
@@ -307,6 +307,20 @@ def build_message(rows):
             lines.append(f"{r['label']:<4}{marker(r)} {what} "
                          f"{r['expected']:%d %b}{late:>4}d ago")
 
+    if announced:
+        lines.append("")
+        # Its own block, because these dates describe a DIFFERENT report from
+        # the row that company has above. Overlaying one would put a row in
+        # the upcoming table with a period end no other row shares, which
+        # flips the whole table to mixed-period: the header loses its P/E
+        # line, every row drops its weekday to buy a period column, and the
+        # row itself prints an August date against a December period.
+        lines.append("Announced")
+        lines.append("-" * 26)
+        for label, when in announced:
+            days = (when - today).days
+            lines.append(f"{label:<4}  {when:%a %d %b}{days:>4}d")
+
     if later:
         lines.append("")
         for r in later:
@@ -328,6 +342,8 @@ def build_message(rows):
         key.append("? thin history")
     if "!" in shown:
         key.append("! announced by company")
+    if announced:
+        key.append("announced, not projected")
     if key:
         lines.append("")
         lines.extend(key)
@@ -413,6 +429,12 @@ def main():
         print(f"  {note}")
     print(f"{applied} row(s) use an announced date.")
 
+    announced = ed.announced_elsewhere(rows, disclosed, date.today())
+    if announced:
+        print(f"{len(announced)} announced date(s) shown separately, because "
+              f"the row for that company projects a different report: "
+              f"{', '.join(f'{l} {d}' for l, d in announced)}")
+
     # apply() only knows the rows it was handed, which are the rows that
     # projected — it has no view of the roster, so it cannot tell a company
     # that's absent from watchlist.py from one that's on it but hasn't filed
@@ -449,7 +471,7 @@ def main():
     else:
         print("\nNo company is below the quarterly filing floor.")
 
-    text = build_message(rows)
+    text = build_message(rows, announced=announced)
     print(f"\n{text}\n")
     if missing:
         print(f"Insufficient history: {', '.join(missing)}\n")

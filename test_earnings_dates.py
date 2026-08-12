@@ -422,6 +422,50 @@ def main():
           not ed.also_reports_results(
               "Company Announces Q2 Earnings Release and Webcast"))
 
+    print("\nANNOUNCED BUT NOT OVERLAID")
+    soon = date.today() + timedelta(days=3)
+    store = {"0001854368": {"ticker": "DGXX", "date": soon.isoformat(),
+                            "source_uid": "u", "source_title": "t",
+                            "source_published": "2026-07-20T00:00:00+00:00"}}
+
+    # An annual-only row: its period end is a year out, so apply() refuses.
+    arow = {"label": "DGXX", "name": "Digi Power X", "cik": "0001854368",
+            "period": date.today() + timedelta(days=200),
+            "expected": date.today() + timedelta(days=290), "lag": 90,
+            "spread": 40, "kind": "annual", "degraded": False,
+            "annual_only": True}
+    rows, applied, _ = ed.apply([dict(arow)], store, date.today())
+    check("apply still refuses to overlay it", applied == 0)
+    got = ed.announced_elsewhere([dict(arow)], store, date.today())
+    check("but the date is surfaced separately",
+          got == [("DGXX", soon)], got)
+
+    # A row where the date WAS overlaid must not also appear in the section.
+    qrow = dict(arow, period=date.today() - timedelta(days=10),
+                annual_only=False)
+    rows, applied, _ = ed.apply([dict(qrow)], store, date.today())
+    check("a date that was overlaid is applied", applied == 1)
+    # Reuses `rows`, the same objects apply() just mutated — not a fresh
+    # dict(qrow) — because announced_elsewhere()'s contract is that it reads
+    # `disclosed` off rows apply() has already run over. A fresh copy would
+    # never carry that flag and this check would be testing nothing.
+    check("and is NOT repeated in the section",
+          ed.announced_elsewhere(rows, store, date.today()) == [],
+          "it is already on the row")
+
+    past = {"0001854368": dict(store["0001854368"],
+                               date=(date.today() - timedelta(days=5)).isoformat())}
+    check("a date already past is not surfaced",
+          ed.announced_elsewhere([dict(arow)], past, date.today()) == [],
+          "the section is about what is coming")
+
+    text = ec.build_message([dict(arow)], announced=[("DGXX", soon)])
+    check("the section renders with its own heading",
+          "Announced" in text and "DGXX" in text, text)
+    widest = max(len(l) for l in text.splitlines())
+    check("and nothing in the block exceeds 28 characters",
+          widest <= 28, widest)
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0

@@ -268,8 +268,9 @@ def apply(rows, companies, today):
             continue
         if when <= r["period"]:
             notes.append(f"{r['label']}: stored date {when} is not after the "
-                         f"period end {r['period']} being projected; it "
-                         f"belongs to a period already reported")
+                         f"period end {r['period']} being projected, so it "
+                         f"describes a different report than this row; shown "
+                         f"in the Announced section instead")
             continue
         if when != r["expected"]:
             notes.append(f"{r['label']}: projected {r['expected']}, company "
@@ -280,6 +281,35 @@ def apply(rows, companies, today):
         applied += 1
 
     return rows, applied, notes
+
+
+def announced_elsewhere(rows, companies, today):
+    """Announced dates that are real, still ahead, and NOT on any row.
+
+    `apply()` overlays a stored date only when it falls after the period end
+    being projected, so a stale one expires by itself. An annual-only row's
+    period end is up to twelve months out, so a QUARTERLY announcement always
+    falls before it and is refused — correctly, because that row is about the
+    annual filing and an August date on it would be a claim about the wrong
+    report.
+
+    The date is still true and still useful, so it is surfaced here instead of
+    being dropped to a log line. Returns [(label, date), ...] sorted by date.
+    """
+    applied_ciks = {r.get("cik") for r in rows if r.get("disclosed")}
+    out = []
+    for r in rows:
+        cik = r.get("cik")
+        if cik in applied_ciks:
+            continue
+        rec = companies.get(cik)
+        if not isinstance(rec, dict):
+            continue
+        when = parse_iso(rec.get("date"))
+        if when is None or when < today:
+            continue
+        out.append((r["label"], when))
+    return sorted(out, key=lambda t: t[1])
 
 
 def candidate_dates(text, released, limit=6):
