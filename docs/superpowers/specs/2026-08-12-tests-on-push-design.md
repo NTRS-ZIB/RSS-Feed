@@ -36,7 +36,7 @@ as protection because it exists.
 
 `.github/workflows/tests.yml`, named **Tests**.
 
-- `on: push` filtered to `**.py`, plus `workflow_dispatch`.
+- `on: push` filtered to `['*.py', '**/*.py']`, plus `workflow_dispatch`.
 - `permissions: contents: read`. It reads code and reports; it writes nothing and
   takes no secrets.
 - Python 3.12, `pip install requests`.
@@ -47,16 +47,30 @@ The value is catching a break **before** it merges, so it has to run where the
 work happens. A gate that only guards `main` tells you after the fact, which is
 the position this design exists to leave.
 
-### Filtered to `**.py`
+### Filtered to `['*.py', '**/*.py']`, and the pattern is the risky part
 
 Fourteen workflows commit state files to `main` through the day. Most carry
 `[skip ci]`, but not all, and running six suites against a `snapshot.json` commit
 proves nothing. The filter mirrors `workflow-list-gate.yml`, which already
 triggers on `push` filtered to `.github/workflows/**`.
 
-The filter is also what makes the verification below meaningful: a broken commit
-touches a `.py`, so a wrong filter shows up as the workflow not firing rather than
-as a pass.
+**An earlier draft of this spec said `'**.py'`, and that was a defect worth
+recording rather than quietly correcting.** All 42 Python files in this
+repository sit at the root; none is in a subdirectory. Whether `'**.py'` matches a
+root-level file is a glob subtlety this design should not be betting on, and if it
+does not match, **the workflow never fires and says nothing**, which is precisely
+the failure this workflow exists to end, reintroduced inside its own trigger. A
+guard whose trigger silently does not match is indistinguishable from a guard
+that passes.
+
+`'*.py'` covers the root unambiguously, which today is every file that matters.
+`'**/*.py'` is carried alongside it so a future module in a subdirectory is not
+silently excluded. Two patterns, no ambiguity, no bet.
+
+The filter is also what the verification below tests: a broken commit touches a
+`.py`, so a wrong filter shows up as the workflow not firing rather than as a
+pass. That check stays valuable, but the design should be right rather than
+rescued by it.
 
 ### Six steps, not one
 
@@ -67,12 +81,17 @@ No pytest and no adapter. These are standalone scripts using the repo's own
 `check()` harness; they print `N/M checks passed` and exit non-zero on failure, so
 a plain `run:` fails the job.
 
-### `test_baseline.py` stays out
+### `test_baseline.py` stays out, and the reason was checked rather than assumed
 
-It needs `SEC_USER_AGENT` and live SEC data. That makes it a live-data check
-rather than a unit suite: it can fail because the SEC is slow, which is exactly
-the kind of failure that teaches people to ignore a red mark. It keeps its own
-dispatch-only workflow.
+It reads `SEC_USER_AGENT` from the environment and exits immediately with
+`SEC_USER_AGENT is not set.` when it is absent, then fetches
+`https://data.sec.gov/submissions/CIK{cik}.json` through
+`urllib.request.urlopen`. It is a live-data check, not a unit suite: it can fail
+because the SEC is slow or unreachable, and a red mark that fires for reasons
+outside the repository is how people learn to ignore red marks.
+
+It keeps its own dispatch-only workflow, where a human runs it knowing it talks
+to the SEC.
 
 ## Two things this must not break
 
