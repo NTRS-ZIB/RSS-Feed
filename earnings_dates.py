@@ -407,7 +407,7 @@ def candidate_dates(text, released, limit=6):
 def date_from_body(text, released, today):
     """(date, reason) for the ONE forward date a body offers, or (None, why).
 
-    reason is "ok", "several", "no-candidates" or "past".
+    reason is "ok", "several", "no-candidates", "past" or "no-baseline".
 
     EXACTLY ONE IS THE WHOLE RULE. A body carrying several forward dates
     offers no way to tell the report date from the call date, the replay
@@ -423,6 +423,14 @@ def date_from_body(text, released, today):
     choose, the other says the body offered nothing. Logging them as one
     number would hide which problem a future rule has to solve.
     """
+    if released is None:
+        # With no release date there is nothing to recognise the body's own
+        # dateline against, so candidate_dates() returns it unfiltered along
+        # with everything else — see its "With released=None" note. Every
+        # date in the body is then a candidate, and the first one is usually
+        # the dateline itself: exactly one candidate would read as "ok" and
+        # store today's date as the company's announced date.
+        return None, "no-baseline"
     cands = candidate_dates(text, released)
     if not cands:
         return None, "no-candidates"

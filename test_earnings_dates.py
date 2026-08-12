@@ -375,6 +375,37 @@ def main():
           != ed.date_from_body("nothing", REL, NOW)[1],
           "one means we could not choose; the other means there was nothing")
 
+    # THE ONE THAT MATTERS. With no release timestamp, candidate_dates has no
+    # baseline to recognise the body's own dateline against, so the dateline
+    # itself survives as the only candidate and looks like a perfectly good
+    # answer. Stored, it becomes today's date presented as an announced date.
+    NO_BASELINE_BODY = ("MIAMI, Aug. 20, 2026 -- Acme will host its call "
+                        "next Tuesday.")
+    check("with no release date, the rule refuses rather than storing the "
+          "dateline",
+          ed.date_from_body(NO_BASELINE_BODY, None, date(2026, 8, 12))
+          == (None, "no-baseline"),
+          "released=None must not let the dateline read as a real date")
+    check("the same shape with a real release date still yields its one date",
+          ed.date_from_body(
+              "MIAMI, Aug. 20, 2026 -- Acme will host its call on "
+              "August 25, 2026.",
+              date(2026, 8, 20), date(2026, 8, 21))
+          == (date(2026, 8, 25), "ok"),
+          "the fix must not disable the rule when a release date IS known")
+
+    check("date_from_body's reasons are a closed set",
+          {ed.date_from_body(*a)[1] for a in [
+              ("will report on August 12, 2026", REL, NOW),
+              ("a August 12, 2026 b August 19, 2026", REL, NOW),
+              ("no dates here", REL, NOW),
+              ("reported on August 1, 2026", date(2026, 7, 1),
+               date(2026, 8, 20)),
+              ("MIAMI, Aug. 20, 2026 -- nothing else", None,
+               date(2026, 8, 12)),
+          ]} == {"ok", "several", "no-candidates", "past", "no-baseline"},
+          "press_monitor indexes its counter dict by these strings")
+
     print("\nANNUAL-ONLY PROJECTION")
 
     def annual(year, lag_days):
@@ -646,6 +677,28 @@ def main():
     check("a title-derived row is still marked !", "BGDE!" in ttext, ttext)
     check("the + key is absent when no + row is shown",
           "+ date read from body" not in ttext, ttext)
+
+    # A table showing BOTH markers at once is the only path that produces
+    # "(blank on ! and + rows)" — every test above shows just one, which
+    # only ever exercises "(blank on ! rows)" or "(blank on + rows)". A third,
+    # projected row is needed too: with every row disclosed there is nothing
+    # in the spread column at all, and the footnote does not print — see
+    # "no spread footnote when nothing populates that column" above.
+    both_text = ec.build_message([
+        calendar_row("BGDE", today + timedelta(days=5), disclosed=True,
+                     source="title"),
+        calendar_row("WYFI", today + timedelta(days=6), disclosed=True,
+                     source="body"),
+        calendar_row("PROJ", today + timedelta(days=7), disclosed=False),
+    ])
+    check("both markers appear together", "BGDE!" in both_text
+          and "WYFI+" in both_text, both_text)
+    check("the footnote names both markers",
+          "(blank on ! and + rows)" in both_text, both_text)
+    check("every line still fits the 28-char ceiling",
+          max(len(l) for l in both_text.splitlines()) <= 28, both_text)
+    check("the widest line for this table is 26",
+          max(len(l) for l in both_text.splitlines()) == 26, both_text)
 
     # THE ONE THAT MATTERS. Same past date, same everything else: the
     # company's own headline date is late immediately, while a date we read

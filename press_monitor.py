@@ -1849,9 +1849,10 @@ def post(item, webhook, color=0x1F6FEB):
     return False
 
 
-# Used by probe_body_dates.py, not by this module. It lives here because it
-# needs headers_for(), and the per-host header knowledge that function carries
-# is not worth duplicating or splitting — see HOST_HEADERS.
+# Used by both probe_body_dates.py and record_disclosed_dates() below. It
+# lives here because it needs headers_for(), and the per-host header
+# knowledge that function carries is not worth duplicating or splitting —
+# see HOST_HEADERS.
 BODY_TIMEOUT = (10, 15)
 BODY_MAX_BYTES = 400_000
 
@@ -1929,7 +1930,8 @@ def record_disclosed_dates(items, fresh_uids):
 
     counts = {"ok": 0, "no-date": 0, "past": 0, "no-match": 0}
     body = {"eligible": 0, "fetched": 0, "failed": 0,
-            "ok": 0, "several": 0, "no-candidates": 0, "past": 0}
+            "ok": 0, "several": 0, "no-candidates": 0, "past": 0,
+            "no-baseline": 0}
     no_date_examples = []
     for item in items:
         entry = EXTRA_CIKS.get(item.get("ticker") or "")
@@ -1988,7 +1990,8 @@ def record_disclosed_dates(items, fresh_uids):
     print(f"  earnings dates: body rule — {body['eligible']} eligible, "
           f"{body['fetched']} fetched, {body['failed']} fetch failed; "
           f"{body['ok']} stored, {body['several']} had several dates, "
-          f"{body['no-candidates']} had none, {body['past']} were past.")
+          f"{body['no-candidates']} had none, {body['past']} were past, "
+          f"{body['no-baseline']} had no release date to check against.")
     if DRY_RUN:
         print("  earnings dates: dry run — nothing written.")
         return
