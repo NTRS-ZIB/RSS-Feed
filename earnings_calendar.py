@@ -333,7 +333,13 @@ def build_message(rows, announced=None):
     # disclosed and, say, erratic: marker() shows `!` for it since that
     # outranks `~`, so a key built from "any row has a high spread" would
     # advertise a `~` that appears nowhere in the table.
-    shown = {marker(r) for r in rows}
+    # From the rows that are actually RENDERED, not from every row. A row
+    # whose date sits between `today - OVERDUE_GRACE` and `today` is in no
+    # section: too late for upcoming, not yet overdue, not beyond the horizon.
+    # Keying off `rows` would advertise its marker with nothing in the table
+    # carrying it.
+    rendered = upcoming + overdue + later
+    shown = {marker(r) for r in rendered}
     key = []
     if "*" in shown:
         key.append("* annual report")
@@ -348,9 +354,14 @@ def build_message(rows, announced=None):
     if key:
         lines.append("")
         lines.extend(key)
-        lines.append("last col = +/- spread")
-        if "!" in shown:
-            lines.append("(blank on ! rows)")
+        # Only when a rendered row actually populates that column. An `!` row
+        # blanks it, so a table whose every row is announced would otherwise
+        # explain a column nothing fills.
+        has_spread = any(not r.get("disclosed") for r in rendered)
+        if has_spread:
+            lines.append("last col = +/- spread")
+            if "!" in shown:
+                lines.append("(blank on ! rows)")
 
     return "\n".join(lines)
 
@@ -360,7 +371,10 @@ def post(text, missing):
             "its median filing lag. These are estimates, not announced dates; "
             "the ± figure is the spread in that company's past lags.")
     if missing:
-        desc += f"\n\nInsufficient history: {', '.join(missing)}"
+        # Each entry already carries its count against the floor, e.g.
+        # "SPCX 1/2" — see where `missing` is built.
+        desc += (f"\n\nToo few periodic filings to project: "
+                 f"{', '.join(missing)}")
 
     embed = {
         "title": "Expected reporting dates",
@@ -408,8 +422,20 @@ def main():
                   f"median lag {projection['lag']}d "
                   f"(±{projection['spread']}d over {projection['samples']})")
         else:
-            missing.append(label)
-            print(f"    only {len(filings)} periodic filing(s) — cannot project")
+            # A COUNT AGAINST THE FLOOR, NOT A BARE NAME. A name in a list is
+            # an excuse; a count tells the reader both that nothing is wrong
+            # and roughly when it resolves. Every other component on this
+            # roster does this — CLAUDE.md records earnings_calendar.py as the
+            # one that did not.
+            #
+            # The count is stated without a cause. `project()` returns None
+            # both when there are fewer than MIN_PERIODIC_FILINGS filings and
+            # when no single form type reaches two, so citing the floor as the
+            # reason would read "2/2 filings, not enough" whenever the second
+            # case fires.
+            missing.append(f"{label} {len(filings)}/{MIN_PERIODIC_FILINGS}")
+            print(f"    {len(filings)} periodic filing(s), no projection "
+                  f"derived from them")
 
     if not rows:
         sys.exit("No projections possible; not posting.")
@@ -453,10 +479,13 @@ def main():
             # asserting a cause here would be right by luck rather than by
             # evidence. The count against the floor is the useful part.
             n = filing_counts.get(cik, 0)
-            print(f"  {label} has an announced date; {n}/"
-                  f"{MIN_PERIODIC_FILINGS} periodic filing(s) seen — not "
-                  f"enough to project a period end, so the announced date "
-                  f"is not applied")
+            # The count, without naming which floor stopped it. project()
+            # returns None both below MIN_PERIODIC_FILINGS and when no single
+            # form type reaches two, so citing the former reads "2/2 seen, not
+            # enough" whenever the latter is what fired.
+            print(f"  {label} has an announced date; {n} periodic filing(s) "
+                  f"seen and no projection derived from them, so there is no "
+                  f"period end to apply it against")
         else:
             rec = disclosed[cik]
             ticker = rec.get("ticker") if isinstance(rec, dict) else rec
@@ -475,7 +504,8 @@ def main():
     text = build_message(rows, announced=announced)
     print(f"\n{text}\n")
     if missing:
-        print(f"Insufficient history: {', '.join(missing)}\n")
+        print(f"Too few periodic filings to project: "
+              f"{', '.join(missing)}\n")
 
     if DRY_RUN:
         print(f"Dry run complete: {len(rows)} projected, {len(missing)} skipped.")

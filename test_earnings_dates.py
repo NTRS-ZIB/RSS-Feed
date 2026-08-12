@@ -507,6 +507,39 @@ def main():
           "DGXX~" in later_section and "DGXX~" not in announced_section,
           text)
 
+    print("\nTHE KEY DESCRIBES ONLY WHAT THE TABLE SHOWS")
+
+    def krow(label, expected, **kw):
+        r = {"label": label, "name": label, "cik": "000000000" + label[0],
+             "period": date.today() - timedelta(days=90), "expected": expected,
+             "lag": 45, "spread": 5, "kind": "10-Q", "degraded": False}
+        r.update(kw)
+        return r
+
+    # A row between `today - OVERDUE_GRACE` and `today` renders in NO section:
+    # too late for upcoming, not yet overdue, not beyond the horizon. Its
+    # marker must not reach the key.
+    assert 3 < ec.OVERDUE_GRACE, "fixture assumes 3 days is inside the grace"
+    limbo = krow("LIMB", date.today() - timedelta(days=3), degraded=True)
+    visible = krow("VIS", date.today() + timedelta(days=5))
+    text = ec.build_message([limbo, visible])
+    check("a row rendered in no section is really absent from the table",
+          "LIMB" not in text, text)
+    check("and its marker is not advertised in the key",
+          "? thin history" not in text,
+          "the key described a row the reader cannot see")
+
+    # Every rendered row announced, so every last column is blank.
+    only_disclosed = krow("DISC", date.today() + timedelta(days=5),
+                          disclosed=True)
+    text = ec.build_message([only_disclosed])
+    check("no spread footnote when nothing populates that column",
+          "last col" not in text, text)
+    # And the ordinary case still explains it.
+    text = ec.build_message([only_disclosed, visible])
+    check("the footnote returns as soon as one row has a spread",
+          "last col = +/- spread" in text and "(blank on ! rows)" in text)
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0
