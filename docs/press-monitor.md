@@ -915,19 +915,26 @@ offer exactly one forward date and none offers several, while the other two
 populations scatter across all three buckets. One date that every press release
 carries had hidden that completely.
 
-The sixth advance notice is HUT's, and it was checked before trusting the table.
-**It is not a parsing failure and not a fixable one: hut8.com serves no release
-body to a plain fetch.** What comes back is the headline, "Posted Jul 13, 2026",
-and an email signup form — 1,227 characters against ABTC's ~2,650, and the only
-date in it is the posting date. The release text is rendered client-side, so
-`announcement_body` is not losing the date; the date was never in the response.
+The sixth advance notice is HUT's, and the first explanation recorded here
+was wrong in every particular. It said hut8.com served no release body, that
+the date was never in the response, and that no body-reading rule could ever
+recover it. **The date was in the response the whole time, and
+`announcement_body` was deleting it.**
 
-That is worth separating from the rest of the table. A body carrying no
-forward date and a body that was never served are different measurements, and
-`bucket_of` counts both as `none` because it can only see what the fetch
-returned. Hut 8 near-certainly did announce a date. **No rule reading bodies
-will ever recover it from this source**, and the fix, if one is wanted, is a
-route to the content rather than a better parser.
+hut8.com server-renders its article into a `__NUXT_DATA__` JSON payload
+rather than into markup, and the extractor stripped `<script>` blocks before
+reading. Replaying that pipeline over the page's 121,286 bytes yields exactly
+1,227 characters, the figure logged here, which is the furniture: headline,
+"Posted Jul 13, 2026", and a signup form. The payload holds two dates, the
+dateline and **August 4, 2026**, so once the dateline is discounted the body
+offers exactly one forward date.
+
+**Two checks agreed the body was absent, and both were blind the same way.**
+The probe's own fetch and a WebFetch of the same URL each render to text
+before anyone sees them, so each dropped the payload for the same reason.
+Agreement between two readings of the same blind spot is one reading.
+`page_text.extract_text()` now recovers payload strings, and the fix is not
+HUT-specific: any source that ships its article as JSON is readable.
 
 Both tables above are probe runs. The first reading of the second table was
 arithmetic done by hand on the printed rows, and it agreed with the measurement
