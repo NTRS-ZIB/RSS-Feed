@@ -459,6 +459,21 @@ def main():
           ed.announced_elsewhere([dict(arow)], past, date.today()) == [],
           "the section is about what is coming")
 
+    # THE SELF-EXPIRY NOTE. `arow`'s period end is 200 days out (future) and
+    # `past`'s stored date is 5 days ago, so apply()'s `when <= r["period"]`
+    # test fires for the same reason it does for a real forthcoming
+    # announcement — but this date is not forthcoming, it is stale. The note
+    # for this population must not claim the date is shown in the Announced
+    # section: announced_elsewhere's own `when < today` guard means a passed
+    # date never reaches it, so that claim would be false — the same defect
+    # Step 6 rewrote the note to remove, just relocated to this branch.
+    rows, applied, notes = ed.apply([dict(arow)], past, date.today())
+    check("a date already past does not apply", applied == 0)
+    check("its note says the date is not shown anywhere, not that it is in "
+          "the Announced section",
+          any("already passed" in n for n in notes)
+          and not any("Announced section" in n for n in notes), notes)
+
     text = ec.build_message([dict(arow)], announced=[("DGXX", soon)])
     check("the section renders with its own heading",
           "Announced" in text and "DGXX" in text, text)
