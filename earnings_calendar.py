@@ -317,6 +317,13 @@ def build_message(rows, announced=None):
 
     if later:
         lines.append("")
+        # Its own heading. Without one, "Announced" directly above reads as
+        # the heading for this block too, and a company can be in both:
+        # DGXX~ due in the Announced section on one date and a Later row on
+        # another describing its actual annual projection, three lines apart
+        # with no marker separating which block owns which line.
+        lines.append("Later")
+        lines.append("-" * 26)
         for r in later:
             lines.append(f"{r['label']:<4}{marker(r)} {r['expected']:%a %d %b}"
                          f"  later")

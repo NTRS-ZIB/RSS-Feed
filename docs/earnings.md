@@ -88,7 +88,13 @@ section carry no marker and no spread column: they are neither a projection
 nor the current estimate for any row, so `!`, `~`, `?` and `*` all describe
 something these dates are not.
 
-**Later** — one-line summary of everything beyond the horizon.
+**Later** — one line per row beyond the horizon, under its own heading. It
+needs one: a row can appear here and in Announced both, for different dates —
+Announced shows a disclosed date that belongs to an earlier report than the
+row projects, while this section still shows that row's own (annual) date,
+further out. Without a heading of its own, "Announced" directly above would
+read as covering these lines too, and the two dates for the same label would
+look like a contradiction rather than two different measurements.
 
 ## Known quirks
 

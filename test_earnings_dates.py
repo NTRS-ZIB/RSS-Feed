@@ -493,6 +493,20 @@ def main():
     check("and nothing in the block exceeds 28 characters",
           widest <= 28, widest)
 
+    # arow's own expected date (290d out) is past HORIZON_DAYS, so the same
+    # DGXX label appears a second time, in Later — under Announced's own
+    # date (`soon`). Without a heading of its own, Later's rows read as
+    # still belonging to Announced, and the label appears to contradict
+    # itself. Later must have its own heading, and DGXX's Later row must be
+    # findable under that heading rather than under Announced's.
+    check("Later gets its own heading too",
+          "Later" in text, text)
+    later_section = text.split("Later", 1)[1]
+    announced_section = text.split("Announced", 1)[1].split("Later", 1)[0]
+    check("DGXX's own (annual) date is under Later, not Announced",
+          "DGXX~" in later_section and "DGXX~" not in announced_section,
+          text)
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0
