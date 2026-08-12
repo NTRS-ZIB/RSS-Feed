@@ -846,15 +846,6 @@ GlobeNewswire feed as a permanent control in `KNOWN_DEAD` — a detector that
 stops firing on that is broken, and one control is thin, so a second dead source
 is worth adding there rather than only noting.
 
-`probe_body_dates.py` is the second maintenance tool, dispatched by hand
-through **Probe body dates**. It collects the same IR sources, selects every
-announcement whose title carried no parsable date, fetches each body and
-prints the candidate dates it found, grouped by whether the title named a
-forthcoming event. It exists because the same measurement inside the monitor
-was gated on items new in a run and fetched nothing for as long as it lived
-there: the twenty undated announcements had all been seen already. Read-only,
-no secrets, no state, no commit.
-
 **Same-day items are collapsed before measuring**, and this is load-bearing
 rather than tidiness. Uncollapsed, HUT's median reads 5.5d instead of 18d and
 MARA's 4.4d instead of 8d — a single burst would drag the median down until an
@@ -872,6 +863,15 @@ the window, so the check takes the larger of the two.
 It logs and returns. It never raises and never suppresses items: a stale source
 may simply be quiet, its items still deduplicate normally, and one source going
 dark must not affect the other thirteen or the EDGAR sweep.
+
+`probe_body_dates.py` is the second maintenance tool, dispatched by hand
+through **Probe body dates**. It collects the same IR sources, selects every
+announcement whose title carried no parsable date, fetches each body and
+prints the candidate dates it found, grouped by whether the title named a
+forthcoming event. It exists because the same measurement inside the monitor
+was gated on items new in a run and fetched nothing for as long as it lived
+there: the twenty undated announcements had all been seen already. Read-only,
+no secrets, no state, no commit.
 
 ### Two dead sources that parse perfectly — both DGXX
 

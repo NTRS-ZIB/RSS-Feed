@@ -73,6 +73,7 @@ audit_8k_items.py                 maintenance: 8-K item distribution
 check_metric_regime.py            maintenance: is a metric's move real or a regime shift
 probe_sites.py                    maintenance: grid operators and states a filing names
 probe_holders.py                  maintenance: what 13D/G filings carry
+probe_body_dates.py               maintenance: what a release body offers
 holder_events.py                  >5% holder arrivals, changes and exits
 ftd_monitor.py                    SEC fails-to-deliver
 threshold_list.py                 Reg SHO threshold list (exception report)
@@ -98,6 +99,7 @@ grid_context.py                   grid demand and natural gas
 .github/workflows/sites.yml       operating footprint sweep, manual only
 .github/workflows/audit.yml       identifier audit, manual only
 .github/workflows/calibrate.yml   staleness calibration, manual only
+.github/workflows/probe-body-dates.yml  body-date probe, manual only
 .github/workflows/items.yml       8-K item audit, manual only
 .github/workflows/metric-regime.yml  metric regime check, manual only
 spike_state.json                  auto-generated; per-day alert tiers
