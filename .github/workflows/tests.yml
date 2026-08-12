@@ -1,0 +1,54 @@
+name: Tests
+
+# The offline suites, on every push that touches Python. Before this existed
+# NOTHING ran them: the only push-triggered workflow was the list gate, which
+# checks that workflows are watched rather than that code works, and
+# baseline-test.yml is dispatch-only and runs one file. That left 258 checks
+# executing only when a person remembered.
+#
+# test_baseline.py is deliberately absent. It needs SEC_USER_AGENT and fetches
+# data.sec.gov, so it can go red because the SEC is slow, and a red mark that
+# fires for reasons outside the repository is how people learn to ignore red
+# marks. It keeps baseline-test.yml.
+#
+# BOTH path patterns are required. Every Python file in this repo is at the
+# root, and a filter that misses the root would mean this never fires and never
+# says so, which is the failure it exists to end.
+
+on:
+  push:
+    paths:
+      - "*.py"
+      - "**/*.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      # Only test_earnings_dates.py needs this, through its earnings_calendar
+      # import. The other five are stdlib-only.
+      - name: Install dependencies
+        run: pip install requests
+      # One step per suite so a failure is named in the run's step list and
+      # nobody has to open a log to learn which one broke.
+      - name: page_text
+        run: python -u test_page_text.py
+      - name: earnings_dates
+        run: python -u test_earnings_dates.py
+      - name: probe_body_dates
+        run: python -u test_probe_body_dates.py
+      - name: loop_state
+        run: python -u test_loop_state.py
+      - name: loop_verdict
+        run: python -u test_loop_verdict.py
+      - name: loop_approval
+        run: python -u test_loop_approval.py

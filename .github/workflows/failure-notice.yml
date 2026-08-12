@@ -65,6 +65,7 @@ on:
       - "Shares outstanding"
       - "Short interest"
       - "Short sale volume"
+      - "Tests"
       - "Volume spikes"
       - "Weekly digest"
       # The gate that guards this very list is watched by it. A check that
