@@ -883,26 +883,32 @@ agree. Zero failed fetches.
 | scheduled + results | 2 | 4 | 0 |
 | not scheduled | 4 | 4 | 0 |
 
-Read alone, that says a rule is not possible: advance notices sit in *several*,
-not *one*. **Read against the rows, it says the opposite, and the counts are the
-thing that misleads.** In every scheduled row the first candidate is exactly the
-release date, because `candidate_dates` drops a date only when `when < released`
-and so keeps the body's own dateline. Discount it and the same twelve rows read:
+Read alone that says a rule is not possible: advance notices sit in *several*,
+not *one*. **The counts were the thing that misled.** Every scheduled body opens
+with its own dateline, and `candidate_dates` dropped a date only when
+`when < released`, so the release date itself survived as candidate one.
+
+The filter now excludes it, and the second run of the same twenty rows measured:
 
 | label | one | several | none |
 |---|---|---|---|
 | advance notice | **5** | **0** | 1 |
 | scheduled + results | 2 | 2 | 2 |
+| not scheduled | 3 | 1 | 4 |
 
-So the scheduled-event gate does discriminate, sharply, and the raw table hid it
-behind a date every body carries. The one advance notice yielding nothing is
-HUT's, whose extracted body is 1,227 characters against ABTC's ~2,650 — a short
-extraction, not an absent date, and worth checking before any rule is written.
+**So the scheduled-event gate does discriminate.** Five of six advance notices
+offer exactly one forward date and none offers several, while the other two
+populations scatter across all three buckets. One date that every press release
+carries had hidden that completely.
 
-**This second table is arithmetic on the printed rows, not a probe run.** It has
-not been produced by the code and must be re-measured before it decides anything
-— which is a one-line change to `candidate_dates` and another dispatch. That
-distinction is the whole point of the trap in `CLAUDE.md` about numbers that are
+The sixth advance notice is HUT's, and it is the one to check before a rule is
+written: its extracted body is 1,227 characters against ABTC's ~2,650, which
+looks like a short extraction rather than a release that names no date.
+
+Both tables above are probe runs. The first reading of the second table was
+arithmetic done by hand on the printed rows, and it agreed with the measurement
+exactly — which is not evidence it was sound, only that it was lucky. It was
+re-measured before it decided anything, per the `CLAUDE.md` trap about numbers
 true of something adjacent to the question.
 
 ### Two dead sources that parse perfectly — both DGXX
