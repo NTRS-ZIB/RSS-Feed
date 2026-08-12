@@ -48,9 +48,11 @@ ANNOUNCE_VERBS = ("to report", "to announce", "to release", "announces",
 RESULTS_WORDS = ("results", "earnings")
 
 # Words that name a FORTHCOMING EVENT. An advance notice schedules something;
-# a results release reports something. This gates body FETCHING only, never
-# storing, so a phrasing missing from this list costs one measurement sample
-# and nothing else.
+# a results release reports something. probe_body_dates.py is the only
+# production caller, where this is a pure label applied to every selected
+# row rather than a gate on what gets fetched — so a phrasing missing from
+# this list does not skip a sample, it misfiles that row into "not scheduled"
+# inside the very table built to decide whether this list discriminates.
 SCHEDULED_EVENT_WORDS = ("conference call", "webcast", "call for",
                          "schedules", "to be held", "will host")
 
@@ -61,17 +63,18 @@ def names_a_scheduled_event(title):
     return any(w in t for w in SCHEDULED_EVENT_WORDS)
 
 
-# The gate above is not a clean split. A title can genuinely announce results
-# and a call in the same breath — "...Third Quarter 2026 Financial Results
-# and Will Host Conference Call" — and no word list separates that from a
-# pure advance notice, because both use the same scheduling language.
-# RESULTS_WORDS is too broad to use as the signal here: "earnings" alone
-# names the call itself ("Earnings Conference Call", "Earnings Release and
-# Webcast") and would flag every clean advance notice as mixed. "results" is
-# the narrower word that shows up when the release is actually reported, not
-# merely named as an event. This does not fix the gate — it labels what got
-# past it, so the body-date measurement can be filtered by the label rather
-# than trusted wholesale.
+# SCHEDULED_EVENT_WORDS above is not a clean split. A title can genuinely
+# announce results and a call in the same breath — "...Third Quarter 2026
+# Financial Results and Will Host Conference Call" — and no word list
+# separates that from a pure advance notice, because both use the same
+# scheduling language. RESULTS_WORDS is too broad to use as the signal here:
+# "earnings" alone names the call itself ("Earnings Conference Call",
+# "Earnings Release and Webcast") and would flag every clean advance notice
+# as mixed. "results" is the narrower word that shows up when the release is
+# actually reported, not merely named as an event. This is a second, finer
+# label on top of names_a_scheduled_event's — both are pure labels applied
+# to every row probe_body_dates.py selects, so probe_body_dates.py's table
+# can be split by label rather than read wholesale.
 RESULTS_RELEASE_WORDS = ("results",)
 
 

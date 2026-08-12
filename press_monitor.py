@@ -1849,9 +1849,9 @@ def post(item, webhook, color=0x1F6FEB):
     return False
 
 
-# One body fetch per undated announcement, and ONLY for items new this run.
-# Over every item it would re-fetch the same dozen pages on each pass, about
-# eight times an hour, indefinitely, for a measurement that does not change.
+# Used by probe_body_dates.py, not by this module. It lives here because it
+# needs headers_for(), and the per-host header knowledge that function carries
+# is not worth duplicating or splitting — see HOST_HEADERS.
 BODY_TIMEOUT = (10, 15)
 BODY_MAX_BYTES = 400_000
 
@@ -1895,7 +1895,7 @@ def announcement_body(link):
     return " ".join(re.sub(r"<[^>]+>", " ", html).split())
 
 
-def record_disclosed_dates(items, fresh_uids):
+def record_disclosed_dates(items):
     """Extract announced reporting dates from item titles and store them.
 
     Runs over EVERY item, not only the ones that will post. An announcement
@@ -1922,7 +1922,6 @@ def record_disclosed_dates(items, fresh_uids):
 
     counts = {"ok": 0, "no-date": 0, "past": 0, "no-match": 0}
     no_date_examples = []
-    body_seen = body_with_dates = 0
     for item in items:
         entry = EXTRA_CIKS.get(item.get("ticker") or "")
         if not entry:
@@ -1936,50 +1935,12 @@ def record_disclosed_dates(items, fresh_uids):
             if len(no_date_examples) < 3:
                 # The informative miss: an announcement whose date is in the
                 # body rather than the title. This count is what decides
-                # whether fetching bodies is worth building. Kept to a
-                # handful of examples in the summary line rather than one
-                # line per item — per-item logging here reprinted the same
-                # unparsed title on every pass, since this runs over all
-                # items rather than new ones, roughly eight times an hour
-                # indefinitely.
+                # whether a rule over bodies is worth building, and
+                # probe_body_dates.py is what measures it — by hand, over
+                # every undated announcement at once, rather than from here
+                # over the two items that are new in a given run.
                 no_date_examples.append(
                     f"{item['ticker']}: {item.get('title')!r}")
-            # MEASUREMENT ONLY — nothing here is stored. A later task decides
-            # whether a rule over these candidates is worth trusting. Gated
-            # on freshness, deliberately independent of the 3-example cap
-            # above: EDGAR-then-feeds iterates newest-first, so a fixed cap
-            # can fill with the same recurring tickers indefinitely and
-            # starve every other undated item of a fetch even when it is
-            # fresh — the fetch must stay reachable for any fresh no-date
-            # item, not just the first three logged as examples.
-            # Widening recognition to bare "announces" made results releases
-            # recognised and undated, and A RESULTS RELEASE BODY IS DENSE WITH
-            # DATES — the period covered, prior-year comparatives, the figures
-            # themselves. Fetching those would poison the very measurement
-            # this body probe exists to produce, so the fetch is also gated
-            # on the title naming a scheduled event rather than reporting one.
-            #
-            # That gate is imperfect and known to be: a title can announce
-            # results and a call in the same breath — "...Financial Results
-            # and Will Host Conference Call" — and no word list separates
-            # that from a pure advance notice, because both use the same
-            # scheduling language. Rather than chase that with more words,
-            # also_reports_results() labels what got through, so the
-            # candidates below can be filtered by the label instead of
-            # trusted wholesale.
-            if (item.get("uid") in fresh_uids
-                    and ed.names_a_scheduled_event(item.get("title"))):
-                text = announcement_body(item.get("link"))
-                if text is not None:
-                    body_seen += 1
-                    cands = ed.candidate_dates(text, released)
-                    if cands:
-                        body_with_dates += 1
-                    mixed = ed.also_reports_results(item.get("title"))
-                    print(f"  earnings dates: BODY {item['ticker']} "
-                          f"{len(text)} chars, candidates {cands}, "
-                          f"also_reports_results={mixed} "
-                          f"from {item.get('title')!r}")
         if when is None:
             continue
         iso = (datetime.fromtimestamp(published, timezone.utc).isoformat()
@@ -1991,9 +1952,7 @@ def record_disclosed_dates(items, fresh_uids):
 
     print(f"  earnings dates: {counts['ok']} recorded, {counts['no-date']} "
           f"announcement(s) with no parsable date, {counts['past']} rejected "
-          f"as past, {len(companies)} on file."
-          f" Bodies fetched {body_seen}, {body_with_dates} carried at least "
-          f"one forward-looking date.")
+          f"as past, {len(companies)} on file.")
     if no_date_examples:
         print("  earnings dates: no-date example(s): "
               + "; ".join(no_date_examples))
@@ -2073,8 +2032,7 @@ def main():
     # abort main() and silence the whole channel for a failure that has
     # nothing to do with press items.
     try:
-        record_disclosed_dates(all_items,
-                               {i["uid"] for i in fresh + insider_fresh})
+        record_disclosed_dates(all_items)
     except Exception as e:
         print(f"  earnings dates: FAILED this run — {type(e).__name__}: {e}. "
               f"Dates were not recorded this run; continuing to post.",

@@ -864,6 +864,15 @@ It logs and returns. It never raises and never suppresses items: a stale source
 may simply be quiet, its items still deduplicate normally, and one source going
 dark must not affect the other thirteen or the EDGAR sweep.
 
+`probe_body_dates.py` is the second maintenance tool, dispatched by hand
+through **Probe body dates**. It collects the same IR sources, selects every
+announcement whose title carried no parsable date, fetches each body and
+prints the candidate dates it found, grouped by whether the title named a
+forthcoming event. It exists because the same measurement inside the monitor
+was gated on items new in a run and fetched nothing for as long as it lived
+there: the twenty undated announcements had all been seen already. Read-only,
+no secrets, no state, no commit.
+
 ### Two dead sources that parse perfectly — both DGXX
 
 Recorded because each looked like a solution, and one check caught both.
