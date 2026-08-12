@@ -80,9 +80,42 @@ dropped, so what reaches the date parser is prose rather than JSON. Appending th
 raw block instead would feed it URLs, class names and escaping, which is the
 noise this design exists to avoid.
 
-Order is visible text first, then recovered text. Nothing depends on it today, since
-the rule fires only on exactly one date, but a deterministic order keeps
+### The join must not be a space
+
+Concatenating unrelated strings with whitespace can MANUFACTURE a date across a
+boundary that exists in neither string. `["Revenue grew in August", "4, 2026 was
+a record"]` joined with a space matches `August 4, 2026`, a date nobody
+published. A page-state payload is full of adjacent unrelated strings, so this is
+not a hypothetical shape.
+
+**Join recovered strings, and the visible half to the recovered half, with a
+separator containing a non-whitespace character** such as `" | "`. `DATE_RE`
+allows `\s+` between the month and the day, so a newline would not prevent this;
+a literal `|` cannot appear inside a match and ends it.
+
+Measured on HUT: joining its 112 strings with `" | "` yields exactly the same two
+dates as joining with a space, because both dates sit inside single strings:
+`"MIAMI, July 13, 2026 "` and `"Date: Tuesday, August 4, 2026\nTime: 8:30 a.m.
+ET"`. The separator costs nothing on the one source this exists for.
+
+The residual trade, stated plainly: a site that splits a date across two strings
+for formatting will now be missed. That fails toward storing nothing rather than
+storing something invented, which is the direction the rule already chooses
+everywhere else.
+
+Order is visible text first, then recovered text. Nothing depends on it today,
+since the rule fires only on exactly one date, but a deterministic order keeps
 `candidate_dates`' "document order" contract meaningful.
+
+### What string-only does not need to handle
+
+None of HUT's 112 strings contains an HTML tag, so recovered text needs no second
+tag-stripping pass. Were a site to store markup in a payload, tags would arrive as
+noise that `DATE_RE` cannot match, so the failure is cosmetic rather than wrong.
+
+A payload embedding a "related releases" list would contribute those releases'
+dates and push the body to several candidates, where the rule stores nothing.
+That is the safe direction and needs no special handling.
 
 ### `application/ld+json` is deliberately excluded
 
