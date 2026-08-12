@@ -65,9 +65,12 @@ Expected dates falling on a weekend roll forward to Monday.
 **Expected in the next 45 days** — the actionable list.
 
 **Overdue** — a company past its own announced date with nothing filed, or
-more than 10 days beyond its typical lag. An announced date gets no grace,
-because the grace exists to allow for the spread in our projection and an
-announced date has none. This corroborates the `NT 10-Q` / `NT 10-K`
+more than 10 days beyond its typical lag. An announced date in the headline
+(marked `!`) gets no grace, because the grace exists to allow for the spread in
+our projection and an announced date has none. A date found in the body and
+parsed by us (marked `+`) keeps the normal grace, because what is uncertain
+there is our reading rather than the company's statement. This corroborates the
+`NT 10-Q` / `NT 10-K`
 late-filing notices the press monitor watches for; seeing both is a strong
 signal.
 
@@ -99,12 +102,13 @@ look like a contradiction rather than two different measurements.
 
 ## Known quirks
 
-- **Most rows are estimates; a `!` row is not.** Companies announce actual
+- **Most rows are estimates; a `!` or `+` row is not.** Companies announce actual
   dates by press release, and the [press release monitor](press-monitor.md) reads
   them from the release title (marked `!`) or, when found in the body only, parses
   them out (marked `+`). The company stated the date either way, so both show no
-  spread; the difference is that a `+` row keeps normal overdue grace because our
-  parsing is more fallible than the company's headline.
+  spread; the difference is that a `+` row keeps normal overdue grace, because
+  the company stated the date either way and what is uncertain is our reading
+  rather than the company's statement.
 - **Recent listings have thin history.** WYFI had 4 periodic filings at time of
   writing, giving ±35d. Accurate reporting of low confidence, not a bug.
 - **Validate against reality.** When a company actually files, compare to the
