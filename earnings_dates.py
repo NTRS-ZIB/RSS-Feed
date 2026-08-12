@@ -279,10 +279,9 @@ def apply(rows, companies, today):
             # was rewritten to remove, just relocated to a narrower case.
             if when < today:
                 notes.append(f"{r['label']}: stored date {when} is not after "
-                             f"the period end {r['period']} being projected; "
-                             f"it has already passed, describing a report "
-                             f"the company has since made, so it is not "
-                             f"shown anywhere")
+                             f"the period end {r['period']} being projected, "
+                             f"and is itself before today; it is not applied "
+                             f"and not shown anywhere")
             else:
                 notes.append(f"{r['label']}: stored date {when} is not after "
                              f"the period end {r['period']} being projected, "

@@ -483,7 +483,7 @@ def main():
     check("a date already past does not apply", applied == 0)
     check("its note says the date is not shown anywhere, not that it is in "
           "the Announced section",
-          any("already passed" in n for n in notes)
+          any("not shown anywhere" in n for n in notes)
           and not any("Announced section" in n for n in notes), notes)
 
     text = ec.build_message([dict(arow)], announced=[("DGXX", soon)])
