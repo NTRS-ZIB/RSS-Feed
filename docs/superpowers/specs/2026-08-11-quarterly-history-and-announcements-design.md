@@ -123,20 +123,29 @@ end by a different route. For BTDR: last annual period 31 December 2025, next
 31 December 2026, plus its measured annual lag of 111 days, landing around 21
 April 2027 and shown under "later".
 
-**It is also never reported overdue.** Marking something overdue asserts that
-it should have arrived and has not, and this component cannot observe a 6-K
-filer arriving at all. A claim we cannot check does not belong in the post.
+**It remains eligible for Overdue, and the first draft of this document was
+wrong about that.** The draft argued that such a row should never be reported
+overdue, because marking something overdue asserts it should have arrived and
+this component cannot observe a 6-K filer arriving. That reasoning was sound
+for the row it was written about — a fabricated *quarterly* projection nothing
+could ever satisfy — and it stopped being sound the moment the same change
+replaced that projection with the annual one. 10-K, 20-F and 40-F are all in
+`PERIODIC_FORMS`, so an annual filing is exactly as observable as any other
+row's, and DGXX makes it plain: it files a 10-K and a 10-Q.
 
-**This is a real loss and is not being papered over.** If BTDR goes genuinely
-silent for two quarters, nothing here will say so. The alternative on offer was
-a row that has been wrong for 22 days and would go on being wrong, and between
-a false claim and no claim the honest choice is no claim. Its releases still
-reach the press channel, so silence remains visible elsewhere.
+So the rule was narrowed to what it was actually for. There is no longer a
+class of row this check cannot check, and suppressing it would have discarded a
+real late-filing signal on the argument that we could not compute it, when we
+can. The whole-branch review caught this; the draft had generalised from BTDR
+to a predicate that also selects DGXX without re-testing the reasoning against
+the second company.
 
-A passed *disclosed* date is deliberately not made to trigger overdue either,
-tempting though it is, because the company said the date itself. The row would
-go overdue on a better number and stay there permanently: the same failure,
-better dressed.
+**The ordinary grace applies, and a disclosed date still gets none.** A
+company's own announced date has no projection spread to allow for, which was
+true before this change and is unaffected by it. Note the consequence: both
+affected companies render `~`, meaning annual lag spreads above 30 days, so
+such a row enters Overdue about eleven days past an estimate carrying far more
+variance than that. It is the same trade every erratic row already makes.
 
 ### 2. Recognition gains bare "announces"
 
@@ -180,7 +189,11 @@ storing, so a word missing from it costs a measurement sample and nothing else.
 ## Verification
 
 - Unit tests over `project()` below the quarterly floor: annual projection
-  produced, no quarterly projection attempted, not marked overdue at any date.
+  produced, no quarterly projection attempted. **Overdue is asserted, not
+  suppressed** — such a row past its annual projection by more than
+  `OVERDUE_GRACE` must reach Overdue, and must not while inside the grace. An
+  earlier draft of this line specified the opposite and would have had a reader
+  write the removed behaviour back.
 - **A test at the boundary, since that is where the first draft was wrong.**
   One quarterly filing plus several annual ones must still be treated
   annual-only; two quarterly filings must flip to normal treatment. A test
