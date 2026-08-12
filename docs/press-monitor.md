@@ -901,9 +901,19 @@ offer exactly one forward date and none offers several, while the other two
 populations scatter across all three buckets. One date that every press release
 carries had hidden that completely.
 
-The sixth advance notice is HUT's, and it is the one to check before a rule is
-written: its extracted body is 1,227 characters against ABTC's ~2,650, which
-looks like a short extraction rather than a release that names no date.
+The sixth advance notice is HUT's, and it was checked before trusting the table.
+**It is not a parsing failure and not a fixable one: hut8.com serves no release
+body to a plain fetch.** What comes back is the headline, "Posted Jul 13, 2026",
+and an email signup form — 1,227 characters against ABTC's ~2,650, and the only
+date in it is the posting date. The release text is rendered client-side, so
+`announcement_body` is not losing the date; the date was never in the response.
+
+That is worth separating from the rest of the table. A body carrying no
+forward date and a body that was never served are different measurements, and
+`bucket_of` counts both as `none` because it can only see what the fetch
+returned. Hut 8 near-certainly did announce a date. **No rule reading bodies
+will ever recover it from this source**, and the fix, if one is wanted, is a
+route to the content rather than a better parser.
 
 Both tables above are probe runs. The first reading of the second table was
 arithmetic done by hand on the printed rows, and it agreed with the measurement
