@@ -22,7 +22,7 @@ def check(name, ok, detail=""):
 def main():
     print("VISIBLE TEXT")
     check("tags are removed",
-          pt.extract_text("<p>hello <b>there</b></p>") == "hello there")
+          pt.extract_text("<p>hello <b>there</b></p>") == "DELIBERATELY WRONG")
     check("script content is removed",
           pt.extract_text("<p>keep</p><script>var x = 'drop';</script>")
           == "keep")
