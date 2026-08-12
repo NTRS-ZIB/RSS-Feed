@@ -84,7 +84,29 @@ def main():
           pt.extract_text('<p>keep this text</p><script type="application/json">'
                           + '['*1000 + ']'*1000 +
                           '</script>') == "keep this text",
-          "json.loads raises RecursionError on deeply nested but valid JSON; must not discard visible text")
+          "the walk in _strings exceeds the recursion limit on deeply nested"
+          " JSON, even though json.loads itself accepts it; must not discard"
+          " visible text")
+    # A RecursionError raised partway through _strings must not leak the
+    # strings appended before the raise. Two candidate dates sit either side
+    # of a deeply nested element in the same array; if the block is truncated
+    # rather than skipped, the first candidate survives and the second is
+    # lost, turning a body that should be refused (several candidates) into
+    # one that gets stored (one candidate) -- silently choosing the wrong
+    # date. See CLAUDE.md and the 2026-08-12 json-payload-body-text review.
+    deep = '[' * 1200 + ']' * 1200
+    LEAK_SHAPE = (
+        '<p>visible furniture</p><script type="application/json">'
+        '["Call replay available until August 20, 2026", ' + deep +
+        ', "Results will be released on August 4, 2026"]</script>'
+    )
+    check("a block that cannot be fully walked contributes nothing, not a "
+          "truncated prefix",
+          pt.extract_text(LEAK_SHAPE) == "visible furniture",
+          pt.extract_text(LEAK_SHAPE))
+    check("payload_strings returns no strings from an unwalkable block",
+          pt.payload_strings(LEAK_SHAPE) == [],
+          str(pt.payload_strings(LEAK_SHAPE)))
     check("a page with no payload is unchanged",
           pt.extract_text("<p>hello there</p>") == "hello there")
     check("ld+json is left alone",

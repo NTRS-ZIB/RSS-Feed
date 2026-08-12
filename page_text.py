@@ -53,14 +53,24 @@ def payload_strings(html):
     """
     out = []
     for m in JSON_SCRIPT.finditer(html or ""):
+        # Accumulate into a block-local list and only extend `out` once the
+        # whole block has been walked. _strings appends directly into
+        # whatever list it is given, so appending into `out` itself would let
+        # a RecursionError raised partway through leave everything appended
+        # before the raise in place -- a block truncated at an arbitrary
+        # point set by nesting depth, not skipped as the except below intends.
+        block = []
         try:
             data = json.loads(m.group(1))
-            _strings(data, out)
+            _strings(data, block)
         except (ValueError, RecursionError):
-            # ValueError: syntactically broken JSON. RecursionError: deeply
-            # nested but syntactically valid JSON. Both must be skipped to
-            # prevent discarding visible text already extracted.
+            # ValueError: syntactically broken JSON. RecursionError: the walk
+            # in _strings adds a Python frame per level of nesting and can
+            # exceed the recursion limit even though json.loads itself
+            # accepts the same document as syntactically valid. Both must be
+            # skipped to prevent discarding visible text already extracted.
             continue
+        out.extend(block)
     return out
 
 
