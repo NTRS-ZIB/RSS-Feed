@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+"""Tests for probe_body_dates. Standalone, stdlib only.
+
+THE ONE THAT MATTERS: the probe must NOT apply press_monitor's
+scheduled-event gate. That gate exists to keep date-dense results releases
+out of the measurement, and whether it actually discriminates is the
+question this probe was built to answer. A probe that pre-filters by the
+gate can only ever confirm it.
+"""
+
+import sys
+from datetime import date, datetime, timezone
+
+import probe_body_dates as pb
+
+PASS, FAIL = "PASS", "FAIL"
+results = []
+
+
+def check(name, ok, detail=""):
+    results.append((PASS if ok else FAIL, name))
+    print(f"  [{PASS if ok else FAIL}] {name}" + (f" — {detail}" if detail else ""))
+
+
+TODAY = date(2026, 8, 10)
+ROSTER = {"MARA": ("0001507605", "MARA Holdings"),
+          "HUT": ("0001964789", "Hut 8 Corp")}
+
+
+def epoch(y, m, d):
+    return datetime(y, m, d, tzinfo=timezone.utc).timestamp()
+
+
+# One item per case the selector has to get right. The three labels are
+# taken from real titles and their predicates were measured, not assumed:
+# MARA's actual advance notice says "...Second Quarter 2026 Financial
+# Results", so also_reports_results() is TRUE for it. A pure advance notice
+# is the rarer phrasing that never says "results" at all.
+ADVANCE_NOTICE = {            # scheduled, not mixed
+    "ticker": "MARA", "link": "https://example.test/a", "published": epoch(2026, 8, 5),
+    "title": "MARA Schedules Conference Call for Second Quarter 2026 Earnings",
+}
+MIXED_NOTICE = {              # scheduled AND reports results
+    "ticker": "MARA", "link": "https://example.test/b", "published": epoch(2026, 8, 5),
+    "title": "MARA Schedules Conference Call for Second Quarter 2026 Financial Results",
+}
+RESULTS_RELEASE = {           # not scheduled
+    "ticker": "MARA", "link": "https://example.test/c", "published": epoch(2026, 8, 5),
+    "title": "MARA Announces Second Quarter 2026 Results",
+}
+HAS_A_DATE = {
+    "ticker": "HUT", "link": "https://example.test/d", "published": epoch(2026, 8, 5),
+    "title": "Hut 8 to Report Second Quarter 2026 Results on August 20, 2026",
+}
+UNRELATED = {
+    "ticker": "MARA", "link": "https://example.test/e", "published": epoch(2026, 8, 5),
+    "title": "MARA Announces $4.7 Billion Data Center Lease",
+}
+OFF_ROSTER = {
+    "ticker": "ZZZZ", "link": "https://example.test/f", "published": epoch(2026, 8, 5),
+    "title": "Zzzz Schedules Conference Call for Second Quarter 2026 Results",
+}
+
+
+def main():
+    print("SELECTION")
+    rows = pb.undated_announcements(
+        [ADVANCE_NOTICE, MIXED_NOTICE, RESULTS_RELEASE, HAS_A_DATE, UNRELATED,
+         OFF_ROSTER],
+        TODAY, roster=ROSTER)
+    titles = [r["title"] for r in rows]
+
+    check("an advance notice with no title date is selected",
+          ADVANCE_NOTICE["title"] in titles)
+    check("a mixed notice is selected", MIXED_NOTICE["title"] in titles)
+    check("a results release with no title date is ALSO selected",
+          RESULTS_RELEASE["title"] in titles,
+          "the gate is what this probe is measuring, not a filter it applies")
+    check("an announcement whose date parsed is not selected",
+          HAS_A_DATE["title"] not in titles)
+    check("an unrelated release is not selected",
+          UNRELATED["title"] not in titles)
+    check("a ticker off the roster is not selected",
+          OFF_ROSTER["title"] not in titles,
+          "mirrors record_disclosed_dates, so the count matches the log")
+    check("exactly three rows selected", len(rows) == 3, f"got {len(rows)}")
+
+    print("\nROW SHAPE")
+    notice = next(r for r in rows if r["title"] == ADVANCE_NOTICE["title"])
+    mixed = next(r for r in rows if r["title"] == MIXED_NOTICE["title"])
+    release = next(r for r in rows if r["title"] == RESULTS_RELEASE["title"])
+    check("release date read from the published epoch",
+          notice["released"] == date(2026, 8, 5))
+    check("an advance notice is labelled scheduled", notice["scheduled"] is True)
+    check("an advance notice is not labelled mixed", notice["mixed"] is False)
+    check("a mixed notice is labelled scheduled", mixed["scheduled"] is True)
+    check("a mixed notice is labelled mixed", mixed["mixed"] is True,
+          "the real MARA title says 'Financial Results' and must not read as pure")
+    check("a results release is not labelled scheduled",
+          release["scheduled"] is False)
+    check("a results release is labelled mixed", release["mixed"] is True)
+    check("the link is carried through", notice["link"] == "https://example.test/a")
+
+    print("\nRELEASE DATE")
+    check("an item with no published epoch has no release date",
+          pb.released_date({"ticker": "MARA"}) is None,
+          "candidate_dates treats None as no lower bound")
+
+    bad = sum(1 for r, _ in results if r == FAIL)
+    print(f"\n{len(results) - bad}/{len(results)} checks passed")
+    return 1 if bad else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
