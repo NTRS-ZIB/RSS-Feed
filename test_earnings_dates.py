@@ -194,6 +194,43 @@ def main():
           applied == 0 and rows[0]["expected"] == date(2026, 8, 14)
           and any("not a dict" in n for n in notes), notes)
 
+    print("\nWHERE A STORED DATE CAME FROM")
+    fresh = {}
+    ed.upsert(fresh, "0001218683", "BGDE", date(2026, 9, 1), "u1", "t1",
+              "2026-08-01T00:00:00+00:00")
+    check("a date defaults to source 'title'",
+          fresh["0001218683"]["source"] == "title",
+          "every date stored before this change came from a headline")
+
+    body = {}
+    ed.upsert(body, "0001218683", "BGDE", date(2026, 9, 1), "u1", "t1",
+              "2026-08-01T00:00:00+00:00", source="body")
+    check("a body-derived date records source 'body'",
+          body["0001218683"]["source"] == "body")
+
+    # A record written before this change has no "source" key at all. Its
+    # absence is not unknown provenance — it is a title, because that was
+    # the only way a date could be stored.
+    LEGACY = {"0001218683": {"ticker": "BGDE", "date": "2026-09-01",
+                             "source_uid": "u", "source_title": "t",
+                             "source_published": "2026-08-01T00:00:00+00:00"}}
+    lrows = [row("BGDE", "0001218683", date(2026, 6, 30), date(2026, 9, 5))]
+    lrows, lapplied, _ = ed.apply(lrows, LEGACY, date(2026, 8, 12))
+    check("a legacy record with no source key applies", lapplied == 1)
+    check("a legacy record reads as a title", lrows[0]["disclosed_source"] == "title",
+          "absence of the key is a title, not an unknown")
+
+    BODYSTORE = {"0001218683": {"ticker": "BGDE", "date": "2026-09-01",
+                                "source_uid": "u", "source_title": "t",
+                                "source_published": "2026-08-01T00:00:00+00:00",
+                                "source": "body"}}
+    brows = [row("BGDE", "0001218683", date(2026, 6, 30), date(2026, 9, 5))]
+    brows, _, _ = ed.apply(brows, BODYSTORE, date(2026, 8, 12))
+    check("a body record carries its provenance onto the row",
+          brows[0]["disclosed_source"] == "body")
+    check("provenance rides alongside disclosed, not instead of it",
+          brows[0]["disclosed"] is True)
+
     print("\nYEAR FROM THE RELEASE DATE")
     check("year taken from the release",
           ed.parse_date("... Results on August 14th", date(2026, 7, 29))

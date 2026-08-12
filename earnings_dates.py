@@ -211,7 +211,8 @@ def save(companies, path=DEFAULT_PATH):
         encoding="utf-8")
 
 
-def upsert(companies, cik, ticker, when, uid, title, published):
+def upsert(companies, cik, ticker, when, uid, title, published,
+           source="title"):
     """Record a disclosed date. Returns True if the store changed.
 
     A LATER RELEASE WINS, JUDGED BY THE RELEASE rather than by when we read
@@ -223,6 +224,13 @@ def upsert(companies, cik, ticker, when, uid, title, published):
     The store is keyed by CIK and overwrites in place, so it is bounded by
     the roster. Nothing is pruned; a passed date is what the Overdue section
     is built on.
+
+    `source` is "title" when the date was in the headline and "body" when it
+    was read out of the release text. It records how much of the reading was
+    ours: the company announced the date either way. PROVENANCE NEVER
+    DECIDES WHICH RECORD WINS — that is the release timestamp's job above,
+    and a body-derived date from a later release supersedes a title-derived
+    one from an earlier release exactly as it should.
     """
     cik = str(cik).zfill(10)
     prior = companies.get(cik)
@@ -237,6 +245,7 @@ def upsert(companies, cik, ticker, when, uid, title, published):
         "source_uid": uid,
         "source_title": title,
         "source_published": published,
+        "source": source,
     }
     return True
 
@@ -297,6 +306,10 @@ def apply(rows, companies, today):
         r["projected"] = r["expected"]
         r["expected"] = when
         r["disclosed"] = True
+        # Absent means "title": every date stored before provenance existed
+        # came from a headline, so the default is a fact about the old
+        # records rather than a guess about them.
+        r["disclosed_source"] = rec.get("source") or "title"
         applied += 1
 
     return rows, applied, notes
