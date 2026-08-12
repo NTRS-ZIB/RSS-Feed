@@ -1,0 +1,72 @@
+name: Tests
+
+# The offline suites, on every push that touches Python. Before this existed
+# NOTHING ran them: the only push-triggered workflow was the list gate, which
+# checks that workflows are watched rather than that code works, and
+# baseline-test.yml is dispatch-only and runs one file. That left 258 checks
+# executing only when a person remembered.
+#
+# test_baseline.py is deliberately absent. It needs SEC_USER_AGENT and fetches
+# data.sec.gov, so it can go red because the SEC is slow, and a red mark that
+# fires for reasons outside the repository is how people learn to ignore red
+# marks. It keeps baseline-test.yml.
+#
+# BOTH path patterns are required. Every Python file in this repo is at the
+# root, and a filter that misses the root would mean this never fires and never
+# says so, which is the failure it exists to end.
+
+on:
+  push:
+    paths:
+      - "*.py"
+      - "**/*.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      # Only test_earnings_dates.py needs this, through its earnings_calendar
+      # import. The other five are stdlib-only.
+      - name: Install dependencies
+        run: pip install requests
+      # The six steps below are a hand-maintained list with no gate: add a
+      # test_*.py and forget to list it here, and it never runs, silently.
+      # That is the same silent-gap shape workflow-list-gate.yml exists to
+      # prevent, one level down, so this checks the list against the repo's
+      # actual test files before any suite runs, and stays before them so a
+      # coverage gap is reported even when a suite below is failing.
+      - name: Every suite is run by this workflow
+        run: |
+          python - <<'PY'
+          import glob, re, sys
+          EXCLUDED = {"test_baseline.py"}   # live SEC data, runs via baseline-test.yml instead
+          wf = open(".github/workflows/tests.yml", encoding="utf-8").read()
+          run = set(re.findall(r"python -u (test_\w+\.py)", wf))
+          missing = sorted(set(glob.glob("test_*.py")) - run - EXCLUDED)
+          if missing:
+              sys.exit("Not run by this workflow: " + ", ".join(missing))
+          print("All %d suites are run." % len(run))
+          PY
+      # One step per suite so a failure is named in the run's step list and
+      # nobody has to open a log to learn which one broke.
+      - name: page_text
+        run: python -u test_page_text.py
+      - name: earnings_dates
+        run: python -u test_earnings_dates.py
+      - name: probe_body_dates
+        run: python -u test_probe_body_dates.py
+      - name: loop_state
+        run: python -u test_loop_state.py
+      - name: loop_verdict
+        run: python -u test_loop_verdict.py
+      - name: loop_approval
+        run: python -u test_loop_approval.py
