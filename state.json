@@ -1044,7 +1044,34 @@
   "urn:tag:sec.gov,2008:accession-number=0001931824-26-000017",
   "urn:tag:sec.gov,2008:accession-number=0001931824-26-000015",
   "urn:tag:sec.gov,2008:accession-number=0002025334-26-000008",
-  "urn:tag:sec.gov,2008:accession-number=0001721702-26-000018"
+  "urn:tag:sec.gov,2008:accession-number=0001721702-26-000018",
+  "urn:tag:sec.gov,2008:accession-number=0001595888-26-000097",
+  "urn:tag:sec.gov,2008:accession-number=0001104659-26-091181",
+  "urn:tag:sec.gov,2008:accession-number=0000919574-26-004796",
+  "urn:tag:sec.gov,2008:accession-number=0002100119-26-001382",
+  "urn:tag:sec.gov,2008:accession-number=0001839341-26-000016",
+  "urn:tag:sec.gov,2008:accession-number=0001839341-26-000014",
+  "urn:tag:sec.gov,2008:accession-number=0001839341-26-000013",
+  "urn:tag:sec.gov,2008:accession-number=0001839341-26-000012",
+  "https://investors.corescientific.com/news-events/press-releases/detail/141/core-scientific-supports-governor-abbotts-focus-on-responsible-data-center-infrastructure-in-texas",
+  "https://investors.corescientific.com/news-events/press-releases/detail/140/core-scientific-appoints-mark-adams-to-board-of-directors",
+  "https://investors.corescientific.com/news-events/press-releases/detail/139/core-scientific-announces-second-quarter-2026-results",
+  "https://investors.corescientific.com/news-events/press-releases/detail/138/core-scientific-and-amd-announce-infrastructure-partnership",
+  "https://investors.corescientific.com/news-events/press-releases/detail/137/core-scientific-appoints-steve-smith-to-board-of-directors",
+  "https://investors.corescientific.com/news-events/press-releases/detail/136/core-scientific-announces-first-quarter-fiscal-year-2026-results",
+  "https://investors.corescientific.com/news-events/press-releases/detail/135/core-scientific-plans-expansion-to-1-5-gigawatts-of-gross-power-at-muskogee-oklahoma-campus",
+  "https://investors.corescientific.com/news-events/press-releases/detail/134/core-scientific-plans-expansion-to-1-5-gigawatts-of-gross-power-at-pecos-texas-campus",
+  "https://investors.corescientific.com/news-events/press-releases/detail/133/core-scientific-inc-schedules-first-quarter-fiscal-year-2026-earnings-release-conference-call-and-webcast",
+  "https://investors.corescientific.com/news-events/press-releases/detail/132/core-scientific-announces-pricing-of-3-3-billion-of-senior-secured-notes",
+  "urn:tag:sec.gov,2008:accession-number=0000905148-26-003595",
+  "urn:tag:sec.gov,2008:accession-number=0000905148-26-003481",
+  "urn:tag:sec.gov,2008:accession-number=0000905148-26-003446",
+  "urn:tag:sec.gov,2008:accession-number=0000905148-26-003445",
+  "urn:tag:sec.gov,2008:accession-number=0000905148-26-003381",
+  "urn:tag:sec.gov,2008:accession-number=0000905148-26-003318",
+  "urn:tag:sec.gov,2008:accession-number=0000905148-26-003288",
+  "urn:tag:sec.gov,2008:accession-number=0000905148-26-003287",
+  "urn:tag:sec.gov,2008:accession-number=0000905148-26-003271"
  ],
  "initialized": true,
  "baselined": {
@@ -1067,7 +1094,8 @@
   "VIP": "2026-08-10",
   "WULF": "2026-08-10",
   "WYFI": "2026-08-10",
-  "RIOT": "2026-08-13"
+  "RIOT": "2026-08-13",
+  "CORZ": "2026-08-13"
  },
  "feeds": {
   "ANY": {
@@ -1135,6 +1163,10 @@
    "alerted": false
   },
   "RIOT": {
+   "fails": 0,
+   "alerted": false
+  },
+  "CORZ": {
    "fails": 0,
    "alerted": false
   }
