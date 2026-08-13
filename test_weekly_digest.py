@@ -23,7 +23,9 @@ Mondays and require that exactly one of them claims a given settlement; a
 window test would have claimed two.
 """
 
+import os
 import sys
+import tempfile
 import types
 
 sys.modules.setdefault("feedparser", types.ModuleType("feedparser"))
@@ -337,6 +339,174 @@ def main():
           untestable == [("AAAA", "crossings",
                           "34/60 bars minimum for a 52-week window")],
           str(untestable))
+
+    print("\nCHECK_POST -- THE OUTPUT GUARDS")
+    # check_post returns a list of problems against Discord's own limits plus
+    # this repo's MONO_WIDTH. The first check is the one most likely to be
+    # missing: a guard that always complains is one nobody reads, so a
+    # compliant post has to come back clean before anything else is trusted.
+    def mk_embed(title="T", desc="d" * 10, fields=None, footer="f" * 10):
+        return {"title": title, "description": desc,
+                "fields": fields if fields is not None else [],
+                "footer": {"text": footer}}
+
+    compliant = mk_embed(fields=[{"name": "n", "value": "```\nAAAA +1.0%\n```"}])
+    check("a compliant embed returns no problems -- a guard that always "
+          "complains is one nobody reads",
+          dr.check_post(compliant) == [], str(dr.check_post(compliant)))
+
+    # One check per limit, each fixture breaching only that one limit so the
+    # returned problem list is exactly one entry.
+    desc_over = mk_embed(desc="x" * (dr.DESC_LIMIT + 1))
+    problems = dr.check_post(desc_over)
+    check("a description over DESC_LIMIT is reported, and only that limit",
+          problems == [f"description {dr.DESC_LIMIT + 1} > {dr.DESC_LIMIT}"],
+          str(problems))
+
+    field_over = mk_embed(fields=[{"name": "n",
+                                   "value": "y" * (dr.FIELD_LIMIT + 1)}])
+    problems = dr.check_post(field_over)
+    check("a field value over FIELD_LIMIT is reported, and only that "
+          "limit -- it does not start with a fence, so the monospace arm "
+          "never runs",
+          problems == [f"field 'n' {dr.FIELD_LIMIT + 1} > {dr.FIELD_LIMIT}"],
+          str(problems))
+
+    # Each field value and the description individually sit under their own
+    # limits; only the sum crosses EMBED_LIMIT.
+    total_over = mk_embed(desc="d" * 4000,
+                          fields=[{"name": "n1", "value": "a" * 1000},
+                                  {"name": "n2", "value": "b" * 1000}])
+    problems = dr.check_post(total_over)
+    computed_total = (len(total_over["title"]) + len(total_over["description"])
+                      + len(total_over["footer"]["text"])
+                      + sum(len(f["name"]) + len(f["value"])
+                            for f in total_over["fields"]))
+    check("an embed total over EMBED_LIMIT is reported, and only that "
+          "limit, even though every individual piece is within its own",
+          problems == [f"embed total {computed_total} > {dr.EMBED_LIMIT}"],
+          str(problems))
+
+    # THE FENCE ASYMMETRY: the monospace arm only inspects a field whose
+    # value STARTS WITH a fence. The identical wide line needs a fixture on
+    # both sides, or the branch that skips non-fenced fields is untested.
+    wide_line = "x" * (dr.MONO_WIDTH + 1)
+    fenced = mk_embed(fields=[{"name": "n",
+                               "value": "```\n" + wide_line + "\n```"}])
+    problems = dr.check_post(fenced)
+    check("a line over MONO_WIDTH inside a fenced field is reported, and "
+          "only that limit",
+          problems == [f"monospace line {len(wide_line)} > {dr.MONO_WIDTH}: "
+                       f"{wide_line!r}"],
+          str(problems))
+
+    unfenced = mk_embed(fields=[{"name": "n", "value": wide_line}])
+    check("the identical wide line OUTSIDE a fence is not a monospace "
+          "problem -- the arm only inspects fields whose value starts "
+          "with a fence",
+          dr.check_post(unfenced) == [], str(dr.check_post(unfenced)))
+
+    exact_line = "x" * dr.MONO_WIDTH
+    at_ceiling = mk_embed(fields=[{"name": "n",
+                                   "value": "```\n" + exact_line + "\n```"}])
+    check("a monospace line exactly at MONO_WIDTH is not a problem -- the "
+          "check is a ceiling (>), not an exclusive bound",
+          dr.check_post(at_ceiling) == [], str(dr.check_post(at_ceiling)))
+
+    print("\nMONO_TABLE")
+    # mono_table's own claim is that every line it produces fits MONO_WIDTH.
+    # Exercised over a realistic-shaped record: five real-length tickers,
+    # both marks (hi/lo), both reasons for the tilde (cross_untestable and
+    # short_window), a missing volume verdict (volx -> "n/a"), and a company
+    # with no return figure at all (dropped from the table, not blanked).
+    mt_record = {
+        "roster": ["MARA", "CLSK", "BKKT", "NUAI", "WYFI"],
+        "verdicts": {
+            "MARA": {
+                "price": verdict(wd.ROUTINE,
+                                 detail={"week_return_pct": -87.3,
+                                         "close": 12.34}),
+                "volume": verdict(wd.ROUTINE, detail={"peak_multiple": 42.7}),
+                "crossings": verdict(wd.ROUTINE, detail={"new_lows": True}),
+            },
+            "CLSK": {
+                "price": verdict(wd.ROUTINE,
+                                 detail={"week_return_pct": 156.2,
+                                         "close": 5.0}),
+                "volume": verdict(wd.ROUTINE, detail={"peak_multiple": 3.1}),
+                "crossings": verdict(wd.ROUTINE,
+                                     detail={"new_highs": True,
+                                             "short_window": True}),
+            },
+            "BKKT": {
+                "price": verdict(wd.ROUTINE,
+                                 detail={"week_return_pct": 0.4,
+                                         "close": 3.0}),
+                # no volume verdict at all -- volx must read as "n/a"
+                "crossings": verdict(wd.NOT_TESTABLE),
+            },
+            "NUAI": {},  # no price verdict -- ret is None
+            "WYFI": {
+                "price": verdict(wd.ROUTINE,
+                                 detail={"week_return_pct": -3.2,
+                                         "close": 1.11}),
+                "volume": verdict(wd.ROUTINE, detail={"peak_multiple": 1.0}),
+            },
+        },
+    }
+    mt_table = dr.mono_table(mt_record)
+    mt_widths = [len(line) for line in mt_table]
+    check("every line mono_table produces -- header, rule and data rows "
+          "alike -- fits the monospace ceiling",
+          max(mt_widths) <= dr.MONO_WIDTH,
+          f"widths={mt_widths} table={mt_table!r}")
+
+    print("\nWEEK_TITLE")
+    same_month = {"monday": "2026-07-27", "friday": "2026-07-31"}
+    check("same calendar month: one month name, one year, day range joined "
+          "by a dash with no surrounding spaces",
+          dr.week_title(same_month) == "27–31 Jul 2026",
+          dr.week_title(same_month))
+
+    cross_month = {"monday": "2026-07-29", "friday": "2026-08-02"}
+    check("crossing a calendar month: each end names its own month",
+          dr.week_title(cross_month) == "29 Jul – 2 Aug 2026",
+          dr.week_title(cross_month))
+
+    print("\nWEEK_URL")
+    url_record = {"week": "2026-W32"}
+    check("week_url appends '<week>.md' to the committed blob path",
+          dr.week_url(url_record) == f"{dr.REPO_BLOB}/2026-W32.md",
+          dr.week_url(url_record))
+
+    print("\nALREADY_PRODUCED -- THE WHOLE NO-STATE-FILE DESIGN")
+    # The file for week N IS the record that week N was produced. One line,
+    # checked from both directions, plus the cases that would silently break
+    # the design if this drifted: a different week's file present, only the
+    # JSON sibling present, and a directory that does not exist at all.
+    with tempfile.TemporaryDirectory() as tmp:
+        check("false when the directory exists but the week's file does "
+              "not",
+              dr.already_produced(tmp, "2026-W32") is False)
+        with open(os.path.join(tmp, "2026-W32.md"), "w") as fh:
+            fh.write("placeholder")
+        check("true once <week>.md exists in that directory",
+              dr.already_produced(tmp, "2026-W32") is True)
+        check("false for a different week, even in the same non-empty "
+              "directory",
+              dr.already_produced(tmp, "2026-W31") is False)
+
+    with tempfile.TemporaryDirectory() as tmp2:
+        with open(os.path.join(tmp2, "2026-W32.json"), "w") as fh:
+            fh.write("{}")
+        check("the JSON record alone does not count -- only the markdown "
+              "file is the produced record",
+              dr.already_produced(tmp2, "2026-W32") is False)
+
+    missing_dir = os.path.join(tempfile.gettempdir(), "no-such-digest-dir-xyz")
+    check("a directory that does not exist at all is also false, not a "
+          "raise",
+          dr.already_produced(missing_dir, "2026-W32") is False)
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
