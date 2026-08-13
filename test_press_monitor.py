@@ -56,8 +56,12 @@ def main():
           pm.drift_candidates({"SCHEDULE 13D"}) == [])
     check("an unrelated form is not flagged",
           pm.drift_candidates({"DEF 14A"}) == [])
+    # "10-K405" starts with "10-K", a tracked prefix in FORM_TYPES, so
+    # form_matches short-circuits it at press_monitor.py:626 before
+    # DRIFT_IGNORE is ever consulted. "10KSB" has no dash, so it matches no
+    # FORM_TYPES prefix and only DRIFT_IGNORE keeps it quiet.
     check("an obsolete form in DRIFT_IGNORE is not flagged",
-          pm.drift_candidates({"10-K405"}) == [],
+          pm.drift_candidates({"10KSB"}) == [],
           "a warning that always fires is one nobody reads")
 
     # The incident itself: with the new spelling untracked, the old one must
@@ -183,10 +187,24 @@ def main():
     check("an exact title outside the window is not suppressed", len(kept) == 1)
 
     # A failed scrape must not read as a successful match against nothing.
+    # Comparing against an empty list would ALSO return every feed item
+    # unsuppressed even with the early-return removed, since nothing in an
+    # empty index can match, so the return value alone cannot tell "skipped
+    # the comparison" apart from "ran the comparison and it found nothing".
+    # The SKIPPED log line at press_monitor.py:1551 is the only observable
+    # that distinguishes them, so that is what this checks, using the same
+    # stdout-capture technique as staleness_log above.
     feed = [item(Q1_2022, base), item(Q1_2021, base)]
+    buf = _io.StringIO()
+    with _ctx.redirect_stdout(buf):
+        empty_result = pm.suppress_cross_host(feed, [], "T")
     check("an empty newsroom suppresses nothing at all",
-          pm.suppress_cross_host(feed, [], "T") == feed,
+          empty_result == feed,
           "the bias is to post twice, never to suppress")
+    check("an empty newsroom SKIPS the comparison, logged as such",
+          "SKIPPED" in buf.getvalue(),
+          "disabling the early return still returns every item unsuppressed; "
+          "only the log line proves the comparison itself was skipped")
 
     # A missing timestamp on either side cannot satisfy the window.
     kept = pm.suppress_cross_host([item(Q1_2022, 0)],
@@ -222,8 +240,11 @@ def main():
           pm.carries_press_release("8-K", "2.02,9.01"))
     check("an unrelated item code does not",
           not pm.carries_press_release("8-K", "5.02"))
+    # Non-empty items, so only the 6-K exemption at press_monitor.py:657 can
+    # produce True; an empty-items fixture would hit the fail-open branch at
+    # :659 instead and pass whether or not the exemption exists.
     check("a 6-K is never filtered, having no item numbers",
-          pm.carries_press_release("6-K", ""))
+          pm.carries_press_release("6-K", "5.02"))
     # 1,986 of 1,986 real 8-Ks carry item codes, so this branch has never
     # once executed in production. A fixture can exercise what real data
     # never has, which is the cheapest insurance against someone deleting
@@ -257,6 +278,14 @@ def main():
           pm.filing_title("8-K/A", "2.02", "8-K").endswith("(amended)"))
     check("with no items it falls back to the form label",
           pm.filing_title("10-Q", "", "") == pm.form_label("10-Q"))
+    # BOTH form_label and description present, or the fallback order is
+    # untestable: the two existing checks around this one each leave one term
+    # empty, so swapping press_monitor.py:698 to "description or form_label(...)"
+    # would survive either alone. form_label("10-Q") is "Quarterly report",
+    # which differs from the description "10-Q" here, so only the real order
+    # (form_label first) satisfies this.
+    check("the form label wins over the description when both are present",
+          pm.filing_title("10-Q", "", "10-Q") == pm.form_label("10-Q"))
     check("with no label it falls back to the description",
           pm.filing_title("DEF 14A", "", "Proxy statement") == "Proxy statement")
     check("with nothing at all it names the form",
@@ -292,6 +321,20 @@ def main():
           pm.passes_keywords({"title": "anything at all"})
           if not pm.KEYWORDS else True,
           "KEYWORDS is empty in this repo, so this is the live path")
+
+    # KEYWORDS is empty in production, so the match/no-match arms below are
+    # otherwise unreachable and `return True` in their place would still pass
+    # the whole suite. Monkeypatched, in the idiom already used above for
+    # FORM_TYPES, so the two real arms of the spec get exercised at all.
+    original_keywords = pm.KEYWORDS
+    try:
+        pm.KEYWORDS = ["dividend"]
+        check("a matching keyword passes, case-insensitively",
+              pm.passes_keywords({"title": "Special DIVIDEND Announced"}))
+        check("an unrelated title does not pass",
+              not pm.passes_keywords({"title": "Quarterly Results"}))
+    finally:
+        pm.KEYWORDS = original_keywords
 
     # BOTH keys present, or the check cannot test preference at all. A
     # fixture carrying only one key returns the same epoch whatever order
