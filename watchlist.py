@@ -596,13 +596,22 @@ WATCHLIST = [
         # repo sweeps. audit_identifiers.py will report the ones that are
         # really there.
         "cik": "0001167419",
-        # EMPTY ON PURPOSE, and the one real hazard in this record. The
-        # COLLISIONS guard needs a pinned CUSIP to collide with, so it cannot
-        # protect a company added with none, which is how SPCX's first sweep
-        # proposed the previous owner's identifier. Run audit_identifiers.py
-        # twice before filling this, and read the DESCRIPTION column, not just
-        # the dates.
-        "cusips": [],
+        # From the SEC's own fails files, swept for the literal symbol over
+        # six half-month periods, and read WITH ITS DESCRIPTION COLUMN:
+        #
+        #   767292105  RIOT PLATFORMS,INC COM  2026-04-15 to 2026-07-13
+        #
+        # The description names the same registrant EDGAR's CIK does, which is
+        # the two-independent-sources standard HUT established. The check digit
+        # verifies, no roster company claims it, and it is not on REFUSED.
+        #
+        # ONE PERIOD, NOT A HISTORY. Six periods is three months; this company
+        # has traded far longer and under earlier names, so retired CUSIPs
+        # almost certainly exist and are unswept rather than absent. Run
+        # audit_identifiers.py with a large SWEEP_PERIODS before believing this
+        # list is complete — the 120-period sweep of 2026-08-05 found retired
+        # identifiers on five companies that had been on the roster for months.
+        "cusips": ["767292105"],
         "alt_symbols": [],
         # MEASURED, not assumed, and the measurement nearly went the other
         # way. The press-releases page carries no feed itself; discover_feed
