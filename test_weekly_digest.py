@@ -23,7 +23,9 @@ Mondays and require that exactly one of them claims a given settlement; a
 window test would have claimed two.
 """
 
+import inspect
 import os
+import re
 import sys
 import tempfile
 import types
@@ -507,6 +509,151 @@ def main():
     check("a directory that does not exist at all is also false, not a "
           "raise",
           dr.already_produced(missing_dir, "2026-W32") is False)
+
+    print("\nTHE FTD FETCH-DEPTH INCIDENT")
+    # derive_ftd once took its baseline median over EVERY PRIOR PERIOD IN THE
+    # FETCH rather than a fixed window, so the verdict for one week changed
+    # depending on how much history the caller happened to pull: ABTC
+    # converged in a three-week render (8 half-month periods fetched) and did
+    # not in the ten-week backfill (11 periods) -- the same week, two
+    # answers. It is now bounded to ftd_monitor.BASELINE_PERIODS (6).
+    #
+    # The check is the incident itself: call derive_ftd for the SAME week
+    # with 8 periods of context and again with 11, and require the two
+    # verdicts to be EQUAL TO EACH OTHER. Not a hard-coded verdict -- that
+    # would pin today's arithmetic rather than the property under test,
+    # which is independence from fetch depth.
+    #
+    # The extra periods in the deeper fetch must be OLDER than
+    # BASELINE_PERIODS or the two calls would legitimately differ and the
+    # check would be asserting the wrong thing. `common_prior` below is the
+    # 6 most-recent prior periods, identical in both fetches; the "older"
+    # periods sit further back. Demonstrated: with the bound removed, the
+    # median itself can still land unchanged (it is a robust statistic and
+    # a minority of outliers does not move it) but the PERIOD COUNT read
+    # into `baseline_periods` and quoted in `basis` ("N-period median")
+    # does not, and that alone is enough to make the same week's verdict
+    # text disagree between the two fetches -- which is what the check
+    # below actually catches.
+    ftd_target = "202606b"                 # publishes the week of 2026-07-15
+    ftd_week_monday = date(2026, 7, 13)
+    ftd_sessions = wd.week_sessions(ftd_week_monday)
+    ftd_contributor = next(c for c in wd.CONTRIBUTORS if c["key"] == "ftd")
+
+    common_prior = ["202606a", "202605b", "202605a",
+                     "202604b", "202604a", "202603b"]         # the 6 in-window
+    older_shallow = ["202603a"]                                # +1 -> 8 total
+    older_deep = ["202603a", "202602b", "202602a", "202601b"]  # +4 -> 11 total
+
+    def ftd_fixture(older):
+        d = {ftd_target: {"ABTC": {"peak": 200000.0, "days": 6}}}
+        for p in common_prior:
+            d[p] = {"ABTC": {"peak": 50000.0, "days": 3}}
+        for p in older:
+            d[p] = {"ABTC": {"peak": 5000000.0, "days": 10}}
+        return d
+
+    shallow_src = wd.Source("ftd")
+    shallow_src.data = ftd_fixture(older_shallow)
+    deep_src = wd.Source("ftd")
+    deep_src.data = ftd_fixture(older_deep)
+
+    check("fixture sanity: the shallow fetch carries 8 half-month periods",
+          len(shallow_src.data) == 8, sorted(shallow_src.data))
+    check("fixture sanity: the deep fetch carries 11 half-month periods",
+          len(deep_src.data) == 11, sorted(deep_src.data))
+    check("fixture sanity: the 3 extra periods in the deep fetch are all "
+          "older than every period in the shallow fetch, so they sit "
+          "outside a 6-period bound in both cases",
+          max(older_deep) < min(common_prior),
+          f"older_deep={older_deep} common_prior={common_prior}")
+
+    shallow_verdict = wd.derive_ftd(ftd_contributor, {"ftd": shallow_src},
+                                     ftd_week_monday, ftd_sessions)["ABTC"]
+    deep_verdict = wd.derive_ftd(ftd_contributor, {"ftd": deep_src},
+                                  ftd_week_monday, ftd_sessions)["ABTC"]
+
+    check("both fetches actually resolve the same target period -- "
+          "otherwise an equal verdict would prove nothing",
+          shallow_verdict["detail"].get("period") == ftd_target
+          == deep_verdict["detail"].get("period"),
+          f"{shallow_verdict['detail'].get('period')} vs "
+          f"{deep_verdict['detail'].get('period')}")
+    check("the baseline actually used is bounded to BASELINE_PERIODS in "
+          "both cases, not the full prior history each fetch happened to "
+          "carry",
+          shallow_verdict["detail"].get("baseline_periods")
+          == wd.ftd_monitor.BASELINE_PERIODS
+          == deep_verdict["detail"].get("baseline_periods"),
+          f"shallow={shallow_verdict['detail'].get('baseline_periods')} "
+          f"deep={deep_verdict['detail'].get('baseline_periods')}")
+
+    check("THE INCIDENT: the SAME week's verdict is identical whether the "
+          "fetch pulled 8 periods of context or 11 -- level, figure and "
+          "basis all agree",
+          (shallow_verdict["level"], shallow_verdict["figure"],
+           shallow_verdict["basis"])
+          == (deep_verdict["level"], deep_verdict["figure"],
+              deep_verdict["basis"]),
+          f"shallow={shallow_verdict!r}\ndeep={deep_verdict!r}")
+
+    print("\nTHE DETAIL-KEY NAMESPACE")
+    # `baseline_median` once meant a volume median to one contributor and a
+    # median of half-month fail peaks to another. digest_render.md_detail is
+    # where that bit: for each NOTABLE verdict it scans a FIXED set of
+    # detail-field names with d.get(...), NOT scoped to which contributor
+    # produced `d` -- so if two contributors' derive_* functions emit the
+    # same field name, the renderer cannot tell whose number it is holding.
+    #
+    # The set of field names checked below is read out of md_detail's own
+    # source, never typed by hand, so a renderer change is picked up
+    # automatically. The set of contributors is wd.CONTRIBUTORS, never a
+    # hand-typed name list, so a newly added contributor is picked up too.
+    # Ownership of a field is decided by literally searching each
+    # contributor's OWN derive_* source for that field as a dict key -- what
+    # the function actually emits, not what a comment claims it emits.
+    #
+    # NOTE ON SCOPE: several detail keys ARE shared across contributors
+    # today (e.g. "count" between comment_letters and holders, or
+    # "baseline_sessions" between short_volume and volume) and the module's
+    # own backfill diagnostic says so is fine -- "shared is fine where the
+    # quantity is the same". Those keys are never read back out of a detail
+    # dict by name anywhere in digest_render.py, so no renderer branch can
+    # ever attribute one contributor's figure to another under one of them.
+    # This check is therefore scoped to exactly the keys md_detail DOES read
+    # by name -- the set where a collision is the baseline_median failure
+    # mode, not a merely coincidental name.
+    renderer_src = inspect.getsource(dr.md_detail)
+    renderer_keys = sorted(set(re.findall(r'd\.get\("([a-zA-Z_]+)"\)',
+                                          renderer_src)))
+    check("sanity: md_detail's own field scan was actually found in its "
+          "source and is not accidentally empty",
+          len(renderer_keys) >= 5, renderer_keys)
+    check("sanity: the renderer-scanned keys include the two ends of the "
+          "actual incident",
+          {"baseline_median", "baseline_volume_median"} <= set(renderer_keys),
+          renderer_keys)
+
+    def key_owners(key):
+        owners = set()
+        for c in wd.CONTRIBUTORS:
+            if f'"{key}"' in inspect.getsource(c["derive"]):
+                owners.add(c["key"])
+        return owners
+
+    check("THE INCIDENT ITSELF, as a positive control: 'baseline_median' "
+          "is claimed by ftd and only ftd",
+          key_owners("baseline_median") == {"ftd"}, key_owners("baseline_median"))
+    check("its fix: 'baseline_volume_median' is claimed by volume and "
+          "only volume -- the rename that ended the collision",
+          key_owners("baseline_volume_median") == {"volume"},
+          key_owners("baseline_volume_median"))
+
+    key_collisions = {k: key_owners(k) for k in renderer_keys
+                      if len(key_owners(k)) > 1}
+    check("no two contributors' derive_* functions claim the same "
+          "renderer-scanned detail key",
+          key_collisions == {}, str(key_collisions))
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
