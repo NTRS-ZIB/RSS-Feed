@@ -155,8 +155,6 @@ def main():
           "this settlement",
           claiming_weeks == [pub_monday],
           f"claimed by {claiming_weeks}")
-    check("the week that claims it is the settlement's own publication week",
-          claiming_weeks == [pub_monday])
 
     print("\nPERIOD PUBLISHED IN")
     # First half of a month publishes at month end; second half publishes
@@ -187,6 +185,38 @@ def main():
           "202512b names 2025; it must publish in 2026")
     check("it does not publish a week early",
           not wd.period_published_in("202512b", dec_prior))
+
+    # The 'a' half carries its OWN year roll, on a separate line from the 'b'
+    # half's. Mutating one leaves the other passing, so the December wrap
+    # needs both: 202512a resolves to 2025-12-31 and would resolve to
+    # 2024-12-31 if its roll were dropped.
+    check("a December 'a' period publishes at the END of that December",
+          wd.period_published_in("202512a", wd.week_sessions(date(2025, 12, 29))),
+          "its own year roll, not the 'b' half's")
+
+    # THE WEEKEND GAP, PINNED AS IT IS RATHER THAN AS IT SHOULD BE.
+    # The publication date is a bare calendar date and week_sessions spans
+    # Monday to Friday, so a period whose nominal publication date falls on a
+    # weekend is claimed by NO week, ever. Measured over 2026: 8 of 24 periods.
+    # That is a defect, recorded in docs/weekly-digest.md and deliberately not
+    # fixed on the test branch that found it. This check exists so that a fix
+    # HAS something to break: it must be updated, deliberately, when the
+    # arithmetic changes. Without it, two plausible fixes leave the suite green.
+    weekend_period = "202601a"                     # publishes 2026-01-31, a Saturday
+    claimed = [m for m in (date(2026, 1, 5) + timedelta(days=7 * i)
+                           for i in range(12))
+               if wd.period_published_in(weekend_period, wd.week_sessions(m))]
+    check("A WEEKEND PUBLICATION DATE IS CLAIMED BY NO WEEK AT ALL",
+          claimed == [],
+          "current behaviour, and a defect: 8 of 24 periods in 2026")
+
+    # Load-bearing beyond formatting: digest filenames sort lexically and the
+    # renderer compares week keys as strings, so an unpadded week 9 would sort
+    # after week 10.
+    check("iso_week_key zero-pads the week number",
+          wd.iso_week_key(date(2026, 3, 2)) == "2026-W10"
+          and wd.iso_week_key(date(2026, 2, 23)) == "2026-W09",
+          wd.iso_week_key(date(2026, 2, 23)))
 
     print("\nFTD PUBLISHES")
     # ftd_publishes aggregates period_published_in over every period in the
@@ -605,10 +635,30 @@ def main():
     # produced `d` -- so if two contributors' derive_* functions emit the
     # same field name, the renderer cannot tell whose number it is holding.
     #
-    # The set of field names checked below is read out of md_detail's own
-    # source, never typed by hand, so a renderer change is picked up
-    # automatically. The set of contributors is wd.CONTRIBUTORS, never a
-    # hand-typed name list, so a newly added contributor is picked up too.
+    # The set of field names below is read out of md_detail's own source,
+    # never typed by hand. It is the set of BRANCH GUARD keys -- the names
+    # md_detail tests with `if d.get(...)` to decide whether to emit a line --
+    # and NOT every name it reads: it also reads keys by subscript inside
+    # those branches, and those are scoped by the guard that admitted them.
+    # The guard is where a collision does its damage, because it is what
+    # decides whose dict is being read at all.
+    #
+    # WHY DOUBLE QUOTES ONLY, WHICH LOOKS LIKE A BUG AND IS NOT. In
+    # md_detail every branch guard is written `if d.get("x")`, and every read
+    # INSIDE a branch is written `d.get('x')` -- single quotes, forced by the
+    # enclosing double-quoted f-string. The quote style therefore separates
+    # guards from reads exactly, and it is the guards that matter: a guard
+    # decides whose dict is being read at all, while a read inside one is
+    # already scoped by the guard that admitted it.
+    #
+    # MEASURED: widening this to accept both quote styles makes the check
+    # FAIL against correct code, on `baseline_sessions` (volume and
+    # short_volume) and `sd_multiple` (price and short_volume) -- both read
+    # only inside f-strings, in branches a guard has already scoped. So the
+    # obvious "fix" here is a regression, and the next reader is owed that
+    # rather than left to discover it. The set of contributors is
+    # wd.CONTRIBUTORS, never a hand-typed name list, so a newly added
+    # contributor is picked up too.
     # Ownership of a field is decided by literally searching each
     # contributor's OWN derive_* source for that field as a dict key -- what
     # the function actually emits, not what a comment claims it emits.
