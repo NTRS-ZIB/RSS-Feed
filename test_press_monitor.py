@@ -153,6 +153,58 @@ def main():
     check("all-zero timestamps are treated as no timestamps",
           staleness_log([0, 0]) == "")
 
+    print("\nCROSS-HOST SUPPRESSION")
+    base = _time.time()
+
+    def item(title, when):
+        return {"title": title, "published": when, "uid": title}
+
+    Q1_2021 = "Galaxy Digital Announces First Quarter 2021 Financial Results"
+    Q1_2022 = "Galaxy Digital Announces First Quarter 2022 Financial Results"
+
+    # An exact repeat inside the window is a genuine duplicate.
+    kept = pm.suppress_cross_host([item(Q1_2022, base)],
+                                  [item(Q1_2022, base - 3600)], "T")
+    check("an exact title inside the window is suppressed", kept == [])
+
+    # THE ONE THAT MATTERS. These two scored 0.984 similarity across 23,771
+    # measured pairs. Any threshold below 1.000 suppresses one as a duplicate
+    # of the other, silently, once a quarter, on the highest-value item the
+    # channel carries.
+    kept = pm.suppress_cross_host([item(Q1_2022, base)],
+                                  [item(Q1_2021, base - 3600)], "T")
+    check("A 0.984-SIMILAR TITLE IS NOT SUPPRESSED", len(kept) == 1,
+          "no similarity threshold may creep in here")
+
+    # The window is what makes exact matching safe by construction.
+    old = base - (pm.CROSS_HOST_DAYS + 1) * 86400
+    kept = pm.suppress_cross_host([item(Q1_2022, base)],
+                                  [item(Q1_2022, old)], "T")
+    check("an exact title outside the window is not suppressed", len(kept) == 1)
+
+    # A failed scrape must not read as a successful match against nothing.
+    feed = [item(Q1_2022, base), item(Q1_2021, base)]
+    check("an empty newsroom suppresses nothing at all",
+          pm.suppress_cross_host(feed, [], "T") == feed,
+          "the bias is to post twice, never to suppress")
+
+    # A missing timestamp on either side cannot satisfy the window.
+    kept = pm.suppress_cross_host([item(Q1_2022, 0)],
+                                  [item(Q1_2022, base)], "T")
+    check("a feed item with no timestamp is not suppressed", len(kept) == 1)
+    kept = pm.suppress_cross_host([item(Q1_2022, base)],
+                                  [item(Q1_2022, 0)], "T")
+    check("a newsroom item with no timestamp suppresses nothing", len(kept) == 1)
+
+    print("\nTITLE NORMALISATION")
+    check("punctuation and case do not change a normalised title",
+          pm.norm_title("Q1 2026 Results!") == pm.norm_title("q1 2026 results"))
+    check("an HTML entity is stripped",
+          "amp" not in pm.norm_title("Smith &amp; Co Results"))
+    check("two different titles do not normalise equal",
+          pm.norm_title(Q1_2021) != pm.norm_title(Q1_2022),
+          "this is what stops the year being normalised away")
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0
