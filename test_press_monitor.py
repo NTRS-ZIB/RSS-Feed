@@ -508,6 +508,95 @@ def main():
           "cannot return" in line,
           "they are marked seen before the age floor drops them")
 
+    print("\nFORM 144: A PROPOSED SALE")
+    # Measured 2026-08-13 (probe_form_144.py): 338 filings across the roster,
+    # median 2 days ahead of the Form 4 that follows, and one filer who files
+    # 144s and NO Form 4 under any CIK, so the channel cannot see him at all
+    # without this.
+    check("144 is carried on the insider channel",
+          "144" in pm.INSIDER_ALLOWED_FORMS and "144/A" in pm.INSIDER_ALLOWED_FORMS)
+    check("144 has a label of its own",
+          pm.form_label("144") == "Proposed insider sale")
+    # An earlier check here asserted that INSIDER_ALLOWED_FORMS contains no
+    # "14A" or "1445". It was removed: it inspected the constant rather than
+    # any behaviour, so no change to the module could break it. What the set
+    # is actually for is exact membership, which collect_all applies over the
+    # network and no fixture here can reach.
+    check("an amended 144 keeps the label and is marked amended",
+          pm.form_label("144/A") == "Proposed insider sale (amended)")
+
+    # THE XSL TRAP. primaryDocument points at the rendered view; parsing that
+    # as XML fails in a way that reads as the filing not being structured.
+    check("the stylesheet segment is stripped from the source url",
+          pm.form_144_source("0001144879", "0001950047-26-007614",
+                             "xslFORM144X01/primary_doc.xml")
+          == "https://www.sec.gov/Archives/edgar/data/1144879/"
+             "000195004726007614/primary_doc.xml",
+          "parsing the rendered view reads as 'not structured after all'")
+    check("a primary document that is not xml yields no url",
+          pm.form_144_source("0001144879", "0001950047-26-007614",
+                             "form144.htm") == "",
+          "better no fetch than a fetch that cannot parse")
+    check("a missing primary document yields no url",
+          pm.form_144_source("0001144879", "0001950047-26-007614", "") == "")
+
+    xml144 = """<?xml version="1.0"?>
+    <edgarSubmission>
+      <headerData><filerInfo><filer><filerCredentials>
+        <cik>0001166816</cik></filerCredentials></filer></filerInfo></headerData>
+      <formData>
+        <issuerInfo>
+          <issuerName>APPLIED DIGITAL CORPORATION</issuerName>
+          <nameOfPersonForWhoseAccountTheSecuritiesAreToBeSold>RICHARD N NOTTENBURG</nameOfPersonForWhoseAccountTheSecuritiesAreToBeSold>
+          <relationshipsToIssuer><relationshipToIssuer>Director</relationshipToIssuer></relationshipsToIssuer>
+        </issuerInfo>
+        <securitiesInformation>
+          <brokerOrMarketmakerDetails><name>Morgan Stanley</name></brokerOrMarketmakerDetails>
+          <noOfUnitsSold>75000</noOfUnitsSold>
+          <aggregateMarketValue>2336107.50</aggregateMarketValue>
+          <noOfUnitsOutstanding>291469000</noOfUnitsOutstanding>
+          <approxSaleDate>08/04/2026</approxSaleDate>
+        </securitiesInformation>
+      </formData>
+    </edgarSubmission>"""
+    got = pm.parse_144(xml144)
+    # THE SELLER IS NESTED INSIDE issuerInfo, AND THE BROKER HAS A FIELD
+    # LITERALLY CALLED name. A tolerant extractor written for the probe
+    # returned "Morgan Stanley" here and reported a clean, wrong zero.
+    check("the SELLER is read, not the broker",
+          got.get("seller") == "RICHARD N NOTTENBURG", got.get("seller"))
+    check("the relationship to the issuer is read",
+          got.get("relationship") == "Director")
+    check("the size and the float are both read",
+          (got.get("shares"), got.get("outstanding")) == ("75000", "291469000"))
+    check("malformed xml yields no details rather than raising",
+          pm.parse_144("<edgarSubmission><formData>") == {})
+    check("empty input yields no details", pm.parse_144("") == {})
+
+    line = pm.sale_title(got)
+    check("the title names the seller and their relationship",
+          "Richard N Nottenburg (Director)" in line, line[:60])
+    check("the title carries the share count", "75,000 sh" in line)
+    check("the title carries the value in millions", "$2.34M" in line)
+    # A bare share count invites a baseline from intuition, and this roster's
+    # share counts run from tens of millions to billions.
+    check("THE TITLE CARRIES THE FRACTION OF SHARES OUTSTANDING",
+          "0.026% of shares out" in line, line)
+    check("a sale under a million is shown in dollars, not millions",
+          "$40,000" in pm.sale_title({"seller": "X", "shares": "1000",
+                                      "value": "40000"}))
+    check("no seller means no title, so the plain one is kept",
+          pm.sale_title({"shares": "1000"}) == "",
+          "an intent to sell is worth posting even without the detail")
+    check("missing numbers drop their phrase rather than the title",
+          pm.sale_title({"seller": "Jane Roe"}) == "Proposed sale — Jane Roe")
+    check("an unparsable number is dropped, not printed raw",
+          pm.sale_title({"seller": "Jane Roe", "shares": "n/a"})
+          == "Proposed sale — Jane Roe")
+    check("a zero float does not divide",
+          pm.sale_title({"seller": "Jane Roe", "shares": "10",
+                         "outstanding": "0"}) == "Proposed sale — Jane Roe: 10 sh")
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0
