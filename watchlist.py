@@ -623,6 +623,42 @@ WATCHLIST = [
         # results of 2026-08-10.
         "ir_feed": "https://www.riotplatforms.com/feed/",
     },
+    {
+        "ticker": "CORZ",
+        "name": "Core Scientific",
+        # EDGAR names this registrant "Core Scientific, Inc./tx" — the suffix
+        # is EDGAR's own disambiguator, not part of the company's name. Former
+        # name: Power & Digital Infrastructure Acquisition Corp, the 2021 SPAC
+        # it came public through. The registrant continues across that, so a
+        # CIK older than the operating company is correct, the same shape as
+        # ABTC's.
+        "cik": "0001839341",
+        # From the SEC fails files, swept for the literal symbol, read with
+        # its description:
+        #
+        #   21874A106  CORE SCIENTIFIC INC NEW COM  2026-04-17 to 2026-07-14
+        #
+        # "NEW COM" is doing work in that description. This company emerged
+        # from Chapter 11 in January 2024 and the pre-reorganisation common is
+        # a different security, so a RETIRED CUSIP almost certainly exists and
+        # a six-period sweep cannot see it. Unswept, not absent.
+        #
+        # EDGAR lists this CIK on four exchange rows — Nasdaq, OTC, Nasdaq,
+        # Nasdaq — which is several securities under one registrant, warrants
+        # among them. Those trade under their own symbols and their own
+        # CUSIPs, and they are NOT this company's common stock: pinning one
+        # would attribute warrant fails to the equity. Only the symbol CORZ
+        # was matched here, deliberately.
+        "cusips": ["21874A106"],
+        "alt_symbols": [],
+        # MEASURED, and the measurement had to choose between two live feeds.
+        # The investor newsroom carries press releases and was three days old
+        # when probed; corescientific.com/feed/ is a site-wide WordPress blog,
+        # nine entries, SEVENTEEN MONTHS stale, carrying "How HPC Hosting
+        # Saves Costs for Businesses". Both parse, both answer 200. Freshness
+        # is what separates them, which is now how the probe chooses.
+        "ir_feed": "https://investors.corescientific.com/news-events/press-releases/rss",
+    },
     # EVERY None ABOVE IS A MEASURED ABSENCE OF A FEED ON THE COMPANY'S OWN
     # NEWSROOM, and every one of those companies is still covered by something
     # faster than EDGAR. "Not looked for" no longer exists on this roster.

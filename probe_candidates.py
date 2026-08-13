@@ -305,10 +305,22 @@ def feeds():
                     title = " ".join((e.get("title") or "").split())[:88]
                     when = (e.get("published") or "")[:16]
                     print(f"              {when:<17}{title}")
-                found.append((url, len(entries)))
+                found.append((url, len(entries), newest))
         if found:
-            best = max(found, key=lambda r: r[1])
-            print(f"  -> USE {best[0]}  ({best[1]} entries)")
+            # BY FRESHNESS, NOT BY COUNT. CORZ has two feeds: its investor
+            # newsroom, 10 entries and three days old, and a site-wide
+            # WordPress blog, 9 entries and SEVENTEEN MONTHS old, carrying
+            # "How HPC Hosting Saves Costs for Businesses" rather than any
+            # press release. Picking the larger got that right by one entry;
+            # a blog with twenty posts would have won. What separates them is
+            # recency, so that is what decides, with the count as a tie-break.
+            best = max(found, key=lambda r: (r[2], r[1]))
+            age = time.strftime("%Y-%m-%d", time.gmtime(best[2])) if best[2] else "?"
+            print(f"  -> USE {best[0]}")
+            print(f"     ({best[1]} entries, newest {age})")
+            for url, n, stamp in sorted(found, key=lambda r: -r[2])[1:]:
+                when = time.strftime("%Y-%m-%d", time.gmtime(stamp)) if stamp else "?"
+                print(f"     rejected: {url} ({n} entries, newest {when})")
         else:
             print("  -> no feed on any URL tried. `ir_feed: None` would be a "
                   "measured absence,\n     and the company then needs a "
