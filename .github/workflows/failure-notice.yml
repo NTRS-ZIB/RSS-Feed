@@ -55,6 +55,7 @@ on:
       - "Metric regime check"
       - "Press release monitor"
       - "Probe body dates"
+      - "Probe candidates"
       - "Probe filing rate"
       - "Probe form 144"
       - "Probe holders"

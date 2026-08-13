@@ -1,0 +1,33 @@
+name: Probe candidates
+
+# Maintenance tool, not a component. Read-only: resolves a list of candidate
+# tickers against EDGAR's own ticker index and submissions API, and reports
+# what EDGAR says today — CIK, current name, former names, exchange, and
+# whether the registrant is still filing. Prints and exits.
+#
+# Run it BEFORE writing a record in watchlist.py. Edit CANDIDATES in
+# probe_candidates.py first. It deliberately proposes no CUSIP: that comes
+# from data a component actually reads, via audit_identifiers.py, in two
+# passes. See docs/watchlist.md.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      # No dependencies: urllib and watchlist, both stdlib-only.
+      - name: Probe
+        timeout-minutes: 10
+        env:
+          PYTHONUNBUFFERED: "1"
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: python -u probe_candidates.py
