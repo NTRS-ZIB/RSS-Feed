@@ -669,18 +669,30 @@ In `main()`, after the `FILING TIMESTAMPS` section, add:
           if not pm.KEYWORDS else True,
           "KEYWORDS is empty in this repo, so this is the live path")
 
-    check("entry_time prefers published_parsed",
-          pm.entry_time({"published_parsed": (2026, 8, 12, 0, 0, 0, 0, 0, 0)})
-          == 1786492800)
-    check("entry_time falls through to updated_parsed",
+    # BOTH keys present, or the check cannot test preference at all. A
+    # fixture carrying only one key returns the same epoch whatever order
+    # the function reads them in, so reversing the preference would not
+    # fail it. The two dates differ by a day so the answer is unambiguous.
+    check("entry_time PREFERS published_parsed over updated_parsed",
+          pm.entry_time({"published_parsed": (2026, 8, 12, 0, 0, 0, 0, 0, 0),
+                         "updated_parsed": (2026, 8, 11, 0, 0, 0, 0, 0, 0)})
+          == 1786492800,
+          "reversing the preference returns the 11th, one day earlier")
+    check("entry_time falls through when published_parsed is absent",
           pm.entry_time({"updated_parsed": (2026, 8, 12, 0, 0, 0, 0, 0, 0)})
           == 1786492800)
     check("entry_time returns 0 when nothing is usable",
           pm.entry_time({}) == 0,
           "that 0 becomes a released of None, which the body-date rule refuses")
 
-    check("entry_form takes the first tag's term",
-          pm.entry_form({"tags": [{"term": " 8-K "}]}) == "8-K")
+    # TWO tags, or "first" is untestable for the same reason. A single-tag
+    # fixture proves only that a term is read and stripped.
+    check("entry_form takes the FIRST tag's term, and strips it",
+          pm.entry_form({"tags": [{"term": " 8-K "}, {"term": "4"}]}) == "8-K",
+          "taking the last would return 4")
+    check("entry_form skips a tag whose term is empty",
+          pm.entry_form({"tags": [{"term": ""}, {"term": "4"}]}) == "4",
+          "the `if term:` guard, which a single-tag fixture cannot reach")
     check("entry_form uses the fallback when there are no tags",
           pm.entry_form({}, "6-K") == "6-K")
 
@@ -736,7 +748,7 @@ In `main()`, after the `FILING TIMESTAMPS` section, add:
 python test_press_monitor.py
 ```
 
-Expected: `71/71 checks passed`.
+Expected: `72/72 checks passed`.
 
 The `baseline_companies` fixtures above were verified against the live function
 before this plan was written: the record lives in `state["baselined"]`, `today` is
@@ -752,7 +764,7 @@ python -m py_compile press_monitor.py
 git diff --stat press_monitor.py
 ```
 
-Expected: `71/71`, `36/36`, `130/130`, `32/32`, `27/27`, `22/22`, `11/11`;
+Expected: `72/72`, `36/36`, `130/130`, `32/32`, `27/27`, `22/22`, `11/11`;
 compiles; and **no output from the last command**, proving every Tier 1 mutation
 was reverted.
 
