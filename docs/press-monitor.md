@@ -1184,10 +1184,25 @@ is tested rather than the first, so a proxy proposing both a reverse split and
 a genuine increase still posts on the genuine one.
 
 Recall was measured over what the rule **rejected**, not what it accepted: 11
-near-misses across the rejected documents, all correctly declined — a
+near-misses across the rejected documents, **every one adjudicated against the
+numbered proposal list of the meeting it came from** rather than against its
+surrounding prose. All correctly declined — a
 company's constitutional power to alter share capital, an increase in the
 number of *directors*, two equity-plan share increases, and an executive's
 salary rise.
+
+Two ABTC documents were left unadjudicated by the first sweep, because prose
+about "authorized but unissued and unreserved capital stock" reads the same
+whether a meeting is voting on an increase or not. Settled 2026-08-13 by
+printing what each meeting actually voted on: ABTC's 2026-04-27 annual meeting
+put three proposals to shareholders — directors, the auditor, and **a reverse
+stock split**. No authorized-share increase. The language was the anti-takeover
+discussion that accompanies a reverse split, which is the same single confusion
+class `INCREASE_IS_AN_EFFECT` exists for, and the rule declined it correctly.
+
+**So recall is 7 of 7 and measured, not assumed.** The near-miss list is only
+worth having because it can be adjudicated; a list of phrases nobody can settle
+would be a longer way of writing "trust me".
 
 **`DEFA14A` is not the proxy.** It is soliciting material: a vote reminder or
 a slide deck, often one or two thousand characters. A first run of the probe
