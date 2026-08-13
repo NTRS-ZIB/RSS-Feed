@@ -1027,7 +1027,24 @@
   "12531",
   "https://www.solunacomputing.com/?post_type=news&p=16165",
   "urn:tag:sec.gov,2008:accession-number=0000895421-26-000259",
-  "urn:tag:sec.gov,2008:accession-number=0000895421-26-000270"
+  "urn:tag:sec.gov,2008:accession-number=0000895421-26-000270",
+  "urn:tag:sec.gov,2008:accession-number=0001104659-26-093448",
+  "urn:tag:sec.gov,2008:accession-number=0001104659-26-093406",
+  "urn:tag:sec.gov,2008:accession-number=0000315066-26-002108",
+  "https://www.riotplatforms.com/riot-platforms-reports-second-quarter-2026-financial-results-and-strategic-highlights/",
+  "https://www.riotplatforms.com/riot-announces-new-date-for-second-quarter-2026-earnings-conference-call/",
+  "https://www.riotplatforms.com/riot-reschedules-second-quarter-2026-earnings-conference-call/",
+  "https://www.riotplatforms.com/riot-announces-second-quarter-2026-earnings-conference-call/",
+  "https://www.riotplatforms.com/terrestrial-energy-and-riot-platforms-launch-collaboration-to-develop-nuclear-powered-large-scale-data-center-projects/",
+  "https://www.riotplatforms.com/riot-platforms-reports-first-quarter-2026-financial-results-and-strategic-highlights/",
+  "https://www.riotplatforms.com/riot-announces-first-quarter-2026-earnings-conference-call/",
+  "https://www.riotplatforms.com/riot-announces-first-quarter-2026-production-and-operations-updates/",
+  "https://www.riotplatforms.com/riot-platforms-reports-full-year-2025-financial-results-and-strategic-highlights/",
+  "https://www.riotplatforms.com/riot-announces-fourth-quarter-and-year-end-2025-earnings-conference-call/",
+  "urn:tag:sec.gov,2008:accession-number=0001931824-26-000017",
+  "urn:tag:sec.gov,2008:accession-number=0001931824-26-000015",
+  "urn:tag:sec.gov,2008:accession-number=0002025334-26-000008",
+  "urn:tag:sec.gov,2008:accession-number=0001721702-26-000018"
  ],
  "initialized": true,
  "baselined": {
@@ -1049,7 +1066,8 @@
   "SPCX": "2026-08-10",
   "VIP": "2026-08-10",
   "WULF": "2026-08-10",
-  "WYFI": "2026-08-10"
+  "WYFI": "2026-08-10",
+  "RIOT": "2026-08-13"
  },
  "feeds": {
   "ANY": {
@@ -1113,6 +1131,10 @@
    "alerted": false
   },
   "WYFI": {
+   "fails": 0,
+   "alerted": false
+  },
+  "RIOT": {
    "fails": 0,
    "alerted": false
   }
