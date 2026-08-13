@@ -249,6 +249,7 @@ def lead_times(rows_by_ticker, ciks):
     print(f"\nLEAD TIME over the {len(sample)} most recent 144s")
     leads, unmatched, seen_names = [], collections.Counter(), []
     person_index = {}          # filer CIK -> their whole filing index
+    no_form4 = []              # (ticker, filed, name) for the name re-check
     today = date.today()
     for ticker, filed, acc, prim in sample:
         cik = ciks[ticker][0]
@@ -300,6 +301,7 @@ def lead_times(rows_by_ticker, ciks):
                       f"({age}d ago; this filer's last Form 4 {theirs[-1][0]})")
             else:
                 unmatched["this filer has never filed a Form 4 here"] += 1
+                no_form4.append((ticker, filed, raw_who))
                 print(f"  {ticker}  144 {filed}  NO FORM 4 EVER by this filer")
             continue
         days = (date.fromisoformat(after[0][0]) - date.fromisoformat(filed)).days
@@ -316,6 +318,38 @@ def lead_times(rows_by_ticker, ciks):
               f"same-day {sum(1 for d in leads if d == 0)}")
     for reason, n in unmatched.most_common():
         print(f"  unmatched, {reason}: {n}")
+
+    # WHY THIS SECOND PASS EXISTS. The matching above joins on CIK, and a
+    # person can hold more than one. So "this filer has never filed a Form 4
+    # here" has two readings that call for opposite conclusions: either they
+    # sell as an affiliate outside Section 16, which would mean Form 144
+    # reaches sellers the insider channel cannot see at all, or they file
+    # their Form 4s under a different CIK and the gap is an artefact of the
+    # join. Comparing NAMES against the issuer's own Form 4s separates them.
+    if no_form4:
+        print("\nTHE UNMATCHED, CHECKED BY NAME RATHER THAN BY CIK")
+    for ticker, filed, raw_who in no_form4:
+        cik = ciks[ticker][0]
+        want = norm_name(raw_who)
+        year = int(filed[:4])
+        near = [r for r in rows_by_ticker[ticker]
+                if r[0].upper() in ("4", "4/A")
+                and abs(int(r[1][:4]) - year) <= 1]
+        hits = []
+        for form4 in near:
+            time.sleep(GAP)
+            f4 = parse_xml(fetch(source_document(cik, form4[2], form4[3])))
+            if f4 is None:
+                continue
+            if norm_name(person_name(flatten(f4))) == want:
+                hits.append(form4[1])
+        if hits:
+            print(f"  {ticker} {raw_who}: {len(hits)} Form 4(s) under a "
+                  f"DIFFERENT CIK, latest {max(hits)} — the gap is the join, "
+                  f"not the filer")
+        else:
+            print(f"  {ticker} {raw_who}: no Form 4 under ANY CIK across "
+                  f"{len(near)} checked — sells without Section 16 reporting")
     # The names actually compared. A silently wrong extractor is the failure
     # mode this whole section had on its first run, and a count alone hid it.
     print("\n  names read from the 144s:")
