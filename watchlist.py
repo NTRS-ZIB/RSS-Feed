@@ -585,6 +585,35 @@ WATCHLIST = [
         "alt_symbols": ["ABTCZZZZ", "GRYP", "KERN"],
         "ir_feed": None,                  # no feed; Sanity CMS, read_abtc()
     },
+    {
+        "ticker": "RIOT",
+        "name": "Riot Platforms",
+        # Resolved from EDGAR's own ticker index rather than from memory, and
+        # the registrant is a long chain of renames: Riot Blockchain, Bioptix,
+        # Venaxis, AspenBio Pharma, ASPENBIO INC. None of those goes in
+        # alt_symbols — that field records symbols OBSERVED in data a
+        # component reads, and every one of these predates any window this
+        # repo sweeps. audit_identifiers.py will report the ones that are
+        # really there.
+        "cik": "0001167419",
+        # EMPTY ON PURPOSE, and the one real hazard in this record. The
+        # COLLISIONS guard needs a pinned CUSIP to collide with, so it cannot
+        # protect a company added with none, which is how SPCX's first sweep
+        # proposed the previous owner's identifier. Run audit_identifiers.py
+        # twice before filling this, and read the DESCRIPTION column, not just
+        # the dates.
+        "cusips": [],
+        "alt_symbols": [],
+        # MEASURED, not assumed, and the measurement nearly went the other
+        # way. The press-releases page carries no feed itself; discover_feed
+        # finds this one, which serves 10 entries and whose newest was
+        # 2026-08-10, three days before it was probed. A first reading called
+        # it 99 days stale, because the probe took max() over RFC-822 date
+        # STRINGS and "Wed, 06 May" sorts above "Tue, 28 Jul". The titles are
+        # what settled it: they are press releases, including the Q2 2026
+        # results of 2026-08-10.
+        "ir_feed": "https://www.riotplatforms.com/feed/",
+    },
     # EVERY None ABOVE IS A MEASURED ABSENCE OF A FEED ON THE COMPANY'S OWN
     # NEWSROOM, and every one of those companies is still covered by something
     # faster than EDGAR. "Not looked for" no longer exists on this roster.

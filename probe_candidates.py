@@ -69,6 +69,10 @@ GAP = 0.15
 TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 SUBMISSIONS = "https://data.sec.gov/submissions/CIK%s.json"
 RECENT_DAYS = 120
+# Half-month fails periods to sweep for a candidate's CUSIP. Six is three
+# months, enough for a symbol that trades now; a symbol that does not appear
+# has not been ruled out, only unswept.
+FTD_PERIODS = 6
 
 
 def fetch_json(url):
@@ -166,7 +170,77 @@ def main():
 
     if FEED_CANDIDATES:
         feeds()
+    identifiers()
     return 0
+
+
+def identifiers():
+    """The CUSIP a candidate trades under, from the SEC's own fails files.
+
+    THIS EXISTS BECAUSE OF A CIRCLE. `watchlist.validate()` rejects a record
+    with no CUSIP, and `audit_identifiers.py` only recognises symbols already
+    on the roster — so a new company cannot get its identifier from the audit
+    and cannot be added without one. The fails files carry the symbol, so
+    sweeping for the literal symbol breaks the circle.
+
+    IT PRINTS THE DESCRIPTION COLUMN, which `audit_identifiers.py` does not
+    parse. That column is the only thing that separated SPCX-the-SPAC-ETF from
+    SPCX-the-rocket-company when the first sweep proposed the ETF's CUSIP —
+    right shape, right dates, wrong company, no collision reported. A CUSIP
+    without the description beside it is a number nobody has checked.
+    """
+    import io as _io
+    import zipfile
+    import ftd_monitor                                # noqa: E402
+
+    wanted = {t.upper() for t in CANDIDATES}
+    print("\n" + "=" * 68)
+    print("IDENTIFIERS — from the SEC fails files, never from a filing")
+    print("=" * 68)
+    sess = ftd_monitor.session()
+    try:
+        periods = ftd_monitor.fetch_index(sess)[:FTD_PERIODS]
+    except Exception as exc:                           # noqa: BLE001
+        print(f"  could not read the fails index: {type(exc).__name__} {exc}")
+        return
+    if not periods:
+        print("  no fails periods found — layout changed?")
+        return
+
+    seen = {}
+    for period, url in sorted(periods):
+        try:
+            r = sess.get(url, timeout=60)
+            r.raise_for_status()
+            zf = zipfile.ZipFile(_io.BytesIO(r.content))
+            member = next(n for n in zf.namelist() if not n.endswith("/"))
+            body = zf.read(member).decode("latin-1")
+        except Exception as exc:                       # noqa: BLE001
+            print(f"  {period}: {type(exc).__name__}")
+            continue
+        for line in body.splitlines():
+            parts = [p.strip() for p in line.split("|")]
+            if len(parts) < 5 or not parts[0].isdigit():
+                continue
+            date, cusip, symbol, _qty, desc = parts[:5]
+            if symbol.upper() not in wanted:
+                continue
+            key = (symbol.upper(), cusip)
+            first, last, _ = seen.get(key, (date, date, desc))
+            seen[key] = (min(first, date), max(last, date), desc)
+        time.sleep(GAP)
+
+    if not seen:
+        print(f"  no candidate symbol appears in {len(periods)} periods. "
+              f"Absence here is\n  NOT evidence of a wrong ticker: the SEC "
+              f"lists only NON-ZERO fails, so a name\n  that simply did not "
+              f"fail is missing for the best possible reason.")
+        return
+    for (symbol, cusip), (first, last, desc) in sorted(seen.items()):
+        print(f"\n  {symbol}  {cusip}  {first} to {last}")
+        print(f"    DESCRIPTION: {desc}")
+        print(f"    -> read that name before pinning it. It is what separated "
+              f"SPCX-the-ETF\n       from SPCX-the-rocket-company.")
 
 
 def feeds():
@@ -201,8 +275,18 @@ def feeds():
                         url = discovered
             print(f"  {len(entries):>3} entries  {url}{note}")
             if entries:
-                newest = max((e.get("published", "") or "") for e in entries)
-                print(f"            newest entry: {newest or 'no timestamp'}")
+                # THROUGH entry_time, NOT max() OVER THE DATE STRINGS. The
+                # first version did the latter and reported this very feed as
+                # 99 days stale: RFC-822 dates start with a weekday, so
+                # "Wed, 06 May" sorts above "Tue, 28 Jul" and the newest entry
+                # was three days old, not three months. A default sort is not
+                # a date sort, and it read as a dead source rather than as a
+                # bug. Only printing the titles caught it.
+                stamps = [pm.entry_time(e) for e in entries]
+                newest = max(stamps) if any(stamps) else 0
+                print("            newest entry: " + (
+                    time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(newest))
+                    if newest else "no usable timestamp"))
                 # WHAT IS IN IT, not just how much. A site-wide WordPress feed
                 # answers 200 with valid XML and carries blog posts rather
                 # than press releases, which is a different source wearing the
