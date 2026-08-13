@@ -611,9 +611,21 @@ def drift_candidates(seen_forms):
     watchlist company went unreported.
 
     The rule that catches it without knowing the new spelling in advance: if an
-    unmatched form's core CONTAINS a tracked prefix's core, or vice versa, the
-    two are probably the same filing under a changed name. `SCHEDULE 13D` ->
-    `SCHEDULE13D` contains `13D`; `SC 13D` -> `SC13D` contains `13D`.
+    unmatched form's core CONTAINS a tracked prefix's stem, the two are
+    probably the same filing under a changed name. A tracked prefix's stem is
+    its core with a leading `SC`, `SCHEDULE`, `NT` or `FORM` stripped, because
+    those words are exactly what a rename changes: `SC 13D` -> core `SC13D` ->
+    stem `13D`, which is contained in `SCHEDULE 13D` -> core `SCHEDULE13D`.
+
+    **The containment is one-directional, and deliberately so.** An earlier
+    version of this docstring said "or vice versa", which the code has never
+    done. Adding the reverse — an unmatched core contained in a tracked stem —
+    would only catch a rename that SHORTENS the form type, which is not the
+    direction renames have gone, and it would fire on every short form type
+    that happens to sit inside a tracked one. This detector's whole value is
+    that it stays quiet enough to still be read, so the asymmetry is the
+    feature. `test_press_monitor.py` pins it, so changing it means changing a
+    test that says what it is doing.
     """
     tracked = list(FORM_TYPES) + sorted(INSIDER_ALLOWED_FORMS)
     # Cores short enough to appear inside unrelated forms would match
