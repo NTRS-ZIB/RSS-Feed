@@ -99,6 +99,8 @@ jobs:
       # nobody has to open a log to learn which one broke.
       - name: page_text
         run: python -u test_page_text.py
+      - name: press_monitor
+        run: python -u test_press_monitor.py
       - name: earnings_dates
         run: python -u test_earnings_dates.py
       - name: probe_body_dates
