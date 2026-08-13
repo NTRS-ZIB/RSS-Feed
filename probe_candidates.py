@@ -177,11 +177,20 @@ def main():
 def identifiers():
     """The CUSIP a candidate trades under, from the SEC's own fails files.
 
-    THIS EXISTS BECAUSE OF A CIRCLE. `watchlist.validate()` rejects a record
-    with no CUSIP, and `audit_identifiers.py` only recognises symbols already
-    on the roster — so a new company cannot get its identifier from the audit
-    and cannot be added without one. The fails files carry the symbol, so
-    sweeping for the literal symbol breaks the circle.
+    THERE IS NO CIRCLE HERE, though an earlier version of this docstring said
+    there was. `watchlist.validate()` REPORTS an empty `cusips` list; it does
+    not reject one. `docs/watchlist.md` is explicit that a new company sitting
+    at `"cusips": []` is the intended state and that the warning "should be
+    left alone", because it is a true statement about what this repo knows.
+
+    What this adds is speed and one column. `audit_identifiers.py` matches on
+    symbols already on the roster, so it cannot report a candidate before the
+    record exists; sweeping the fails files for the literal symbol answers the
+    same question first, which lets a record be written complete rather than
+    pending. That is a convenience, NOT a licence to skip the real audit: this
+    sweeps six periods where the audit sweeps twenty-four or a hundred and
+    twenty, and a shallow window finds a current identifier while missing
+    every retired one.
 
     IT PRINTS THE DESCRIPTION COLUMN, which `audit_identifiers.py` does not
     parse. That column is the only thing that separated SPCX-the-SPAC-ETF from
