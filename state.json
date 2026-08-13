@@ -1014,7 +1014,13 @@
   "https://whitefiber.investorroom.com/2026-08-12-C-O-R-R-E-C-T-I-O-N-WhiteFiber,-Inc",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-088668",
   "urn:tag:sec.gov,2008:accession-number=0001140361-26-032638",
-  "12501"
+  "12501",
+  "urn:tag:sec.gov,2008:accession-number=0001957799-26-000129",
+  "urn:tag:sec.gov,2008:accession-number=0001959173-26-005264",
+  "urn:tag:sec.gov,2008:accession-number=0001959173-26-005262",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-007164",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-007244",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-007614"
  ],
  "initialized": true,
  "baselined": {
