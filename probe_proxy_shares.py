@@ -44,6 +44,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from datetime import date
 
 import page_text
 import watchlist
@@ -78,6 +79,23 @@ MENTIONS = re.compile(r"authorized", re.I)
 # reading. Reported when present; its absence does not disqualify a hit.
 FROM_TO = re.compile(
     r"from\s+([\d,]{7,})\s+(?:shares\s+)?to\s+([\d,]{7,})", re.I)
+# A REVERSE SPLIT DOES NOT RAISE THE AUTHORIZED COUNT. It lowers the issued
+# count, so the unissued headroom rises RELATIVELY, and proxies describe that
+# as an effect in these words. BGDE's 2025-09-04 proxy matched the proposal
+# rule on exactly that sentence.
+#
+# The fragility is the reason this is a separate pattern rather than a tweak:
+# SLNH's 2025-07-21 proxy carries the same reverse-split effect and was
+# rejected, purely because it says "increase the relative amount of authorized
+# but unissued" where BGDE says "relative increase in the number of
+# authorized". One matched and one did not on word order alone, so the rule
+# was never really 7 of 8 — it was a coin flip that landed well seven times.
+EFFECT = re.compile(
+    r"reverse\s+(stock\s+)?split|relative(ly)?\s+(increase|amount)"
+    r"|increase\s+the\s+relative|but\s+unissued", re.I)
+# How much text either side of a candidate is read for that effect language.
+EFFECT_WINDOW = 200
+
 # THE RECALL INSTRUMENT. Deliberately far too loose to use as a rule: any
 # "increase" within 400 characters of "authorized". Run only over documents
 # the strict rule REJECTED, and printed rather than counted, so a proposal
@@ -150,6 +168,39 @@ def document_url(cik, accession, primary):
                       "/".join(parts))
 
 
+def proposal_match(text):
+    """The first candidate that is a PROPOSAL rather than a described effect.
+
+    EVERY candidate is tested, not just the first. A proxy that proposes a
+    reverse split AND an authorized increase is a common combination, and
+    rejecting the whole document on the first effect-qualified sentence would
+    lose the genuine proposal sitting further down it. Rejecting a document
+    only when every candidate in it is effect-qualified is the difference
+    between a filter and a blindfold.
+    """
+    for m in PROPOSES.finditer(text):
+        around = text[max(0, m.start() - EFFECT_WINDOW):m.end() + EFFECT_WINDOW]
+        if not EFFECT.search(around):
+            return m
+    return None
+
+
+def lead_days(rows, after, prefixes):
+    """Days from `after` to the next filing of any of these form prefixes.
+
+    None when the company has filed none since. Both S-3 and 424 are already
+    tracked by press_monitor, so this is the number that decides whether a
+    proxy is worth carrying: it is how much earlier the reader would learn
+    that the share ceiling is moving.
+    """
+    later = sorted(r[1] for r in rows
+                   if r[1] > after
+                   and any(r[0].upper().startswith(p) for p in prefixes))
+    if not later:
+        return None
+    return (date.fromisoformat(later[0]) - date.fromisoformat(after)).days
+
+
 def snippet(text, match, width=160):
     a = max(0, match.start() - width // 2)
     return " ".join(text[a:match.end() + width].split())
@@ -214,7 +265,7 @@ def read_proposals(rows_by_ticker, ciks):
         says = MENTIONS.search(text)
         if says:
             mentions += 1
-        hit = PROPOSES.search(text)
+        hit = proposal_match(text)
         # The form and the size are printed because they are how a wrong
         # document announces itself: a two-thousand-character "proxy" is a
         # covering letter, not a statement. Truncation is flagged for the
@@ -230,7 +281,11 @@ def read_proposals(rows_by_ticker, ciks):
             for n in near:
                 misses.append((ticker, filed, n))
         if hit:
-            proposes.append((ticker, filed, snippet(text, hit), url))
+            proposes.append((ticker, filed, snippet(text, hit), url,
+                             lead_days(rows_by_ticker[ticker], filed,
+                                       ("S-3",)),
+                             lead_days(rows_by_ticker[ticker], filed,
+                                       ("424",))))
             pair = FROM_TO.search(text[hit.start():hit.start() + 600])
             if pair:
                 print(f"      from {pair.group(1)} to {pair.group(2)}")
@@ -246,10 +301,12 @@ def read_proposals(rows_by_ticker, ciks):
     if proposes:
         print("\nEVERY MATCH, IN ITS OWN WORDS — judge the rule on these, "
               "not on the count")
-        for ticker, filed, text, url in proposes:
+        for ticker, filed, text, url, to_s3, to_424 in proposes:
             print(f"\n  {ticker} {filed}")
             print(f"    {text}")
             print(f"    {url}")
+            print(f"    next S-3 {to_s3 if to_s3 is not None else '-':>4}d "
+                  f"later, next 424 {to_424 if to_424 is not None else '-':>4}d later")
     else:
         print("\nNo proxy in this sweep proposes an increase. Read that "
               "against the census above:\nproxies filed and none proposing "
