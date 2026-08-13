@@ -16,6 +16,7 @@ import re
 import socket
 import sys
 import time
+import xml.etree.ElementTree as ET
 from calendar import timegm
 from collections import Counter
 from datetime import date, datetime, timedelta, timezone
@@ -290,7 +291,6 @@ MAX_INSIDER_POSTS_PER_RUN = 25
 # NOTE on the query: EDGAR's type filter is a prefix match, so type=4 also
 # returns 40-F and 424B*. Entries are therefore filtered against
 # INSIDER_ALLOWED_FORMS using the form type EDGAR reports on each entry.
-INSIDER_QUERY_FORM = "4"
 # Form 3 is an insider's INITIAL statement of ownership, filed within 10 days
 # of becoming an officer, director or >10% holder. It reports no transaction,
 # so it is not a trade — but it is the first appearance of a new insider, and
@@ -300,7 +300,14 @@ INSIDER_QUERY_FORM = "4"
 # Form 5 is deliberately excluded: an annual catch-up of small or exempt
 # transactions that should have been reported already, filed in bulk after
 # year end. High volume, low signal.
-INSIDER_ALLOWED_FORMS = {"3", "3/A", "4", "4/A"}
+# Form 144 is an affiliate's NOTICE OF INTENT to sell restricted stock,
+# filed before the sale. It is not a Section 16 form, and that is the
+# point: measured 2026-08-13, one filer on this roster files 144s for HUT
+# and appears in none of its Form 4s under any CIK, so his sales are
+# invisible to this channel without it. Median lead over the Form 4 that
+# does follow is 2 days (36 of 40 sampled; 8 same-day). See
+# probe_form_144.py and docs/press-monitor.md.
+INSIDER_ALLOWED_FORMS = {"3", "3/A", "4", "4/A", "144", "144/A"}
 
 # ------------------------------------------------------------------ RUNTIME
 
@@ -487,6 +494,7 @@ FORM_LABELS = {
     "40-F": "Annual report (Canadian issuer)",
     "6-K": "Foreign issuer report",
     "8-K": "Material event",
+    "144": "Proposed insider sale",
 }
 
 
@@ -728,6 +736,7 @@ def company_filings(cik):
     # Both are carried because they answer different questions: see the
     # horizon note in collect_all() for why the two are not interchangeable.
     accepted = recent.get("acceptanceDateTime") or []
+    primaries = recent.get("primaryDocument") or []
 
     out = []
     for i, form in enumerate(forms):
@@ -743,6 +752,7 @@ def company_filings(cik):
             "accepted": accepted[i] if i < len(accepted) else "",
             "items": items[i] if i < len(items) else "",
             "description": descriptions[i] if i < len(descriptions) else "",
+            "primary": primaries[i] if i < len(primaries) else "",
         })
     return out
 
@@ -855,7 +865,8 @@ def collect_all(resolved):
                 ins += 1
                 insider.append({**base, "form": form,
                                 "source": f"{name} ({ticker}) · Form {form}",
-                                "title": title})
+                                "title": title,
+                                "cik": cik, "primary": f.get("primary", "")})
             elif form_matches(form, FORM_TYPES):
                 kept += 1
                 press.append({**base, "form": form,
@@ -1863,6 +1874,132 @@ def within_age(item, now):
     return (item.get("published") or 0) >= now - MAX_AGE_DAYS * 86400
 
 
+def form_144_source(cik, accession, primary):
+    """The URL of a Form 144's SOURCE xml, not EDGAR's rendered view.
+
+    EDGAR's `primaryDocument` for a structured filing points at the
+    XSL-rendered HTML. Parsing that as XML fails in a way that reads as "this
+    filing is not structured after all", which is how three companies were
+    once written off here. The source sits in the same accession directory
+    with the stylesheet segment removed.
+    """
+    parts = [p for p in (primary or "").split("/")
+             if not p.lower().startswith("xsl")]
+    if not parts or not parts[-1].lower().endswith(".xml"):
+        return ""
+    return (f"https://www.sec.gov/Archives/edgar/data/{cik.lstrip('0')}/"
+            f"{accession.replace('-', '')}/{'/'.join(parts)}")
+
+
+# Leaf elements of the Form 144 schema, read off a real filing rather than
+# guessed. An earlier tolerant version of this — "the first leaf ending in
+# name, skipping anything under issuer" — returned the BROKER, because the
+# schema nests the seller inside `issuerInfo`.
+F144_FIELDS = {
+    "nameOfPersonForWhoseAccountTheSecuritiesAreToBeSold": "seller",
+    "relationshipToIssuer": "relationship",
+    "noOfUnitsSold": "shares",
+    "aggregateMarketValue": "value",
+    "noOfUnitsOutstanding": "outstanding",
+    "approxSaleDate": "sale_date",
+}
+
+
+def parse_144(xml_text):
+    """{seller, relationship, shares, value, outstanding, sale_date} or {}.
+
+    Never raises. A 144 that will not parse must still post as a bare filing
+    line rather than taking down the run: the fact that an affiliate filed an
+    intent to sell is worth more than the detail of how much.
+    """
+    try:
+        root = ET.fromstring(xml_text or "")
+    except ET.ParseError:
+        return {}
+    out = {}
+    for node in root.iter():
+        leaf = node.tag.split("}", 1)[-1]
+        key = F144_FIELDS.get(leaf)
+        if key and key not in out and (node.text or "").strip():
+            out[key] = node.text.strip()
+    return out
+
+
+def sale_title(details):
+    """The headline for a proposed sale, or "" if there is nothing to say.
+
+    WHY THE PERCENTAGE IS COMPUTED HERE. A share count alone invites the
+    reader to supply a baseline from intuition, and for a roster whose share
+    counts run from 78 million to 3 billion that intuition is wrong. The 144
+    carries `noOfUnitsOutstanding` in the same filing, so the fraction costs
+    nothing and is the only figure comparable across companies.
+    """
+    seller = details.get("seller")
+    if not seller:
+        return ""
+    bits = []
+    shares = _as_number(details.get("shares"))
+    if shares is not None:
+        bits.append(f"{shares:,.0f} sh")
+    value = _as_number(details.get("value"))
+    if value is not None:
+        bits.append(f"${value / 1e6:.2f}M" if value >= 1e6 else f"${value:,.0f}")
+    outstanding = _as_number(details.get("outstanding"))
+    if shares is not None and outstanding:
+        bits.append(f"{shares / outstanding * 100:.3f}% of shares out")
+    who = seller.title() if seller.isupper() else seller
+    relationship = details.get("relationship")
+    if relationship:
+        who = f"{who} ({relationship})"
+    return f"Proposed sale — {who}" + (f": {', '.join(bits)}" if bits else "")
+
+
+def _as_number(text):
+    """A number from an EDGAR text field, or None. Never raises."""
+    try:
+        return float(str(text).replace(",", ""))
+    except (TypeError, ValueError):
+        return None
+
+
+def enrich_144(items):
+    """Give each Form 144 a title carrying who, how much, and what fraction.
+
+    Fetches one small XML per filing, and ONLY for items already selected for
+    posting: the age floor and the per-run cap have both run by this point,
+    so the cost is bounded by what the channel will actually carry — measured
+    at two to three Form 144s a week across the whole roster.
+
+    Fails open in every direction. A filing that will not fetch, will not
+    parse, or carries no seller keeps the plain "Proposed insider sale" title
+    it already has. An affiliate's intent to sell is worth posting even when
+    the detail is unavailable, and this must never be the reason a run dies.
+    """
+    enriched = 0
+    for item in items:
+        if not str(item.get("form", "")).startswith("144"):
+            continue
+        url = form_144_source(item.get("cik", ""), item.get("accession", ""),
+                              item.get("primary", ""))
+        if not url:
+            continue
+        try:
+            r = requests.get(url, headers=sec_headers("www.sec.gov"),
+                             timeout=(8, 20))
+            time.sleep(0.15)
+            body = r.text if r.status_code == 200 else ""
+        except requests.RequestException as e:
+            print(f"  form 144: {type(e).__name__} for {item.get('ticker')}")
+            continue
+        title = sale_title(parse_144(body))
+        if title:
+            item["title"] = title
+            enriched += 1
+    if enriched:
+        print(f"  form 144: {enriched} enriched with seller and size.")
+    return enriched
+
+
 def undated_items(items):
     """Items carrying no usable timestamp, counted per ticker.
 
@@ -2252,6 +2389,12 @@ def main():
     print(f"{len(candidates)} candidate(s) checked, {len(to_post)} to post"
           + (f" ({n_unannounced} unannounced material filing(s))"
              if n_unannounced else "") + ".")
+
+    # Ahead of BOTH output paths, so a dry run shows the title a live run
+    # would post. The enrichment fetches, so it is deliberately last: every
+    # filter that could drop these items has already run.
+    insider_recent.sort(key=lambda i: i.get("published") or 0, reverse=True)
+    enrich_144(insider_recent[:MAX_INSIDER_POSTS_PER_RUN])
 
     if DRY_RUN:
         for item in to_post:

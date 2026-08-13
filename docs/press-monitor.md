@@ -1147,6 +1147,51 @@ because the two states need different responses from a reader:
 It never raises. One scraper must not take down thirteen feeds and the EDGAR
 sweep with it, which is the isolation the whole repo is built on.
 
+### Form 144: intent to sell, and a seller Section 16 cannot see
+
+The insider channel carries Forms 3 and 4, which report a sale **after** it
+settles. Form 144 is an affiliate's notice of intent to sell restricted stock,
+filed **before**. It arrives in the same submissions call the monitor already
+makes per company, so it costs no extra request to find.
+
+**Measured 2026-08-13** with [`probe_form_144.py`](../probe_form_144.py):
+
+| | |
+|---|---|
+| Filings under the issuer's own CIK | **338**, 14 of 19 companies, 2023-04-17 to 2026-08-04 |
+| Recent rate | roughly 2 to 3 a week across the roster |
+| Lead over the Form 4 that follows | **median 2 days** (36 of 40 matched; min 0, max 5, 8 same-day) |
+
+Two days is modest, and on its own would be a weak case. **The stronger half is
+that Form 144 covers a different population.** Forms 3, 4 and 5 apply to
+officers, directors and holders above 10%; Rule 144 applies to any affiliate
+selling restricted securities. In the sample, `RICKERTSEN CARL J` filed two
+144s for HUT and appears in **none of HUT's 34 Form 4s** across the surrounding
+year, under any CIK. Without this, his sales are invisible to the channel.
+
+The other two unmatched were `SIXTAV VENTURES, LLC`, which filed intent twice
+for GLXY and has reported no sale since 2025-08-08 — an intent that has not
+become a sale, which is its own signal.
+
+`enrich_144()` fetches one small XML per filing, and only for items already
+selected for posting, so the age floor and the per-run cap both bound the cost.
+It fails open in every direction: a filing that will not fetch, will not parse
+or names no seller keeps the plain `Proposed insider sale` title. An affiliate
+filing an intent to sell is worth posting even when the detail is unavailable.
+
+**The title carries the fraction of shares outstanding, not just the count.**
+The 144 reports `noOfUnitsOutstanding` in the same filing, so the fraction is
+free, and it is the only figure comparable across a roster whose share counts
+run from 78 million to over a billion. A bare share count invites the reader to
+supply a baseline from intuition.
+
+**Two things to know before parsing one.** The seller is nested inside
+`issuerInfo`, beside an `issuerName`, and the broker has a field literally
+called `name` — a tolerant extractor written for the probe returned *Morgan
+Stanley* as the seller and reported a clean, wrong zero matches. And
+`primaryDocument` points at the XSL-rendered view; `form_144_source()` strips
+that segment, per the trap recorded in CLAUDE.md.
+
 ### Critical: a source whose DATES break is silent in all three checks
 
 The failure above is loud because the item count goes to zero. There is a
