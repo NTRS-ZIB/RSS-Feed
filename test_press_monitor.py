@@ -36,9 +36,14 @@ def main():
           pm.form_matches("8-K/A", ["8-K"]))
     check("a prefix does not match an unrelated form",
           not pm.form_matches("DEF 14A", ["8-K"]))
+    # THE 117-FILING INCIDENT, as a property of the module rather than of
+    # Python. An earlier draft asserted not "SCHEDULE 13D".startswith(
+    # "SC 13D"), which is true of the language and could not fail whatever
+    # press_monitor did. This calls the real function, so it fails if anyone
+    # makes form_matches fuzzy or substring-based to "fix" renames.
     check("PREFIX MATCHING DOES NOT BRIDGE A RENAME",
-          not "SCHEDULE 13D".startswith("SC 13D"),
-          "the whole 117-filing incident, as a fact about the language")
+          not pm.form_matches("SCHEDULE 13D", ["SC 13D"]),
+          "the rename the prefix could not follow, asked of the module")
 
     check("form_core strips the amendment suffix and spacing",
           pm.form_core("SC 13D/A") == "SC13D", pm.form_core("SC 13D/A"))
