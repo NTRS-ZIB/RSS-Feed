@@ -406,9 +406,18 @@ def main():
                 continue
             got = time_to_increase(history, filed)
             if not got:
-                current = history[-1][1]
-                print(f"  {ticker} {filed}: no rise since; still "
-                      f"{current:,} as of {history[-1][0]}")
+                # "IT HAS NOT RISEN" AND "WE CANNOT SEE IT" ARE DIFFERENT
+                # MEASUREMENTS AND MUST NOT SHARE A LABEL. ABTC's last tagged
+                # value is from 2022 while its proxy is from 2025, so the
+                # probe is blind there rather than observing no change. Under
+                # one label that reads as evidence the proposal went nowhere.
+                last_filed, current = history[-1]
+                if last_filed < filed:
+                    print(f"  {ticker} {filed}: NOT MEASURABLE — the concept "
+                          f"was last tagged {last_filed}, before this proxy")
+                else:
+                    print(f"  {ticker} {filed}: no rise yet; still "
+                          f"{current:,} as of {last_filed}")
                 continue
             days, before, after, when = got
             gaps.append(days)
