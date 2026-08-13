@@ -585,6 +585,44 @@ WATCHLIST = [
         "alt_symbols": ["ABTCZZZZ", "GRYP", "KERN"],
         "ir_feed": None,                  # no feed; Sanity CMS, read_abtc()
     },
+    {
+        "ticker": "RIOT",
+        "name": "Riot Platforms",
+        # Resolved from EDGAR's own ticker index rather than from memory, and
+        # the registrant is a long chain of renames: Riot Blockchain, Bioptix,
+        # Venaxis, AspenBio Pharma, ASPENBIO INC. None of those goes in
+        # alt_symbols — that field records symbols OBSERVED in data a
+        # component reads, and every one of these predates any window this
+        # repo sweeps. audit_identifiers.py will report the ones that are
+        # really there.
+        "cik": "0001167419",
+        # From the SEC's own fails files, swept for the literal symbol over
+        # six half-month periods, and read WITH ITS DESCRIPTION COLUMN:
+        #
+        #   767292105  RIOT PLATFORMS,INC COM  2026-04-15 to 2026-07-13
+        #
+        # The description names the same registrant EDGAR's CIK does, which is
+        # the two-independent-sources standard HUT established. The check digit
+        # verifies, no roster company claims it, and it is not on REFUSED.
+        #
+        # ONE PERIOD, NOT A HISTORY. Six periods is three months; this company
+        # has traded far longer and under earlier names, so retired CUSIPs
+        # almost certainly exist and are unswept rather than absent. Run
+        # audit_identifiers.py with a large SWEEP_PERIODS before believing this
+        # list is complete — the 120-period sweep of 2026-08-05 found retired
+        # identifiers on five companies that had been on the roster for months.
+        "cusips": ["767292105"],
+        "alt_symbols": [],
+        # MEASURED, not assumed, and the measurement nearly went the other
+        # way. The press-releases page carries no feed itself; discover_feed
+        # finds this one, which serves 10 entries and whose newest was
+        # 2026-08-10, three days before it was probed. A first reading called
+        # it 99 days stale, because the probe took max() over RFC-822 date
+        # STRINGS and "Wed, 06 May" sorts above "Tue, 28 Jul". The titles are
+        # what settled it: they are press releases, including the Q2 2026
+        # results of 2026-08-10.
+        "ir_feed": "https://www.riotplatforms.com/feed/",
+    },
     # EVERY None ABOVE IS A MEASURED ABSENCE OF A FEED ON THE COMPANY'S OWN
     # NEWSROOM, and every one of those companies is still covered by something
     # faster than EDGAR. "Not looked for" no longer exists on this roster.

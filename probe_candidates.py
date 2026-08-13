@@ -46,11 +46,33 @@ import watchlist
 # point of the probe is that none of them is trusted until it answers.
 CANDIDATES = ["RIOT", "CORZ", "BITF", "HIVE", "CRWV", "BTBT", "CANG"]
 
+# Newsroom URLs to test for a real feed, per candidate. EVERY `None` in
+# watchlist.py means a MEASURED absence of a feed, not an unexamined one —
+# the roster's closing comment says so in those words — so a record cannot
+# honestly be written with `None` until this has run and come back empty.
+#
+# Several URLs per company on purpose, and every one is REPORTED rather than
+# guessed at: a soft-404 answers 200 with the wrong content, so what decides
+# is how many entries actually parse, not the status code.
+FEED_CANDIDATES = {
+    "RIOT": [
+        "https://www.riotplatforms.com/news-events/press-releases",
+        "https://www.riotplatforms.com/news",
+        "https://ir.riotplatforms.com/news-events/press-releases",
+        "https://www.riotplatforms.com/rss/pressrelease.aspx",
+        "https://investors.riotplatforms.com/rss/pressrelease.aspx",
+    ],
+}
+
 UA = os.environ.get("SEC_USER_AGENT", "").strip()
 GAP = 0.15
 TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 SUBMISSIONS = "https://data.sec.gov/submissions/CIK%s.json"
 RECENT_DAYS = 120
+# Half-month fails periods to sweep for a candidate's CUSIP. Six is three
+# months, enough for a symbol that trades now; a symbol that does not appear
+# has not been ruled out, only unswept.
+FTD_PERIODS = 6
 
 
 def fetch_json(url):
@@ -145,7 +167,143 @@ def main():
               f"{newest[0]} {newest[1]}")
         print(f"  forms seen: {', '.join(kinds[:14])}")
         print()
+
+    if FEED_CANDIDATES:
+        feeds()
+    identifiers()
     return 0
+
+
+def identifiers():
+    """The CUSIP a candidate trades under, from the SEC's own fails files.
+
+    THIS EXISTS BECAUSE OF A CIRCLE. `watchlist.validate()` rejects a record
+    with no CUSIP, and `audit_identifiers.py` only recognises symbols already
+    on the roster — so a new company cannot get its identifier from the audit
+    and cannot be added without one. The fails files carry the symbol, so
+    sweeping for the literal symbol breaks the circle.
+
+    IT PRINTS THE DESCRIPTION COLUMN, which `audit_identifiers.py` does not
+    parse. That column is the only thing that separated SPCX-the-SPAC-ETF from
+    SPCX-the-rocket-company when the first sweep proposed the ETF's CUSIP —
+    right shape, right dates, wrong company, no collision reported. A CUSIP
+    without the description beside it is a number nobody has checked.
+    """
+    import io as _io
+    import zipfile
+    import ftd_monitor                                # noqa: E402
+
+    wanted = {t.upper() for t in CANDIDATES}
+    print("\n" + "=" * 68)
+    print("IDENTIFIERS — from the SEC fails files, never from a filing")
+    print("=" * 68)
+    sess = ftd_monitor.session()
+    try:
+        periods = ftd_monitor.fetch_index(sess)[:FTD_PERIODS]
+    except Exception as exc:                           # noqa: BLE001
+        print(f"  could not read the fails index: {type(exc).__name__} {exc}")
+        return
+    if not periods:
+        print("  no fails periods found — layout changed?")
+        return
+
+    seen = {}
+    for period, url in sorted(periods):
+        try:
+            r = sess.get(url, timeout=60)
+            r.raise_for_status()
+            zf = zipfile.ZipFile(_io.BytesIO(r.content))
+            member = next(n for n in zf.namelist() if not n.endswith("/"))
+            body = zf.read(member).decode("latin-1")
+        except Exception as exc:                       # noqa: BLE001
+            print(f"  {period}: {type(exc).__name__}")
+            continue
+        for line in body.splitlines():
+            parts = [p.strip() for p in line.split("|")]
+            if len(parts) < 5 or not parts[0].isdigit():
+                continue
+            date, cusip, symbol, _qty, desc = parts[:5]
+            if symbol.upper() not in wanted:
+                continue
+            key = (symbol.upper(), cusip)
+            first, last, _ = seen.get(key, (date, date, desc))
+            seen[key] = (min(first, date), max(last, date), desc)
+        time.sleep(GAP)
+
+    if not seen:
+        print(f"  no candidate symbol appears in {len(periods)} periods. "
+              f"Absence here is\n  NOT evidence of a wrong ticker: the SEC "
+              f"lists only NON-ZERO fails, so a name\n  that simply did not "
+              f"fail is missing for the best possible reason.")
+        return
+    for (symbol, cusip), (first, last, desc) in sorted(seen.items()):
+        print(f"\n  {symbol}  {cusip}  {first} to {last}")
+        print(f"    DESCRIPTION: {desc}")
+        print(f"    -> read that name before pinning it. It is what separated "
+              f"SPCX-the-ETF\n       from SPCX-the-rocket-company.")
+
+
+def feeds():
+    """Does this company's own newsroom carry a feed, measured not assumed.
+
+    Uses press_monitor's OWN parse_feed and discover_feed, so what is measured
+    is what the component would actually get rather than what a browser shows.
+    A URL answering 200 proves nothing on its own: a soft-404 does that too,
+    and this repo has already nearly posted two dead links to one. The entry
+    count is the answer.
+    """
+    import press_monitor as pm                       # noqa: E402
+
+    print("=" * 68)
+    print("NEWSROOM FEEDS — a None in watchlist.py must be a MEASURED absence")
+    print("=" * 68)
+    for ticker, urls in FEED_CANDIDATES.items():
+        print(f"\n{ticker}")
+        found = []
+        for url in urls:
+            time.sleep(GAP)
+            entries = pm.parse_feed(url)
+            note = ""
+            if not entries:
+                # Not a feed itself: ask whether the PAGE advertises one.
+                discovered = pm.discover_feed(url)
+                if discovered and discovered != url:
+                    time.sleep(GAP)
+                    entries = pm.parse_feed(discovered)
+                    note = f"  (via discovered {discovered})"
+                    if entries:
+                        url = discovered
+            print(f"  {len(entries):>3} entries  {url}{note}")
+            if entries:
+                # THROUGH entry_time, NOT max() OVER THE DATE STRINGS. The
+                # first version did the latter and reported this very feed as
+                # 99 days stale: RFC-822 dates start with a weekday, so
+                # "Wed, 06 May" sorts above "Tue, 28 Jul" and the newest entry
+                # was three days old, not three months. A default sort is not
+                # a date sort, and it read as a dead source rather than as a
+                # bug. Only printing the titles caught it.
+                stamps = [pm.entry_time(e) for e in entries]
+                newest = max(stamps) if any(stamps) else 0
+                print("            newest entry: " + (
+                    time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(newest))
+                    if newest else "no usable timestamp"))
+                # WHAT IS IN IT, not just how much. A site-wide WordPress feed
+                # answers 200 with valid XML and carries blog posts rather
+                # than press releases, which is a different source wearing the
+                # right shape. DGXX's old feed is the recorded case: 20 valid
+                # items, nothing newer than months back, every check passed.
+                for e in entries[:8]:
+                    title = " ".join((e.get("title") or "").split())[:88]
+                    when = (e.get("published") or "")[:16]
+                    print(f"              {when:<17}{title}")
+                found.append((url, len(entries)))
+        if found:
+            best = max(found, key=lambda r: r[1])
+            print(f"  -> USE {best[0]}  ({best[1]} entries)")
+        else:
+            print("  -> no feed on any URL tried. `ir_feed: None` would be a "
+                  "measured absence,\n     and the company then needs a "
+                  "scraper or CMS reader like HUT, GLXY, DGXX and ABTC.")
 
 
 if __name__ == "__main__":

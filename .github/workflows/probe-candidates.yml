@@ -24,7 +24,10 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      # No dependencies: urllib and watchlist, both stdlib-only.
+      # The newsroom-feed section imports press_monitor, so that what is
+      # measured is what the component would actually get.
+      - name: Install dependencies
+        run: pip install feedparser requests
       - name: Probe
         timeout-minutes: 10
         env:
