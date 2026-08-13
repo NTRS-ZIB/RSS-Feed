@@ -233,6 +233,30 @@ def main():
           all(n == 1 for _, n in counts),
           f"not exactly once: {[p for p, n in counts if n != 1]}")
 
+    # THE SAME SHAPE, SWEPT AND LEFT ALONE, PINNED SO A CHANGE IS DELIBERATE.
+    # derive_filings, derive_letters, derive_dilution and derive_holders all
+    # filter by sessions[0] <= d <= sessions[-1], which is Monday to Friday,
+    # so a WEEKEND-dated row belongs to no week either. It was not changed:
+    # those dates are supplied by EDGAR and XBRL rather than computed here,
+    # EDGAR credits filings to business days, and measured against what is on
+    # disk 0 of 235 filing dates and 0 of 16 dilution as-of dates fall on a
+    # weekend. The one to watch is derive_dilution -- month-end as-of dates
+    # are an ordinary XBRL convention and 7 of 24 month ends in 2025-26 fall
+    # on a weekend. See docs/weekly-digest.md.
+    #
+    # Widening these to a full seven-day week is safe and would close it. This
+    # check exists so that doing so is a decision someone made rather than a
+    # side effect: it goes red the moment the span stops being Monday to
+    # Friday, and whoever sees it red should read the section above.
+    week = wd.week_sessions(date(2026, 5, 25))
+    saturday, sunday = date(2026, 5, 30), date(2026, 5, 31)
+    check("a week spans Monday to Friday only, so a weekend date is outside "
+          "it -- a KNOWN LIMIT, not an accident",
+          week[0] <= saturday and not (week[0] <= saturday <= week[-1])
+          and not (week[0] <= sunday <= week[-1]),
+          "derive_filings, letters, dilution and holders all filter on this "
+          "span; see docs/weekly-digest.md")
+
     # Load-bearing beyond formatting: digest filenames sort lexically and the
     # renderer compares week keys as strings, so an unpadded week 9 would sort
     # after week 10.
