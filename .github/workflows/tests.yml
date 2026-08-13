@@ -58,8 +58,12 @@ jobs:
           print("All %d suites are run." % len(run))
           PY
       # Only seven files have suites. These two steps cover all 43, cheaply,
-      # and run first because they are the broader check: watchlist.py is
-      # imported by no suite at all, so before this a typo in it merged green.
+      # and run first because they are the broader check: ftd_monitor.py is
+      # loaded by no suite, directly or transitively, so before this a typo in
+      # it merged green. Twenty-six modules are in that position. Counting the
+      # suites understates the gap and counting the tested modules overstates
+      # it: watchlist.py has no suite of its own but three suites import it,
+      # so a typo there has always been caught.
       - name: Every module parses
         run: python -m py_compile *.py
       # PARSING IS NOT LOADING, and the gap is most of the value. Importing
