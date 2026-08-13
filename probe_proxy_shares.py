@@ -201,6 +201,53 @@ def lead_days(rows, after, prefixes):
     return (date.fromisoformat(later[0]) - date.fromisoformat(after)).days
 
 
+CONCEPT = ("https://data.sec.gov/api/xbrl/companyconcept/CIK%s/us-gaap/"
+           "CommonStockSharesAuthorized.json")
+
+
+def authorized_history(cik):
+    """[(filed, value)] for the authorized share count, oldest first.
+
+    Read from XBRL rather than from a filing body. The count is a tagged
+    fact, so this needs no parsing and cannot be fooled by the surrounding
+    prose — which is the whole difficulty everywhere else in this probe.
+
+    Deduplicated by value: the same figure is restated in every periodic
+    report, and what matters here is when it CHANGED.
+    """
+    data = fetch_json(CONCEPT % cik.zfill(10))
+    if not data:
+        return []
+    rows = []
+    for fact in (data.get("units") or {}).get("shares", []):
+        if fact.get("filed") and fact.get("val") is not None:
+            rows.append((fact["filed"], int(fact["val"])))
+    rows.sort()
+    out = []
+    for filed, val in rows:
+        if not out or out[-1][1] != val:
+            out.append((filed, val))
+    return out
+
+
+def time_to_increase(history, proxy_date):
+    """(days, before, after, filed) for the first RISE after a proxy.
+
+    None when the ceiling has not risen since. The gap is measured to the
+    filing date of the report that first carries the higher number, which is
+    when a reader watching financial data rather than proxies would have
+    learned it. That is the comparison the whole idea rests on.
+    """
+    before = None
+    for filed, val in history:
+        if filed <= proxy_date:
+            before = val
+        elif before is not None and val > before:
+            days = (date.fromisoformat(filed) - date.fromisoformat(proxy_date)).days
+            return days, before, val, filed
+    return None
+
+
 def snippet(text, match, width=160):
     a = max(0, match.start() - width // 2)
     return " ".join(text[a:match.end() + width].split())
@@ -341,13 +388,48 @@ def main():
         print(f"  {ticker}: {len(rows)} filings, "
               f"{sum(1 for r in rows if is_proxy(r[0]))} proxy")
 
+    def report_leads(proposals):
+        """The number the build decision rests on, measured per proposal."""
+        print("\nHOW LONG BEFORE THE CEILING ACTUALLY MOVED")
+        print("Days from the proxy to the first filing carrying a HIGHER "
+              "authorized count,\nfrom XBRL rather than from any body text. "
+              "The S-3 and 424 columns above are\nnot this number: these "
+              "companies file both continuously, so 'the next S-3' is\nsoon "
+              "whatever the proxy said.")
+        gaps = []
+        for ticker, filed, _text, _url, _s3, _424 in proposals:
+            time.sleep(GAP)
+            history = authorized_history(ciks[ticker][0])
+            if not history:
+                print(f"  {ticker} {filed}: no CommonStockSharesAuthorized "
+                      f"tagged at all")
+                continue
+            got = time_to_increase(history, filed)
+            if not got:
+                current = history[-1][1]
+                print(f"  {ticker} {filed}: no rise since; still "
+                      f"{current:,} as of {history[-1][0]}")
+                continue
+            days, before, after, when = got
+            gaps.append(days)
+            print(f"  {ticker} {filed}: {before:,} -> {after:,} first seen "
+                  f"{when} — {days}d after the proxy")
+        if gaps:
+            gaps.sort()
+            mid = gaps[len(gaps) // 2]
+            print(f"\n  {len(gaps)} measured: median {mid}d, "
+                  f"min {gaps[0]}d, max {gaps[-1]}d")
+        return gaps
+
     if not census(rows_by_ticker):
         print("\nNo proxy statements at all. That is a fact about the source "
               "or the form\nmatching, not about the companies: a US listed "
               "issuer holding an annual\nmeeting files one. Check is_proxy "
               "before concluding anything.")
         return 0
-    read_proposals(rows_by_ticker, ciks)
+    proposals = read_proposals(rows_by_ticker, ciks)
+    if proposals:
+        report_leads(proposals)
     return 0
 
 
