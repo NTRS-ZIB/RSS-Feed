@@ -23,7 +23,9 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      # No dependencies: it uses urllib and page_text, both stdlib-only.
+      # The end-to-end section imports press_monitor, which needs these.
+      - name: Install dependencies
+        run: pip install feedparser requests
       - name: Probe
         timeout-minutes: 25
         env:

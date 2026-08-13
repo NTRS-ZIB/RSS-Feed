@@ -1147,6 +1147,54 @@ because the two states need different responses from a reader:
 It never raises. One scraper must not take down thirteen feeds and the EDGAR
 sweep with it, which is the isolation the whole repo is built on.
 
+### Proxies: the share ceiling, months before it moves
+
+`dilution.py` tracks shares **outstanding**. Nothing tracked the **ceiling**.
+`S-3` and `424` catch a raise once it is under way; a proxy proposing to lift
+the authorized count arrives long before either.
+
+**Measured 2026-08-13** with [`probe_proxy_shares.py`](../probe_proxy_shares.py),
+over 28 definitive proxies, two per company:
+
+| | |
+|---|---|
+| Proxies that mention authorized shares | **26 of 28** |
+| Proxies that PROPOSE raising the count | **7**, all genuine, none missed |
+| Days from proxy to a higher count in XBRL | **median 108** (63, 83, 108, 141, 167) |
+
+Every one of the five measured raises was substantial: WULF 600M→950M, APLD
+300M→400M then 400M→600M, CIFR 500M→1B, SLNH 75M→375M.
+
+**A proxy posts only if it proposes a rise.** That is unlike every other
+tracked form, and it is why `keep_proxy()` fetches the body: 26 of 28 mention
+authorized shares, so posting all proxies would bury the seven that matter
+under one or two a year per company saying nothing. It **fails closed** —
+unfetchable or unreadable means no post — which is the opposite of
+`carries_press_release()`, because the failure here would be posting "Proxy
+statement" with no reason to read it.
+
+**A reverse split is not a rise, and this is not a rare edge.** A reverse
+split cuts the issued count, so unissued headroom rises *relatively*, and
+proxies say so in words that read like a proposal. Two roster proxies carry
+it — BGDE 2025-09-04 and SLNH 2025-07-21 — and before the filter existed
+**one matched the rule and the other did not, on word order alone**. The rule
+was never really 7 of 8; it was a coin flip that landed well seven times.
+`INCREASE_IS_AN_EFFECT` names that language, and every candidate in a document
+is tested rather than the first, so a proxy proposing both a reverse split and
+a genuine increase still posts on the genuine one.
+
+Recall was measured over what the rule **rejected**, not what it accepted: 11
+near-misses across the rejected documents, all correctly declined — a
+company's constitutional power to alter share capital, an increase in the
+number of *directors*, two equity-plan share increases, and an executive's
+salary rise.
+
+**`DEFA14A` is not the proxy.** It is soliciting material: a vote reminder or
+a slide deck, often one or two thousand characters. A first run of the probe
+took the most recent filing matching `14A` and read 1,055 characters for CLSK
+believing it was a proxy. Prefix matching keeps them apart without a special
+case, because `DEFA14A` does not start with `DEF 14A`.
+
 ### Form 144: intent to sell, and a seller Section 16 cannot see
 
 The insider channel carries Forms 3 and 4, which report a sale **after** it

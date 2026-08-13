@@ -178,6 +178,13 @@ FORM_TYPES = [
     # amendment is often the sign it is about to be used.
     "S-1",
     "S-3",     # shelf registration
+    # Proxy statements, but ONLY posted when they propose raising the
+    # authorized share count — see proxy_title(). Prefix matching is
+    # safe: "DEFA14A" does not start with "DEF 14A", the fourth
+    # character being A rather than a space, so the soliciting material
+    # around a proxy is not swept in with it.
+    "DEF 14A",
+    "PRE 14A",
     "10-Q",    # quarterly financials
     "10-K",    # annual financials
     "20-F",    # annual, foreign private issuers
@@ -495,6 +502,8 @@ FORM_LABELS = {
     "6-K": "Foreign issuer report",
     "8-K": "Material event",
     "144": "Proposed insider sale",
+    "DEF 14A": "Proxy statement",
+    "PRE 14A": "Proxy statement (preliminary)",
 }
 
 
@@ -858,6 +867,10 @@ def collect_all(resolved):
                 # baseline_companies() keys on it and a display string is not
                 # an identifier.
                 "ticker": ticker,
+                # Needed by anything that reads the filing itself rather
+                # than the index entry: Form 144 detail, proxy proposals.
+                "cik": cik,
+                "primary": f.get("primary", ""),
             }
             title = filing_title(form, f["items"], f["description"])
 
@@ -865,8 +878,7 @@ def collect_all(resolved):
                 ins += 1
                 insider.append({**base, "form": form,
                                 "source": f"{name} ({ticker}) · Form {form}",
-                                "title": title,
-                                "cik": cik, "primary": f.get("primary", "")})
+                                "title": title})
             elif form_matches(form, FORM_TYPES):
                 kept += 1
                 press.append({**base, "form": form,
@@ -1874,8 +1886,72 @@ def within_age(item, now):
     return (item.get("published") or 0) >= now - MAX_AGE_DAYS * 86400
 
 
-def form_144_source(cik, accession, primary):
-    """The URL of a Form 144's SOURCE xml, not EDGAR's rendered view.
+# ------------------------------------------------------- PROXY SHARE CEILING
+#
+# Nothing else in this repo tracks the share CEILING. dilution.py tracks
+# shares outstanding; S-3 and 424 catch a raise once it is under way. A proxy
+# proposing to lift the authorized count precedes the ceiling actually moving
+# by a MEDIAN OF 108 DAYS (measured 2026-08-13 over five proposals: 63, 83,
+# 108, 141, 167), and it happens to roughly one roster company a year in four.
+# See probe_proxy_shares.py and docs/press-monitor.md.
+
+# THE PROPOSAL, not the description of existing capital stock. Every proxy
+# says how many shares are authorized; only some ask to change it. Measured
+# across 28 proxies: 26 mention it, 7 propose it.
+PROPOSES_INCREASE = re.compile(
+    r"(increase|amend\w*\s+\w{0,12}\s*to\s+increase)[^.]{0,120}?"
+    r"(number of authorized|authorized shares|authorized (?:shares of )?common)",
+    re.I | re.S)
+# A REVERSE SPLIT DOES NOT RAISE THE CEILING. It lowers the issued count, so
+# the unissued headroom rises RELATIVELY, and proxies describe that as an
+# effect in these words. Two roster proxies carry it; one matched the rule
+# above and one did not, on word order alone, so this is not a rare edge.
+INCREASE_IS_AN_EFFECT = re.compile(
+    r"reverse\s+(stock\s+)?split|relative(ly)?\s+(increase|amount)"
+    r"|increase\s+the\s+relative|but\s+unissued", re.I)
+EFFECT_WINDOW = 200
+# "from 500,000,000 to 1,000,000,000". Two of seven measured proposals carry
+# the pair close enough to read; the rest are still worth posting without it.
+AUTHORIZED_FROM_TO = re.compile(
+    r"from\s+([\d,]{7,})\s+(?:shares\s+)?to\s+([\d,]{7,})", re.I)
+PROXY_FORMS = ("DEF 14A", "PRE 14A")
+
+
+def proposes_increase(text):
+    """The match for a genuine proposal to raise the ceiling, or None.
+
+    EVERY candidate is tested, not just the first. A proxy that proposes a
+    reverse split AND an authorized increase is a common combination, and
+    rejecting the document on its first effect-qualified sentence would lose
+    the real proposal further down it.
+    """
+    for m in PROPOSES_INCREASE.finditer(text or ""):
+        around = text[max(0, m.start() - EFFECT_WINDOW):m.end() + EFFECT_WINDOW]
+        if not INCREASE_IS_AN_EFFECT.search(around):
+            return m
+    return None
+
+
+def proxy_title(text):
+    """The headline for a proxy proposing a higher ceiling, or "".
+
+    "" means this proxy is not proposing one and must not post at all. Unlike
+    every other form this component carries, a proxy is only interesting when
+    it says a particular thing: posting all of them would be one or two a
+    year per company saying nothing.
+    """
+    m = proposes_increase(text)
+    if not m:
+        return ""
+    pair = AUTHORIZED_FROM_TO.search(text[m.start():m.start() + 600])
+    if pair:
+        return (f"Proposes raising authorized shares: "
+                f"{pair.group(1)} -> {pair.group(2)}")
+    return "Proposes raising authorized shares"
+
+
+def filing_document(cik, accession, primary):
+    """The URL of a filing's SOURCE document, not EDGAR's rendered view.
 
     EDGAR's `primaryDocument` for a structured filing points at the
     XSL-rendered HTML. Parsing that as XML fails in a way that reads as "this
@@ -1885,10 +1961,22 @@ def form_144_source(cik, accession, primary):
     """
     parts = [p for p in (primary or "").split("/")
              if not p.lower().startswith("xsl")]
-    if not parts or not parts[-1].lower().endswith(".xml"):
+    if not parts:
         return ""
     return (f"https://www.sec.gov/Archives/edgar/data/{cik.lstrip('0')}/"
             f"{accession.replace('-', '')}/{'/'.join(parts)}")
+
+
+def form_144_source(cik, accession, primary):
+    """The URL of a Form 144's SOURCE xml, or "" if it is not xml.
+
+    Same stylesheet-stripping as `filing_document`, plus the requirement that
+    what is left is actually XML: a 144 whose primary document is HTML cannot
+    be parsed for seller and size, and no fetch is better than one whose
+    failure would read as a filing carrying no detail.
+    """
+    url = filing_document(cik, accession, primary)
+    return url if url.lower().endswith(".xml") else ""
 
 
 # Leaf elements of the Form 144 schema, read off a real filing rather than
@@ -1960,6 +2048,50 @@ def _as_number(text):
         return float(str(text).replace(",", ""))
     except (TypeError, ValueError):
         return None
+
+
+def keep_proxy(item):
+    """Whether this proxy proposes a higher ceiling, retitling it if so.
+
+    Unlike every other tracked form, a proxy is only worth posting when it
+    says a particular thing. Measured across 28 proxies, 26 mention authorized
+    shares and 7 propose raising the count, so posting them all would be one
+    or two a year per company saying nothing, and the seven that matter would
+    be buried among them.
+
+    Fetches the body, which is why this runs at the end of the candidate loop
+    rather than in `collect_all`: only an item that has already survived the
+    seen check, the baseline suppression and the age floor is worth a request.
+    Proxies are rare — under one a week across the roster.
+
+    FAILS CLOSED, which is the opposite of `carries_press_release`. A proxy
+    that cannot be fetched or read is not posted, because the alternative is
+    posting "Proxy statement" with no reason to read it, every time a fetch
+    fails. Nothing is lost that was not already invisible.
+    """
+    url = filing_document(item.get("cik", ""), item.get("accession", ""),
+                          item.get("primary", ""))
+    if not url:
+        return False
+    try:
+        r = requests.get(url, headers=sec_headers("www.sec.gov"),
+                         timeout=(8, 30))
+        time.sleep(0.15)
+        body = r.text if r.status_code == 200 else ""
+    except requests.RequestException as e:
+        print(f"  proxy: {type(e).__name__} for {item.get('ticker')}")
+        return False
+    title = proxy_title(page_text.extract_text(body))
+    if not title:
+        return False
+    item["title"] = title
+    # The same amber as an unannounced material filing, and for the same
+    # reason: a reader's prior on a main-channel post is that the company
+    # announced something, and a proposal to raise the share ceiling is
+    # filed rather than announced.
+    item["unannounced"] = True
+    print(f"  proxy: {item.get('ticker')} — {title}")
+    return True
 
 
 def enrich_144(items):
@@ -2380,6 +2512,12 @@ def main():
         # carries_press_release() first would defeat the whole change.
         if always_post_items(item):
             item["unannounced"] = True
+        elif str(item.get("form", "")).startswith(PROXY_FORMS):
+            # A proxy posts only if it proposes raising the share ceiling.
+            # keep_proxy fetches the body, so it sits last among these arms
+            # and after every filter above it.
+            if not keep_proxy(item):
+                continue
         elif PRESS_RELEASE_EXHIBIT_ONLY and item.get("form") in EXHIBIT_CHECK_FORMS:
             if not carries_press_release(item["form"], item.get("items", "")):
                 continue

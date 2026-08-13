@@ -375,6 +375,39 @@ def read_proposals(rows_by_ticker, ciks):
     return proposes
 
 
+def end_to_end(proposals, ciks, rows_by_ticker):
+    """Run press_monitor's OWN proxy chain against a real proposing proxy.
+
+    A dry run shows the monitor collects proxies, but it can only show it
+    posts one when a proxy is fresh enough to survive the age floor, and
+    these arrive once or twice a year per company. Everything between
+    collection and the post would otherwise be assumed: the URL built from
+    primaryDocument, the fetch, the extraction, the title, and the decision
+    to keep the item at all.
+    """
+    import press_monitor as pm                       # noqa: E402
+
+    if not proposals:
+        return
+    ticker, filed = proposals[0][0], proposals[0][1]
+    row = next((r for r in rows_by_ticker[ticker]
+                if r[1] == filed and r[0].upper().startswith(("DEF 14A",
+                                                              "PRE 14A"))), None)
+    if not row:
+        print("\nEND TO END: could not re-find the filing row")
+        return
+    item = {"ticker": ticker, "form": row[0], "accession": row[2],
+            "cik": ciks[ticker][0], "primary": row[3],
+            "title": pm.filing_title(row[0], "", "")}
+    print(f"\nEND TO END through press_monitor, on {ticker} {filed}")
+    print(f"  url:          {pm.filing_document(item['cik'], row[2], row[3])}")
+    print(f"  title before: {item['title']}")
+    kept = pm.keep_proxy(item)
+    print(f"  keep_proxy:   {kept}")
+    print(f"  title after:  {item['title']}")
+    print(f"  amber:        {item.get('unannounced', False)}")
+
+
 def main():
     if not UA:
         sys.exit("SEC_USER_AGENT is not set. Use: 'Your Name your@email.com'")
@@ -439,6 +472,7 @@ def main():
     proposals = read_proposals(rows_by_ticker, ciks)
     if proposals:
         report_leads(proposals)
+        end_to_end(proposals, ciks, rows_by_ticker)
     return 0
 
 

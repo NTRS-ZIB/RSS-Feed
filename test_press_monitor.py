@@ -262,7 +262,10 @@ def main():
           "NT is not itself a label key, so this must not fall through")
     check("an amendment is labelled as one",
           pm.form_label("10-Q/A").endswith("(amended)"))
-    check("an unknown form has no label", pm.form_label("DEF 14A") == "")
+    # Was DEF 14A until proxies became tracked. A check that names an
+    # "unknown" form has to be updated when that form stops being unknown,
+    # which is the check doing its job rather than a nuisance.
+    check("an unknown form has no label", pm.form_label("SC 13E3") == "")
 
     check("8-K item labels beat the SEC document label",
           pm.filing_title("8-K", "2.02", "8-K") == pm.ITEM_LABELS["2.02"])
@@ -287,9 +290,9 @@ def main():
     check("the form label wins over the description when both are present",
           pm.filing_title("10-Q", "", "10-Q") == pm.form_label("10-Q"))
     check("with no label it falls back to the description",
-          pm.filing_title("DEF 14A", "", "Proxy statement") == "Proxy statement")
+          pm.filing_title("SC 13E3", "", "Going private") == "Going private")
     check("with nothing at all it names the form",
-          pm.filing_title("DEF 14A", "", "") == "DEF 14A filing")
+          pm.filing_title("SC 13E3", "", "") == "SC 13E3 filing")
 
     print("\nFILING TIMESTAMPS")
     # filingDate is a DATE ONLY. Reading it alone puts publication at 00:00
@@ -596,6 +599,95 @@ def main():
     check("a zero float does not divide",
           pm.sale_title({"seller": "Jane Roe", "shares": "10",
                          "outstanding": "0"}) == "Proposed sale — Jane Roe: 10 sh")
+
+    print("\nPROXY: A PROPOSAL TO RAISE THE SHARE CEILING")
+    # The strings below are REAL, from the proxies named, via
+    # probe_proxy_shares.py run 31730368424. Invented proposal text would
+    # prove the rule can match text written to be matched.
+    real = {
+        "BKKT": "To approve an amendment of the Company's Certificate of "
+                "Incorporation to increase the number of authorized shares of "
+                "Class A Common Stock.",
+        "CIFR": "CHARTER AMENDMENT PROPOSAL - INCREASE IN AUTHORIZED SHARES "
+                "Purpose of the Charter Amendment We are asking you to adopt "
+                "an amendment",
+        "APLD": "the best interests of the Company and our stockholders to "
+                "amend the Articles to increase the number of authorized "
+                "shares of common stock.",
+    }
+    for ticker, text in sorted(real.items()):
+        check(f"a real {ticker} proposal is recognised",
+              bool(pm.proposes_increase(text)))
+
+    # THE ONE THAT WOULD HAVE POSTED WRONGLY. A reverse split does not raise
+    # the ceiling; it lowers the issued count so the unissued headroom rises
+    # relatively. This exact sentence matched the rule before the effect
+    # filter existed.
+    bgde = ("to issue, the proposed Reverse Stock Split Amendment would "
+            "result in a relative increase in the number of authorized and "
+            "unissued shares of our Common Stock.")
+    check("A REVERSE SPLIT IS NOT A PROPOSAL TO RAISE THE CEILING",
+          pm.proposes_increase(bgde) is None,
+          "the relative increase is an effect of the issued count falling")
+    # Same effect, opposite word order, from a different company. Before the
+    # filter, one of these matched and one did not, which is why the rule was
+    # never really seven of eight.
+    slnh = ("An additional effect of a Reverse Stock Split would be to "
+            "increase the relative amount of authorized but unissued shares "
+            "of common stock")
+    # A PIN RATHER THAN A TEST OF THE FILTER, and worth saying so. This
+    # phrasing is rejected because PROPOSES_INCREASE never matches it, not
+    # because INCREASE_IS_AN_EFFECT catches it: "authorized but unissued
+    # shares" is neither "authorized shares" nor "number of authorized".
+    # Breaking it takes two changes at once — widening the phrase list AND
+    # dropping the effect filter — which was measured rather than assumed.
+    # It earns its place by guarding against exactly that widening.
+    check("the same effect in the other word order is also rejected",
+          pm.proposes_increase(slnh) is None)
+
+    # Real near-misses the rule must keep rejecting, from the same run.
+    for name, text in [
+        ("an increase in DIRECTORS is not an increase in shares",
+         "Newly created directorships resulting from any increase in our "
+         "authorized number of directors or any vacancies in our Board"),
+        ("an equity plan increase is not a charter amendment",
+         "2021 Equity Incentive Plan to increase the number of shares of "
+         "Class A common stock authorized for issuance under the 2021 Plan"),
+        ("a constitutional power to alter capital is not a proposal",
+         "increase, reduce or eliminate the maximum number of shares that "
+         "the Company is authorized to issue"),
+    ]:
+        check(name, pm.proposes_increase(text) is None)
+
+    # A proxy proposing BOTH is common, and the real proposal must survive
+    # the reverse-split discussion sitting elsewhere in the same document.
+    both = bgde + (" x" * 300) + " " + real["APLD"]
+    check("a proposal survives a reverse split elsewhere in the document",
+          bool(pm.proposes_increase(both)),
+          "every candidate is tested, not just the first")
+
+    sized = ("to increase the number of authorized shares of common stock "
+             "from 500,000,000 to 1,000,000,000.")
+    check("the title carries the from and to when the proxy states them",
+          pm.proxy_title(sized)
+          == "Proposes raising authorized shares: 500,000,000 -> 1,000,000,000",
+          pm.proxy_title(sized))
+    check("the title still posts when no pair is stated",
+          pm.proxy_title(real["BKKT"]) == "Proposes raising authorized shares")
+    # "" is what stops a proxy posting at all, so it is load-bearing.
+    check("A PROXY THAT PROPOSES NOTHING GETS NO TITLE",
+          pm.proxy_title("We are authorized to issue 900,000,000 shares.") == "",
+          "26 of 28 proxies mention authorized shares; 7 propose a rise")
+    check("no body at all yields no title", pm.proxy_title("") == "")
+
+    check("the proxy forms are tracked",
+          pm.form_matches("DEF 14A", pm.FORM_TYPES)
+          and pm.form_matches("PRE 14A", pm.FORM_TYPES))
+    # DEFA14A is soliciting material — a vote reminder or a slide deck. It is
+    # not the statement, and the fourth character is what keeps it out.
+    check("SOLICITING MATERIAL IS NOT SWEPT IN WITH THE PROXY",
+          not pm.form_matches("DEFA14A", pm.FORM_TYPES),
+          "DEFA14A does not start with 'DEF 14A'")
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
