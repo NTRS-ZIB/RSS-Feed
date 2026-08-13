@@ -1147,6 +1147,55 @@ because the two states need different responses from a reader:
 It never raises. One scraper must not take down thirteen feeds and the EDGAR
 sweep with it, which is the isolation the whole repo is built on.
 
+### Critical: a source whose DATES break is silent in all three checks
+
+The failure above is loud because the item count goes to zero. There is a
+neighbouring one that is not: a source that keeps serving items and stops
+serving readable **dates**.
+
+Five paths mint a `published` of `0`. `entry_time()` returns it for a feed
+entry whose timestamp will not parse, and `scrape_hut8()`, `scrape_galaxy()`,
+`read_dgxx()` and `read_abtc()` each fall back to it when their own format
+string fails — `"%b %d, %Y"` and friends, against a CMS nobody here controls.
+
+A `0` reads as 1970, so `within_age()` drops the item as ancient. And
+`main()` marks items seen **before** the age floor runs, so the item is
+recorded as seen and can never return. One undated item is one release the
+channel never carries, and it is not retried.
+
+Three checks that exist to notice a broken source all pass it:
+
+| Check | Why it passes |
+|---|---|
+| `report_feed_health` | entries WERE returned; `feed_ok` is `True` |
+| `check_staleness` | all-zero timestamps are treated as no timestamps, so it logs nothing |
+| the scraper's own parse-failure line | the item count is normal; only the dates are gone |
+
+So a source can answer 200, return a full page of genuine releases, pass every
+health check the component has, and lose all of them permanently, with no line
+in any log. It is the HTTP-200 death by a different route.
+
+**Measured 2026-08-13, `probe_undated_items.py`: 0 of 223 items** across all
+sixteen feeds and all four scraped sources. Every item carried a date its
+source could produce and its reader could read. That is a measurement of the
+population, not a proof the path is dead: it says the drop costs nothing while
+the sources behave, and bites only when one breaks, which is exactly when it is
+least affordable.
+
+`undated_items()` now counts them per ticker and `undated_notice()` posts one
+ops line naming each source and its count, because the shape of the loss is the
+diagnosis: one item from one source is an odd release, while every item from
+one source is that source's date format having changed. The count is taken
+after the baseline suppression and before the age floor, over items that are
+still fresh, so each lost item is reported exactly once — on the next run it is
+seen, so it is not fresh, so it is not counted again. That is what stops a
+broken source raising the same notice every fifteen minutes forever.
+
+**It will report zero for a long time, and that is not a reason to delete it.**
+It is the same shape as `carries_press_release`'s no-items branch: a guard whose
+value is entirely in the case that has not happened yet. Re-run the probe rather
+than reasoning about it.
+
 ## Scaling
 
 **Requests per run: 28** — one submissions call per company (14), one per IR

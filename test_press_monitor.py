@@ -467,6 +467,47 @@ def main():
           not pm.within_age({"title": "no published key"}, now),
           "0 reads as 1970, against this component's post-twice bias")
 
+    print("\nUNDATED ITEMS")
+    # Measured 2026-08-13: 0 of 223 items across all twenty IR sources. So
+    # these checks guard a path that live data does not currently reach, which
+    # is exactly why fixtures are the only way to hold it.
+    dated = {"ticker": "MARA", "published": now}
+    no_key = {"ticker": "DGXX"}
+    zero = {"ticker": "DGXX", "published": 0}
+    check("an item with a timestamp is not counted",
+          pm.undated_items([dated]) == {})
+    # Both shapes reach the same place: entry_time RETURNS 0 rather than
+    # omitting the key, while a scraper may never set one.
+    check("a MISSING published key counts",
+          pm.undated_items([no_key]) == {"DGXX": 1})
+    check("a published of literally 0 counts",
+          pm.undated_items([zero]) == {"DGXX": 1},
+          "entry_time returns 0; the key is present and falsy")
+    check("counts aggregate per ticker",
+          pm.undated_items([zero, no_key, dated, {"ticker": "HUT"}])
+          == {"DGXX": 2, "HUT": 1},
+          "every item from one source is that source's format having changed")
+    check("an undated item with no ticker is still counted",
+          pm.undated_items([{"published": 0}]) == {"?": 1},
+          "an unattributable loss is still a loss")
+
+    check("no undated items yields no notice",
+          pm.undated_notice({}) == "",
+          "silence is the healthy signal")
+    # The line itself is never echoed into a detail: it carries the same
+    # warning emoji as the other ops notices, and printing that to a cp1252
+    # console raises, which would take the whole suite down rather than fail
+    # one check.
+    line = pm.undated_notice({"DGXX": 2, "HUT": 1})
+    check("the notice carries the TOTAL", "3 item(s)" in line,
+          "2 + 1, summed rather than restated")
+    check("the notice names every source and its count",
+          "DGXX 2" in line and "HUT 1" in line,
+          "the shape of the loss is the diagnosis, not the total")
+    check("the notice says the items cannot return",
+          "cannot return" in line,
+          "they are marked seen before the age floor drops them")
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0
