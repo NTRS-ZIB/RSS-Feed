@@ -183,9 +183,10 @@ def read_proposals(rows_by_ticker, ciks):
     targets.sort(key=lambda t: t[1], reverse=True)
     targets = targets[:MAX_DOCS]
 
-    print(f"\nREADING THE MOST RECENT PROXY FOR {len(targets)} COMPANIES")
+    print(f"\nREADING THE MOST RECENT DEFINITIVE PROXY FOR "
+          f"{len(targets)} COMPANIES")
     proposes, mentions, unreadable = [], 0, 0
-    for ticker, filed, acc, prim in targets:
+    for ticker, filed, acc, prim, form in targets:
         url = document_url(ciks[ticker][0], acc, prim)
         time.sleep(GAP)
         raw = fetch(url)
@@ -202,7 +203,10 @@ def read_proposals(rows_by_ticker, ciks):
         if says:
             mentions += 1
         hit = PROPOSES.search(text)
-        print(f"  {ticker} {filed}: {len(text):>7} chars, "
+        # The form and the size are printed because they are how a wrong
+        # document announces itself: a two-thousand-character "proxy" is a
+        # covering letter, not a statement.
+        print(f"  {ticker} {filed} {form:<8} {len(text):>7} chars, "
               f"mentions authorized={'yes' if says else 'no':<3} "
               f"proposes increase={'YES' if hit else 'no'}")
         if hit:
