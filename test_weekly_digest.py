@@ -194,21 +194,44 @@ def main():
           wd.period_published_in("202512a", wd.week_sessions(date(2025, 12, 29))),
           "its own year roll, not the 'b' half's")
 
-    # THE WEEKEND GAP, PINNED AS IT IS RATHER THAN AS IT SHOULD BE.
-    # The publication date is a bare calendar date and week_sessions spans
-    # Monday to Friday, so a period whose nominal publication date falls on a
-    # weekend is claimed by NO week, ever. Measured over 2026: 8 of 24 periods.
-    # That is a defect, recorded in docs/weekly-digest.md and deliberately not
-    # fixed on the test branch that found it. This check exists so that a fix
-    # HAS something to break: it must be updated, deliberately, when the
-    # arithmetic changes. Without it, two plausible fixes leave the suite green.
-    weekend_period = "202601a"                     # publishes 2026-01-31, a Saturday
+    # THE WEEKEND GAP, FIXED 2026-08-13 AND PINNED THE OTHER WAY ROUND.
+    # `sessions` is Monday to Friday, so a nominal publication date on a
+    # Saturday or Sunday fell between one week's Friday and the next week's
+    # Monday and was claimed by NO week at all -- permanently unsatisfiable
+    # rather than late. Measured when this suite found it: 8 of 24 half-month
+    # periods in 2026. The previous version of this check pinned that
+    # behaviour deliberately, so that a fix would have something to break.
+    # This is that fix, and this is the check it broke.
+    weekend_period = "202601a"                     # nominal 2026-01-31, a Saturday
     claimed = [m for m in (date(2026, 1, 5) + timedelta(days=7 * i)
                            for i in range(12))
                if wd.period_published_in(weekend_period, wd.week_sessions(m))]
-    check("A WEEKEND PUBLICATION DATE IS CLAIMED BY NO WEEK AT ALL",
-          claimed == [],
-          "current behaviour, and a defect: 8 of 24 periods in 2026")
+    check("A WEEKEND PUBLICATION DATE IS CLAIMED BY EXACTLY ONE WEEK",
+          len(claimed) == 1, f"claimed by {claimed}")
+    # Forward, not back. Rolling back to the Friday would claim the period in
+    # a week that ENDED BEFORE its nominal date, reporting data as available
+    # before it was; rolling forward claims it in a week where the file
+    # certainly exists.
+    check("it rolls FORWARD to the following Monday, never back",
+          claimed == [date(2026, 2, 2)],
+          f"nominal Sat 2026-01-31 -> claimed by {claimed}")
+
+    # THE PROPERTY, over the whole year rather than one example: every period
+    # is claimed, and none is claimed twice. A count alone would not separate
+    # "all fine" from "half of them silently invisible", which is exactly the
+    # state this component was in.
+    counts = []
+    for month in range(1, 13):
+        for half in "ab":
+            p = f"2026{month:02d}{half}"
+            n = sum(1 for i in range(60)
+                    if wd.period_published_in(
+                        p, wd.week_sessions(date(2025, 12, 29)
+                                            + timedelta(days=7 * i))))
+            counts.append((p, n))
+    check("EVERY 2026 PERIOD IS CLAIMED BY EXACTLY ONE WEEK, none by zero",
+          all(n == 1 for _, n in counts),
+          f"not exactly once: {[p for p, n in counts if n != 1]}")
 
     # Load-bearing beyond formatting: digest filenames sort lexically and the
     # renderer compares week keys as strings, so an unpadded week 9 would sort

@@ -1204,6 +1204,21 @@ def period_published_in(period, sessions):
         pub = date(year + (month == 12), month % 12 + 1, 1) - timedelta(days=1)
     else:
         pub = date(year + (month == 12), month % 12 + 1, 15)
+    # A NOMINAL PUBLICATION DATE ON A WEEKEND USED TO BE CLAIMED BY NO WEEK AT
+    # ALL. `sessions` is Monday to Friday, so a Saturday or Sunday fell in the
+    # gap between one week's Friday and the next week's Monday — permanently
+    # unsatisfiable rather than late. Measured over 2026 when the test suite
+    # found it: 8 of 24 half-month periods, a third of the year. The
+    # contributor then landed in "fetched but did not publish", which is the
+    # innocuous-looking one of the three states this component separates, and
+    # the convergence denominator was short by one for those weeks.
+    #
+    # Rolled FORWARD to the Monday rather than back to the Friday, so the
+    # period is claimed by a week in which the file certainly exists. Rolling
+    # back would claim it in a week that ended before the nominal date, which
+    # is the worse error: reporting data as available before it was.
+    if pub.weekday() >= 5:
+        pub += timedelta(days=7 - pub.weekday())
     return sessions[0] <= pub <= sessions[-1]
 
 
