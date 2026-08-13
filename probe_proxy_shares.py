@@ -164,11 +164,22 @@ def census(rows_by_ticker):
 
 def read_proposals(rows_by_ticker, ciks):
     """Stage 2 and 3: what the most recent proxy per company actually says."""
+    # THE STATEMENT ITSELF, NOT THE SOLICITING MATERIAL AROUND IT. A first
+    # run of this probe took the most recent filing matching "14A", which for
+    # most companies is a DEFA14A — a vote-reminder letter or a slide deck,
+    # commonly one or two thousand characters. It read 1,055 characters for
+    # CLSK and 1,411 for CIFR and reported that 1 of 15 proxies proposed an
+    # increase, which measured which document happened to be most recent
+    # rather than anything about proposals. The proposals live in the DEF 14A,
+    # or in the PRE 14A before it.
     targets = []
     for ticker, rows in rows_by_ticker.items():
-        proxies = sorted((r[1], r[2], r[3]) for r in rows if is_proxy(r[0]))
-        if proxies:
-            targets.append((ticker, *proxies[-1]))
+        for want in ("DEF 14A", "PRE 14A"):
+            hits = sorted((r[1], r[2], r[3]) for r in rows
+                          if r[0].upper() == want)
+            if hits:
+                targets.append((ticker, *hits[-1], want))
+                break
     targets.sort(key=lambda t: t[1], reverse=True)
     targets = targets[:MAX_DOCS]
 
