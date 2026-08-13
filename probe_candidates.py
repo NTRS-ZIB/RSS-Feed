@@ -83,18 +83,39 @@ def main():
     for row in index.values():
         by_ticker.setdefault(str(row.get("ticker", "")).upper(),
                              (str(row.get("cik_str")), row.get("title", "")))
-    print(f"  {len(by_ticker)} tickers in the index\n")
+    print(f"  {len(by_ticker)} tickers in the index")
+
+    # VALIDATE THE INSTRUMENT BEFORE TRUSTING ITS SILENCE. "Does not resolve"
+    # is this probe's most decisive verdict, and it is only meaningful if the
+    # index actually covers companies like the ones being asked about. The
+    # roster is the control: nineteen companies known to exist and known to
+    # file, several of them foreign private issuers. If some of THEM are
+    # missing, absence is a fact about the index rather than about a
+    # candidate, and a candidate that does not resolve has not been ruled out.
+    missing_roster = sorted(t for t in roster if t.upper() not in by_ticker)
+    print(f"  control: {len(roster) - len(missing_roster)} of {len(roster)} "
+          f"roster tickers resolve in it")
+    if missing_roster:
+        print(f"  ROSTER TICKERS THE INDEX DOES NOT CARRY: "
+              f"{', '.join(missing_roster)}")
+        print("  So a candidate that does not resolve has NOT been ruled out "
+              "by this probe.\n")
+    else:
+        print("  so a candidate missing from it is genuinely missing\n")
 
     cutoff = (date.today() - timedelta(days=RECENT_DAYS)).isoformat()
     for want in CANDIDATES:
         hit = by_ticker.get(want.upper())
         print(f"{want}")
         if not hit:
-            # The most decision-relevant answer there is: a ticker that does
-            # not resolve has been acquired, delisted or renamed, and adding
-            # it would create a record that matches nothing and says nothing.
-            print("  DOES NOT RESOLVE in EDGAR's ticker index — acquired, "
-                  "delisted or renamed. Do not add.\n")
+            # Deliberately does NOT say "acquired, delisted or renamed". The
+            # first version did, and that is a cause asserted from an absence:
+            # the index is built from cover-page data and need not carry every
+            # filer. Read this against the control line above, which says
+            # whether the index carries companies like these at all.
+            print("  DOES NOT RESOLVE in EDGAR's ticker index. That is a "
+                  "reason to look, not a verdict —\n  read the control line "
+                  "above before concluding anything.\n")
             continue
         cik, title = hit
         print(f"  CIK {cik.zfill(10)}  {title}")
