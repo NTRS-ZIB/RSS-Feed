@@ -136,8 +136,14 @@ usable items it falls back through `form_label`, then `description`, then
 
 ### `form_label`
 
-Longest matching prefix wins, and `/A` appends `(amended)`. Tests: a longer prefix
-beats a shorter one that also matches; an unknown form returns empty.
+Longest matching prefix wins, and `/A` appends `(amended)`. Tests: an unknown
+form returns empty; `/A` appends.
+
+**The longest-prefix check was asked for here and deliberately not written.** No
+two keys in `FORM_LABELS` form a prefix pair, so exercising the rule means adding
+one purely to be tested, and a fixture invented to satisfy a check tests the
+fixture. The test file records that in place. If a key is ever added that shadows
+another, the check becomes real and should be written then.
 
 ### `filed_time`
 
@@ -210,8 +216,13 @@ Tier 1 the mutation is named:
 - **form matching**: remove `SCHEDULE 13D` from `FORM_TYPES`, confirm the drift
   test fires, restore it. This exact demonstration was used when the detector was
   first built.
-- **`headers_for`**: empty `HOST_HEADERS`, confirm the override test fails,
-  restore it.
+- **`headers_for`**: make it return `IR_HEADERS` unconditionally, confirm the
+  override test fails, restore it. An earlier draft named emptying
+  `HOST_HEADERS` instead, and that mutation does not work: the test reads the
+  same dict to build its fixture, so it raises `KeyError` and aborts the run at
+  check 12 of 76 rather than failing check 12. The run still goes red, but a
+  mutation that crashes the harness demonstrates nothing about the check, and
+  a mutation must fail the check it names and no other.
 - **`check_staleness`**: drop the same-day collapse, confirm the collapse test
   fails, restore it.
 - **`suppress_cross_host`**: widen the match from exact title to substring,
@@ -228,13 +239,27 @@ check, because it reads as coverage.
 
 ## Out of scope
 
-The 20 functions that fetch, scrape, read a file or post: `sec_get_json`,
+Nineteen functions that fetch, scrape, read a file or post: `sec_get_json`,
 `company_filings`, `parse_feed`, `discover_feed`, the two scrapers, the two CMS
 readers, `collect_all`, `collect_ir`, `post`, `announcement_body`,
 `record_disclosed_dates`, `load_state`, `save_state`, `resolve_ciks`,
-`report_feed_health`, `_ops_notice`, `sec_headers`, `main`. Testing those needs
-mocking or fixtures of fetched payloads, which is a different technique and its
-own decision.
+`report_feed_health`, `_ops_notice`, `main`. Testing those needs mocking or
+fixtures of fetched payloads, which is a different technique and its own
+decision.
 
-This spec buys confidence in every decision the module makes offline. It does not
-buy confidence that the module fetches, parses or posts correctly.
+`sec_headers` makes 38. It is pure, and an earlier draft of this spec put it in
+the list above, which was simply wrong. It is out of scope for a different
+reason: it returns `SEC_USER_AGENT` straight from the environment, so a check on
+its output asserts what the runner was configured with rather than what the
+module decides. The one thing worth pinning — that it sends `Host` — is already
+enforced by six components failing at once when the value is wrong, which is the
+trap CLAUDE.md records.
+
+Two more decisions are pure but nested inside `main()` and so unreachable: the
+dedupe-by-accession fallback and the age floor. Reaching them means extracting
+them, which is a change to `press_monitor.py` and does not belong on a branch
+whose value rests on that file being byte-identical.
+
+This spec buys confidence in every offline decision the module exposes as a
+function. It does not buy confidence that the module fetches, parses or posts
+correctly, nor in the two decisions buried in `main()`.
