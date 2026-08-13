@@ -655,6 +655,242 @@ def main():
           "renderer-scanned detail key",
           key_collisions == {}, str(key_collisions))
 
+    print("\nCONTRIBUTOR RULES -- PRICE, VOLUME, CROSSINGS, FILINGS, LETTERS")
+    # Three arms each: firing, not-firing, no-data. Not five -- ten similar
+    # functions tested five ways each is padding, and padding is where checks
+    # that cannot fail come from (this repo's press_monitor suite the same
+    # week).
+    #
+    # THE NO-DATA ARM AND THE NOT-FIRING ARM ARE DIFFERENT STATES and get
+    # separate fixtures throughout: no-data means the ticker's own entry is
+    # missing from the source entirely (mirrors "not fetched" / "never
+    # returned a row for this company"); not-firing means the source
+    # answered for this ticker -- there is a real, sufficient series -- and
+    # the rule looked and declined to fire. Collapsing them into one empty
+    # fixture would prove nothing about a rule that runs and stays quiet.
+    #
+    # These five derive_* functions loop over the real wd.TICKERS (the
+    # roster), not over a roster passed by the caller, so the fixtures below
+    # key their data by an actual roster ticker rather than an invented one.
+    price_c = next(c for c in wd.CONTRIBUTORS if c["key"] == "price")
+    volume_c = next(c for c in wd.CONTRIBUTORS if c["key"] == "volume")
+    crossings_c = next(c for c in wd.CONTRIBUTORS if c["key"] == "crossings")
+    filings_c = next(c for c in wd.CONTRIBUTORS if c["key"] == "filings")
+    letters_c = next(c for c in wd.CONTRIBUTORS
+                     if c["key"] == "comment_letters")
+
+    cr_monday = date(2026, 7, 27)
+    cr_sessions = wd.week_sessions(cr_monday)
+    T = wd.TICKERS[0]
+
+    print("\nDERIVE_PRICE")
+    # Week return against the ticker's own trailing 12-week return dispersion
+    # (PRICE_SD_MULTIPLE = 2.0 x PRICE_BASELINE_WEEKS-week SD). 13 trailing
+    # Friday closes alternating 10.10/10.00 give a small, non-zero baseline
+    # SD (~1pt); the target week's close is what moves between the firing
+    # and not-firing fixtures.
+    price_baseline = [(cr_monday - timedelta(days=7 * i) + timedelta(days=4),
+                       10.10 if i % 2 else 10.00) for i in range(13, 0, -1)]
+
+    firing_price_rows = [(d, px, 1000.0) for d, px in price_baseline]
+    firing_price_rows.append((cr_sessions[-1], 20.00, 1000.0))
+    firing_price_src = wd.Source("bars")
+    firing_price_src.data = {T: firing_price_rows}
+    firing_price = wd.derive_price(price_c, {"bars": firing_price_src},
+                                   cr_monday, cr_sessions)[T]
+    check("a week return far past the trailing weekly-SD multiple is "
+          "NOTABLE",
+          firing_price["level"] == wd.NOTABLE
+          and firing_price["figure"] == "+98.0%",
+          firing_price)
+
+    routine_price_rows = [(d, px, 1000.0) for d, px in price_baseline]
+    routine_price_rows.append((cr_sessions[-1], 10.05, 1000.0))
+    routine_price_src = wd.Source("bars")
+    routine_price_src.data = {T: routine_price_rows}
+    routine_price = wd.derive_price(price_c, {"bars": routine_price_src},
+                                    cr_monday, cr_sessions)[T]
+    check("the identical baseline with an ordinary week return is ROUTINE, "
+          "not NOTABLE -- fetched, computed, did not cross the threshold",
+          routine_price["level"] == wd.ROUTINE
+          and routine_price["figure"] == "-0.5%",
+          routine_price)
+
+    nodata_price_src = wd.Source("bars")
+    nodata_price_src.data = {}
+    nodata_price = wd.derive_price(price_c, {"bars": nodata_price_src},
+                                   cr_monday, cr_sessions)[T]
+    check("a ticker with no bars at all is NOT_TESTABLE with basis 'no "
+          "bars' -- the source never returned a row for this company, "
+          "distinct from the routine fixture which is fully populated",
+          nodata_price["level"] == wd.NOT_TESTABLE
+          and nodata_price["basis"] == "no bars",
+          nodata_price)
+
+    print("\nDERIVE_VOLUME")
+    # Daily volume against a 30-session trailing MEDIAN, VOLUME_DAYS (3) of
+    # 5 sessions at >= VOLUME_MULTIPLE (2.0x) required to fire.
+    vol_prior = [(cr_monday - timedelta(days=i), 5.0, 1000.0)
+                for i in range(1, 45) if (cr_monday - timedelta(days=i)).weekday() < 5][:30]
+
+    firing_vol_week = [(cr_sessions[0], 5.0, 3000.0), (cr_sessions[1], 5.0, 3000.0),
+                       (cr_sessions[2], 5.0, 3000.0), (cr_sessions[3], 5.0, 500.0),
+                       (cr_sessions[4], 5.0, 500.0)]
+    firing_vol_src = wd.Source("bars")
+    firing_vol_src.data = {T: vol_prior + firing_vol_week}
+    firing_vol = wd.derive_volume(volume_c, {"bars": firing_vol_src},
+                                  cr_monday, cr_sessions)[T]
+    check("3 of 5 sessions at >= 2x the trailing 30-session median volume "
+          "is NOTABLE",
+          firing_vol["level"] == wd.NOTABLE and firing_vol["figure"] == "3.0x peak",
+          firing_vol)
+
+    routine_vol_week = [(d, 5.0, 1000.0) for d in cr_sessions]
+    routine_vol_src = wd.Source("bars")
+    routine_vol_src.data = {T: vol_prior + routine_vol_week}
+    routine_vol = wd.derive_volume(volume_c, {"bars": routine_vol_src},
+                                   cr_monday, cr_sessions)[T]
+    check("the identical baseline with every session at 1x the median is "
+          "ROUTINE -- fetched, computed, never crossed 2x",
+          routine_vol["level"] == wd.ROUTINE and routine_vol["figure"] == "1.0x peak",
+          routine_vol)
+
+    nodata_vol_src = wd.Source("bars")
+    nodata_vol_src.data = {}
+    nodata_vol = wd.derive_volume(volume_c, {"bars": nodata_vol_src},
+                                  cr_monday, cr_sessions)[T]
+    check("a ticker with no bars at all is NOT_TESTABLE with basis "
+          "'baseline 0/30 sessions' -- no series to build a median from, "
+          "distinct from the routine fixture's full 30-session baseline",
+          nodata_vol["level"] == wd.NOT_TESTABLE
+          and nodata_vol["basis"] == "baseline 0/30 sessions",
+          nodata_vol)
+
+    print("\nDERIVE_CROSSINGS")
+    # A 52-week high or low touched during the week, against a trailing
+    # window of at least CROSSINGS_MIN_BARS (60) prior bars.
+    cx_before_days = [cr_monday - timedelta(days=i) for i in range(1, 130)
+                      if (cr_monday - timedelta(days=i)).weekday() < 5][:60]
+
+    firing_cx_before = [(d, 10.0, 1.0) for d in cx_before_days]
+    firing_cx_src = wd.Source("bars")
+    firing_cx_src.data = {T: firing_cx_before
+                          + [(cr_sessions[0], 10.0, 1.0),
+                             (cr_sessions[1], 15.0, 1.0)]}
+    firing_cx = wd.derive_crossings(crossings_c, {"bars": firing_cx_src},
+                                    cr_monday, cr_sessions)[T]
+    check("a close above the trailing 60-bar window's high is NOTABLE as "
+          "a 52-week high",
+          firing_cx["level"] == wd.NOTABLE
+          and firing_cx["figure"] == f"52-week high 15.00 on {cr_sessions[1]}",
+          firing_cx)
+
+    routine_cx_before = [(d, 10.0 if i % 2 == 0 else 12.0, 1.0)
+                         for i, d in enumerate(cx_before_days)]
+    routine_cx_src = wd.Source("bars")
+    routine_cx_src.data = {T: routine_cx_before + [(cr_sessions[0], 11.0, 1.0)]}
+    routine_cx = wd.derive_crossings(crossings_c, {"bars": routine_cx_src},
+                                     cr_monday, cr_sessions)[T]
+    check("the identical window with a week close inside the trailing "
+          "high/low range is ROUTINE -- fetched, computed, touched "
+          "neither bound",
+          routine_cx["level"] == wd.ROUTINE, routine_cx)
+
+    nodata_cx_src = wd.Source("bars")
+    nodata_cx_src.data = {}
+    nodata_cx = wd.derive_crossings(crossings_c, {"bars": nodata_cx_src},
+                                    cr_monday, cr_sessions)[T]
+    check("a ticker with no bars at all is NOT_TESTABLE with basis "
+          "'0/60 bars minimum for a 52-week window' -- no window to "
+          "compare against, distinct from the routine fixture's full "
+          "60-bar window",
+          nodata_cx["level"] == wd.NOT_TESTABLE
+          and nodata_cx["basis"] == "0/60 bars minimum for a 52-week window",
+          nodata_cx)
+
+    print("\nDERIVE_FILINGS")
+    # Material filings (FILING_CLASSES in MATERIAL_CLASSES, or 8-K item codes
+    # in ALWAYS_POST_ITEMS) filed inside the week.
+    def mkfiling(form, filed):
+        return {"form": form, "filed": filed, "accepted": "", "items": "",
+                "description": "", "accession": "acc-1",
+                "url": "https://example.sec.gov/x"}
+
+    fl_in_week = cr_sessions[2].isoformat()
+
+    firing_fl_src = wd.Source("filings")
+    firing_fl_src.data = {T: [mkfiling("424B3", fl_in_week)]}
+    firing_fl = wd.derive_filings(filings_c, {"filings": firing_fl_src},
+                                  cr_monday, cr_sessions)[T]
+    check("a capital-class form (424B3) filed in the week is NOTABLE",
+          firing_fl["level"] == wd.NOTABLE and firing_fl["figure"] == "1 capital",
+          firing_fl)
+
+    routine_fl_src = wd.Source("filings")
+    routine_fl_src.data = {T: []}
+    routine_fl = wd.derive_filings(filings_c, {"filings": routine_fl_src},
+                                   cr_monday, cr_sessions)[T]
+    check("a ticker that was fetched and filed nothing this week is "
+          "ROUTINE, not the same state as an unfetched ticker",
+          routine_fl["level"] == wd.ROUTINE and routine_fl["figure"] == "0 filings",
+          routine_fl)
+
+    nodata_fl_src = wd.Source("filings")
+    nodata_fl_src.data = {}
+    nodata_fl = wd.derive_filings(filings_c, {"filings": nodata_fl_src},
+                                  cr_monday, cr_sessions)[T]
+    check("a ticker absent from the filings source entirely is "
+          "SOURCE_FAILED, not ROUTINE -- the EDGAR fetch never returned a "
+          "row for this company at all",
+          nodata_fl["level"] == wd.SOURCE_FAILED
+          and nodata_fl["basis"] == "EDGAR submissions fetch did not return",
+          nodata_fl)
+
+    print("\nDERIVE_LETTERS")
+    # SEC review correspondence (LETTER_FORMS: UPLOAD, CORRESP) released
+    # inside the week.
+    firing_lt_src = wd.Source("filings")
+    firing_lt_src.data = {T: [mkfiling("UPLOAD", fl_in_week)]}
+    firing_lt = wd.derive_letters(letters_c, {"filings": firing_lt_src},
+                                  cr_monday, cr_sessions)[T]
+    check("an UPLOAD (SEC staff letter) released in the week is NOTABLE",
+          firing_lt["level"] == wd.NOTABLE
+          and firing_lt["figure"] == f"SEC staff letter {fl_in_week}",
+          firing_lt)
+
+    routine_lt_src = wd.Source("filings")
+    routine_lt_src.data = {T: []}
+    routine_lt = wd.derive_letters(letters_c, {"filings": routine_lt_src},
+                                   cr_monday, cr_sessions)[T]
+    check("a ticker that was fetched and had no correspondence this week "
+          "is ROUTINE with count 0",
+          routine_lt["level"] == wd.ROUTINE
+          and routine_lt["detail"]["count"] == 0,
+          routine_lt)
+
+    nodata_lt_src = wd.Source("filings")
+    nodata_lt_src.data = {}
+    nodata_lt = wd.derive_letters(letters_c, {"filings": nodata_lt_src},
+                                  cr_monday, cr_sessions)[T]
+    check("a ticker absent from the filings source entirely is "
+          "SOURCE_FAILED, not ROUTINE",
+          nodata_lt["level"] == wd.SOURCE_FAILED
+          and nodata_lt["basis"] == "EDGAR submissions fetch failed",
+          nodata_lt)
+
+    print("\nFORM_IN")
+    # form_in(form, prefixes): EDGAR-style prefix match, any() over the
+    # prefix list. The no-data arm here is an empty prefix list -- there is
+    # nothing to test against, which is a different state from a non-empty
+    # prefix list that simply does not match this form.
+    check("a form matching one of several prefixes is True",
+          wd.form_in("SCHEDULE 13D", ["SC 13D", "SCHEDULE 13D"]) is True)
+    check("a form matching none of a real, non-empty prefix list is False",
+          wd.form_in("10-K", ["SC 13D", "SCHEDULE 13D"]) is False)
+    check("an empty prefix list is False -- no prefixes to test against, "
+          "not the same state as a real list that failed to match",
+          wd.form_in("10-K", []) is False)
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0
