@@ -269,9 +269,9 @@ ANY   W22 0/4  W23 0/5  W24 5/5  W25 4/4  W26 5/5  W27 4/4  W28 3/5  W29 0/5
 
 Five consecutive weeks listed, from a component that posts only on a change.
 
-## A publication date that falls on a weekend is never claimed by any week
+## A publication date that falls on a weekend was claimed by no week at all
 
-**Found 2026-08-13 while writing the test suite. Not yet fixed.**
+**Found and fixed 2026-08-13, on separate branches and in that order.**
 
 `period_published_in` computes a bare calendar publication date — month end for
 the `a` half, the 15th of the following month for `b` — and asks whether it
@@ -290,10 +290,24 @@ contributor lands in *fetched but did not publish* — the innocuous-looking one
 of the three states this component separates precisely so that this class of
 thing stays visible. No error, no log line.
 
-It was left alone deliberately: it was found on a branch whose rule was that
-the module under test must not change, because changing behaviour under cover
-of a test branch is how a regression ships unnoticed. The suite now pins the
-current arithmetic, so a fix has something to break.
+It was left alone at first, deliberately: it was found on a branch whose rule
+was that the module under test must not change, because changing behaviour
+under cover of a test branch is how a regression ships unnoticed. The suite
+shipped with a check pinning the defect as it was, precisely so that a fix
+would have something to break.
+
+**The fix rolls the nominal date FORWARD to the following Monday**, so the
+period is claimed by a week in which the file certainly exists. Rolling back
+to the preceding Friday would also close the gap and is the worse choice: it
+would claim the period in a week that ended before the nominal publication
+date, reporting data as available before it was.
+
+The check that pinned the defect was replaced by one that pins the fix, and
+two more were added: that the roll is forward rather than back, and that
+**every one of the 24 periods in 2026 is claimed by exactly one week** — none
+by zero, none by two. A count alone would not separate "all fine" from "half
+of them silently invisible", which is the state this was in. Restoring the
+original arithmetic turns all three red.
 
 ## Untested is not the same as working
 
