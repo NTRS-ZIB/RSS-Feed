@@ -36,10 +36,10 @@ jobs:
           python-version: "3.12"
       # requests is all the suites need, through test_earnings_dates.py's
       # earnings_calendar import. feedparser and matplotlib are for the import
-      # step below, which loads every module rather than only the tested six.
+      # step below, which loads every module rather than only the tested seven.
       - name: Install dependencies
         run: pip install requests feedparser matplotlib
-      # The six steps below are a hand-maintained list with no gate: add a
+      # The seven steps below are a hand-maintained list with no gate: add a
       # test_*.py and forget to list it here, and it never runs, silently.
       # That is the same silent-gap shape workflow-list-gate.yml exists to
       # prevent, one level down, so this checks the list against the repo's
@@ -57,8 +57,8 @@ jobs:
               sys.exit("Not run by this workflow: " + ", ".join(missing))
           print("All %d suites are run." % len(run))
           PY
-      # Only six files have suites. These two steps cover all 42, cheaply, and
-      # run first because they are the broader check: press_monitor.py is
+      # Only seven files have suites. These two steps cover all 43, cheaply,
+      # and run first because they are the broader check: watchlist.py is
       # imported by no suite at all, so before this a typo in it merged green.
       - name: Every module parses
         run: python -m py_compile *.py
