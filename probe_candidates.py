@@ -46,6 +46,24 @@ import watchlist
 # point of the probe is that none of them is trusted until it answers.
 CANDIDATES = ["RIOT", "CORZ", "BITF", "HIVE", "CRWV", "BTBT", "CANG"]
 
+# Newsroom URLs to test for a real feed, per candidate. EVERY `None` in
+# watchlist.py means a MEASURED absence of a feed, not an unexamined one —
+# the roster's closing comment says so in those words — so a record cannot
+# honestly be written with `None` until this has run and come back empty.
+#
+# Several URLs per company on purpose, and every one is REPORTED rather than
+# guessed at: a soft-404 answers 200 with the wrong content, so what decides
+# is how many entries actually parse, not the status code.
+FEED_CANDIDATES = {
+    "RIOT": [
+        "https://www.riotplatforms.com/news-events/press-releases",
+        "https://www.riotplatforms.com/news",
+        "https://ir.riotplatforms.com/news-events/press-releases",
+        "https://www.riotplatforms.com/rss/pressrelease.aspx",
+        "https://investors.riotplatforms.com/rss/pressrelease.aspx",
+    ],
+}
+
 UA = os.environ.get("SEC_USER_AGENT", "").strip()
 GAP = 0.15
 TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
@@ -145,7 +163,54 @@ def main():
               f"{newest[0]} {newest[1]}")
         print(f"  forms seen: {', '.join(kinds[:14])}")
         print()
+
+    if FEED_CANDIDATES:
+        feeds()
     return 0
+
+
+def feeds():
+    """Does this company's own newsroom carry a feed, measured not assumed.
+
+    Uses press_monitor's OWN parse_feed and discover_feed, so what is measured
+    is what the component would actually get rather than what a browser shows.
+    A URL answering 200 proves nothing on its own: a soft-404 does that too,
+    and this repo has already nearly posted two dead links to one. The entry
+    count is the answer.
+    """
+    import press_monitor as pm                       # noqa: E402
+
+    print("=" * 68)
+    print("NEWSROOM FEEDS — a None in watchlist.py must be a MEASURED absence")
+    print("=" * 68)
+    for ticker, urls in FEED_CANDIDATES.items():
+        print(f"\n{ticker}")
+        found = []
+        for url in urls:
+            time.sleep(GAP)
+            entries = pm.parse_feed(url)
+            note = ""
+            if not entries:
+                # Not a feed itself: ask whether the PAGE advertises one.
+                discovered = pm.discover_feed(url)
+                if discovered and discovered != url:
+                    time.sleep(GAP)
+                    entries = pm.parse_feed(discovered)
+                    note = f"  (via discovered {discovered})"
+                    if entries:
+                        url = discovered
+            print(f"  {len(entries):>3} entries  {url}{note}")
+            if entries:
+                newest = max((e.get("published", "") or "") for e in entries)
+                print(f"            newest entry: {newest or 'no timestamp'}")
+                found.append((url, len(entries)))
+        if found:
+            best = max(found, key=lambda r: r[1])
+            print(f"  -> USE {best[0]}  ({best[1]} entries)")
+        else:
+            print("  -> no feed on any URL tried. `ir_feed: None` would be a "
+                  "measured absence,\n     and the company then needs a "
+                  "scraper or CMS reader like HUT, GLXY, DGXX and ABTC.")
 
 
 if __name__ == "__main__":
