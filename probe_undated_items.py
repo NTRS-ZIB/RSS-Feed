@@ -177,9 +177,9 @@ def run_the_real_counter(items):
 
 def main():
     print("Sweeping IR feeds...")
-    feed_rows, feed_losses = sweep_feeds()
+    feed_rows, feed_losses, feed_items = sweep_feeds()
     print("\nSweeping scraped and CMS sources...")
-    scraped_rows, scraped_losses = sweep_scraped()
+    scraped_rows, scraped_losses, scraped_items = sweep_scraped()
 
     rows = feed_rows + scraped_rows
     losses = feed_losses + scraped_losses
