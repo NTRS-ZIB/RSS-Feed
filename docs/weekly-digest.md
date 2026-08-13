@@ -309,6 +309,20 @@ by zero, none by two. A count alone would not separate "all fine" from "half
 of them silently invisible", which is the state this was in. Restoring the
 original arithmetic turns all three red.
 
+**Verified against live data**, ten-week backfills on the fixed branch and on
+`main`, same sources minutes apart. Exactly one line of ten differs:
+
+```
+2026-W23  main   denominator 7 families (9/11)   converged: CIFR
+2026-W23  fixed  denominator 8 families (10/11)  converged: CIFR
+```
+
+That is `202605a`, nominal publication Sunday 2026-05-31, now rolled to Monday
+2026-06-01 and claimed by the week beginning that day. The nine other weeks are
+identical and **no company's verdict changed** in the sample. The correction is
+to the denominator the convergence threshold is measured against, which is what
+the denominator section above is about, not to any week's names.
+
 ## Untested is not the same as working
 
 **As of 2026-08-13 there is a suite**: `test_weekly_digest.py`, 113 checks over
