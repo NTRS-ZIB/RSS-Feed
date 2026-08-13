@@ -102,6 +102,16 @@ EFFECT_WINDOW = 200
 # the strict rule missed is visible instead of being absorbed into a "no".
 # A rule can only be shown to have good recall by looking at its negatives.
 LOOSE = re.compile(r"increase[^\n]{0,400}?authorized", re.I | re.S)
+# THE PROPOSAL LIST, printed for any document that produced a near-miss. A
+# near-miss is only adjudicable against what the meeting actually votes on: a
+# proxy that DISCUSSES authorized-but-unissued shares while proposing nothing
+# is a correct rejection, and one that lists an authorized-share increase as a
+# numbered proposal the rule declined is a false negative. Nothing in the
+# surrounding prose separates those two, which is why the first sweep left
+# two ABTC documents unadjudicated.
+PROPOSAL_LIST = re.compile(
+    r"proposal\s+(?:no\.?\s*)?(?:\d+|one|two|three|four|five|six|seven)\b[^.]{0,110}",
+    re.I)
 
 
 def fetch(url):
@@ -295,7 +305,7 @@ def read_proposals(rows_by_ticker, ciks):
     print(f"\nREADING THE MOST RECENT DEFINITIVE PROXY FOR "
           f"{len(targets)} COMPANIES")
     proposes, mentions, unreadable = [], 0, 0
-    truncated, misses = 0, []
+    truncated, misses, proposal_lists = 0, [], []
     for ticker, filed, acc, prim, form in targets:
         url = document_url(ciks[ticker][0], acc, prim)
         time.sleep(GAP)
@@ -326,7 +336,14 @@ def read_proposals(rows_by_ticker, ciks):
         if not hit and says:
             near = [snippet(text, m) for m in list(LOOSE.finditer(text))[:2]]
             for n in near:
-                misses.append((ticker, filed, n))
+                misses.append((ticker, filed, n, url))
+            if near:
+                votes = []
+                for m in PROPOSAL_LIST.finditer(text):
+                    one = " ".join(m.group(0).split())
+                    if one.lower() not in [v.lower() for v in votes]:
+                        votes.append(one)
+                proposal_lists.append((ticker, filed, votes[:12], url))
         if hit:
             proposes.append((ticker, filed, snippet(text, hit), url,
                              lead_days(rows_by_ticker[ticker], filed,
@@ -369,9 +386,20 @@ def read_proposals(rows_by_ticker, ciks):
           f"it called 'no'")
     print("A real proposal appearing below is a FALSE NEGATIVE and the rule "
           "is too narrow.\nBoilerplate below is the rule working.")
-    for ticker, filed, text in misses:
+    for ticker, filed, text, url in misses:
         print(f"\n  {ticker} {filed}")
         print(f"    {text}")
+        print(f"    {url}")
+
+    # WHAT THOSE MEETINGS ACTUALLY VOTED ON. Without this a near-miss can only
+    # be argued about; with it the question is answered by the document.
+    print("\nWHAT THOSE MEETINGS ACTUALLY VOTED ON")
+    for ticker, filed, votes, url in proposal_lists:
+        print(f"\n  {ticker} {filed}  {url}")
+        for v in votes:
+            print(f"    - {v}")
+        if not votes:
+            print("    (no numbered proposal language found)")
     return proposes
 
 
