@@ -54,12 +54,16 @@ SUBMISSIONS = "https://data.sec.gov/submissions/CIK%s.json"
 OLDER = "https://data.sec.gov/submissions/%s"
 ARCHIVE = "https://www.sec.gov/Archives/edgar/data/%s/%s/%s"
 
-# One document per company: the most recent proxy. Enough to answer whether
-# the language is recognisable; not a longitudinal study.
-MAX_DOCS = 19
-# Proxies run to megabytes. This is generous for the proposal summary, which
-# sits in the first pages, and keeps the extraction bounded.
-TEXT_LIMIT = 400_000
+# TWO proxies per company, not one. A single year gives fifteen documents and
+# four hits, and a precision figure off four hits is not a precision figure.
+# The second year mostly adds NEGATIVES, which is the point: recall is
+# measured by looking at what the rule rejected.
+PROXIES_PER_COMPANY = 2
+MAX_DOCS = 40
+# Was 400,000, and HUT and IREN both came back at exactly that, which is a
+# truncated read reported as a clean negative. Raised, and any document that
+# still reaches it is flagged rather than counted as a "no".
+TEXT_LIMIT = 1_500_000
 
 # THE PROPOSAL, not the description of existing capital stock. Every proxy
 # says how many shares are authorized; only some ask to change it.
@@ -74,6 +78,12 @@ MENTIONS = re.compile(r"authorized", re.I)
 # reading. Reported when present; its absence does not disqualify a hit.
 FROM_TO = re.compile(
     r"from\s+([\d,]{7,})\s+(?:shares\s+)?to\s+([\d,]{7,})", re.I)
+# THE RECALL INSTRUMENT. Deliberately far too loose to use as a rule: any
+# "increase" within 400 characters of "authorized". Run only over documents
+# the strict rule REJECTED, and printed rather than counted, so a proposal
+# the strict rule missed is visible instead of being absorbed into a "no".
+# A rule can only be shown to have good recall by looking at its negatives.
+LOOSE = re.compile(r"increase[^\n]{0,400}?authorized", re.I | re.S)
 
 
 def fetch(url):
@@ -178,7 +188,8 @@ def read_proposals(rows_by_ticker, ciks):
             hits = sorted((r[1], r[2], r[3]) for r in rows
                           if r[0].upper() == want)
             if hits:
-                targets.append((ticker, *hits[-1], want))
+                for filed, acc, prim in hits[-PROXIES_PER_COMPANY:]:
+                    targets.append((ticker, filed, acc, prim, want))
                 break
     targets.sort(key=lambda t: t[1], reverse=True)
     targets = targets[:MAX_DOCS]
@@ -186,6 +197,7 @@ def read_proposals(rows_by_ticker, ciks):
     print(f"\nREADING THE MOST RECENT DEFINITIVE PROXY FOR "
           f"{len(targets)} COMPANIES")
     proposes, mentions, unreadable = [], 0, 0
+    truncated, misses = 0, []
     for ticker, filed, acc, prim, form in targets:
         url = document_url(ciks[ticker][0], acc, prim)
         time.sleep(GAP)
@@ -205,10 +217,18 @@ def read_proposals(rows_by_ticker, ciks):
         hit = PROPOSES.search(text)
         # The form and the size are printed because they are how a wrong
         # document announces itself: a two-thousand-character "proxy" is a
-        # covering letter, not a statement.
+        # covering letter, not a statement. Truncation is flagged for the
+        # same reason — a cut-off read must not be counted as a clean "no".
+        cut = "  TRUNCATED" if len(text) >= TEXT_LIMIT else ""
+        if cut:
+            truncated += 1
         print(f"  {ticker} {filed} {form:<8} {len(text):>7} chars, "
               f"mentions authorized={'yes' if says else 'no':<3} "
-              f"proposes increase={'YES' if hit else 'no'}")
+              f"proposes increase={'YES' if hit else 'no'}{cut}")
+        if not hit and says:
+            near = [snippet(text, m) for m in list(LOOSE.finditer(text))[:2]]
+            for n in near:
+                misses.append((ticker, filed, n))
         if hit:
             proposes.append((ticker, filed, snippet(text, hit), url))
             pair = FROM_TO.search(text[hit.start():hit.start() + 600])
@@ -219,6 +239,9 @@ def read_proposals(rows_by_ticker, ciks):
           f"authorized shares, {len(proposes)} appear to PROPOSE an increase.")
     if unreadable:
         print(f"{unreadable} could not be read at all.")
+    if truncated:
+        print(f"{truncated} hit the extraction limit, so their 'no' is a "
+              f"truncated read rather than a clean negative.")
 
     if proposes:
         print("\nEVERY MATCH, IN ITS OWN WORDS — judge the rule on these, "
@@ -234,6 +257,17 @@ def read_proposals(rows_by_ticker, ciks):
               "It is not evidence that the language is unrecognisable, and "
               "not\nevidence the signal never fires — only that it is not "
               "firing now.")
+
+    # RECALL. Everything above measures what the rule accepted. This is the
+    # only part that can show what it wrongly rejected, and it is printed in
+    # full because a count of near-misses would say nothing at all.
+    print(f"\nWHAT THE RULE REJECTED: {len(misses)} loose hit(s) in documents "
+          f"it called 'no'")
+    print("A real proposal appearing below is a FALSE NEGATIVE and the rule "
+          "is too narrow.\nBoilerplate below is the rule working.")
+    for ticker, filed, text in misses:
+        print(f"\n  {ticker} {filed}")
+        print(f"    {text}")
     return proposes
 
 
