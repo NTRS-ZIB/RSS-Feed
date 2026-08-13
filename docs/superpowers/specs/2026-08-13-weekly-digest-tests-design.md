@@ -88,11 +88,29 @@ context and compare, rather than asserting a hard-coded number.
 half-month fail peaks to another; the renderer matched the first and read a
 field only the second carries.
 
-This is a structural check rather than a behavioural one: **no two contributors
-claim the same detail key**, asserted over `CONTRIBUTORS` and whatever the
-`derive_*` functions emit. It is the one check here that guards a class of
-future mistake rather than a past one, which is why it belongs in the suite
+This is a structural check rather than a behavioural one, and it guards a class
+of future mistake rather than a past one, which is why it belongs in the suite
 rather than only in the backfill's diagnostics.
+
+**Amended 2026-08-13, during Task 4.** This section first asked for "no two
+contributors claim the same detail key", asserted over everything the
+`derive_*` functions emit. **That property is false against correct shipped
+code**, and the module says so itself, in the backfill diagnostic: *"Shared is
+fine where the quantity is the same. Where it is not, rename — the name is all
+a renderer has."* Five keys are legitimately shared today — `count` and
+`accessions` between comment letters and holders, `forms` between filings and
+holders, `baseline_sessions` between short volume and volume, `sd_multiple`
+between price and short volume — in every branch that produces them.
+
+The real hazard is narrower and is the one the `baseline_median` incident went
+through: a key that `digest_render.md_detail` reads back **unscoped by
+contributor**. Those are the names where a collision silently returns another
+contributor's quantity. The check is scoped to that set, extracted from
+`md_detail`'s own source rather than hand-listed.
+
+Recorded because the spec was wrong in a specific way worth remembering: it
+asserted a tidier property than the design holds, and a check written from it
+would have failed against correct code and been "fixed" by loosening it.
 
 ### `check_post` and `mono_table`
 
