@@ -108,6 +108,19 @@ demonstrating the failure it prevents, with the guard removed. The drift
 detector below was validated that way — `SCHEDULE 13D` was taken back out of
 `FORM_TYPES` to confirm it flagged it.
 
+**The demonstration only counts if the fixture can reach the branch the check
+names, and the natural minimal fixture usually cannot.** Six checks written for
+`test_press_monitor.py` could not fail, all six the same shape: empty `items`
+reaches `carries_press_release`'s fail-open branch before the 6-K exemption
+matters; `10-K405` matches a tracked prefix before `DRIFT_IGNORE` is consulted;
+an empty `KEYWORDS` makes the matching arm of `passes_keywords` unreachable; one
+key cannot test a preference and one tag cannot test "first". Every one read as
+coverage in a green run, and every one came from the plan rather than from the
+implementation, so writing them carefully was not what caught them. **Name the
+one-line change to the module that turns the check red, then make that change
+and watch it.** A mutation that crashes the harness instead of failing the check
+has also shown nothing.
+
 **Identifiers come from data a component actually reads, never from a filing.** A
 filing is a lead to verify. The failure modes are not symmetric: a missing
 identifier shows up as an unexplained gap, while a wrong one silently attributes
