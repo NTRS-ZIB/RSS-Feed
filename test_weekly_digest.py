@@ -878,6 +878,208 @@ def main():
           and nodata_lt["basis"] == "EDGAR submissions fetch failed",
           nodata_lt)
 
+    print("\nCONTRIBUTOR RULES -- THRESHOLD, DILUTION, HOLDERS, SHORT INTEREST")
+    # Same three arms as the block above: firing, not-firing, no-data -- ten
+    # similar functions tested five ways each is padding, and padding is
+    # where checks that cannot fail come from.
+    threshold_c = next(c for c in wd.CONTRIBUTORS if c["key"] == "threshold_list")
+    dilution_c = next(c for c in wd.CONTRIBUTORS if c["key"] == "dilution")
+    holders_c = next(c for c in wd.CONTRIBUTORS if c["key"] == "holders")
+    short_interest_c = next(c for c in wd.CONTRIBUTORS
+                            if c["key"] == "short_interest")
+
+    print("\nDERIVE_THRESHOLD")
+    # Reg SHO threshold list, persistence-eligible (cadence DAILY). The
+    # no-data arm here is shaped differently from the other three: it is not
+    # "this ticker's own row is missing" but "no threshold file parsed for
+    # the whole week at all" -- fetch_threshold's own way of saying the
+    # parse failed for every settlement day, not just for one company.
+    th_days = [d.isoformat() for d in cr_sessions]
+
+    firing_th_days = {d: {} for d in th_days}
+    firing_th_days[th_days[0]] = {T: "0.50"}
+    firing_th_days[th_days[2]] = {T: "0.50"}
+    firing_th_src = wd.Source("threshold")
+    firing_th_src.data = {"by_day": firing_th_days,
+                          "flagged_totals": {d: 1 for d in th_days}}
+    firing_th = wd.derive_threshold(threshold_c, {"threshold": firing_th_src},
+                                    cr_monday, cr_sessions)[T]
+    check("listed on 2 of 5 settlement days this week is NOTABLE, carrying "
+          "a persistence claim",
+          firing_th["level"] == wd.NOTABLE
+          and firing_th["figure"]
+          == "on the threshold list 2 of 5 settlement days"
+          and firing_th["persistence"]
+          == {"hits": 2, "of": 5, "direction": "listed"},
+          firing_th)
+
+    routine_th_days = {d: {} for d in th_days}
+    routine_th_src = wd.Source("threshold")
+    routine_th_src.data = {"by_day": routine_th_days,
+                           "flagged_totals": {d: 1 for d in th_days}}
+    routine_th = wd.derive_threshold(threshold_c, {"threshold": routine_th_src},
+                                     cr_monday, cr_sessions)[T]
+    check("5 files parsed and this ticker never listed is ROUTINE -- "
+          "fetched, computed, never crossed onto the list; not the same "
+          "state as no files parsed at all",
+          routine_th["level"] == wd.ROUTINE
+          and routine_th["detail"]
+          == {"files_read": 5, "days_listed": 0, "dates": []},
+          routine_th)
+
+    nodata_th_src = wd.Source("threshold")
+    nodata_th_src.data = {"by_day": {}, "flagged_totals": {}}
+    nodata_th = wd.derive_threshold(threshold_c, {"threshold": nodata_th_src},
+                                    cr_monday, cr_sessions)[T]
+    check("no threshold file parsed for any settlement day this week is "
+          "SOURCE_FAILED for every ticker, not ROUTINE",
+          nodata_th["level"] == wd.SOURCE_FAILED
+          and nodata_th["basis"] == "no threshold file parsed for this week",
+          nodata_th)
+
+    print("\nDERIVE_DILUTION")
+    # THIS FIRING ARM HAS NEVER EXECUTED AGAINST REAL DATA. Measured across
+    # the ten-week backfill (190 ticker-weeks), only 3 ticker-weeks had a
+    # new XBRL share-count observation in the week at all, and the largest
+    # step among those three was HUT at +9.50% -- half a point under
+    # NOTABLE_STEP_PCT (10.0%). A fixture is the only way this branch has
+    # ever run, which is the argument for testing it at all, not a reason to
+    # skip it -- the same argument press_monitor.py records above
+    # carries_press_release's untested no-items branch.
+    dl_prior_date = (cr_monday - timedelta(days=30)).isoformat()
+
+    firing_dl_src = wd.Source("dilution")
+    firing_dl_src.data = {T: {"series": [
+        (dl_prior_date, 1000000, "10-Q"),
+        (cr_sessions[2].isoformat(), 1250000, "10-Q")],
+        "concept": "CommonStockSharesOutstanding"}}
+    firing_dl = wd.derive_dilution(dilution_c, {"dilution": firing_dl_src},
+                                   cr_monday, cr_sessions)[T]
+    check("a new share count stepping +25% against the 10% threshold is "
+          "NOTABLE (fabricated -- see the comment above; real data has "
+          "never crossed this line)",
+          firing_dl["level"] == wd.NOTABLE
+          and firing_dl["figure"] == "+25.0% to 1,250,000 shares",
+          firing_dl)
+
+    routine_dl_src = wd.Source("dilution")
+    routine_dl_src.data = {T: {"series": [
+        (dl_prior_date, 1000000, "10-Q"),
+        (cr_sessions[2].isoformat(), 1020000, "10-Q")],
+        "concept": "CommonStockSharesOutstanding"}}
+    routine_dl = wd.derive_dilution(dilution_c, {"dilution": routine_dl_src},
+                                    cr_monday, cr_sessions)[T]
+    check("the identical baseline with a +2% step is ROUTINE -- fetched, "
+          "computed, did not cross the threshold",
+          routine_dl["level"] == wd.ROUTINE and routine_dl["figure"] == "+2.0%",
+          routine_dl)
+
+    nodata_dl_src = wd.Source("dilution")
+    nodata_dl_src.data = {}
+    nodata_dl = wd.derive_dilution(dilution_c, {"dilution": nodata_dl_src},
+                                   cr_monday, cr_sessions)[T]
+    check("a ticker absent from the dilution source entirely is "
+          "SOURCE_FAILED, not ROUTINE -- the XBRL fetch never returned a "
+          "row for this company",
+          nodata_dl["level"] == wd.SOURCE_FAILED
+          and nodata_dl["basis"] == "XBRL fetch did not return",
+          nodata_dl)
+
+    print("\nDERIVE_HOLDERS")
+    # A >5% holder disclosure (SC/SCHEDULE 13D or 13G) filed inside the
+    # week. Cadence EVENT, so no persistence claim is possible here.
+    firing_hd_src = wd.Source("filings")
+    firing_hd_src.data = {T: [mkfiling("SCHEDULE 13D", fl_in_week)]}
+    firing_hd = wd.derive_holders(holders_c, {"filings": firing_hd_src},
+                                  cr_monday, cr_sessions)[T]
+    check("an initial SCHEDULE 13D filed in the week is NOTABLE",
+          firing_hd["level"] == wd.NOTABLE
+          and firing_hd["figure"] == "1 >5% disclosure, 1 initial",
+          firing_hd)
+
+    routine_hd_src = wd.Source("filings")
+    routine_hd_src.data = {T: []}
+    routine_hd = wd.derive_holders(holders_c, {"filings": routine_hd_src},
+                                   cr_monday, cr_sessions)[T]
+    check("a ticker that was fetched and filed no >5% disclosure this week "
+          "is ROUTINE, not the same state as an unfetched ticker",
+          routine_hd["level"] == wd.ROUTINE
+          and routine_hd["detail"]["count"] == 0,
+          routine_hd)
+
+    nodata_hd_src = wd.Source("filings")
+    nodata_hd_src.data = {}
+    nodata_hd = wd.derive_holders(holders_c, {"filings": nodata_hd_src},
+                                  cr_monday, cr_sessions)[T]
+    check("holders: a ticker absent from the filings source entirely is "
+          "SOURCE_FAILED, not ROUTINE",
+          nodata_hd["level"] == wd.SOURCE_FAILED
+          and nodata_hd["basis"] == "EDGAR submissions fetch failed",
+          nodata_hd)
+
+    print("\nDERIVE_SHORT_INTEREST")
+    # UNLIKE THE OTHER THREE, THIS FUNCTION HAS NO PER-TICKER SOURCE_FAILED
+    # BRANCH AT ALL. "the whole source never fetched" and "fetched, but no
+    # settlement published this week" both fall through the same
+    # `if not fresh` branch to ROUTINE -- consistent with this repo's rule
+    # that absence of data is a measurement, not a gap (see derive_ftd's
+    # zero-fails case), and with the twice-monthly cadence, where most
+    # weeks legitimately have nothing new to report. The no-data fixture
+    # below still gets its own setup rather than reusing the not-firing
+    # one, so a mutation breaking only one of the two paths is still caught.
+    si_settlement = "2026-07-15"
+    si_prior = "2026-06-15"          # publishes a different week (2026-06-22)
+    si_monday = wd.publication_week(si_settlement)
+    si_sessions = wd.week_sessions(si_monday)
+
+    firing_si_src = wd.Source("short_interest")
+    firing_si_src.data = {
+        si_prior: {T: {"current": 1000000.0, "revised": False,
+                       "split": False, "days_to_cover": 1.0,
+                       "change_pct": None}},
+        si_settlement: {T: {"current": 1300000.0, "revised": False,
+                            "split": False, "days_to_cover": 1.0,
+                            "change_pct": None}},
+    }
+    firing_si = wd.derive_short_interest(
+        short_interest_c, {"short_interest": firing_si_src},
+        si_monday, si_sessions)[T]
+    check("a settlement published this week at +30% against the prior "
+          "settlement is NOTABLE",
+          firing_si["level"] == wd.NOTABLE
+          and firing_si["figure"] == "+30% to 1,300,000 shares",
+          firing_si)
+
+    routine_si_src = wd.Source("short_interest")
+    routine_si_src.data = {
+        si_prior: {T: {"current": 1000000.0, "revised": False,
+                       "split": False, "days_to_cover": 1.0,
+                       "change_pct": None}},
+        si_settlement: {T: {"current": 1050000.0, "revised": False,
+                            "split": False, "days_to_cover": 1.0,
+                            "change_pct": None}},
+    }
+    routine_si = wd.derive_short_interest(
+        short_interest_c, {"short_interest": routine_si_src},
+        si_monday, si_sessions)[T]
+    check("the identical settlement with a +5% change is ROUTINE -- "
+          "fetched, computed, did not cross the 15% threshold",
+          routine_si["level"] == wd.ROUTINE
+          and routine_si["detail"]["change_pct"] == 5.0,
+          routine_si)
+
+    nodata_si_src = wd.Source("short_interest")
+    nodata_si_src.data = None
+    nodata_si = wd.derive_short_interest(
+        short_interest_c, {"short_interest": nodata_si_src},
+        si_monday, si_sessions)[T]
+    check("no settlement in the source at all is ROUTINE with basis 'no "
+          "settlement published this week' -- its own fixture, distinct "
+          "from the not-firing case above even though both are ROUTINE",
+          nodata_si["level"] == wd.ROUTINE
+          and nodata_si["basis"] == "no settlement published this week",
+          nodata_si)
+
     print("\nFORM_IN")
     # form_in(form, prefixes): EDGAR-style prefix match, any() over the
     # prefix list. The no-data arm here is an empty prefix list -- there is
