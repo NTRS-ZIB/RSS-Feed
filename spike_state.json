@@ -1,4 +1,6 @@
 {
  "date": "2026-08-13",
- "alerted": {}
+ "alerted": {
+  "IREN": 1.5
+ }
 }
