@@ -203,6 +203,15 @@ def feeds():
             if entries:
                 newest = max((e.get("published", "") or "") for e in entries)
                 print(f"            newest entry: {newest or 'no timestamp'}")
+                # WHAT IS IN IT, not just how much. A site-wide WordPress feed
+                # answers 200 with valid XML and carries blog posts rather
+                # than press releases, which is a different source wearing the
+                # right shape. DGXX's old feed is the recorded case: 20 valid
+                # items, nothing newer than months back, every check passed.
+                for e in entries[:8]:
+                    title = " ".join((e.get("title") or "").split())[:88]
+                    when = (e.get("published") or "")[:16]
+                    print(f"              {when:<17}{title}")
                 found.append((url, len(entries)))
         if found:
             best = max(found, key=lambda r: r[1])
