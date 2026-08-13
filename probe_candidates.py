@@ -44,7 +44,7 @@ import watchlist
 
 # Edit this before running. These are the candidates as of 2026-08-13; the
 # point of the probe is that none of them is trusted until it answers.
-CANDIDATES = ["RIOT", "CORZ", "BITF", "HIVE", "CRWV", "BTBT", "CANG"]
+CANDIDATES = ["CORZ"]
 
 # Newsroom URLs to test for a real feed, per candidate. EVERY `None` in
 # watchlist.py means a MEASURED absence of a feed, not an unexamined one —
@@ -55,12 +55,12 @@ CANDIDATES = ["RIOT", "CORZ", "BITF", "HIVE", "CRWV", "BTBT", "CANG"]
 # guessed at: a soft-404 answers 200 with the wrong content, so what decides
 # is how many entries actually parse, not the status code.
 FEED_CANDIDATES = {
-    "RIOT": [
-        "https://www.riotplatforms.com/news-events/press-releases",
-        "https://www.riotplatforms.com/news",
-        "https://ir.riotplatforms.com/news-events/press-releases",
-        "https://www.riotplatforms.com/rss/pressrelease.aspx",
-        "https://investors.riotplatforms.com/rss/pressrelease.aspx",
+    "CORZ": [
+        "https://investors.corescientific.com/news-events/press-releases",
+        "https://investors.corescientific.com/rss/pressrelease.aspx",
+        "https://www.corescientific.com/news",
+        "https://www.corescientific.com/feed/",
+        "https://ir.corescientific.com/news-events/press-releases",
     ],
 }
 
@@ -305,10 +305,22 @@ def feeds():
                     title = " ".join((e.get("title") or "").split())[:88]
                     when = (e.get("published") or "")[:16]
                     print(f"              {when:<17}{title}")
-                found.append((url, len(entries)))
+                found.append((url, len(entries), newest))
         if found:
-            best = max(found, key=lambda r: r[1])
-            print(f"  -> USE {best[0]}  ({best[1]} entries)")
+            # BY FRESHNESS, NOT BY COUNT. CORZ has two feeds: its investor
+            # newsroom, 10 entries and three days old, and a site-wide
+            # WordPress blog, 9 entries and SEVENTEEN MONTHS old, carrying
+            # "How HPC Hosting Saves Costs for Businesses" rather than any
+            # press release. Picking the larger got that right by one entry;
+            # a blog with twenty posts would have won. What separates them is
+            # recency, so that is what decides, with the count as a tie-break.
+            best = max(found, key=lambda r: (r[2], r[1]))
+            age = time.strftime("%Y-%m-%d", time.gmtime(best[2])) if best[2] else "?"
+            print(f"  -> USE {best[0]}")
+            print(f"     ({best[1]} entries, newest {age})")
+            for url, n, stamp in sorted(found, key=lambda r: -r[2])[1:]:
+                when = time.strftime("%Y-%m-%d", time.gmtime(stamp)) if stamp else "?"
+                print(f"     rejected: {url} ({n} entries, newest {when})")
         else:
             print("  -> no feed on any URL tried. `ir_feed: None` would be a "
                   "measured absence,\n     and the company then needs a "
