@@ -408,6 +408,65 @@ def main():
           pm.baseline_companies(state, ["NEW", "MARA"], every,
                                 today="2026-08-13") == ([], []))
 
+    print("\nWHAT COUNTS AS NEW, AND AS RECENT")
+    # These three were nested inside main() until 2026-08-13 and so could not
+    # be reached by any test, though all three decide what posts.
+
+    legacy = ("https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany"
+              "&CIK=0001507605&type=8-K&accession-number=0001507605-26-000042")
+    check("an accession is read out of a legacy uid",
+          pm.seen_accessions([legacy]) == {"0001507605-26-000042"},
+          "the half of the rename guard that reads OLD state")
+    # A uid with no accession segment must contribute NOTHING. Without the
+    # filter, rsplit returns the whole uid and a bare feed id lands in the
+    # set of accessions, where it can never match but is not obviously wrong.
+    check("a uid carrying no accession contributes nothing",
+          pm.seen_accessions([legacy, "https://ir.example.com/2026/q2"])
+          == {"0001507605-26-000042"},
+          "an IR feed id is not an accession")
+    # An empty-input check was written here and removed: seen_accessions([])
+    # is empty under every mutation of the function, so it could not fail.
+
+    seen = {"uid-a"}
+    accs = {"0001507605-26-000042"}
+    check("an item whose uid was seen is not unseen",
+          not pm.is_unseen({"uid": "uid-a"}, seen, accs))
+    # THE POINT OF THE SECOND IDENTIFIER. A new uid for a filing already
+    # posted is what a change of uid format looks like, and matching on the
+    # accession is what stops that reposting the entire history at once.
+    check("A NEW UID FOR AN ALREADY-SEEN ACCESSION IS NOT UNSEEN",
+          not pm.is_unseen(
+              {"uid": "reshaped-uid", "accession": "0001507605-26-000042"},
+              seen, accs),
+          "the flood this guard exists to prevent")
+    check("an item new by both identifiers is unseen",
+          pm.is_unseen({"uid": "uid-b", "accession": "0001507605-26-000099"},
+                       seen, accs))
+    check("an item with an empty uid is never unseen",
+          not pm.is_unseen({"uid": "", "accession": "0001507605-26-000099"},
+                           seen, accs),
+          "it could not be recorded, so it would post every run forever")
+    check("an item with no accession key at all is unseen",
+          pm.is_unseen({"uid": "uid-c"}, seen, accs),
+          "IR feed items have no accession and must not be filtered by one")
+
+    now = 1_700_000_000.0
+    day = 86400
+    check("an item published now is within the window",
+          pm.within_age({"published": now}, now))
+    check("an item older than MAX_AGE_DAYS is not",
+          not pm.within_age({"published": now - (pm.MAX_AGE_DAYS + 1) * day},
+                            now))
+    check("an item exactly on the boundary is within",
+          pm.within_age({"published": now - pm.MAX_AGE_DAYS * day}, now),
+          "the floor is inclusive")
+    # Documented rather than endorsed: an unparseable feed timestamp becomes
+    # 0 in entry_time, which reads here as 1970 and silently drops a real
+    # item. Changing that is a separate decision; this pins what it does now.
+    check("an item with NO timestamp is dropped, not kept",
+          not pm.within_age({"title": "no published key"}, now),
+          "0 reads as 1970, against this component's post-twice bias")
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0
