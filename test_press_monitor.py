@@ -103,39 +103,55 @@ def main():
           pm.headers_for("https://www.globenewswire.com/") is gnw)
 
     print("\nSTALENESS")
-    import time as _time
+    import io as _io, time as _time, contextlib as _ctx
+
+    def staleness_log(times, **kw):
+        """check_staleness RETURNS None ON EVERY PATH; it logs and returns.
+
+        So asserting on its return value cannot discriminate: `is None` is
+        true whether the horizon fired, the history was too short, or the
+        collapse was deleted. An earlier draft of this suite did exactly
+        that, and a mutation removing the same-day collapse passed it. The
+        log is the only observable, so the log is what these check.
+        """
+        buf = _io.StringIO()
+        with _ctx.redirect_stdout(buf):
+            pm.check_staleness("T", times, **kw)
+        return buf.getvalue()
+
     now = _time.time()
     day = 86400
 
-    # Fewer than STALE_MIN_DAYS distinct publication days: report a count,
-    # do not warn. Too little history and a dead source are different
-    # measurements and must never share a label.
-    out = pm.check_staleness("T", [now - day, now - 2 * day])
-    check("too little history returns without warning", out is None)
-
-    # Three items in one morning are ONE publication day. Measured on the
+    # Three releases in one morning are ONE publication event. Measured on
     # real data: HUT's median gap reads 5.5d uncollapsed and 18d collapsed,
     # so this is what makes the horizon mean anything.
-    same_day = [now - 1, now - 2, now - 3, now - 4, now - 5]
-    check("same-day items collapse, so five become too little history",
-          pm.check_staleness("T", same_day) is None,
-          "uncollapsed this would look like five days of history")
+    check("same-day items collapse to ONE publication day",
+          "1 publication day(s)" in staleness_log(
+              [now - 1, now - 2, now - 3, now - 4, now - 5]),
+          "uncollapsed these five would read as five days of history")
+    check("genuinely distinct days are counted as distinct",
+          "2 publication day(s)" in staleness_log([now - day, now - 2 * day]))
 
-    # A healthy source: daily items, newest today. Well inside any horizon.
-    fresh = [now - i * day for i in range(10)]
-    check("a fresh source returns quietly", pm.check_staleness("T", fresh) is None)
+    # Below STALE_MIN_DAYS it reports a COUNT rather than warning. Too little
+    # history and a dead source are different measurements.
+    check("too little history says so rather than warning",
+          "insufficient history" in staleness_log([now - day, now - 2 * day]))
 
-    # A dead source: ten daily items, but the newest is a year old. Median
-    # gap 1d, horizon max(6*1, 60) = 60d, age ~365d.
-    dead = [now - 365 * day - i * day for i in range(10)]
-    check("a source dead a year returns None rather than raising",
-          pm.check_staleness("T", dead) is None,
-          "it logs and returns; one dead source must not stop the sweep")
+    check("a fresh source logs NOTHING",
+          staleness_log([now - i * day for i in range(10)]) == "",
+          "silence is the healthy signal; a warning here would be noise")
 
-    check("no timestamps at all returns immediately",
-          pm.check_staleness("T", []) is None)
+    # Ten daily items whose newest is a year old: median gap 1d, so the
+    # horizon is the 60d floor rather than 6x1d, and age is ~365d.
+    dead = staleness_log([now - 365 * day - i * day for i in range(10)])
+    check("a source dead a year is called STALE", "STALE" in dead, dead[:60])
+    check("the log names the term that actually set the horizon",
+          "60d floor" in dead,
+          "a warning that cannot explain its threshold invites dismissal")
+
+    check("no timestamps at all logs nothing", staleness_log([]) == "")
     check("all-zero timestamps are treated as no timestamps",
-          pm.check_staleness("T", [0, 0]) is None)
+          staleness_log([0, 0]) == "")
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
