@@ -61,10 +61,9 @@ ARCHIVE = "https://www.sec.gov/Archives/edgar/data/%s/%s/%s"
 # 144 covers sales over the following three months, so a window shorter than
 # that would count a real pair as unmatched.
 MATCH_WINDOW_DAYS = 100
-# Bounds on the expensive half. Each sampled 144 costs one document fetch
-# plus one per candidate Form 4.
-MAX_SAMPLE = 25
-MAX_FOLLOWING = 15
+# Bound on the expensive half. Each sampled 144 costs one document fetch,
+# plus one index fetch per filer not seen before.
+MAX_SAMPLE = 40
 
 
 def fetch(url):
@@ -181,6 +180,18 @@ PERSON_LEAVES = {
 }
 
 
+def filer_cik(fields):
+    """The CIK of whoever FILED this, from the submission header.
+
+    Not the issuer: a Form 144 is filed by the selling person, and this
+    is the identifier that lets their own filing history be read.
+    """
+    for path, value in fields.items():
+        if path.endswith("filerCredentials/cik"):
+            return value.strip()
+    return ""
+
+
 def person_name(fields):
     """The name of the person the filing is about, or "" if absent."""
     for path, value in fields.items():
@@ -237,6 +248,8 @@ def lead_times(rows_by_ticker, ciks):
 
     print(f"\nLEAD TIME over the {len(sample)} most recent 144s")
     leads, unmatched, seen_names = [], collections.Counter(), []
+    person_index = {}          # filer CIK -> their whole filing index
+    today = date.today()
     for ticker, filed, acc, prim in sample:
         cik = ciks[ticker][0]
         time.sleep(GAP)
@@ -250,29 +263,51 @@ def lead_times(rows_by_ticker, ciks):
             unmatched["no name found in the 144"] += 1
             continue
         seen_names.append(f"{ticker} {filed} {raw_who}")
-        # Form 4s filed after this 144, nearest first.
-        following = sorted(
-            (r for r in rows_by_ticker[ticker]
-             if r[0].upper() in ("4", "4/A") and r[1] >= filed),
-            key=lambda r: r[1])[:MAX_FOLLOWING]
-        hit = None
-        for form4 in following:
-            time.sleep(GAP)
-            f4 = parse_xml(fetch(source_document(cik, form4[2], form4[3])))
-            if f4 is None:
-                continue
-            if norm_name(person_name(flatten(f4))) == who:
-                hit = form4
-                break
-        if hit is None:
-            unmatched["no Form 4 by the same person in window"] += 1
+
+        # THE FILER'S OWN CIK, from the 144's header. This is what makes the
+        # unmatched cases explainable rather than merely counted. An earlier
+        # version walked the issuer's next N Form 4s and fetched each one to
+        # read its owner: that capped the lookahead, and on a company filing
+        # 298 Form 4s the cap can span only days, so a real pair with a longer
+        # lead was indistinguishable from no pair at all.
+        #
+        # Intersecting the PERSON's own filing index with the issuer's
+        # accessions removes the cap entirely and costs one request per
+        # person rather than one per candidate filing.
+        filer = filer_cik(flatten(root))
+        if not filer:
+            unmatched["no filer CIK in the 144 header"] += 1
             continue
-        days = (date.fromisoformat(hit[1]) - date.fromisoformat(filed)).days
+        if filer not in person_index:
+            time.sleep(GAP)
+            person_index[filer] = all_filings(filer.zfill(10))
+        mine = person_index[filer]
+        if not mine:
+            unmatched["the filer's own index could not be read"] += 1
+            continue
+
+        issuer_form4 = {r[2]: r[1] for r in rows_by_ticker[ticker]
+                        if r[0].upper() in ("4", "4/A")}
+        # Their Form 4s FOR THIS ISSUER: same accession in both indexes.
+        theirs = sorted((issuer_form4[r[2]], r[2]) for r in mine
+                        if r[0].upper() in ("4", "4/A") and r[2] in issuer_form4)
+        after = [(d, a) for d, a in theirs if d >= filed]
+        if not after:
+            age = (today - date.fromisoformat(filed)).days
+            if theirs:
+                unmatched[f"no Form 4 since; last was {theirs[-1][0]}"] += 1
+                print(f"  {ticker}  144 {filed}  NO SALE REPORTED "
+                      f"({age}d ago; this filer's last Form 4 {theirs[-1][0]})")
+            else:
+                unmatched["this filer has never filed a Form 4 here"] += 1
+                print(f"  {ticker}  144 {filed}  NO FORM 4 EVER by this filer")
+            continue
+        days = (date.fromisoformat(after[0][0]) - date.fromisoformat(filed)).days
         if days > MATCH_WINDOW_DAYS:
-            unmatched["match was beyond the window"] += 1
+            unmatched[f"next Form 4 was {days}d later, beyond the window"] += 1
             continue
         leads.append(days)
-        print(f"  {ticker}  144 {filed} -> form 4 {hit[1]}  {days:>3}d")
+        print(f"  {ticker}  144 {filed} -> form 4 {after[0][0]}  {days:>3}d")
 
     if leads:
         leads.sort()
