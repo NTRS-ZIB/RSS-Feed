@@ -63,8 +63,8 @@ ARCHIVE = "https://www.sec.gov/Archives/edgar/data/%s/%s/%s"
 MATCH_WINDOW_DAYS = 100
 # Bounds on the expensive half. Each sampled 144 costs one document fetch
 # plus one per candidate Form 4.
-MAX_SAMPLE = 12
-MAX_FOLLOWING = 12
+MAX_SAMPLE = 25
+MAX_FOLLOWING = 15
 
 
 def fetch(url):
@@ -165,18 +165,26 @@ def flatten(node, prefix="", out=None):
     return out
 
 
-def person_name(fields):
-    """The filing person's name, from whatever the schema happens to call it.
+# The exact leaf elements that name the person, one per form, read off the
+# schema dump rather than guessed.
+#
+# A TOLERANT VERSION OF THIS RETURNED A CLEAN, WRONG ZERO. It skipped any
+# path containing "issuer" and took the first leaf ending in "name" — but
+# Form 144 nests the seller inside `issuerInfo`, so the skip removed the
+# right answer and the fallback found `brokerOrMarketmakerDetails/name`. The
+# probe then compared a brokerage against Form 4 owner names, matched
+# nothing, and reported "no Form 4 by the same person in window: 12", which
+# reads as a finding about insiders rather than a bug in the extractor.
+PERSON_LEAVES = {
+    "nameOfPersonForWhoseAccountTheSecuritiesAreToBeSold",   # Form 144
+    "rptOwnerName",                                          # Forms 3, 4, 5
+}
 
-    Tolerant on purpose: the exact element names are printed by the schema
-    dump above, and this is written to survive them differing between the
-    144 and the Form 4 without a table of every variant.
-    """
+
+def person_name(fields):
+    """The name of the person the filing is about, or "" if absent."""
     for path, value in fields.items():
-        low = path.lower()
-        if "issuer" in low:
-            continue
-        if low.endswith("name") or "ownername" in low or "personname" in low:
+        if path.rsplit("/", 1)[-1] in PERSON_LEAVES:
             return value
     return ""
 
@@ -228,7 +236,7 @@ def lead_times(rows_by_ticker, ciks):
             print(f"    {path} = {value[:70]}")
 
     print(f"\nLEAD TIME over the {len(sample)} most recent 144s")
-    leads, unmatched = [], collections.Counter()
+    leads, unmatched, seen_names = [], collections.Counter(), []
     for ticker, filed, acc, prim in sample:
         cik = ciks[ticker][0]
         time.sleep(GAP)
@@ -236,10 +244,12 @@ def lead_times(rows_by_ticker, ciks):
         if root is None:
             unmatched["144 would not parse"] += 1
             continue
-        who = norm_name(person_name(flatten(root)))
+        raw_who = person_name(flatten(root))
+        who = norm_name(raw_who)
         if not who:
             unmatched["no name found in the 144"] += 1
             continue
+        seen_names.append(f"{ticker} {filed} {raw_who}")
         # Form 4s filed after this 144, nearest first.
         following = sorted(
             (r for r in rows_by_ticker[ticker]
@@ -271,6 +281,11 @@ def lead_times(rows_by_ticker, ciks):
               f"same-day {sum(1 for d in leads if d == 0)}")
     for reason, n in unmatched.most_common():
         print(f"  unmatched, {reason}: {n}")
+    # The names actually compared. A silently wrong extractor is the failure
+    # mode this whole section had on its first run, and a count alone hid it.
+    print("\n  names read from the 144s:")
+    for line in seen_names:
+        print(f"    {line}")
 
 
 def main():
