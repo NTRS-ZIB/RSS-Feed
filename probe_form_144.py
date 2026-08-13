@@ -357,6 +357,39 @@ def lead_times(rows_by_ticker, ciks):
         print(f"    {line}")
 
 
+def end_to_end(rows_by_ticker, ciks):
+    """Run press_monitor's OWN chain over the most recent real Form 144.
+
+    WHY THIS IS HERE. A dry run proves the monitor COLLECTS 144s, but it can
+    only prove it posts them when one is fresh enough to survive the age
+    floor, and the newest may be weeks old. Everything between collection and
+    the post — the primaryDocument the index returns, the source URL built
+    from it, the fetch, the parse, the title — would then be assumed rather
+    than confirmed, and an entry that matches nothing looks exactly like one
+    whose filings never occur.
+
+    So this drives the real functions against a real filing, on demand.
+    """
+    import press_monitor as pm                       # noqa: E402
+
+    newest = None
+    for ticker, rows in rows_by_ticker.items():
+        for form, filed, acc, prim in rows:
+            if is_144(form) and (newest is None or filed > newest[1]):
+                newest = (ticker, filed, acc, prim)
+    if not newest:
+        return
+    ticker, filed, acc, prim = newest
+    item = {"ticker": ticker, "form": "144", "accession": acc,
+            "cik": ciks[ticker][0], "primary": prim,
+            "title": pm.filing_title("144", "", "")}
+    print(f"\nEND TO END through press_monitor, on {ticker} {filed}")
+    print(f"  source url:  {pm.form_144_source(item['cik'], acc, prim)}")
+    print(f"  title before: {item['title']}")
+    pm.enrich_144([item])
+    print(f"  title after:  {item['title']}")
+
+
 def main():
     if not UA:
         sys.exit("SEC_USER_AGENT is not set. Use: 'Your Name your@email.com'")
@@ -380,6 +413,7 @@ def main():
               "indistinguishable from a form whose filings never occur.")
         return 0
     lead_times(rows_by_ticker, ciks)
+    end_to_end(rows_by_ticker, ciks)
     return 0
 
 
