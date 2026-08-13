@@ -42,8 +42,12 @@ noticed missing.
 
 - `form_matches("8-K/A", ["8-K"])` is true. Prefix matching handles amendments and
   is not the bug.
-- `"SCHEDULE 13D".startswith("SC 13D")` is **false**. The whole incident in one
-  line, and it belongs in the suite as a bare fact about the language.
+- `form_matches("SCHEDULE 13D", ["SC 13D"])` is **false**. The whole incident in
+  one line, asked of the module rather than of Python. A first draft asserted
+  `"SCHEDULE 13D".startswith("SC 13D")` directly, which is a fact about the
+  language: true regardless of what `press_monitor` does, and therefore a check
+  that could never fail. Calling `form_matches` fails if anyone makes it fuzzy or
+  substring-based in an attempt to survive the next rename.
 - `form_core("SC 13D/A") == "SC13D"`.
 - `drift_candidates` flags `SCHEDULE 13D` against a tracked `SC 13D` **without
   knowing the new spelling in advance**, which is the property that serves the
