@@ -1,0 +1,30 @@
+name: Probe form 144
+
+# Maintenance tool, not a component. Read-only: walks each issuer's full EDGAR
+# filing index, counts Form 144 filings, and measures how far ahead of the
+# matching Form 4 they arrive. Prints and exits. No webhook, no state, no
+# commit, no schedule.
+#
+# Run it before adding 144 to FORM_TYPES or to the insider channel. See
+# probe_form_144.py.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Probe
+        timeout-minutes: 20
+        env:
+          PYTHONUNBUFFERED: "1"
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: python -u probe_form_144.py
