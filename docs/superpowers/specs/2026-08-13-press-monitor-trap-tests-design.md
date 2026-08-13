@@ -260,6 +260,21 @@ dedupe-by-accession fallback and the age floor. Reaching them means extracting
 them, which is a change to `press_monitor.py` and does not belong on a branch
 whose value rests on that file being byte-identical.
 
+**Done 2026-08-13, as a follow-up once this branch had merged.** Three, not
+two: reading the code turned up the derivation of the accession set itself,
+which is the other half of the same rename guard. They are now `is_unseen`,
+`within_age` and `seen_accessions`, with eleven checks, so the module has 21
+tested pure functions and no decision left inside `main()`.
+
+Extracting them made one of them legible for the first time. `within_age`
+DROPS an item carrying no timestamp: the value falls to `0`, which reads as
+1970 rather than as undated, and `entry_time` returns exactly that `0` for a
+feed entry whose timestamp will not parse. That runs against this component's
+bias everywhere else, which is to post twice rather than lose something real.
+The behaviour is unchanged and now pinned by a check; whether it is right is a
+separate question, needing a measurement of how often that `0` actually
+occurs.
+
 This spec buys confidence in every offline decision the module exposes as a
 function. It does not buy confidence that the module fetches, parses or posts
 correctly, nor in the two decisions buried in `main()`.

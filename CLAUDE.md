@@ -121,6 +121,15 @@ one-line change to the module that turns the check red, then make that change
 and watch it.** A mutation that crashes the harness instead of failing the check
 has also shown nothing.
 
+**Delete `__pycache__` between mutations, or the run measures the previous
+one.** CPython invalidates cached bytecode on the source's mtime and size, so
+two mutations that remove the same number of characters within the same second
+are indistinguishable to it and the second run silently re-executes the first.
+That happened here: two 28-character deletions, and the second mutation
+reported the first one's failing check. The wrong answer looks exactly like a
+real measurement, which is the whole problem — read the mutated file back and
+clear the cache before running.
+
 **Identifiers come from data a component actually reads, never from a filing.** A
 filing is a lead to verify. The failure modes are not symmetric: a missing
 identifier shows up as an unexplained gap, while a wrong one silently attributes

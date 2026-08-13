@@ -1806,6 +1806,63 @@ def entry_form(entry, fallback=""):
     return fallback
 
 
+def seen_accessions(seen_uids):
+    """The accession numbers inside a state file's seen ids.
+
+    A uid is only meaningful to the source that minted it, so if the shape of
+    a uid ever changes, every historical filing looks new at once and the
+    channel gets a flood. The accession number does not change: it is the
+    SEC's own identifier for a filing, and `filing_uid` holds the Atom-era
+    format for the same reason.
+
+    So this is the second half of that guard. `filing_uid` keeps the format
+    stable going forwards; this reads the accession back out of whatever ids
+    the state file already holds, so a uid that has changed shape still
+    matches on its accession. Ids with no accession segment are dropped rather
+    than contributing a bare uid, which would match nothing and cost a lookup.
+    """
+    return {u.rsplit("accession-number=", 1)[-1]
+            for u in seen_uids if "accession-number=" in u}
+
+
+def is_unseen(item, seen_uids, accessions):
+    """Whether this item has never been posted, by uid OR by accession.
+
+    Two independent identifiers, because either alone has a failure mode. A
+    uid alone reposts everything if the uid format changes; an accession alone
+    covers only EDGAR, since IR feed items have none.
+
+    An item with no uid is never new. That is the conservative arm: an item we
+    cannot record as seen would post on every run forever, so it is dropped
+    instead. `item["uid"]` is indexed rather than fetched with `.get` because
+    every collector sets the key, and an item missing it is a bug in a
+    collector that should be loud rather than silently filtered.
+    """
+    if not item["uid"] or item["uid"] in seen_uids:
+        return False
+    return item.get("accession") not in accessions
+
+
+def within_age(item, now):
+    """Whether this item is inside the posting window.
+
+    The floor is absolute: an item older than MAX_AGE_DAYS never posts however
+    few items there are, because a backlog arriving at once is how a source
+    that has been quiet for a month announces itself, and posting it reads as
+    a month of news breaking today.
+
+    **An item with no timestamp is dropped, not kept.** It falls to `0`, which
+    is 1970, so it reads as ancient rather than as undated. This is worth
+    knowing because it runs against the bias everywhere else in this component,
+    which is to post twice rather than drop something real, and because
+    `entry_time` returns exactly that `0` for a feed entry whose timestamp will
+    not parse. So a parse failure silently costs a real item. It is current
+    behaviour and this refactor keeps it; changing it is a separate decision
+    that needs a measurement of how often that `0` actually occurs.
+    """
+    return (item.get("published") or 0) >= now - MAX_AGE_DAYS * 86400
+
+
 def passes_keywords(item):
     if not KEYWORDS:
         return True
@@ -2029,8 +2086,7 @@ def main():
     seen = set(state["seen"])
     # Older state may hold ids in a different shape. Index by accession number
     # so a change of data source can't make every historical filing look new.
-    seen_accessions = {u.rsplit("accession-number=", 1)[-1]
-                       for u in state["seen"] if "accession-number=" in u}
+    accessions = seen_accessions(state["seen"])
 
     resolved = {}
     if TICKERS:
@@ -2053,13 +2109,9 @@ def main():
         print("WEBHOOK_URL_INSIDER not set — skipping insider channel.")
 
     all_items = items + insider_items
-    def is_new(i):
-        if not i["uid"] or i["uid"] in seen:
-            return False
-        return i.get("accession") not in seen_accessions
-
-    fresh = [i for i in items if is_new(i)]
-    insider_fresh = [i for i in insider_items if is_new(i)]
+    fresh = [i for i in items if is_unseen(i, seen, accessions)]
+    insider_fresh = [i for i in insider_items
+                     if is_unseen(i, seen, accessions)]
     print(f"{len(all_items)} items seen, {len(fresh)} new, "
           f"{len(insider_fresh)} new insider.")
 
@@ -2112,14 +2164,11 @@ def main():
                          if i.get("ticker") not in blocked]
 
     # Age floor first: old filings are already marked seen, and are dropped
-    # here regardless of how many there are.
-    cutoff = time.time() - MAX_AGE_DAYS * 86400
-
-    def recent(items):
-        return [i for i in items if (i.get("published") or 0) >= cutoff]
-
-    fresh_recent = recent(fresh)
-    insider_recent = recent(insider_fresh)
+    # here regardless of how many there are. One `now` for both lists, so a
+    # slow run cannot put two items either side of a moving boundary.
+    now = time.time()
+    fresh_recent = [i for i in fresh if within_age(i, now)]
+    insider_recent = [i for i in insider_fresh if within_age(i, now)]
     aged = (len(fresh) - len(fresh_recent)) + (len(insider_fresh) - len(insider_recent))
     if aged:
         print(f"{aged} item(s) older than {MAX_AGE_DAYS}d — recorded, not posted.")
