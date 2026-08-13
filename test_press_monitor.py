@@ -205,6 +205,80 @@ def main():
           pm.norm_title(Q1_2021) != pm.norm_title(Q1_2022),
           "this is what stops the year being normalised away")
 
+    print("\nALWAYS-POST ITEMS")
+    check("a matching code posts whatever its position",
+          pm.always_post_items({"form": "8-K", "items": "9.01,4.02"}))
+    check("a matching code posts when listed first",
+          pm.always_post_items({"form": "8-K", "items": "4.02,9.01"}))
+    check("an unrelated item set does not post",
+          not pm.always_post_items({"form": "8-K", "items": "7.01"}))
+    check("a non-8-K form is never considered",
+          not pm.always_post_items({"form": "10-Q", "items": "4.02"}))
+    check("a missing items field is safe",
+          not pm.always_post_items({"form": "8-K"}))
+
+    print("\nPRESS RELEASE DETECTION")
+    check("a press-release item code passes",
+          pm.carries_press_release("8-K", "2.02,9.01"))
+    check("an unrelated item code does not",
+          not pm.carries_press_release("8-K", "5.02"))
+    check("a 6-K is never filtered, having no item numbers",
+          pm.carries_press_release("6-K", ""))
+    # 1,986 of 1,986 real 8-Ks carry item codes, so this branch has never
+    # once executed in production. A fixture can exercise what real data
+    # never has, which is the cheapest insurance against someone deleting
+    # it as dead code.
+    check("AN 8-K WITH NO ITEM CODES FAILS OPEN",
+          pm.carries_press_release("8-K", ""),
+          "a branch real data has never reached; do not simplify it away")
+
+    print("\nFORM LABELS AND TITLES")
+    # No two FORM_LABELS keys currently form a prefix pair, so form_label's
+    # longest-first sort is real code no live data exercises. Do not fake a
+    # test for it by inventing a key; check what is actually true.
+    check("a late-notice form gets its specific label",
+          pm.form_label("NT 10-K") != "",
+          "NT is not itself a label key, so this must not fall through")
+    check("an amendment is labelled as one",
+          pm.form_label("10-Q/A").endswith("(amended)"))
+    check("an unknown form has no label", pm.form_label("DEF 14A") == "")
+
+    check("8-K item labels beat the SEC document label",
+          pm.filing_title("8-K", "2.02", "8-K") == pm.ITEM_LABELS["2.02"])
+    check("a generic item yields to a meaningful one",
+          pm.filing_title("8-K", "9.01,2.02", "8-K") == pm.ITEM_LABELS["2.02"],
+          "9.01 is in GENERIC_ITEMS and says nothing on its own")
+    check("a generic item alone is still used rather than nothing",
+          pm.filing_title("8-K", "9.01", "8-K") == pm.ITEM_LABELS["9.01"])
+    check("a repeated label appears once",
+          pm.filing_title("8-K", "2.02,2.02", "8-K").count(
+              pm.ITEM_LABELS["2.02"]) == 1)
+    check("an amended 8-K title says so",
+          pm.filing_title("8-K/A", "2.02", "8-K").endswith("(amended)"))
+    check("with no items it falls back to the form label",
+          pm.filing_title("10-Q", "", "") == pm.form_label("10-Q"))
+    check("with no label it falls back to the description",
+          pm.filing_title("DEF 14A", "", "Proxy statement") == "Proxy statement")
+    check("with nothing at all it names the form",
+          pm.filing_title("DEF 14A", "", "") == "DEF 14A filing")
+
+    print("\nFILING TIMESTAMPS")
+    # filingDate is a DATE ONLY. Reading it alone puts publication at 00:00
+    # UTC and discards a mean of 17.7 hours across 122 measured filings,
+    # 10.5% of the MAX_AGE_DAYS window, because 48% of filings land between
+    # 20:00 and 23:00 UTC.
+    noon = pm.filed_time("2026-08-12", "2026-08-12T12:00:00Z")
+    midnight = pm.filed_time("2026-08-12")
+    check("acceptanceDateTime is preferred over the date", noon > midnight)
+    check("the acceptance stamp is read as UTC, not Eastern",
+          noon - midnight == 12 * 3600,
+          "the field ends in Z and IS UTC; CLAUDE.md records the two "
+          "confirmations that wrongly said otherwise")
+    check("a malformed acceptance stamp falls back to the date",
+          pm.filed_time("2026-08-12", "not-a-timestamp") == midnight)
+    check("a malformed date returns 0 rather than raising",
+          pm.filed_time("not-a-date") == 0)
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0
