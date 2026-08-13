@@ -36,10 +36,10 @@ jobs:
           python-version: "3.12"
       # requests is all the suites need, through test_earnings_dates.py's
       # earnings_calendar import. feedparser and matplotlib are for the import
-      # step below, which loads every module rather than only the tested seven.
+      # step below, which loads every module rather than only the tested eight.
       - name: Install dependencies
         run: pip install requests feedparser matplotlib
-      # The seven steps below are a hand-maintained list with no gate: add a
+      # The eight steps below are a hand-maintained list with no gate: add a
       # test_*.py and forget to list it here, and it never runs, silently.
       # That is the same silent-gap shape workflow-list-gate.yml exists to
       # prevent, one level down, so this checks the list against the repo's
@@ -57,13 +57,18 @@ jobs:
               sys.exit("Not run by this workflow: " + ", ".join(missing))
           print("All %d suites are run." % len(run))
           PY
-      # Only seven files have suites. These two steps cover all 43, cheaply,
-      # and run first because they are the broader check: ftd_monitor.py is
+      # Only eight files have suites. These two steps cover all 47, cheaply,
+      # and run first because they are the broader check: daily_recap.py is
       # loaded by no suite, directly or transitively, so before this a typo in
-      # it merged green. Twenty-six modules are in that position. Counting the
-      # suites understates the gap and counting the tested modules overstates
-      # it: watchlist.py has no suite of its own but three suites import it,
-      # so a typo there has always been caught.
+      # it merged green. TWENTY-THREE modules are in that position, and the
+      # count moves whenever a suite is added — test_weekly_digest.py pulled
+      # ftd_monitor, dilution, regsho_volume and short_interest into the
+      # covered set without testing any of them directly, which is why the
+      # example here was changed at the same time.
+      #
+      # Counting the suites understates the gap and counting the tested
+      # modules overstates it: watchlist.py has no suite of its own but is
+      # imported by most of them, so a typo there has always been caught.
       - name: Every module parses
         run: python -m py_compile *.py
       # PARSING IS NOT LOADING, and the gap is most of the value. Importing
@@ -105,6 +110,8 @@ jobs:
         run: python -u test_page_text.py
       - name: press_monitor
         run: python -u test_press_monitor.py
+      - name: weekly_digest
+        run: python -u test_weekly_digest.py
       - name: earnings_dates
         run: python -u test_earnings_dates.py
       - name: probe_body_dates

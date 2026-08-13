@@ -269,7 +269,39 @@ ANY   W22 0/4  W23 0/5  W24 5/5  W25 4/4  W26 5/5  W27 4/4  W28 3/5  W29 0/5
 
 Five consecutive weeks listed, from a component that posts only on a change.
 
+## A publication date that falls on a weekend is never claimed by any week
+
+**Found 2026-08-13 while writing the test suite. Not yet fixed.**
+
+`period_published_in` computes a bare calendar publication date — month end for
+the `a` half, the 15th of the following month for `b` — and asks whether it
+falls inside `sessions`, which `week_sessions` fills with Monday to Friday. So
+**when that nominal date lands on a Saturday or Sunday, no week can contain it,
+ever.** Not delayed: permanently unsatisfiable.
+
+Measured across every week of 2026: **8 of 24 half-month periods are affected**
+— `202601a`, `202601b`, `202602a`, `202602b`, `202605a`, `202607b`, `202610a`
+and `202610b`.
+
+The consequence reaches the output. `ftd_publishes` returns `False`, so
+`published` is `False`, so `counted_in_denominator` is `False`, and the
+convergence denominator is short by one contributor for those weeks. The
+contributor lands in *fetched but did not publish* — the innocuous-looking one
+of the three states this component separates precisely so that this class of
+thing stays visible. No error, no log line.
+
+It was left alone deliberately: it was found on a branch whose rule was that
+the module under test must not change, because changing behaviour under cover
+of a test branch is how a regression ships unnoticed. The suite now pins the
+current arithmetic, so a fix has something to break.
+
 ## Untested is not the same as working
+
+**As of 2026-08-13 there is a suite**: `test_weekly_digest.py`, 113 checks over
+the publication windows, the silence section, the output guards, fetch-depth
+independence and all ten contributor rules. It runs in `Tests` on every push.
+What follows is still true and is a different claim — a rule with a check
+against a fixture has still never met the occurrence it exists for.
 
 `dilution` fired for no company in ten weeks, and **the rule is not the
 reason**: only **3 of 190 ticker-weeks had a new XBRL observation at all**, and
