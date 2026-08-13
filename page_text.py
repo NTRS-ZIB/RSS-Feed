@@ -117,5 +117,3 @@ def extract_text(html, limit=None):
     # enforced upstream on the raw download, and adding encoding-aware
     # slicing here would duplicate that cap for no reader-visible benefit.
     return text[:limit] if limit is not None else text
-
-import nonexistent_module_xyz  # TEMPORARY
