@@ -79,6 +79,7 @@ probe_sites.py                    maintenance: grid operators and states a filin
 probe_holders.py                  maintenance: what 13D/G filings carry
 probe_proxy_shares.py             maintenance: does a proxy propose more authorized shares
 probe_body_dates.py               maintenance: what a release body offers
+probe_candidates.py               maintenance: what EDGAR says about a roster candidate
 probe_filing_rate.py              maintenance: would a filing rate catch a company going quiet
 probe_form_144.py                 maintenance: does Form 144 precede the Form 4
 probe_premarket.py                maintenance: is a missing premarket the feed, request or venue
@@ -115,6 +116,7 @@ grid_context.py                   grid demand and natural gas
 .github/workflows/audit.yml       identifier audit, manual only
 .github/workflows/calibrate.yml   staleness calibration, manual only
 .github/workflows/probe-body-dates.yml  body-date probe, manual only
+.github/workflows/probe-candidates.yml  roster candidate check, manual only
 .github/workflows/items.yml       8-K item audit, manual only
 .github/workflows/metric-regime.yml  metric regime check, manual only
 .github/workflows/holders.yml     13D/G content probe, manual only
