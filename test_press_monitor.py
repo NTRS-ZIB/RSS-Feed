@@ -86,6 +86,57 @@ def main():
     finally:
         pm.FORM_TYPES = original
 
+    print("\nPER-HOST HEADERS")
+    # A browser-like User-Agent is a per-host bet. GlobeNewswire stalls a
+    # Chrome-claiming request from the runner and answers a plain one in
+    # 0.1s; not knowing that cost 22 hours of silent outage.
+    gnw = pm.headers_for("https://www.globenewswire.com/rss/organization/x")
+    check("a host in HOST_HEADERS gets its override",
+          gnw is pm.HOST_HEADERS["www.globenewswire.com"],
+          "losing this bet presents as a dead host, not as a refusal")
+    check("any other host gets IR_HEADERS",
+          pm.headers_for("https://ir.mara.com/feed") is pm.IR_HEADERS)
+    check("the netloc lookup is case-insensitive",
+          pm.headers_for("https://WWW.GlobeNewswire.COM/x") is gnw,
+          "a casing miss silently reverts the host to the losing bet")
+    check("a path does not affect the lookup",
+          pm.headers_for("https://www.globenewswire.com/") is gnw)
+
+    print("\nSTALENESS")
+    import time as _time
+    now = _time.time()
+    day = 86400
+
+    # Fewer than STALE_MIN_DAYS distinct publication days: report a count,
+    # do not warn. Too little history and a dead source are different
+    # measurements and must never share a label.
+    out = pm.check_staleness("T", [now - day, now - 2 * day])
+    check("too little history returns without warning", out is None)
+
+    # Three items in one morning are ONE publication day. Measured on the
+    # real data: HUT's median gap reads 5.5d uncollapsed and 18d collapsed,
+    # so this is what makes the horizon mean anything.
+    same_day = [now - 1, now - 2, now - 3, now - 4, now - 5]
+    check("same-day items collapse, so five become too little history",
+          pm.check_staleness("T", same_day) is None,
+          "uncollapsed this would look like five days of history")
+
+    # A healthy source: daily items, newest today. Well inside any horizon.
+    fresh = [now - i * day for i in range(10)]
+    check("a fresh source returns quietly", pm.check_staleness("T", fresh) is None)
+
+    # A dead source: ten daily items, but the newest is a year old. Median
+    # gap 1d, horizon max(6*1, 60) = 60d, age ~365d.
+    dead = [now - 365 * day - i * day for i in range(10)]
+    check("a source dead a year returns None rather than raising",
+          pm.check_staleness("T", dead) is None,
+          "it logs and returns; one dead source must not stop the sweep")
+
+    check("no timestamps at all returns immediately",
+          pm.check_staleness("T", []) is None)
+    check("all-zero timestamps are treated as no timestamps",
+          pm.check_staleness("T", [0, 0]) is None)
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0
