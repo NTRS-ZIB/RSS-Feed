@@ -323,6 +323,40 @@ identical and **no company's verdict changed** in the sample. The correction is
 to the denominator the convergence threshold is measured against, which is what
 the denominator section above is about, not to any week's names.
 
+## The same shape elsewhere, swept and left alone
+
+The weekend bug above is one instance of a general shape: **a date compared
+against `sessions`, which spans Monday to Friday, so any date landing on a
+weekend belongs to no week at all.** Four other places filter by that span —
+`derive_filings`, `derive_letters`, `derive_dilution` and `derive_holders`, all
+via `sessions[0] <= d <= sessions[-1]`.
+
+**Swept 2026-08-13 and deliberately not changed.** What separates them from the
+FTD case is where the date comes from:
+
+| | Source of the date | Exposure |
+|---|---|---|
+| `period_published_in` | **computed here** from a period code | lands wherever the calendar puts it — 8 of 24 in 2026 |
+| the other four | **supplied by EDGAR or XBRL** | follows the source's conventions |
+
+A date this repository computes can fall on any day of the week. A date EDGAR
+supplies is credited to a business day, and an XBRL as-of date is a cover date
+companies choose. Measured against what is on disk: **0 of 235 filing dates and
+0 of 16 dilution as-of dates fall on a weekend.**
+
+That is not proof the path is dead, and the numbers are small. The one to watch
+is `derive_dilution`: month-end as-of dates are an ordinary XBRL convention and
+**7 of 24 month ends in 2025–26 fall on a weekend**, so a company tagging a bare
+month end would land in the gap and its share-count step would silently join the
+baseline instead of being reported in a week.
+
+Widening the four to a full seven-day week would close it and is safe — market
+data has no weekend rows, so nothing else would change. It was left alone
+because the rate is zero in everything measurable from here, and a behaviour
+change to four live call sites for an unobserved case is the kind that gets
+made once and understood never. `test_weekly_digest.py` pins the current
+boundary so a future widening is deliberate rather than accidental.
+
 ## Untested is not the same as working
 
 **As of 2026-08-13 there is a suite**: `test_weekly_digest.py`, 113 checks over
