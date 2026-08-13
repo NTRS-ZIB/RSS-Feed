@@ -91,8 +91,12 @@ def date_material(entry):
 
 
 def sweep_feeds():
-    """(rows, losses) over every configured IR feed."""
-    rows, losses = [], []
+    """(rows, losses, items) over every configured IR feed.
+
+    `items` carry the same `published` collect_ir would give them, from the
+    same `entry_time` call, so the production counter can be run over them.
+    """
+    rows, losses, items = [], [], []
     for label, url in pm.IR_FEEDS.items():
         entries = pm.parse_feed(url)
         if not entries:
@@ -104,6 +108,7 @@ def sweep_feeds():
             continue
         counts = {}
         for entry in entries:
+            items.append({"ticker": label, "published": pm.entry_time(entry)})
             verdict = classify(entry)
             counts[verdict] = counts.get(verdict, 0) + 1
             if verdict != PARSED:
@@ -113,18 +118,18 @@ def sweep_feeds():
                                date_material(entry)))
         rows.append((label, "feed", len(entries), counts))
         print(f"  {label}: {len(entries)} entries")
-    return rows, losses
+    return rows, losses, items
 
 
 def sweep_scraped():
-    """(rows, losses) over the four sources that build items themselves.
+    """(rows, losses, items) over the four sources that build items themselves.
 
     These cannot be censused the way a feed can: each reader parses its own
     date inline and returns the item, so the material it rejected is gone by
     the time we see the result. What is observable is the outcome, and for a
     zero the title and link are enough to go and look.
     """
-    rows, losses = [], []
+    rows, losses, collected = [], [], []
     readers = [("HUT", pm.scrape_hut8), ("GLXY", pm.scrape_galaxy),
                ("DGXX", pm.read_dgxx), ("ABTC", pm.read_abtc)]
     for label, reader in readers:
@@ -136,6 +141,7 @@ def sweep_scraped():
             print(f"  {label}: READER RAISED {type(exc).__name__}: {exc}")
             rows.append((label, "scraped", 0, {}))
             continue
+        collected += items
         zeros = [i for i in items if not i.get("published")]
         counts = {PARSED: len(items) - len(zeros)}
         if zeros:
@@ -145,7 +151,28 @@ def sweep_scraped():
                            item.get("link", ""),
                            "reader produced published=0"))
         rows.append((label, "scraped", len(items), counts))
-    return rows, losses
+    return rows, losses, collected
+
+
+def run_the_real_counter(items):
+    """Run the production counter over the live items this sweep collected.
+
+    WHAT THIS DOES AND DOES NOT SHOW. It runs `undated_items` and
+    `undated_notice` over real `published` values, built for feeds exactly as
+    `collect_ir` builds them, so the functions the monitor actually calls are
+    exercised against live data rather than only against fixtures.
+
+    It is NOT an independent confirmation of the census above. Both read
+    `entry_time`, so a bug there moves both together and they would agree
+    while being wrong. A first draft of this function was worse still: it
+    rebuilt the items FROM the census counts, so the comparison was circular
+    by construction and could only ever agree.
+    """
+    counts = pm.undated_items(items)
+    print(f"\nundated_items() over {len(items)} live items: {counts or '{}'}")
+    line = pm.undated_notice(counts)
+    print("undated_notice(): " + (line if line else "(empty, so no notice)"))
+    return counts
 
 
 def main():
@@ -175,6 +202,8 @@ def main():
     print("-" * len(header))
     cells = "".join(f"{totals[c]:>17}" for c in CLASSES)
     print(f"{'TOTAL':<8}{'':<9}{total_items:>6}  {cells}")
+
+    run_the_real_counter(feed_items + scraped_items)
 
     dropped = sum(totals[c] for c in CLASSES if c != PARSED)
     print(f"\n{dropped} of {total_items} items would be DROPPED by within_age "
