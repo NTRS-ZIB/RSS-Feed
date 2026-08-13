@@ -1863,6 +1863,52 @@ def within_age(item, now):
     return (item.get("published") or 0) >= now - MAX_AGE_DAYS * 86400
 
 
+def undated_items(items):
+    """Items carrying no usable timestamp, counted per ticker.
+
+    Measured 2026-08-13 across all twenty IR sources: 0 of 223 items. So this
+    counts nothing in normal traffic, and that is the point — it exists for
+    the case where a source's date format changes, which is invisible in every
+    other check this component has.
+
+    A feed serving entries whose dates will not parse passes
+    `report_feed_health`, because entries WERE returned; passes
+    `check_staleness`, which treats all-zero timestamps as no timestamps and
+    logs nothing; and then loses every item to `within_age`, which reads the
+    `0` as 1970. `main()` marks items seen before the age floor runs, so each
+    one is recorded as seen and can never return. Three silent passes and a
+    permanent loss, from a source answering 200 the whole time.
+
+    Counted over items that are still fresh at the point of the drop, so each
+    lost item is reported exactly once: on the next run it is seen, so it is
+    not fresh, so it is not counted again. That is what keeps a broken source
+    from raising the same notice every fifteen minutes forever.
+    """
+    counts = {}
+    for item in items:
+        if not item.get("published"):
+            key = item.get("ticker") or "?"
+            counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def undated_notice(counts):
+    """The ops line for a batch of undated items, or "" if there were none.
+
+    Names every ticker and its count rather than a bare total, because the
+    shape of the loss is the diagnosis: one item from one source is an odd
+    release, while every item from one source is that source's date format
+    having changed underneath us.
+    """
+    if not counts:
+        return ""
+    total = sum(counts.values())
+    named = ", ".join(f"{t} {n}" for t, n in sorted(counts.items()))
+    return (f"⚠️ **{total} item(s) with no readable date** — dropped by the "
+            f"age floor and recorded as seen, so they cannot return: {named}. "
+            "A source's date format has probably changed.")
+
+
 def passes_keywords(item):
     if not KEYWORDS:
         return True
@@ -2162,6 +2208,17 @@ def main():
         fresh = [i for i in fresh if i.get("ticker") not in blocked]
         insider_fresh = [i for i in insider_fresh
                          if i.get("ticker") not in blocked]
+
+    # An item with no readable date is about to be dropped by the age floor
+    # below, having already been marked seen, so it can never return. Report
+    # it here, between the baseline suppression and the floor, because that is
+    # the exact population the floor is about to lose.
+    undated = undated_items(fresh + insider_fresh)
+    if undated:
+        _ops_notice(undated_notice(undated))
+    elif fresh or insider_fresh:
+        print(f"  dates: all {len(fresh) + len(insider_fresh)} new item(s) "
+              f"carried a readable date.")
 
     # Age floor first: old filings are already marked seen, and are dropped
     # here regardless of how many there are. One `now` for both lists, so a
