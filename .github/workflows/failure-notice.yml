@@ -59,6 +59,7 @@ on:
       - "Probe form 144"
       - "Probe holders"
       - "Probe premarket"
+      - "Probe proxy shares"
       - "Probe sites"
       - "Probe spike normalisation"
       - "Probe undated items"

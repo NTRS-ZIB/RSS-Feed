@@ -77,6 +77,7 @@ audit_8k_items.py                 maintenance: 8-K item distribution
 check_metric_regime.py            maintenance: is a metric's move real or a regime shift
 probe_sites.py                    maintenance: grid operators and states a filing names
 probe_holders.py                  maintenance: what 13D/G filings carry
+probe_proxy_shares.py             maintenance: does a proxy propose more authorized shares
 probe_body_dates.py               maintenance: what a release body offers
 probe_filing_rate.py              maintenance: would a filing rate catch a company going quiet
 probe_form_144.py                 maintenance: does Form 144 precede the Form 4
@@ -117,6 +118,7 @@ grid_context.py                   grid demand and natural gas
 .github/workflows/items.yml       8-K item audit, manual only
 .github/workflows/metric-regime.yml  metric regime check, manual only
 .github/workflows/holders.yml     13D/G content probe, manual only
+.github/workflows/probe-proxy-shares.yml  proxy share-count probe, manual only
 .github/workflows/filing-rate.yml  filing rate probe, manual only
 .github/workflows/probe-form-144.yml  Form 144 lead-time probe, manual only
 .github/workflows/premarket.yml   premarket probe, manual only

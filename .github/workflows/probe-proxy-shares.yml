@@ -1,0 +1,32 @@
+name: Probe proxy shares
+
+# Maintenance tool, not a component. Read-only: walks each issuer's filing
+# index, counts proxy statements, reads the most recent one per company and
+# prints whether it proposes an authorized-share increase, with the matched
+# text. No webhook, no state, no commit, no schedule.
+#
+# Run it before building anything on proxy statements. See
+# probe_proxy_shares.py, and docs/rejected.md for the two earlier probes that
+# died on body-text ambiguity.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      # No dependencies: it uses urllib and page_text, both stdlib-only.
+      - name: Probe
+        timeout-minutes: 25
+        env:
+          PYTHONUNBUFFERED: "1"
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: python -u probe_proxy_shares.py
