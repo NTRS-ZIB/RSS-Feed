@@ -279,6 +279,80 @@ def main():
     check("a malformed date returns 0 rather than raising",
           pm.filed_time("not-a-date") == 0)
 
+    print("\nIDENTIFIERS AND FEED HELPERS")
+    check("filing_uid keeps the Atom-era format",
+          pm.filing_uid("0001193125-26-000123")
+          == "urn:tag:sec.gov,2008:accession-number=0001193125-26-000123",
+          "changing this makes every historical filing look new")
+    url = pm.filing_url("1507605", "0001193125-26-000123")
+    check("filing_url carries the accession dashed and undashed",
+          "000119312526000123" in url and "0001193125-26-000123" in url, url)
+
+    check("no keywords configured passes everything",
+          pm.passes_keywords({"title": "anything at all"})
+          if not pm.KEYWORDS else True,
+          "KEYWORDS is empty in this repo, so this is the live path")
+
+    check("entry_time prefers published_parsed",
+          pm.entry_time({"published_parsed": (2026, 8, 12, 0, 0, 0, 0, 0, 0)})
+          == 1786492800)
+    check("entry_time falls through to updated_parsed",
+          pm.entry_time({"updated_parsed": (2026, 8, 12, 0, 0, 0, 0, 0, 0)})
+          == 1786492800)
+    check("entry_time returns 0 when nothing is usable",
+          pm.entry_time({}) == 0,
+          "that 0 becomes a released of None, which the body-date rule refuses")
+
+    check("entry_form takes the first tag's term",
+          pm.entry_form({"tags": [{"term": " 8-K "}]}) == "8-K")
+    check("entry_form uses the fallback when there are no tags",
+          pm.entry_form({}, "6-K") == "6-K")
+
+    print("\nBASELINE SUPPRESSION FOR A NEW COMPANY")
+    # Adding a ticker must produce NO backdated posts AT ALL. Not "none older
+    # than MAX_AGE_DAYS", none. An item six days old is unseen and inside the
+    # window, and on 2026-08-05 exactly that posted a handful of backdated
+    # items. The record lives in state["baselined"], NOT in "seen": seen is
+    # capped at 1000 and actively evicting, and a uid carries no company, so
+    # "has this company any ids in seen" cannot be asked of the file at all.
+    old_item = {"uid": "o", "ticker": "NEW", "published": 1,
+                "title": "Old", "form": "8-K"}
+    new_item = {"uid": "r", "ticker": "NEW", "published": 2,
+                "title": "Recent", "form": "8-K"}
+    est_item = {"uid": "e", "ticker": "MARA", "published": 3,
+                "title": "Established", "form": "8-K"}
+    every = [old_item, new_item, est_item]
+
+    # An ABSENT key is the backfill run: every roster company has been posting
+    # for weeks, so all are recorded and nothing is suppressed.
+    state = {}
+    new_co, sup = pm.baseline_companies(state, ["NEW", "MARA"], every,
+                                        today="2026-08-13")
+    check("an absent baselined key suppresses nothing",
+          (new_co, sup) == ([], []),
+          "first run under the rule; everyone is established by definition")
+    check("the backfill records the whole roster",
+          set(state["baselined"]) == {"NEW", "MARA"},
+          "so a later run can tell a genuinely new company from these")
+
+    # A company missing from a PRESENT dict is the new one.
+    state = {"baselined": {"MARA": "2026-08-01"}}
+    new_co, sup = pm.baseline_companies(state, ["NEW", "MARA"], every,
+                                        today="2026-08-13")
+    check("a company absent from a present dict is new", new_co == ["NEW"])
+    check("EVERY item from a new company is suppressed, whatever its age",
+          {i["uid"] for i in sup} == {"o", "r"},
+          "not only the aged ones; a six-day-old item posted on 2026-08-05")
+    check("an established company's item is untouched",
+          "e" not in {i["uid"] for i in sup})
+    check("the new company is recorded, so it is new only once",
+          state["baselined"]["NEW"] == "2026-08-13")
+
+    state = {"baselined": {"MARA": "2026-08-01", "NEW": "2026-08-10"}}
+    check("a roster with no new companies suppresses nothing",
+          pm.baseline_companies(state, ["NEW", "MARA"], every,
+                                today="2026-08-13") == ([], []))
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0
