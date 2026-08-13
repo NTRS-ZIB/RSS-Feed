@@ -29,6 +29,7 @@ import types
 sys.modules.setdefault("feedparser", types.ModuleType("feedparser"))
 
 import weekly_digest as wd
+import digest_render as dr
 from datetime import date, timedelta
 
 PASS, FAIL = "PASS", "FAIL"
@@ -204,6 +205,138 @@ def main():
     empty_ctx["ftd"].data = {}
     check("no data at all means nothing published",
           not wd.ftd_publishes(empty_ctx, a_week))
+
+    print("\nSILENT -- THE EDGAR-UNAVAILABLE INCIDENT")
+    # THE INCIDENT: a dry run with EDGAR unavailable reported eleven companies
+    # as having filed nothing, which nothing had measured. Every other section
+    # of the digest UNDERSTATES when a source fails; this one ASSERTS, because
+    # absence is its own subject. silent() has three independent exclusion
+    # arms (count-or-source_failed, NOT_TESTABLE, filings_in_week) plus the
+    # positive path that lists a company with none of those. The fixture below
+    # mirrors the real shape build_week() produces (roster / contributors /
+    # convergence / verdicts) rather than inventing one, and each exclusion
+    # gets its own ticker so a check can fail on exactly one arm.
+    #
+    # QUIET is the positive control: without a company that IS genuinely
+    # silent, every "excluded" check below would pass trivially, since an
+    # empty result excludes everything.
+    def verdict(level, basis=None, detail=None):
+        return {"level": level, "figure": None, "basis": basis,
+                "sources": [], "persistence": None, "detail": detail or {}}
+
+    silent_roster = ["QUIET", "CONVG", "SFAIL", "UNTST", "FILED"]
+    silent_verdicts = {
+        "QUIET": {},
+        "CONVG": {"price": verdict(wd.NOTABLE, basis="2.1x its own 12-week SD")},
+        "SFAIL": {"filings": verdict(wd.SOURCE_FAILED,
+                                     basis="EDGAR submissions fetch did not return")},
+        "UNTST": {"filings": verdict(wd.NOT_TESTABLE)},
+        "FILED": {"filings": verdict(wd.ROUTINE, detail={"filings_in_week": 3})},
+    }
+    silent_convergence = {
+        "QUIET": {"count": 0, "source_failed": []},
+        "CONVG": {"count": 1, "source_failed": []},
+        "SFAIL": {"count": 0, "source_failed": ["filings"]},
+        "UNTST": {"count": 0, "source_failed": []},
+        "FILED": {"count": 0, "source_failed": []},
+    }
+    # "fetched" is what unmeasured names; "published_this_week" must NOT be
+    # what it names -- a fortnightly source being quiet is the normal case.
+    # bars mirrors build_week()'s own rule that an unfetched source is never
+    # published either.
+    silent_contributors = {
+        "bars": {"fetched": False, "published_this_week": False},
+        "short_interest": {"fetched": True, "published_this_week": False},
+        "filings": {"fetched": True, "published_this_week": True},
+    }
+    silent_record = {
+        "roster": silent_roster,
+        "verdicts": silent_verdicts,
+        "convergence": silent_convergence,
+        "contributors": silent_contributors,
+    }
+    quiet, unmeasured = dr.silent(silent_record)
+
+    check("the positive control: a genuinely silent company IS listed",
+          "QUIET" in quiet, str(quiet))
+    check("a company with a convergence count is excluded even though "
+          "nothing filed -- it is not silent, it fired elsewhere",
+          "CONVG" not in quiet, str(quiet))
+    check("a company whose filings source failed is excluded, not "
+          "reported as having filed nothing",
+          "SFAIL" not in quiet, str(quiet))
+    check("a company whose filings verdict is NOT_TESTABLE is excluded, "
+          "not reported as silent",
+          "UNTST" not in quiet, str(quiet))
+    check("a company with a non-empty filings_in_week is excluded",
+          "FILED" not in quiet, str(quiet))
+    check("exactly the positive control is listed, nothing else leaks in",
+          quiet == ["QUIET"], str(quiet))
+
+    check("unmeasured names a contributor that was never fetched",
+          "bars" in unmeasured, str(unmeasured))
+    check("unmeasured does NOT name a contributor that was fetched but "
+          "simply did not publish this week",
+          "short_interest" not in unmeasured, str(unmeasured))
+    check("unmeasured does NOT name a contributor that was fetched and "
+          "did publish",
+          "filings" not in unmeasured, str(unmeasured))
+
+    print("\nFAILED SOURCES")
+    # failed_sources treats "partial" as not-failed -- a deliberate choice,
+    # matching fetch_filings()'s own comment: a partial EDGAR fetch still
+    # carries real data for the issuers that answered, and the missing ones
+    # are already visible per-company. This is the kind of choice that gets
+    # "tidied" away, so it gets its own check rather than an implicit one.
+    fs_record = {"sources": {
+        "bars": {"status": "ok"},
+        "filings": {"status": "partial"},
+        "threshold": {"status": "failed"},
+        "dilution": {"status": "unavailable"},
+    }}
+    bad_sources = dr.failed_sources(fs_record)
+    check("an 'ok' source is not reported as failed",
+          "bars" not in bad_sources, str(bad_sources))
+    check("a 'partial' source is NOT treated as failed",
+          "filings" not in bad_sources, str(bad_sources))
+    check("a 'failed' source is reported",
+          "threshold" in bad_sources, str(bad_sources))
+    check("an 'unavailable' source is reported too, not only literal "
+          "'failed'",
+          "dilution" in bad_sources, str(bad_sources))
+    check("failed_sources returns exactly the two non-ok/partial sources, "
+          "sorted",
+          bad_sources == ["dilution", "threshold"], str(bad_sources))
+
+    print("\nNOT TESTABLE")
+    # (ticker, contributor, basis) for every cell the rule could not be
+    # applied to -- but only when there IS a basis to report. A NOT_TESTABLE
+    # verdict with no basis would render an empty explanation, which is worse
+    # than omitting the cell.
+    nt_record = {"roster": ["AAAA", "BBBB", "CCCC", "DDDD"], "verdicts": {
+        "AAAA": {"crossings": verdict(wd.NOT_TESTABLE,
+                                       basis="34/60 bars minimum for a "
+                                             "52-week window")},
+        "BBBB": {"crossings": verdict(wd.NOT_TESTABLE, basis=None)},
+        "CCCC": {"filings": verdict(wd.NOTABLE, basis="material filing")},
+        "DDDD": {"volume": verdict(wd.ROUTINE)},
+    }}
+    untestable = dr.not_testable(nt_record)
+    check("a NOT_TESTABLE cell carrying a basis is reported",
+          ("AAAA", "crossings",
+           "34/60 bars minimum for a 52-week window") in untestable,
+          str(untestable))
+    check("a NOT_TESTABLE cell with no basis is dropped, not reported as "
+          "an empty explanation",
+          not any(t == "BBBB" for t, _, _ in untestable), str(untestable))
+    check("a NOTABLE cell is never reported here regardless of its basis",
+          not any(t == "CCCC" for t, _, _ in untestable), str(untestable))
+    check("a ROUTINE cell is not reported",
+          not any(t == "DDDD" for t, _, _ in untestable), str(untestable))
+    check("not_testable returns exactly the one qualifying cell",
+          untestable == [("AAAA", "crossings",
+                          "34/60 bars minimum for a 52-week window")],
+          str(untestable))
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
