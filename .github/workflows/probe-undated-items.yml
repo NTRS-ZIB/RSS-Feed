@@ -1,0 +1,32 @@
+name: Probe undated items
+
+# Maintenance tool, not a component. Read-only: collects the same IR sources
+# the press monitor already collects, classifies the date material every item
+# carried, prints what within_age would drop, exits. No webhook, no state, no
+# commit, no schedule, no secrets.
+#
+# Run it before changing within_age's treatment of an item with no timestamp,
+# and after changing any date parse in a scraper or CMS reader, since that
+# changes the population this measures. See probe_undated_items.py.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install feedparser requests
+      - name: Probe
+        timeout-minutes: 10
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: python -u probe_undated_items.py

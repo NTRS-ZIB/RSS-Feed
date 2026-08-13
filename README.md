@@ -81,6 +81,7 @@ probe_body_dates.py               maintenance: what a release body offers
 probe_filing_rate.py              maintenance: would a filing rate catch a company going quiet
 probe_premarket.py                maintenance: is a missing premarket the feed, request or venue
 probe_spike_norm.py               maintenance: reproduce the spike normalisation gain
+probe_undated_items.py            maintenance: date material each IR source offers
 loop_state.py                     loop harness: the state file, one writer
 loop_approval.py                  loop harness: has this irreversible action been authorised
 loop_verdict.py                   loop harness: validate a gate verdict, trusting none of it
@@ -118,6 +119,7 @@ grid_context.py                   grid demand and natural gas
 .github/workflows/filing-rate.yml  filing rate probe, manual only
 .github/workflows/premarket.yml   premarket probe, manual only
 .github/workflows/spike-norm.yml  spike normalisation probe, manual only
+.github/workflows/probe-undated-items.yml  undated item census, manual only
 .github/workflows/regime.yml      filing regime census, manual only
 .github/workflows/baseline-test.yml  baseline rule test, manual only
 .github/workflows/failure-notice.yml  fires on a watched workflow finishing; posts failures to ops
