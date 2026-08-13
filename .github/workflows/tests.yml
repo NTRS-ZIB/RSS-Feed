@@ -34,10 +34,11 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      # Only test_earnings_dates.py needs this, through its earnings_calendar
-      # import. The other five are stdlib-only.
+      # requests is all the suites need, through test_earnings_dates.py's
+      # earnings_calendar import. feedparser and matplotlib are for the import
+      # step below, which loads every module rather than only the tested six.
       - name: Install dependencies
-        run: pip install requests
+        run: pip install requests feedparser matplotlib
       # The six steps below are a hand-maintained list with no gate: add a
       # test_*.py and forget to list it here, and it never runs, silently.
       # That is the same silent-gap shape workflow-list-gate.yml exists to
@@ -55,6 +56,44 @@ jobs:
           if missing:
               sys.exit("Not run by this workflow: " + ", ".join(missing))
           print("All %d suites are run." % len(run))
+          PY
+      # Only six files have suites. These two steps cover all 42, cheaply, and
+      # run first because they are the broader check: press_monitor.py is
+      # imported by no suite at all, so before this a typo in it merged green.
+      - name: Every module parses
+        run: python -m py_compile *.py
+      # PARSING IS NOT LOADING, and the gap is most of the value. Importing
+      # runs the top of each file, so it catches a missing dependency, a
+      # reference to something that no longer exists, and a malformed constant,
+      # none of which py_compile notices. Demonstrated: adding a bad import to
+      # page_text.py fails SIX modules here and still compiles cleanly.
+      - name: Every module imports
+        env:
+          # A placeholder, not a secret. Four modules refuse to load without
+          # it, and none of them fetches anything at import, so nothing is
+          # sent anywhere and no real identity is needed. If a module ever
+          # starts fetching at import, this step needs rethinking rather than
+          # a real value.
+          SEC_USER_AGENT: "ci-import-check tests@example.invalid"
+        run: |
+          python - <<'PY'
+          import glob, importlib, sys
+          # These two demand configuration the moment they load, so importing
+          # them would test the environment rather than the code. test_*.py are
+          # run as suites below, and test_baseline.py also exits at import.
+          EXCLUDED = {"probe_premarket.py", "probe_sites.py"}
+          seen, bad = 0, []
+          for f in sorted(glob.glob("*.py")):
+              if f.startswith("test_") or f in EXCLUDED:
+                  continue
+              seen += 1
+              try:
+                  importlib.import_module(f[:-3])
+              except BaseException as e:
+                  bad.append("%s: %s: %s" % (f, type(e).__name__, e))
+          if bad:
+              sys.exit("Modules that do not import:\n  " + "\n  ".join(bad))
+          print("All %d modules import." % seen)
           PY
       # One step per suite so a failure is named in the run's step list and
       # nobody has to open a log to learn which one broke.

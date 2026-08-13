@@ -122,7 +122,7 @@ grid_context.py                   grid demand and natural gas
 .github/workflows/baseline-test.yml  baseline rule test, manual only
 .github/workflows/failure-notice.yml  fires on a watched workflow finishing; posts failures to ops
 .github/workflows/workflow-list-gate.yml  fails a push that adds a workflow nothing watches
-.github/workflows/tests.yml       the offline test suites, on every push touching Python
+.github/workflows/tests.yml       every module parses and imports, then the six offline suites; on every push touching Python
 spike_state.json                  auto-generated; per-day alert tiers
 shortinterest_state.json          auto-generated; last posted settlement date
 regsho_state.json                 auto-generated; last posted trade date
