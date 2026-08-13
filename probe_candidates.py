@@ -44,7 +44,7 @@ import watchlist
 
 # Edit this before running. These are the candidates as of 2026-08-13; the
 # point of the probe is that none of them is trusted until it answers.
-CANDIDATES = ["RIOT", "CORZ", "BITF", "HIVE", "CRWV", "BTBT", "CANG"]
+CANDIDATES = ["CORZ"]
 
 # Newsroom URLs to test for a real feed, per candidate. EVERY `None` in
 # watchlist.py means a MEASURED absence of a feed, not an unexamined one —
@@ -55,12 +55,12 @@ CANDIDATES = ["RIOT", "CORZ", "BITF", "HIVE", "CRWV", "BTBT", "CANG"]
 # guessed at: a soft-404 answers 200 with the wrong content, so what decides
 # is how many entries actually parse, not the status code.
 FEED_CANDIDATES = {
-    "RIOT": [
-        "https://www.riotplatforms.com/news-events/press-releases",
-        "https://www.riotplatforms.com/news",
-        "https://ir.riotplatforms.com/news-events/press-releases",
-        "https://www.riotplatforms.com/rss/pressrelease.aspx",
-        "https://investors.riotplatforms.com/rss/pressrelease.aspx",
+    "CORZ": [
+        "https://investors.corescientific.com/news-events/press-releases",
+        "https://investors.corescientific.com/rss/pressrelease.aspx",
+        "https://www.corescientific.com/news",
+        "https://www.corescientific.com/feed/",
+        "https://ir.corescientific.com/news-events/press-releases",
     ],
 }
 
