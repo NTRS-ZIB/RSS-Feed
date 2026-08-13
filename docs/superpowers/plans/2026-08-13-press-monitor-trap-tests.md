@@ -363,9 +363,20 @@ Then:
 python test_press_monitor.py; echo "exit=$?"
 ```
 
-Expected: FAIL on `same-day items collapse to ONE publication day`, because the
-five items now read as five publication days and the log says
-`5 publication day(s)` instead of `1`.
+Expected: FAIL on `same-day items collapse to ONE publication day`, and the suite
+at **22/23**.
+
+**It fails because the log goes EMPTY, not because it says `5`.** That is worth
+stating exactly, because the obvious explanation is wrong and was written into an
+earlier draft of this step. With the collapse removed, five items count as five
+publication days, which CLEARS `STALE_MIN_DAYS` of 4. So the function never
+reaches the insufficient-history message at all; it computes a horizon instead,
+and five timestamps seconds apart give a median gap of 0, a 60-day floor and an
+age of about zero. Healthy. Silent. The check fails because an empty string does
+not contain `1 publication day(s)`.
+
+Measured, not reasoned: `check_staleness` with the collapse removed logs `''` for
+that input.
 
 **Verified before this plan was written:** with the collapse removed the
 staleness section drops to 7 of its 8 checks. An earlier draft asserted
