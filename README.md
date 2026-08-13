@@ -79,6 +79,7 @@ probe_sites.py                    maintenance: grid operators and states a filin
 probe_holders.py                  maintenance: what 13D/G filings carry
 probe_body_dates.py               maintenance: what a release body offers
 probe_filing_rate.py              maintenance: would a filing rate catch a company going quiet
+probe_form_144.py                 maintenance: does Form 144 precede the Form 4
 probe_premarket.py                maintenance: is a missing premarket the feed, request or venue
 probe_spike_norm.py               maintenance: reproduce the spike normalisation gain
 probe_undated_items.py            maintenance: date material each IR source offers
@@ -117,6 +118,7 @@ grid_context.py                   grid demand and natural gas
 .github/workflows/metric-regime.yml  metric regime check, manual only
 .github/workflows/holders.yml     13D/G content probe, manual only
 .github/workflows/filing-rate.yml  filing rate probe, manual only
+.github/workflows/probe-form-144.yml  Form 144 lead-time probe, manual only
 .github/workflows/premarket.yml   premarket probe, manual only
 .github/workflows/spike-norm.yml  spike normalisation probe, manual only
 .github/workflows/probe-undated-items.yml  undated item census, manual only
