@@ -81,13 +81,16 @@ import sys
 import time
 import urllib.request
 import xml.etree.ElementTree as ET
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import date, datetime, timezone
 from pathlib import Path
 
 import requests
 
 import watchlist
+# Imported by name rather than as a module: this file already has a local
+# `first_run` for the whole-file guard, and the two names would collide.
+from first_run import baseline, summary
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -462,6 +465,14 @@ def main():
     state = load_state()
     seen = set(state["seen"])
     first_run = not STATE_FILE.exists()
+    # PER COMPANY, NOT PER FILE. `first_run` above covers a cold start. It does
+    # NOT cover a company added to a roster this component has been watching
+    # for months, and on 2026-08-14 that cost EIGHTY-SIX POSTS in one run —
+    # CORZ 39 of 39 new, CRWV 30 of 32 — because for an unseen company every
+    # 13D/G on record is a first appearance, which is what this file reports.
+    # press_monitor already had the per-company rule; the comment below claimed
+    # to use "the same rule" and used only the file-level half of it.
+    newly_watched = set(baseline(state, CIKS))
     events, legacy_seen = [], []
 
     for ticker, (cik, name) in sorted(CIKS.items()):
@@ -500,6 +511,22 @@ def main():
                 else None
             events.append((ticker, name, row, kind, people, pct, prev, ev,
                            note))
+
+    # A NEWLY WATCHED COMPANY POSTS NOTHING, and unlike the cold-start rule
+    # below this one filters in a DRY RUN too. The cold-start exception exists
+    # so an unrendered embed can be previewed on the only run where events are
+    # available; these embeds are rendered every week, so that argument does
+    # not apply, and a dry run that showed the suppressed events could not
+    # demonstrate that they were suppressed — which is the one thing anyone
+    # verifying this change needs to see.
+    #
+    # Their filings were still read and recorded above: accessions into `seen`,
+    # percentages into `holders`, the era floor into `era`. Only the OUTPUT is
+    # withheld, so the next genuine change for these companies posts normally.
+    if newly_watched:
+        per = Counter(t for t, *_ in events if t in newly_watched)
+        events = [e for e in events if e[0] not in newly_watched]
+        print("\n" + summary("holder_events", sorted(newly_watched), per))
 
     # FIRST RUN POSTS NOTHING. Every structured filing is new on a cold start,
     # and 233 of them would arrive at once. The same rule press_monitor uses.

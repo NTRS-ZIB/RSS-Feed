@@ -49,6 +49,7 @@ from pathlib import Path
 import requests
 
 import watchlist
+from first_run import baseline, summary
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -272,6 +273,25 @@ def main():
     seen = set(state["seen"])
     first_run = not STATE_FILE.exists()
     new = all_accessions - seen
+
+    # PER COMPANY, NOT PER FILE. `first_run` above is only a log annotation
+    # here and suppresses nothing; even as a guard it would cover a cold start
+    # and not a company added to a roster this component has watched for
+    # months. For such a company EVERY letter inside the 180-day window is
+    # new, which is the widest window in the repo and so the largest possible
+    # backlog. On 2026-08-14 holder_events posted 86 messages from exactly
+    # this shape; this component escaped only because all three companies
+    # added that week had no correspondence in window. That is luck, not a
+    # guard. Their accessions are still recorded by save_state below, so the
+    # next genuine letter posts normally.
+    newly_watched = set(baseline(state, watchlist.ciks()))
+    if newly_watched:
+        theirs = {a for r in rows if r["ticker"] in newly_watched
+                  for a in r["accessions"]}
+        per = {r["ticker"]: len(r["accessions"]) for r in rows
+               if r["ticker"] in newly_watched}
+        new -= theirs
+        print("\n" + summary("comment_letters", sorted(newly_watched), per))
 
     print()
     print(build_table(rows) if rows else "No comment letters in the window.")
