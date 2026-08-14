@@ -175,7 +175,16 @@ def main():
         mix = Counter(f for _, f in fresh)
         print("  form mix: " + ", ".join(
             f"{f} x{n}" for f, n in mix.most_common(10)))
-        insiderish = sum(n for f, n in mix.items() if f in ("3", "4", "4/A", "3/A"))
+        # READ FROM press_monitor, NEVER RE-LISTED HERE. The first version
+        # hard-coded ("3", "4", "4/A", "3/A") and was wrong within hours:
+        # Form 144 joined the insider channel the same day, so a candidate
+        # filing 187 of them in 120 days was reported as costing 156 insider
+        # posts when the true figure was 343. A second copy of a list drifts
+        # from the first the moment either is edited alone, which is the
+        # argument watchlist.py exists for, one level down.
+        import press_monitor as _pm
+        insiderish = sum(n for f, n in mix.items()
+                         if f in _pm.INSIDER_ALLOWED_FORMS)
         pressish = sum(n for f, n in mix.items()
                        if f.startswith(("8-K", "10-", "S-3", "S-1", "424",
                                         "DEF 14A", "PRE 14A", "6-K", "20-F")))
