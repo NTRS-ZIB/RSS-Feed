@@ -55,12 +55,13 @@ CANDIDATES = ["CRWV"]
 # guessed at: a soft-404 answers 200 with the wrong content, so what decides
 # is how many entries actually parse, not the status code.
 FEED_CANDIDATES = {
-    "CORZ": [
-        "https://investors.corescientific.com/news-events/press-releases",
-        "https://investors.corescientific.com/rss/pressrelease.aspx",
-        "https://www.corescientific.com/news",
-        "https://www.corescientific.com/feed/",
-        "https://ir.corescientific.com/news-events/press-releases",
+    "CRWV": [
+        "https://investors.coreweave.com/news-events/press-releases",
+        "https://investors.coreweave.com/rss/pressrelease.aspx",
+        "https://ir.coreweave.com/news-events/press-releases",
+        "https://www.coreweave.com/news",
+        "https://www.coreweave.com/feed/",
+        "https://www.coreweave.com/blog/rss.xml",
     ],
 }
 
