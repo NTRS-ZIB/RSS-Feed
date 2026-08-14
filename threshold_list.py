@@ -32,7 +32,7 @@ from pathlib import Path
 import requests
 
 import watchlist
-from first_run import baseline, summary
+from first_run import backfill_note, backfilled, baseline, summary
 # ------------------------------------------------------------------ CONFIG
 
 # The watchlist lives in watchlist.py — one record per company, one edit to add
@@ -304,7 +304,10 @@ def main():
     # ADDITION. It was listed before anyone here was looking, so reporting it
     # as "added" dates an event to the day we started watching. Treated as
     # already-known, which also means its eventual REMOVAL posts correctly.
+    backfill = backfilled(state)
     newly_watched = set(baseline(state, watchlist.tickers()))
+    if backfill:
+        print("\n" + backfill_note("threshold_list", len(watchlist.tickers())))
     if newly_watched:
         previous, joining = fold_newly_watched(previous, current,
                                                newly_watched)

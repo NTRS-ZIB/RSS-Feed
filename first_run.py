@@ -78,6 +78,28 @@ def baseline(state, keys, namespace="companies", today=None):
     return new
 
 
+def backfilled(state, namespace="companies"):
+    """Will the NEXT baseline() call be the backfill run? Ask before calling.
+
+    The backfill is correct and it is also invisible: it records every key and
+    returns nothing, so a component that ran it and a component where the rule
+    was never wired produce identical logs. That is the trap `CLAUDE.md` states
+    as "a pattern matching nothing looks exactly like one whose matches never
+    occur", and it was met head-on the first time these five were dry-run —
+    all five green, all five silent, with no way to tell from the output which
+    had happened. Pair this with `backfill_note`.
+    """
+    return state.get(namespace) is None
+
+
+def backfill_note(component, count):
+    """The line a component prints on the one run that establishes its record."""
+    return (f"FIRST-RUN RULE: {count} companies recorded as established in "
+            f"{component}, nothing suppressed. This is the backfill and it "
+            f"happens once; from here a company added to the roster posts "
+            f"nothing on its first run.")
+
+
 def summary(component, new, counts=None):
     """The line a component prints when it suppresses a first run.
 

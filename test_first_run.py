@@ -58,6 +58,14 @@ def wiring():
         check(f"{mod.__name__} prints the first-run summary",
               "summary(" in src,
               "a silent suppression reads as a broken component")
+        check(f"{mod.__name__} announces the backfill run",
+              "backfilled(state)" in src and "backfill_note(" in src,
+              "or a rule that ran and one never wired log identically")
+        # backfilled() answers about the NEXT call, so asking after baseline
+        # always says False and the note never prints — green, and useless.
+        check(f"{mod.__name__} asks backfilled() BEFORE baseline()",
+              src.index("backfilled(state)") < src.index("baseline(state,"),
+              "asked afterwards it is always False")
 
 
 def event(ticker):
@@ -198,6 +206,26 @@ def main():
     check("a newly tracked FORM is new the way a company is",
           first_run.baseline(state, ["4", "144"], namespace="forms",
                              today="2026-08-14") == ["144"])
+
+    print("\nTHE BACKFILL ANNOUNCES ITSELF")
+    # Met head-on: the five components were dry-run against live data, all
+    # five went green and all five printed nothing about the rule, so the log
+    # could not distinguish a backfill from a rule that was never called.
+    check("backfilled() is True while the namespace is ABSENT",
+          first_run.backfilled({}) is True)
+    check("and False for an EMPTY one", first_run.backfilled({"companies": {}})
+          is False, "the same distinction baseline() draws")
+    state = {}
+    was = first_run.backfilled(state)
+    first_run.baseline(state, ["AAA"], today="2026-08-14")
+    check("it answers about the NEXT call, so it is False afterwards",
+          was is True and first_run.backfilled(state) is False,
+          "which is why the components capture it first")
+    note = first_run.backfill_note("crossings", 22)
+    check("the note names the component and the count",
+          "crossings" in note and "22" in note)
+    check("the note says nothing was suppressed", "nothing suppressed" in note,
+          "a reader seeing it must not go looking for lost posts")
 
     print("\nTHE LINE A COMPONENT PRINTS")
     check("no line when nothing is new", first_run.summary("holders", []) == "")

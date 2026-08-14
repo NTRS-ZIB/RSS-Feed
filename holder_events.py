@@ -90,7 +90,7 @@ import requests
 import watchlist
 # Imported by name rather than as a module: this file already has a local
 # `first_run` for the whole-file guard, and the two names would collide.
-from first_run import baseline, summary
+from first_run import backfill_note, backfilled, baseline, summary
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -483,7 +483,10 @@ def main():
     # 13D/G on record is a first appearance, which is what this file reports.
     # press_monitor already had the per-company rule; the comment below claimed
     # to use "the same rule" and used only the file-level half of it.
+    backfill = backfilled(state)
     newly_watched = set(baseline(state, CIKS))
+    if backfill:
+        print("\n" + backfill_note("holder_events", len(CIKS)))
     events, legacy_seen = [], []
 
     for ticker, (cik, name) in sorted(CIKS.items()):

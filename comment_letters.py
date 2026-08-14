@@ -49,7 +49,7 @@ from pathlib import Path
 import requests
 
 import watchlist
-from first_run import baseline, summary
+from first_run import backfill_note, backfilled, baseline, summary
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -298,7 +298,10 @@ def main():
     # added that week had no correspondence in window. That is luck, not a
     # guard. Their accessions are still recorded by save_state below, so the
     # next genuine letter posts normally.
+    backfill = backfilled(state)
     newly_watched = set(baseline(state, watchlist.ciks()))
+    if backfill:
+        print("\n" + backfill_note("comment_letters", len(watchlist.ciks())))
     if newly_watched:
         new, per = drop_newly_watched(new, rows, newly_watched)
         print("\n" + summary("comment_letters", sorted(newly_watched), per))

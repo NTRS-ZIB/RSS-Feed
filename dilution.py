@@ -39,7 +39,7 @@ from pathlib import Path
 import requests
 
 import watchlist
-from first_run import baseline, summary
+from first_run import backfill_note, backfilled, baseline, summary
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -494,7 +494,10 @@ def main():
     state = load_state()
     first_run = not STATE_FILE.exists()
     rows, failed, unavailable, changed, splits = [], [], [], 0, 0
+    backfill = backfilled(state)
     newly_watched = set(baseline(state, watchlist.tickers()))
+    if backfill:
+        print("\n" + backfill_note("dilution", len(watchlist.tickers())))
     if newly_watched:
         print()
         print(summary("dilution", sorted(newly_watched)))

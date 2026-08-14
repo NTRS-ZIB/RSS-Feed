@@ -58,7 +58,7 @@ from pathlib import Path
 import requests
 
 import watchlist
-from first_run import baseline, summary
+from first_run import backfill_note, backfilled, baseline, summary
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -350,7 +350,10 @@ def main():
     # time. `first_run` covers a cold start; this covers a company added to a
     # roster the component has been watching for months, which is the shape
     # that cost holder_events 86 posts on 2026-08-14.
+    backfill = backfilled(state)
     newly_watched = set(baseline(state, tickers))
+    if backfill:
+        print("\n" + backfill_note("crossings", len(tickers)))
     if newly_watched:
         print()
         print(summary("crossings", sorted(newly_watched)))
