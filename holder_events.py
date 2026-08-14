@@ -107,13 +107,19 @@ CIKS = watchlist.ciks()
 STRUCTURED = ("SCHEDULE 13D", "SCHEDULE 13G")
 LEGACY = ("SC 13D", "SC 13G")
 
-# Everything this component tracks, on the CAPABILITY axis of the first-run
-# rule. Adding a prefix here is the same act as adding a company to the
-# roster, and with no age floor it carries the same cost: every filing that
-# matches the new prefix is a first appearance. EDGAR has already forced one
-# such edit — `SC 13D` became `SCHEDULE 13D` around December 2024 and 117
-# filings went missing until the new spelling was added.
-FORMS_TRACKED = STRUCTURED + LEGACY
+# What the CAPABILITY axis of the first-run rule guards. Adding a prefix here
+# is the same act as adding a company to the roster, and with no age floor it
+# carries the same cost: every filing matching the new prefix is a first
+# appearance. EDGAR has already forced one such edit — `SC 13D` became
+# `SCHEDULE 13D` around December 2024 and 117 filings went missing until the
+# new spelling was added.
+#
+# STRUCTURED ONLY, AND LEGACY IS NOT AN OVERSIGHT. Only structured filings
+# become events; a legacy one becomes a line in the footnote saying it exists.
+# Including LEGACY would let a prefix added there print a first-run line
+# claiming a suppression that could not have happened, which is the same
+# class of confident wrong answer the rule exists to stop printing.
+FORMS_TRACKED = STRUCTURED
 
 # A percentage moving by less than this is not an event. Institutions restate
 # to two decimals every quarter and the number drifts with the share count
@@ -584,7 +590,7 @@ def main():
     # same filings under both headings.
     if newly_forms:
         events, per = drop_newly_tracked(
-            events, newly_forms, set(FORMS_TRACKED) - newly_forms)
+            events, newly_forms, set(state["forms"]) - newly_forms)
         print("\n" + summary("holder_events forms", sorted(newly_forms), per,
                              "form type"))
 

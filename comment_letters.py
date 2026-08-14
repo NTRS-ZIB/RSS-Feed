@@ -344,7 +344,7 @@ def main():
     # counted once, under the heading that explains them.
     if newly_forms:
         new, per = drop_newly_tracked(new, forms_by_accession, newly_forms,
-                                      set(FORMS) - newly_forms)
+                                      set(state["forms"]) - newly_forms)
         print("\n" + summary("comment_letters forms", sorted(newly_forms), per,
                              "form type"))
 

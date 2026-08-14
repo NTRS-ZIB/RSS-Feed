@@ -1479,7 +1479,19 @@ reconstruction confirms it: 0 posted, 30 recorded.
 
 ### How a first run is recognised
 
-The record is a `baselined` dict in `state.json`, written once per company.
+The record is a `companies` dict in `state.json`, **keyed by CIK**, written
+once per company. Two more dicts sit beside it, `forms` and `insider_forms`,
+which do the same job for the two tracked form sets — see *The second axis*
+below. The decision behind all three lives in [`first_run.py`](../first_run.py);
+only the filter is here.
+
+It was `baselined`, keyed by ticker, until 2026-08-15. The key moved because
+items are marked seen **before** this runs, so anything suppressed can never
+come back: a rename read as a brand-new company and lost a run of its real
+filings permanently. Six of nineteen have renamed in eighteen months. The old
+key is dropped in code on the next run rather than by hand, because a state
+file is an output.
+
 **Two other shapes were considered and one of them is a trap.**
 
 *The company has no ids in `seen`* is the obvious test and it cannot be used.
@@ -1501,6 +1513,34 @@ established by definition, so all are recorded and nothing is suppressed. And
 if `state.json` is lost entirely, `initialized` is false too, so the
 whole-file first-run path fires first — the behaviour degrades to exactly
 what it is today rather than into something new.
+
+### The second axis: a form type tracked for the first time
+
+Adding an entry to `FORM_TYPES` or `INSIDER_ALLOWED_FORMS` makes every filing
+of that type unseen at once, which is the roster-addition shape rotated. When
+`144` joined the insider forms on 2026-08-13 the only thing standing in the
+way was `MAX_AGE_DAYS` happening to be seven — incidental protection, and
+`holder_events`, which has no age floor, is what that turned out to be worth.
+`baseline_forms()` guards both sets, in two namespaces because they feed
+different channels with different caps and a form can be tracked for one and
+not the other.
+
+**The trap the axis brings with it is that three of the four tracked sets in
+the repo are matched by PREFIX**, so a value can already be covered by a key
+that was there before. Adding `S-3/A` beside an existing `S-3` adds no filings
+whatsoever, and suppressing them would go quiet on a form the channel has
+carried for months. `first_run.newly_tracked()` therefore asks whether the
+PREVIOUS set would have matched, not whether the new key does.
+
+**And `previous` means the RECORD, not the current config minus the new
+keys.** The two differ exactly when an edit REPLACES a key, which this repo
+has already done once: commit `12eaa14` deleted `NT 10-K` and `NT 10-Q` and
+added `NT ` in their place. Under the config reading, `NT ` is new, the
+deleted keys are gone, and every NT filing looks newly tracked — suppressed,
+already marked seen, with a log line calling it a first run. `baseline()`
+never removes a key, so the record still holds them. Caught in review before
+merge; `test_first_run.py` pins both readings, the right one and the wrong
+one, against that exact edit.
 
 ### What `MAX_AGE_DAYS` still does
 

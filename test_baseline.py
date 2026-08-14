@@ -150,14 +150,18 @@ def main():
     print("-" * 78)
     state = {"seen": [], "initialized": True,
              # Every company EXCEPT the five, i.e. the roster as it stood.
-             "baselined": {t: "2026-07-01" for t in ciks if t not in ADDED}}
-    posted2, suppressed, new = new_path(items, list(ciks), state, ADDED_AT)
+             # KEYED BY CIK since 2026-08-15. Under the ticker key a rename
+             # read as a new company and lost a run of its real filings.
+             "companies": {c: "2026-07-01" for t, (c, _) in ciks.items()
+                           if t not in ADDED}}
+    posted2, suppressed, new = new_path(items, ciks, state, ADDED_AT)
     check("nothing posts for a new company", len(posted2) == 0,
           f"{len(posted2)} posted")
     check("everything is accounted for", len(suppressed) == len(items),
           f"{len(suppressed)} suppressed of {len(items)}")
-    check("all five are recorded as baselined",
-          all(state["baselined"].get(t) == "2026-08-05" for t in ADDED))
+    check("all five are recorded, by CIK",
+          all(state["companies"].get(ciks[t][0]) == "2026-08-05"
+              for t in ADDED))
     check("insider items are suppressed too",
           not any(i["kind"] == "insider" for i in posted2),
           f"{sum(1 for i in suppressed if i['kind'] == 'insider')} insider "
@@ -172,21 +176,21 @@ def main():
                  "published": now.timestamp() - 3600, "kind": "press",
                  "title": "MARA 8-K", "is_edgar": True}]
     state2 = {"seen": [], "initialized": True,
-              "baselined": {t: "2026-07-01" for t in ciks}}
-    posted3, suppressed3, new3 = new_path(ordinary, list(ciks), state2, now)
+              "companies": {c: "2026-07-01" for c, _ in ciks.values()}}
+    posted3, suppressed3, new3 = new_path(ordinary, ciks, state2, now)
     check("an established company still posts", len(posted3) == 1)
     check("and nothing is suppressed", not suppressed3 and not new3)
 
     # ---- the backfill run --------------------------------------------------
     print("\n" + "-" * 78)
-    print("THE BACKFILL RUN — `baselined` absent, which is the next real run")
+    print("THE BACKFILL RUN — `companies` absent, which is the next real run")
     print("-" * 78)
     state3 = {"seen": [], "initialized": True}
-    posted4, suppressed4, new4 = new_path(ordinary, list(ciks), state3, now)
+    posted4, suppressed4, new4 = new_path(ordinary, ciks, state3, now)
     check("the backfill suppresses nothing", not suppressed4 and not new4)
     check("and records every roster company",
-          len(state3.get("baselined") or {}) == len(ciks),
-          f"{len(state3.get('baselined') or {})} recorded")
+          len(state3.get("companies") or {}) == len(ciks),
+          f"{len(state3.get('companies') or {})} recorded")
     check("an ordinary item still posts on the backfill run", len(posted4) == 1)
 
     # ---- the hazard in the option NOT taken --------------------------------

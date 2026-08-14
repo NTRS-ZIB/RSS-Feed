@@ -1655,7 +1655,10 @@ def baseline_forms(state, items, insider_items, today=None):
         if not new:
             out.append(set())
             continue
-        old = set(keys) - new
+        # From the RECORD, not from `keys`: an edit that REPLACES a key
+        # drops it out of `keys` and the replacement then looks newly
+        # tracked for filings the old key already covered.
+        old = set(state[namespace]) - new
         per, blocked = Counter(), set()
         for i in items_in:
             hit = first_run.newly_tracked(str(i.get("form") or ""), new, old,

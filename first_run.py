@@ -123,6 +123,16 @@ def newly_tracked(value, new_keys, old_keys, matches):
     channel has carried for months. The question is whether the PREVIOUS set
     would have matched the value, not whether the new key does.
 
+    `old_keys` MUST COME FROM THE RECORD, `set(state[namespace]) - new`, and
+    NOT from the current config minus the new keys. The two differ exactly
+    when an edit REPLACES a key, and the repo has already made that edit
+    once: `NT 10-K` and `NT 10-Q` were deleted and `NT ` added in their
+    place. Under the config reading, `NT ` is new, the deleted keys are gone,
+    so every NT filing looks newly tracked and is suppressed — a form the
+    channel has carried for months, gone quiet, with a log line calling it a
+    first run. `baseline` never removes a key, so the record still holds them
+    and answers the question the docstring above actually asks.
+
     `matches(value, key)` is the component's own matcher: `str.startswith` for
     a prefix set, `operator.eq` for an exact one, `press_monitor.form_matches`
     for `FORM_TYPES`. It stays in the component because the components
