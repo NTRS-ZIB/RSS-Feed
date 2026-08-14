@@ -1152,7 +1152,11 @@
   "urn:tag:sec.gov,2008:accession-number=0001769628-26-000320",
   "urn:tag:sec.gov,2008:accession-number=0001769628-26-000319",
   "https://investors.corescientific.com/news-events/press-releases/detail/142/core-scientific-completes-acquisition-of-polaris-ds-advancing-planned-muskogee-expansion-to-1-5-gw-of-gross-power",
-  "urn:tag:sec.gov,2008:accession-number=0001079500-26-000008"
+  "urn:tag:sec.gov,2008:accession-number=0001079500-26-000008",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-089450",
+  "urn:tag:sec.gov,2008:accession-number=0001839341-26-000018",
+  "https://www.galaxy.com/newsroom/bank-leumi-partners-with-galaxy-to-be-the-first-bank-in-israel-to-offer-digital-asset-trading",
+  "dgxx:j8jz5empqiq78zfqveemjwwv"
  ],
  "initialized": true,
  "baselined": {
