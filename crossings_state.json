@@ -2,91 +2,130 @@
  "ABTC": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
  },
  "ANY": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
  },
  "APLD": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
  },
  "BGDE": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
  },
  "BKKT": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
  },
  "BTDR": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
  },
  "CIFR": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
  },
  "CLSK": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
+ },
+ "CORZ": {
+  "armed_hi": true,
+  "armed_lo": true,
+  "last_seen": "2026-08-14"
+ },
+ "CRWV": {
+  "armed_hi": true,
+  "armed_lo": true,
+  "last_seen": "2026-08-14"
  },
  "DGXX": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
  },
  "GLXY": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
  },
  "HUT": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
  },
  "IREN": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
  },
  "MARA": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
  },
  "NUAI": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
+ },
+ "RIOT": {
+  "armed_hi": true,
+  "armed_lo": true,
+  "last_seen": "2026-08-14"
  },
  "SLNH": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
  },
  "VIP": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
  },
  "WULF": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
  },
  "WYFI": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-08-13"
+  "last_seen": "2026-08-14"
+ },
+ "companies": {
+  "0000064463": "2026-08-14",
+  "0000827876": "2026-08-14",
+  "0001083301": "2026-08-14",
+  "0001144879": "2026-08-14",
+  "0001167419": "2026-08-14",
+  "0001181412": "2026-08-14",
+  "0001218683": "2026-08-14",
+  "0001507605": "2026-08-14",
+  "0001591956": "2026-08-14",
+  "0001755953": "2026-08-14",
+  "0001769628": "2026-08-14",
+  "0001819989": "2026-08-14",
+  "0001820302": "2026-08-14",
+  "0001839341": "2026-08-14",
+  "0001844971": "2026-08-14",
+  "0001854368": "2026-08-14",
+  "0001859392": "2026-08-14",
+  "0001878848": "2026-08-14",
+  "0001899123": "2026-08-14",
+  "0001964789": "2026-08-14",
+  "0002028336": "2026-08-14",
+  "0002042022": "2026-08-14"
  }
 }
