@@ -32,6 +32,7 @@ from pathlib import Path
 import requests
 
 import watchlist
+from first_run import backfill_note, backfilled, baseline_by_cik, summary
 # ------------------------------------------------------------------ CONFIG
 
 # The watchlist lives in watchlist.py — one record per company, one edit to add
@@ -87,6 +88,21 @@ def load_state():
 
 def save_state(state):
     STATE_FILE.write_text(json.dumps(state, indent=1))
+
+
+def fold_newly_watched(previous, current, newly_watched):
+    """Companies added since the last run, treated as already known.
+
+    A COMPANY ALREADY ON THE LIST WHEN IT JOINS THE ROSTER IS NOT AN
+    ADDITION. It was listed before anyone here was looking, so reporting it
+    as "added" dates an event to the day we started watching. Folding it into
+    `previous` also means its eventual REMOVAL posts correctly, which
+    dropping it from `current` would not.
+
+    Returns the widened `previous` and the set that was folded in.
+    """
+    joining = current & {s.upper() for s in newly_watched}
+    return previous | joining, joining
 
 
 def canonical(symbol):
@@ -284,6 +300,20 @@ def main():
     had_state = STATE_FILE.exists()
     state = load_state()
     previous = set(state.get("on_list") or [])
+    # A COMPANY ALREADY ON THE LIST WHEN IT JOINS THE ROSTER IS NOT AN
+    # ADDITION. It was listed before anyone here was looking, so reporting it
+    # as "added" dates an event to the day we started watching. Treated as
+    # already-known, which also means its eventual REMOVAL posts correctly.
+    backfill = backfilled(state)
+    newly_watched = set(baseline_by_cik(state, watchlist.ciks()))
+    if backfill:
+        print("\n" + backfill_note("threshold_list", len(watchlist.tickers())))
+    if newly_watched:
+        previous, joining = fold_newly_watched(previous, current,
+                                               newly_watched)
+        print()
+        print(summary("threshold_list", sorted(newly_watched),
+                      {t: 1 for t in sorted(joining)}))
     added = current - previous
     removed = previous - current
     print(f"previously: {sorted(previous) or 'none'}"
@@ -305,11 +335,23 @@ def main():
                 print("\nDry run: no watchlist company is listed, so a post "
                       "would have nothing to show. The embed is only "
                       "previewable when at least one is on the list.")
-        if not DRY_RUN and state.get("last_date") != day.isoformat():
+        # `on_list` IS WRITTEN HERE TOO, not only on the post path. Without
+        # it the fold above lives for one run and dies: `previous` is widened
+        # in memory, nothing posts, `on_list` keeps its old value, and on the
+        # next run the company is no longer newly watched — so it reloads as
+        # absent from `previous` and posts as an ADDITION. The suppression
+        # would have delayed the unearned post by a day and nothing more.
+        #
+        # Also unconditional on `last_date` for the same reason: gating the
+        # write on the date changing means a fold on a second run of the same
+        # settlement day is discarded.
+        if not DRY_RUN:
+            state["on_list"] = sorted(current)
             state["last_date"] = day.isoformat()
             save_state(state)
             print(f"State written: {STATE_FILE.name} "
-                  f"(on_list empty, last_date {day:%Y-%m-%d})")
+                  f"(on_list {sorted(current) or 'empty'}, "
+                  f"last_date {day:%Y-%m-%d})")
         return
 
     # Runs cost one request per prior file, so only count them on a change.
