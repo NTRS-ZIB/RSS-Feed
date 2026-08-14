@@ -53,8 +53,12 @@ def wiring():
     for mod in COMPONENTS:
         src = inspect.getsource(mod.main)
         check(f"{mod.__name__} passes its state to baseline()",
-              "baseline(state," in src,
+              "baseline_by_cik(state," in src,
               "recording is what stops the NEXT run flooding")
+        check(f"{mod.__name__} baselines the CIK roster, not the tickers",
+              "baseline_by_cik(state, watchlist.ciks())" in src
+              or "baseline_by_cik(state, CIKS)" in src,
+              "watchlist.tickers() would key the record by display label")
         check(f"{mod.__name__} prints the first-run summary",
               "summary(" in src,
               "a silent suppression reads as a broken component")
@@ -64,8 +68,28 @@ def wiring():
         # backfilled() answers about the NEXT call, so asking after baseline
         # always says False and the note never prints — green, and useless.
         check(f"{mod.__name__} asks backfilled() BEFORE baseline()",
-              src.index("backfilled(state)") < src.index("baseline(state,"),
+              src.index("backfilled(state)") < src.index("baseline_by_cik(state,"),
               "asked afterwards it is always False")
+
+    # THE RECORD MUST REACH DISK ON THE QUIET PATH. Both of these components
+    # return early when nothing changed, and both originally saved only after
+    # a successful post — which can be weeks away. Until then the `companies`
+    # record was rebuilt and thrown away every run, so the rule was inert
+    # while every log line said it had already run. Two save sites each is
+    # the cheapest thing that distinguishes the two shapes from source.
+    print()
+    for mod in (dilution, threshold_list):
+        src = inspect.getsource(mod.main)
+        check(f"{mod.__name__} writes state on its no-change path too",
+              src.count("save_state(state)") >= 2,
+              "counts call sites, so a dead branch still reads as green")
+    check("threshold_list persists the FOLDED list, not just the date",
+          inspect.getsource(threshold_list.main).count(
+              'state["on_list"] = sorted(current)') == 2,
+          "otherwise the fold delays the unearned post by one run")
+    check("crossings does not re-flag a ticker it already has",
+          "state.setdefault(ticker," in inspect.getsource(crossings.main),
+          "a plain assignment would wipe last_seen and break classify()")
 
 
 def event(ticker):
@@ -110,17 +134,29 @@ def per_component():
     check("the backfill run suppresses NOTHING", kept == {"r-1", "c-1"})
 
     print("\ncrossings — one unearned post, not a flood")
-    check("a newly watched ticker starts DISARMED",
-          crossings.initial_flags("CORZ", {"CORZ"})
-          == {"armed_hi": False, "armed_lo": False},
-          "a company added at a 52w extreme crossed nothing while watched")
-    check("an established ticker starts ARMED",
-          crossings.initial_flags("RIOT", {"CORZ"})
+    check("a newly watched ticker is disarmed WHERE IT IS CROSSING",
+          crossings.initial_flags("CORZ", {"CORZ"}, "H")
+          == {"armed_hi": False, "armed_lo": True},
+          "a company added above its 52w high crossed nothing while watched")
+    check("and in the other direction when it is crossing low",
+          crossings.initial_flags("CORZ", {"CORZ"}, "L")
+          == {"armed_hi": True, "armed_lo": False})
+    # The bug this replaced: disarming both left a ticker added at 85% of its
+    # range unable to re-arm (that needs 25-75%), so a genuine breakout the
+    # next day was dropped silently. Nothing was suppressed on day one, so
+    # nothing in the log pointed at it either.
+    check("a newly watched ticker CROSSING NOTHING stays fully armed",
+          crossings.initial_flags("CORZ", {"CORZ"}, None)
+          == {"armed_hi": True, "armed_lo": True},
+          "there is no first-run event to suppress, so suppress nothing")
+    check("an established ticker starts ARMED even while crossing",
+          crossings.initial_flags("RIOT", {"CORZ"}, "H")
           == {"armed_hi": True, "armed_lo": True},
           "the disarm must not leak to everyone else")
     check("the backfill run arms everybody",
           crossings.initial_flags("CORZ",
-                                  set(first_run.baseline({}, ["RIOT", "CORZ"])))
+                                  set(first_run.baseline({}, ["RIOT", "CORZ"])),
+                                  "H")
           == {"armed_hi": True, "armed_lo": True})
 
     print("\nthreshold_list — folded into previous, not dropped")
@@ -206,6 +242,32 @@ def main():
     check("a newly tracked FORM is new the way a company is",
           first_run.baseline(state, ["4", "144"], namespace="forms",
                              today="2026-08-14") == ["144"])
+
+    print("\nKEYED BY CIK, BECAUSE A TICKER IS A DISPLAY LABEL")
+    # Six of nineteen renamed in eighteen months. Under a ticker key a rename
+    # reads as a new company and one run of its real events is suppressed —
+    # and in holder_events and comment_letters marked seen in the same run,
+    # so they never post at all.
+    state = {}
+    first_run.baseline_by_cik(state, {"FOO": ("0001000", "Foo Inc")},
+                              today="2026-01-01")
+    check("the record on disk is CIKs, not tickers",
+          state["companies"] == {"0001000": "2026-01-01"})
+    check("a RENAMED company is not newly watched",
+          first_run.baseline_by_cik(state, {"BAR": ("0001000", "Bar Inc")},
+                                    today="2026-08-14") == [],
+          "same CIK, new symbol — this is the case that loses filings")
+    check("a genuinely new company still is",
+          first_run.baseline_by_cik(state, {"BAR": ("0001000", "Bar Inc"),
+                                            "NEW": ("0002000", "New Co")},
+                                    today="2026-08-14") == ["NEW"],
+          "and it comes back as a TICKER, which is what a reader recognises")
+    # The inverse, and the reason a ticker key fails in both directions:
+    # SPCX was a SPAC ETF until 2026-04-07 and SpaceX from 2026-06-15.
+    check("a RECYCLED ticker is a new company",
+          first_run.baseline_by_cik(state, {"NEW": ("0009999", "Someone Else")},
+                                    today="2026-08-15") == ["NEW"],
+          "same symbol, different CIK — a ticker key would suppress it")
 
     print("\nTHE BACKFILL ANNOUNCES ITSELF")
     # Met head-on: the five components were dry-run against live data, all

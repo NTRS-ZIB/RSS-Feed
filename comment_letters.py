@@ -49,7 +49,7 @@ from pathlib import Path
 import requests
 
 import watchlist
-from first_run import backfill_note, backfilled, baseline, summary
+from first_run import backfill_note, backfilled, baseline_by_cik, summary
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -299,7 +299,7 @@ def main():
     # guard. Their accessions are still recorded by save_state below, so the
     # next genuine letter posts normally.
     backfill = backfilled(state)
-    newly_watched = set(baseline(state, watchlist.ciks()))
+    newly_watched = set(baseline_by_cik(state, watchlist.ciks()))
     if backfill:
         print("\n" + backfill_note("comment_letters", len(watchlist.ciks())))
     if newly_watched:

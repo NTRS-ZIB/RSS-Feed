@@ -90,7 +90,7 @@ import requests
 import watchlist
 # Imported by name rather than as a module: this file already has a local
 # `first_run` for the whole-file guard, and the two names would collide.
-from first_run import backfill_note, backfilled, baseline, summary
+from first_run import backfill_note, backfilled, baseline_by_cik, summary
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -484,7 +484,7 @@ def main():
     # press_monitor already had the per-company rule; the comment below claimed
     # to use "the same rule" and used only the file-level half of it.
     backfill = backfilled(state)
-    newly_watched = set(baseline(state, CIKS))
+    newly_watched = set(baseline_by_cik(state, CIKS))
     if backfill:
         print("\n" + backfill_note("holder_events", len(CIKS)))
     events, legacy_seen = [], []

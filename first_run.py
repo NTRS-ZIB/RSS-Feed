@@ -64,8 +64,15 @@ def baseline(state, keys, namespace="companies", today=None):
     that distinguishes "never seen" from "seen and forgotten".
 
     IF THE STATE FILE IS LOST, the namespace is absent, so this returns
-    nothing new and the component's own whole-file first-run path decides what
-    happens. It degrades into existing behaviour rather than into a new one.
+    nothing new and the component behaves exactly as it did before this rule
+    existed. That degradation is deliberate but it is NOT a safety net, and
+    an earlier draft of this docstring claimed it was: only `holder_events`
+    of the five actually suppresses on a cold start. `comment_letters` and
+    `crossings` compute a `first_run` flag and use it as a log annotation, so
+    a lost state file means 180 days of correspondence and every ticker
+    sitting at an extreme post at once. That is unchanged by this rule and
+    out of its scope; it is written down so the next reader does not take the
+    absence of a complaint for a guarantee.
     """
     today = today or date.today().isoformat()
     known = state.get(namespace)
@@ -76,6 +83,30 @@ def baseline(state, keys, namespace="companies", today=None):
     for k in new:
         state[namespace][k] = today
     return new
+
+
+def baseline_by_cik(state, companies, namespace="companies", today=None):
+    """Newly watched TICKERS, recorded by CIK. Takes `watchlist.ciks()`.
+
+    KEYED BY CIK BECAUSE A TICKER IS A DISPLAY LABEL. Six of nineteen
+    companies renamed in eighteen months, and under a ticker key a rename
+    reads as a brand-new company: one run of its real events is suppressed,
+    and in `holder_events` and `comment_letters` those events are marked seen
+    in the same run, so they never post at all. The failure is silent and the
+    log reads as a deliberate first-run suppression.
+
+    The inverse matters as much. A RECYCLED ticker — `SPCX` was a SPAC ETF
+    until 2026-04-07 and SpaceX from 2026-06-15 — is already in the record
+    under a ticker key, so the new company would get no suppression and flood.
+
+    Returns tickers because that is what a reader recognises; the record on
+    disk is CIKs. `docs/watchlist.md` records the one case where a CIK does
+    not survive, a combination creating a new registrant, and that correctly
+    reads as a new company here.
+    """
+    cik_of = {t: c for t, (c, _) in companies.items()}
+    new = set(baseline(state, cik_of.values(), namespace, today))
+    return sorted(t for t, c in cik_of.items() if c in new)
 
 
 def backfilled(state, namespace="companies"):

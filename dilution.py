@@ -39,7 +39,7 @@ from pathlib import Path
 import requests
 
 import watchlist
-from first_run import backfill_note, backfilled, baseline, summary
+from first_run import backfill_note, backfilled, baseline_by_cik, summary
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -310,6 +310,17 @@ def summarise(series):
             "year_base": year_base}
 
 
+def record(state, rows):
+    """Store each company's current count. Called on every saving path.
+
+    `len(state)` is NOT the company count any more — `state` also carries the
+    first-run `companies` record — so callers report `len(rows)`.
+    """
+    for r in rows:
+        state[r["ticker"]] = {"shares": r["m"]["shares"],
+                              "date": r["m"]["date"].isoformat()}
+
+
 def is_change(ticker, prev, m, newly_watched):
     """Whether this company's share count moved since the last run.
 
@@ -495,7 +506,7 @@ def main():
     first_run = not STATE_FILE.exists()
     rows, failed, unavailable, changed, splits = [], [], [], 0, 0
     backfill = backfilled(state)
-    newly_watched = set(baseline(state, watchlist.tickers()))
+    newly_watched = set(baseline_by_cik(state, watchlist.ciks()))
     if backfill:
         print("\n" + backfill_note("dilution", len(watchlist.tickers())))
     if newly_watched:
@@ -600,6 +611,22 @@ def main():
             print("\nDry run: nothing changed, but this is what a post would "
                   "look like.\n")
             print(build_embed(rows, 0, splits, unavailable)["description"])
+            return 0
+        # STATE IS WRITTEN ON THE QUIET PATH TOO. Before this it was written
+        # only after a successful post, which for this component can be weeks
+        # apart, and that made the first-run rule inert for exactly that long:
+        # the `companies` record was rebuilt and thrown away every run, so
+        # every run printed "this is the backfill and it happens once" and
+        # meant it. The first company added in that window would then be
+        # newly watched against an absent record — no suppression — and post
+        # a share-count alert dated to the day it joined the roster.
+        #
+        # Recording every row here is a no-op for established companies,
+        # since `changed` is zero, and records the newly watched ones, which
+        # is what the suppression above promised.
+        record(state, rows)
+        save_state(state)
+        print(f"State written: {STATE_FILE.name} ({len(rows)} companies)")
         return 0
 
     embed = build_embed(rows, changed, splits, unavailable)
@@ -612,11 +639,9 @@ def main():
         print("Post failed — state not saved, will retry next run.")
         return 1
 
-    for r in rows:
-        state[r["ticker"]] = {"shares": r["m"]["shares"],
-                              "date": r["m"]["date"].isoformat()}
+    record(state, rows)
     save_state(state)
-    print(f"State written: {STATE_FILE.name} ({len(state)} companies)")
+    print(f"State written: {STATE_FILE.name} ({len(rows)} companies)")
     print("Posted.")
     return 0
 

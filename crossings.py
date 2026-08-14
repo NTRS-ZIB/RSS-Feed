@@ -58,7 +58,7 @@ from pathlib import Path
 import requests
 
 import watchlist
-from first_run import backfill_note, backfilled, baseline, summary
+from first_run import backfill_note, backfilled, baseline_by_cik, summary
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -166,18 +166,26 @@ def fetch(symbols):
 # ---------------------------------------------------------------- ANALYSIS
 
 
-def initial_flags(ticker, newly_watched):
+def initial_flags(ticker, newly_watched, crossed):
     """The armed flags a ticker gets the first time it is stored.
 
-    A NEWLY WATCHED TICKER STARTS DISARMED. Defaulting to armed means a
-    company added while already sitting at a 52-week extreme fires on its
-    first run, and it did not cross anything while we were watching — the
-    crossing predates the watch, so announcing it asserts an event that did
-    not happen. The re-arm in main() restores it the moment the price comes
-    back through the middle of the range, so a real later crossing fires.
+    A NEWLY WATCHED TICKER IS DISARMED IN THE DIRECTION IT IS ALREADY
+    CROSSING, and only that one. A company added while sitting above its
+    52-week high did not cross anything while we were watching — the crossing
+    predates the watch, so announcing it asserts an event that did not happen.
+
+    DISARMING BOTH DIRECTIONS WOULD BE WORSE THAN THE BUG IT FIXES, and an
+    earlier version of this did. Re-arming needs `REARM_LOW <= pos <=
+    REARM_HIGH`, so a ticker added at 85% of its range — crossing nothing,
+    suppressing nothing, logging nothing — would have `armed_hi` False and
+    never recover it until the price fell back to 75%. A genuine breakout the
+    next day, observed start to finish, would be silently dropped: the exact
+    direction of failure this whole rule exists to avoid, reached without any
+    unusual conditions.
     """
-    armed = ticker not in newly_watched
-    return {"armed_hi": armed, "armed_lo": armed}
+    if ticker not in newly_watched:
+        return {"armed_hi": True, "armed_lo": True}
+    return {"armed_hi": crossed != "H", "armed_lo": crossed != "L"}
 
 
 def classify(ticker, rows, state):
@@ -351,7 +359,7 @@ def main():
     # roster the component has been watching for months, which is the shape
     # that cost holder_events 86 posts on 2026-08-14.
     backfill = backfilled(state)
-    newly_watched = set(baseline(state, tickers))
+    newly_watched = set(baseline_by_cik(state, watchlist.ciks()))
     if backfill:
         print("\n" + backfill_note("crossings", len(tickers)))
     if newly_watched:
@@ -385,7 +393,8 @@ def main():
             missing.append(ticker)
             continue
 
-        st = state.setdefault(ticker, initial_flags(ticker, newly_watched))
+        st = state.setdefault(ticker,
+                              initial_flags(ticker, newly_watched, m["crossed"]))
 
         # Re-arm first: a ticker that has come back through the middle of its
         # range is eligible again, including on the same run it crosses.
@@ -446,7 +455,9 @@ def main():
         return 1
 
     save_state(state)
-    print(f"\nState written: {STATE_FILE.name} ({len(state)} tickers)")
+    # Not len(state): it also carries the first-run `companies` record.
+    print(f"\nState written: {STATE_FILE.name} "
+          f"({sum(1 for k in state if k != 'companies')} tickers)")
     print(f"Posted {len(crossed)} crossing(s).")
     return 0
 
