@@ -1,16 +1,29 @@
 #!/usr/bin/env python3
-"""Tests for first_run.baseline. Standalone, no network.
+"""Tests for first_run.baseline and its five call sites. No network.
 
 THE ONE THAT MATTERS: an ABSENT namespace and an EMPTY one mean opposite
 things. Absent is the backfill run and nothing is new; empty means the rule
 has run before and knows about nothing, so everything is. Reversing them
 either floods on the day the rule lands or silently suppresses a real backlog
 forever, and neither announces itself in the logs.
+
+The second half checks the WIRING, one section per component. The shared
+module being right buys nothing if a component applies it to the wrong set,
+and that failure is silent in the direction nobody watches: an established
+company's real events held back, with a log line that says only that
+something was suppressed.
 """
 
+import inspect
 import sys
+from datetime import date
 
+import comment_letters
+import crossings
+import dilution
 import first_run
+import holder_events
+import threshold_list
 
 PASS, FAIL = "PASS", "FAIL"
 results = []
@@ -19,6 +32,123 @@ results = []
 def check(name, ok, detail=""):
     results.append((PASS if ok else FAIL, name))
     print(f"  [{PASS if ok else FAIL}] {name}" + (f" - {detail}" if detail else ""))
+
+
+COMPONENTS = [holder_events, comment_letters, crossings, dilution,
+              threshold_list]
+
+
+def wiring():
+    """Every component calls baseline WITH ITS STATE, and says so in the log.
+
+    The filters below are checked directly, which cannot see whether main()
+    reaches them or whether the record is written. That is the half that
+    matters — a component that computes `newly_watched` and never passes
+    `state` suppresses correctly once and then floods on the next run, having
+    recorded nothing. main() itself is unreachable offline (SEC, Alpaca, a
+    webhook), so this reads its source. A source check is a weak check, and a
+    weak check on the wiring beats the nothing that was here before.
+    """
+    print("\nWIRING — each main() calls baseline with its own state")
+    for mod in COMPONENTS:
+        src = inspect.getsource(mod.main)
+        check(f"{mod.__name__} passes its state to baseline()",
+              "baseline(state," in src,
+              "recording is what stops the NEXT run flooding")
+        check(f"{mod.__name__} prints the first-run summary",
+              "summary(" in src,
+              "a silent suppression reads as a broken component")
+
+
+def event(ticker):
+    """A holder_events event tuple. Only field 0 is read by the filter, but
+    the arity has to match or the unpack in drop_newly_watched would pass
+    here and fail in production."""
+    return (ticker, "Name", {}, "ARRIVAL", ["A Holder"], 7.5, None, None, None)
+
+
+def per_component():
+    """Each of the five, at its own suppression point.
+
+    The shared module is checked above; this is the wiring, which is where a
+    wrong change goes SILENT — it suppresses real events for an established
+    company and nothing says so. Every check pairs the two directions: the
+    newly watched company is held back, the established one is untouched.
+    """
+    print("\nholder_events — the component that posted 86 times")
+    state = {"companies": {"RIOT": "2026-01-01"}}
+    new = set(first_run.baseline(state, ["RIOT", "CORZ"], today="2026-08-14"))
+    events, per = holder_events.drop_newly_watched(
+        [event("RIOT"), event("CORZ"), event("CORZ")], new)
+    check("a newly watched company's events are dropped",
+          [e[0] for e in events] == ["RIOT"], f"kept {[e[0] for e in events]}")
+    check("and are counted, per company", dict(per) == {"CORZ": 2})
+    # The backfill: absent namespace, so nobody is new and nothing is held.
+    kept, _ = holder_events.drop_newly_watched(
+        [event("RIOT"), event("CORZ")],
+        set(first_run.baseline({}, ["RIOT", "CORZ"])))
+    check("the backfill run suppresses NOTHING", len(kept) == 2,
+          "the rule landing must not itself be a silent outage")
+
+    print("\ncomment_letters — the widest window in the repo, 180 days")
+    rows = [{"ticker": "RIOT", "accessions": ["r-1"]},
+            {"ticker": "CORZ", "accessions": ["c-1", "c-2", "c-3"]}]
+    kept, per = comment_letters.drop_newly_watched(
+        {"r-1", "c-1", "c-2", "c-3"}, rows, {"CORZ"})
+    check("a newly watched company's letters are dropped", kept == {"r-1"})
+    check("and are counted, per company", per == {"CORZ": 3})
+    kept, _ = comment_letters.drop_newly_watched(
+        {"r-1", "c-1"}, rows, set(first_run.baseline({}, ["RIOT", "CORZ"])))
+    check("the backfill run suppresses NOTHING", kept == {"r-1", "c-1"})
+
+    print("\ncrossings — one unearned post, not a flood")
+    check("a newly watched ticker starts DISARMED",
+          crossings.initial_flags("CORZ", {"CORZ"})
+          == {"armed_hi": False, "armed_lo": False},
+          "a company added at a 52w extreme crossed nothing while watched")
+    check("an established ticker starts ARMED",
+          crossings.initial_flags("RIOT", {"CORZ"})
+          == {"armed_hi": True, "armed_lo": True},
+          "the disarm must not leak to everyone else")
+    check("the backfill run arms everybody",
+          crossings.initial_flags("CORZ",
+                                  set(first_run.baseline({}, ["RIOT", "CORZ"])))
+          == {"armed_hi": True, "armed_lo": True})
+
+    print("\nthreshold_list — folded into previous, not dropped")
+    previous, joining = threshold_list.fold_newly_watched(
+        {"RIOT"}, {"RIOT", "CORZ"}, {"CORZ"})
+    check("a newly watched company already listed is not an ADDITION",
+          {"RIOT", "CORZ"} - previous == set() and joining == {"CORZ"},
+          "it was listed before anyone here was looking")
+    check("the existing previous set SURVIVES the fold", "RIOT" in previous,
+          "widened, not replaced — everyone else's history is in there")
+    previous, joining = threshold_list.fold_newly_watched(
+        {"RIOT"}, {"RIOT"}, {"CORZ"})
+    check("a newly watched company NOT on the list is not folded in",
+          previous == {"RIOT"} and joining == set(),
+          "or its first genuine listing would never post")
+    previous, _ = threshold_list.fold_newly_watched(
+        set(), {"RIOT"}, set(first_run.baseline({}, ["RIOT"])))
+    check("the backfill run folds in NOTHING", previous == set())
+
+    print("\ndilution — a first observation is not a move")
+    m = {"shares": 300_000_000, "date": date(2026, 8, 1)}
+    check("a newly watched company's first count is not a change",
+          dilution.is_change("CORZ", {}, m, {"CORZ"}) is False,
+          "or it posts a dilution alert dated to the day it joined")
+    check("an established company with a moved count still counts",
+          dilution.is_change(
+              "RIOT", {"shares": 250_000_000, "date": "2026-05-01"}, m,
+              {"CORZ"}) is True,
+          "the suppression must not leak to everyone else")
+    check("an established company with an unmoved count does not",
+          dilution.is_change(
+              "RIOT", {"shares": 300_000_000, "date": "2026-08-01"}, m,
+              {"CORZ"}) is False)
+    check("the backfill run counts a real move normally",
+          dilution.is_change("RIOT", {"shares": 1, "date": "2026-05-01"}, m,
+                             set(first_run.baseline({}, ["RIOT"]))) is True)
 
 
 def main():
@@ -83,6 +213,9 @@ def main():
     check("a company with no count still appears",
           "AAA: recorded" in first_run.summary("x", ["AAA"]),
           "a component that suppresses state rather than items has no count")
+
+    per_component()
+    wiring()
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")

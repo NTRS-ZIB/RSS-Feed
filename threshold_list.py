@@ -32,6 +32,7 @@ from pathlib import Path
 import requests
 
 import watchlist
+from first_run import baseline, summary
 # ------------------------------------------------------------------ CONFIG
 
 # The watchlist lives in watchlist.py — one record per company, one edit to add
@@ -87,6 +88,21 @@ def load_state():
 
 def save_state(state):
     STATE_FILE.write_text(json.dumps(state, indent=1))
+
+
+def fold_newly_watched(previous, current, newly_watched):
+    """Companies added since the last run, treated as already known.
+
+    A COMPANY ALREADY ON THE LIST WHEN IT JOINS THE ROSTER IS NOT AN
+    ADDITION. It was listed before anyone here was looking, so reporting it
+    as "added" dates an event to the day we started watching. Folding it into
+    `previous` also means its eventual REMOVAL posts correctly, which
+    dropping it from `current` would not.
+
+    Returns the widened `previous` and the set that was folded in.
+    """
+    joining = current & {s.upper() for s in newly_watched}
+    return previous | joining, joining
 
 
 def canonical(symbol):
@@ -284,6 +300,17 @@ def main():
     had_state = STATE_FILE.exists()
     state = load_state()
     previous = set(state.get("on_list") or [])
+    # A COMPANY ALREADY ON THE LIST WHEN IT JOINS THE ROSTER IS NOT AN
+    # ADDITION. It was listed before anyone here was looking, so reporting it
+    # as "added" dates an event to the day we started watching. Treated as
+    # already-known, which also means its eventual REMOVAL posts correctly.
+    newly_watched = set(baseline(state, watchlist.tickers()))
+    if newly_watched:
+        previous, joining = fold_newly_watched(previous, current,
+                                               newly_watched)
+        print()
+        print(summary("threshold_list", sorted(newly_watched),
+                      {t: 1 for t in sorted(joining)}))
     added = current - previous
     removed = previous - current
     print(f"previously: {sorted(previous) or 'none'}"

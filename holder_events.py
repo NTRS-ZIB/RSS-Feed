@@ -448,6 +448,17 @@ def post(embed):
     return True
 
 
+def drop_newly_watched(events, newly_watched):
+    """Events belonging to companies added since the last run, removed.
+
+    Returns the surviving events and a per-ticker count of what was dropped,
+    which is what the log line needs — a name without a count reads as a
+    warning, a name with one reads as a measurement.
+    """
+    per = Counter(t for t, *_ in events if t in newly_watched)
+    return [e for e in events if e[0] not in newly_watched], per
+
+
 # -------------------------------------------------------------------- MAIN
 
 
@@ -524,8 +535,7 @@ def main():
     # percentages into `holders`, the era floor into `era`. Only the OUTPUT is
     # withheld, so the next genuine change for these companies posts normally.
     if newly_watched:
-        per = Counter(t for t, *_ in events if t in newly_watched)
-        events = [e for e in events if e[0] not in newly_watched]
+        events, per = drop_newly_watched(events, newly_watched)
         print("\n" + summary("holder_events", sorted(newly_watched), per))
 
     # FIRST RUN POSTS NOTHING. Every structured filing is new on a cold start,

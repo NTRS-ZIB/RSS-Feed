@@ -164,6 +164,20 @@ def letters_for(cik, cutoff):
     return out
 
 
+def drop_newly_watched(new, rows, newly_watched):
+    """Accessions belonging to companies added since the last run, removed.
+
+    Returns the surviving accessions and a per-ticker count of what was
+    dropped. Every letter inside the 180-day window is unseen for such a
+    company, and that is the widest window in the repo.
+    """
+    theirs = {a for r in rows if r["ticker"] in newly_watched
+              for a in r["accessions"]}
+    per = {r["ticker"]: len(r["accessions"]) for r in rows
+           if r["ticker"] in newly_watched}
+    return new - theirs, per
+
+
 # ------------------------------------------------------------------ FORMAT
 
 
@@ -286,11 +300,7 @@ def main():
     # next genuine letter posts normally.
     newly_watched = set(baseline(state, watchlist.ciks()))
     if newly_watched:
-        theirs = {a for r in rows if r["ticker"] in newly_watched
-                  for a in r["accessions"]}
-        per = {r["ticker"]: len(r["accessions"]) for r in rows
-               if r["ticker"] in newly_watched}
-        new -= theirs
+        new, per = drop_newly_watched(new, rows, newly_watched)
         print("\n" + summary("comment_letters", sorted(newly_watched), per))
 
     print()

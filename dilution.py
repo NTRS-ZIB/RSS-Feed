@@ -39,6 +39,7 @@ from pathlib import Path
 import requests
 
 import watchlist
+from first_run import baseline, summary
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -309,6 +310,21 @@ def summarise(series):
             "year_base": year_base}
 
 
+def is_change(ticker, prev, m, newly_watched):
+    """Whether this company's share count moved since the last run.
+
+    A NEWLY WATCHED COMPANY IS NOT A CHANGE. With no prior share count its
+    first observation compares against nothing and counts as changed, which
+    posts a dilution alert dated to the day it joined the roster rather than
+    to any filing. Its count is still recorded by the caller, so the next
+    genuine move posts normally.
+    """
+    if ticker in newly_watched:
+        return False
+    return (prev.get("shares") != m["shares"]
+            or prev.get("date") != m["date"].isoformat())
+
+
 # ------------------------------------------------------------------ FORMAT
 
 
@@ -478,6 +494,10 @@ def main():
     state = load_state()
     first_run = not STATE_FILE.exists()
     rows, failed, unavailable, changed, splits = [], [], [], 0, 0
+    newly_watched = set(baseline(state, watchlist.tickers()))
+    if newly_watched:
+        print()
+        print(summary("dilution", sorted(newly_watched)))
     any_drop = False
 
     for ticker, (cik, name) in sorted(watchlist.ciks().items()):
@@ -514,7 +534,7 @@ def main():
         m = summarise(series)
         rows.append({"ticker": ticker, "name": name, "m": m, "concept": concept})
         prev = state.get(ticker, {})
-        if prev.get("shares") != m["shares"] or prev.get("date") != m["date"].isoformat():
+        if is_change(ticker, prev, m, newly_watched):
             changed += 1
         if m["split"]:
             splits += 1

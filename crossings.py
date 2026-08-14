@@ -58,6 +58,7 @@ from pathlib import Path
 import requests
 
 import watchlist
+from first_run import baseline, summary
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -163,6 +164,20 @@ def fetch(symbols):
 
 
 # ---------------------------------------------------------------- ANALYSIS
+
+
+def initial_flags(ticker, newly_watched):
+    """The armed flags a ticker gets the first time it is stored.
+
+    A NEWLY WATCHED TICKER STARTS DISARMED. Defaulting to armed means a
+    company added while already sitting at a 52-week extreme fires on its
+    first run, and it did not cross anything while we were watching — the
+    crossing predates the watch, so announcing it asserts an event that did
+    not happen. The re-arm in main() restores it the moment the price comes
+    back through the middle of the range, so a real later crossing fires.
+    """
+    armed = ticker not in newly_watched
+    return {"armed_hi": armed, "armed_lo": armed}
 
 
 def classify(ticker, rows, state):
@@ -331,6 +346,14 @@ def main():
 
     state = load_state()
     first_run = not STATE_FILE.exists()
+    # Consulted below when a ticker's armed flags are created for the first
+    # time. `first_run` covers a cold start; this covers a company added to a
+    # roster the component has been watching for months, which is the shape
+    # that cost holder_events 86 posts on 2026-08-14.
+    newly_watched = set(baseline(state, tickers))
+    if newly_watched:
+        print()
+        print(summary("crossings", sorted(newly_watched)))
     crossed, missing, young, rearmed = [], [], [], []
 
     for ticker in sorted(tickers):
@@ -359,7 +382,7 @@ def main():
             missing.append(ticker)
             continue
 
-        st = state.setdefault(ticker, {"armed_hi": True, "armed_lo": True})
+        st = state.setdefault(ticker, initial_flags(ticker, newly_watched))
 
         # Re-arm first: a ticker that has come back through the middle of its
         # range is eligible again, including on the same run it crosses.
