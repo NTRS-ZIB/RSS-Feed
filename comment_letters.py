@@ -40,16 +40,19 @@ than either alone.
 """
 
 import json
+import operator
 import os
 import sys
 import time
+from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import requests
 
 import watchlist
-from first_run import backfill_note, backfilled, baseline_by_cik, summary
+from first_run import (backfill_note, backfilled, baseline, baseline_by_cik,
+                       newly_tracked, summary)
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -164,6 +167,29 @@ def letters_for(cik, cutoff):
     return out
 
 
+def drop_newly_tracked(new, found, new_forms, old_forms):
+    """Accessions of a form type this component started tracking, removed.
+
+    The capability axis. There is no age floor here and the window is 180
+    days, the widest in the repo, so a third entry in FORMS would post every
+    such filing on the roster at once.
+
+    `found` is {accession: form}. Exact matching, because FORMS is matched
+    exactly rather than by prefix — `operator.eq` is passed for that reason
+    and not as a placeholder.
+
+    Returns the surviving accessions and a count per newly tracked form.
+    """
+    per, kept = Counter(), set()
+    for acc in new:
+        hit = newly_tracked(found.get(acc, ""), new_forms, old_forms, operator.eq)
+        if hit:
+            per[hit] += 1
+        else:
+            kept.add(acc)
+    return kept, per
+
+
 def drop_newly_watched(new, rows, newly_watched):
     """Accessions belonging to companies added since the last run, removed.
 
@@ -254,6 +280,7 @@ def main():
           f"({LOOKBACK_DAYS}-day window)")
 
     rows, all_accessions, failed = [], set(), []
+    forms_by_accession = {}
     for ticker, (cik, name) in sorted(watchlist.ciks().items()):
         try:
             found = letters_for(cik, cutoff)
@@ -262,6 +289,7 @@ def main():
             failed.append(ticker)
             continue
         all_accessions |= {f["accession"] for f in found}
+        forms_by_accession.update({f["accession"]: f["form"] for f in found})
         if found:
             rows.append({
                 "ticker": ticker, "name": name, "count": len(found),
@@ -302,9 +330,23 @@ def main():
     newly_watched = set(baseline_by_cik(state, watchlist.ciks()))
     if backfill:
         print("\n" + backfill_note("comment_letters", len(watchlist.ciks())))
+    # The capability axis, same rule, own namespace.
+    backfill_forms = backfilled(state, "forms")
+    newly_forms = set(baseline(state, FORMS, namespace="forms"))
+    if backfill_forms:
+        print("\n" + backfill_note("comment_letters", len(FORMS),
+                                   "form types"))
     if newly_watched:
         new, per = drop_newly_watched(new, rows, newly_watched)
         print("\n" + summary("comment_letters", sorted(newly_watched), per))
+
+    # Company axis first, so filings from a company that is ALSO new are
+    # counted once, under the heading that explains them.
+    if newly_forms:
+        new, per = drop_newly_tracked(new, forms_by_accession, newly_forms,
+                                      set(state["forms"]) - newly_forms)
+        print("\n" + summary("comment_letters forms", sorted(newly_forms), per,
+                             "form type"))
 
     print()
     print(build_table(rows) if rows else "No comment letters in the window.")

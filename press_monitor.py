@@ -11,6 +11,7 @@ Dedupes against state.json so each item is posted exactly once.
 
 import html
 import json
+import operator
 import os
 import re
 import socket
@@ -28,6 +29,7 @@ import requests
 
 import watchlist
 import earnings_dates as ed
+import first_run
 import page_text
 # ------------------------------------------------------------------ CONFIG
 
@@ -1611,6 +1613,65 @@ def suppress_cross_host(feed_items, newsroom_items, label):
     return kept
 
 
+def baseline_forms(state, items, insider_items, today=None):
+    """Suppress everything of a form type tracked for the first time.
+
+    THE SECOND AXIS. Adding to `FORM_TYPES` or `INSIDER_ALLOWED_FORMS` makes
+    every filing of that type unseen at once, exactly as adding a ticker makes
+    every filing of that company unseen. When `144` joined the insider forms
+    on 2026-08-13 that was covered only by MAX_AGE_DAYS happening to be seven
+    — protection that is incidental rather than designed, and `holder_events`,
+    which has no age floor at all, is the component that proved what that is
+    worth.
+
+    TWO NAMESPACES, because the two sets feed different channels with
+    different caps and a form can legitimately be tracked for one and not the
+    other. They are also matched differently: `FORM_TYPES` by prefix through
+    `form_matches`, `INSIDER_ALLOWED_FORMS` exactly. Both matchers stay here
+    rather than moving to `first_run`, which is the same division the company
+    axis uses.
+
+    A FORM ALREADY COVERED BY AN ESTABLISHED ENTRY IS NOT NEW — see
+    `first_run.newly_tracked`. Adding `S-3/A` beside `S-3` adds no filings,
+    and suppressing them would silence a form the channel has carried for
+    months.
+
+    Returns (suppressed_press_uids, suppressed_insider_uids). Mutates `state`.
+    """
+    out = []
+    for items_in, keys, namespace, matcher in (
+            (items, list(FORM_TYPES), "forms",
+             lambda v, k: form_matches(v, [k])),
+            (insider_items, sorted(INSIDER_ALLOWED_FORMS), "insider_forms",
+             operator.eq)):
+        backfill = first_run.backfilled(state, namespace)
+        new = set(first_run.baseline(state, keys, namespace=namespace,
+                                     today=today))
+        if backfill:
+            print(first_run.backfill_note("press_monitor", len(keys),
+                                          "form types"))
+            out.append(set())
+            continue
+        if not new:
+            out.append(set())
+            continue
+        # From the RECORD, not from `keys`: an edit that REPLACES a key
+        # drops it out of `keys` and the replacement then looks newly
+        # tracked for filings the old key already covered.
+        old = set(state[namespace]) - new
+        per, blocked = Counter(), set()
+        for i in items_in:
+            hit = first_run.newly_tracked(str(i.get("form") or ""), new, old,
+                                          matcher)
+            if hit:
+                per[hit] += 1
+                blocked.add(i["uid"])
+        print(first_run.summary(f"press_monitor {namespace}", sorted(new), per,
+                                "form type"))
+        out.append(blocked)
+    return out[0], out[1]
+
+
 def baseline_companies(state, roster, items, today=None):
     """Suppress everything from a company appearing for the first time.
 
@@ -1621,58 +1682,56 @@ def baseline_companies(state, roster, items, today=None):
     produced a handful of backdated posts alongside the twenty items the age
     floor correctly swallowed.
 
-    THE RECORD IS A DICT IN state.json, `baselined`, AND THE REASON IT IS NOT
-    "the company has no ids in `seen`" IS MEASURABLE. `seen` is capped at
-    max(1000, items_this_run * 3) and is SATURATED at exactly 1000 today, so
-    ids are actively being evicted. Worse, a uid is a bare accession number
-    and carries no company, so "does this company have ids in seen" cannot be
-    asked of the file at all — only of an intersection with the current run,
-    which an eviction would silently empty. A company whose ids had aged out
-    would look brand new and its real backlog would be suppressed without a
-    word. That is the exact failure this function exists to avoid, arriving
-    through the mechanism meant to prevent it.
+    THE DECISION NOW LIVES IN `first_run`, and only the FILTER is here. This
+    rule was written for this component when it was the only one that needed
+    it; on 2026-08-14 `holder_events` posted 86 messages from the same shape
+    and five components turned out to share it. What suppression means still
+    differs everywhere — accessions, letters, armed flags, a share count — so
+    that stayed put and only "which keys has this component never recorded"
+    moved out.
 
-    IT IS ALSO NOT A NEW FILE. `baselined` lives beside `initialized` because
-    it is the same kind of fact — this thing has been baselined — and
-    state.json is already committed by the workflow, already has a merge
-    driver, and is already never hand-edited. A second artefact would need all
-    three built again.
+    THE RECORD IS KEYED BY CIK, and it used to be keyed by ticker. A rename
+    made an established company read as brand new, which is not a rounding
+    error here: the items are marked seen by the caller BEFORE this runs, so
+    a suppressed item can never come back. `roster` is `watchlist.ciks()`.
 
-    IT SELF-BACKFILLS, so no dates are hand-written for the eighteen companies
-    already running. If the key is ABSENT this is the first run under the rule
-    and every roster company is established by definition — they have been
-    posting for weeks — so all are recorded and NOTHING is suppressed. Only a
-    company missing from a PRESENT dict is new.
+    It still lives in state.json, beside `initialized`, because it is the same
+    kind of fact and that file is already committed by the workflow, already
+    has a merge driver and is already never hand-edited.
 
-    IF state.json IS LOST ENTIRELY, `baselined` is empty and `initialized` is
-    false, so the whole-file first-run path fires first and posts nothing.
-    Degrades exactly as today rather than into a new behaviour.
+    NOT "the company has no ids in `seen`", and the reason is measurable.
+    `seen` is capped at max(1000, items_this_run * 3) and is SATURATED at
+    exactly 1000 today, so ids are actively being evicted; and a uid is a bare
+    accession number carrying no company, so the question cannot be asked of
+    the file at all. A company whose ids had aged out would look brand new and
+    have its real backlog suppressed without a word — the exact failure this
+    exists to prevent, arriving through the mechanism meant to prevent it.
+
+    IF state.json IS LOST ENTIRELY the namespace is absent, so nothing is new
+    and `initialized` is false too, meaning the whole-file first-run path
+    fires first and posts nothing. Degrades as before rather than into
+    something new.
 
     Returns (new_companies, suppressed_items). Mutates `state`.
     """
-    today = today or date.today().isoformat()
-    known = state.get("baselined")
-    if known is None:
-        state["baselined"] = {t: today for t in sorted(roster)}
-        print(f"Per-company baseline: recording {len(roster)} established "
-              f"company/companies. Nothing suppressed — the key was absent, "
-              f"so this is the backfill run and every company on the roster "
-              f"is already running.")
-        return [], []
+    # The pre-migration record, keyed by ticker and superseded by `companies`.
+    # Dropped in code rather than by hand because a state file is an output.
+    state.pop("baselined", None)
 
-    new = sorted(t for t in roster if t not in known)
+    # Asked BEFORE the call, which is the whole of the ordering hazard: it
+    # answers about the NEXT baseline, so afterwards it is always False and
+    # the note never prints.
+    backfill = first_run.backfilled(state)
+    new = first_run.baseline_by_cik(state, roster, today=today)
+    if backfill:
+        print(first_run.backfill_note("press_monitor", len(roster)))
+        return [], []
     if not new:
         return [], []
 
     suppressed = [i for i in items if i.get("ticker") in set(new)]
-    for t in new:
-        state["baselined"][t] = today
     per = Counter(i.get("ticker") for i in suppressed)
-    print(f"FIRST RUN for {', '.join(new)} — everything they have is marked "
-          f"seen and NOTHING posts. This is the intended behaviour of adding a "
-          f"ticker, not a loss:")
-    for t in new:
-        print(f"    {t}: {per.get(t, 0)} item(s) suppressed")
+    print(first_run.summary("press_monitor", new, per))
     return new, suppressed
 
 
@@ -2471,12 +2530,24 @@ def main():
     # insider. This runs AFTER the marking above, so its items are recorded as
     # seen exactly like any other suppressed item and cannot return next run.
     new_companies, _suppressed = baseline_companies(
-        state, list(EXTRA_CIKS), fresh + insider_fresh)
+        state, EXTRA_CIKS, fresh + insider_fresh)
     if new_companies:
         blocked = set(new_companies)
         fresh = [i for i in fresh if i.get("ticker") not in blocked]
         insider_fresh = [i for i in insider_fresh
                          if i.get("ticker") not in blocked]
+
+    # The form axis, AFTER the company axis so that filings from a company
+    # that is also new are counted once, under the heading that explains them.
+    # Same placement rationale as above: everything here was marked seen at
+    # the top of this block, so nothing suppressed can return next run.
+    press_blocked, insider_blocked = baseline_forms(state, fresh,
+                                                    insider_fresh)
+    if press_blocked:
+        fresh = [i for i in fresh if i["uid"] not in press_blocked]
+    if insider_blocked:
+        insider_fresh = [i for i in insider_fresh
+                         if i["uid"] not in insider_blocked]
 
     # An item with no readable date is about to be dropped by the age floor
     # below, having already been marked seen, so it can never return. Report
