@@ -114,3 +114,41 @@ and harder to notice.
   output.
 - The mutation standard applies: name the one-line change that turns each check
   red, make it, watch it fail.
+
+## Verification, as carried out
+
+**Offline.** `test_first_run.py`, 57 checks. Every one demonstrated red by a
+named one-line mutation — 51 of them, applied one at a time with
+`__pycache__` cleared between each and the mutated file read back before the
+run. Three checks were rewritten rather than kept, because no mutation could
+redden them: one asserted what the shared module already proved, one asserted
+what its neighbour asserted, and one deletion crashed the harness instead of
+failing a check.
+
+Each component's suppression is a named function so a check can reach it —
+`drop_newly_watched` (holder_events, comment_letters), `initial_flags`
+(crossings), `fold_newly_watched` (threshold_list), `is_change` (dilution).
+`main()` is unreachable offline, so ten source-level checks pin that each
+component passes its state to `baseline` and prints the summary, and five more
+that it asks `backfilled()` **before** `baseline()` — asked afterwards it is
+always False and the note never prints.
+
+**Live, 2026-08-14.** All five dry-run on the branch, twice.
+
+The first round was the finding: five green runs, five normal outputs, and
+**nothing at all about the rule in any log**. The backfill records every key
+and returns nothing new, so it cannot be distinguished from a rule that was
+never called. `backfilled()` and `backfill_note()` were added for that.
+
+The second round prints, in each of the five, `FIRST-RUN RULE: 22 companies
+recorded as established in <component>, nothing suppressed`, with normal
+output beside it — `dilution` reported 3 of 18 changed and rendered its table,
+`comment_letters` and `threshold_list` reported no change, `crossings` nothing
+crossed.
+
+**What has NOT been exercised, and cannot be yet.** No component has
+suppressed a real company, because every state file still lacks the
+`companies` key: the first live run of each is the backfill. Suppression can
+only be demonstrated after that, and only by adding a company. This is the
+same shape as the push-retry loop recorded in `CLAUDE.md` — do not read the
+surrounding work looking finished as evidence that this part ran.

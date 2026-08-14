@@ -1553,6 +1553,7 @@ window to the cadence.
 | `regsho_volume.py` | `last_trade_date` | no | Same shape; a skipped day is a stale snapshot, not a lost event |
 | `dilution.py` | last share count | no | A missed run delays; the XBRL history persists |
 | `ftd_monitor.py` | `BASELINE_PERIODS` | no | Absence is stored as a literal zero rather than skipped |
+| `holder_events.py` | `seen` accessions, no age floor | no | A missed run only delays; the filing stays unseen until it posts. **Added to this table 2026-08-14** — it was absent, and it is the one component that later flooded, though not through this failure |
 | `daily_recap.py`, `btc_context.py`, `grid_context.py`, `volume_spike.py`, `build_snapshot.py` | none | no | Snapshots recomputed from source every run |
 | `earnings_calendar.py` | none | no | Projections recomputed from source every run; the one persisted input, `earnings_dates.json`, is written and protected by `press_monitor.py`, not by this component — see the disclosed-dates note above |
 
@@ -1560,6 +1561,29 @@ window to the cadence.
 conclusion drawn from it at the time — that a population of one does not want
 a framework — held, and the eventual fix was smaller still: a rule inside the
 one component rather than a tool watching it.
+
+#### The table answers a MISSED RUN. It does not answer a ROSTER ADDITION
+
+Both questions are "which components lose or gain events they should not",
+and the answers barely overlap. This one asks what a gap in the schedule
+costs, and its severity is governed by the ratio of the window to the cadence
+— which is why `comment_letters` scores *no* on a 180-day window.
+
+The other asks what happens on the run after a company is added, and there the
+same 180-day window is the **worst** score on the roster: for a company absent
+from the state file every letter inside it is a first appearance. The two
+readings of the same number point in opposite directions.
+
+`holder_events` posted **eighty-six messages** on 2026-08-14 on exactly that
+axis, having no age floor at all, and it was not in the table above to be
+scored either way. Five components turned out to share the shape, so the
+decision — which keys has this component never recorded — was extracted to
+`first_run.py`, leaving what suppression *means* in each component where it
+belongs. See [`docs/superpowers/specs/2026-08-14-first-run-everywhere-design.md`](superpowers/specs/2026-08-14-first-run-everywhere-design.md).
+
+The durable lesson is the one above the specifics: **an audit answers the
+question it asked.** This table was right, was read as settling the general
+case, and the general case was never in it.
 
 ### Why `seen` cannot produce a false positive here
 
