@@ -668,6 +668,37 @@ WATCHLIST = [
         # is what separates them, which is now how the probe chooses.
         "ir_feed": "https://investors.corescientific.com/news-events/press-releases/rss",
     },
+    {
+        "ticker": "CRWV",
+        "name": "CoreWeave",
+        # FORMER NAME: ATLANTIC CRYPTO CORP. This is not an AI company that
+        # wandered onto a mining roster; it is the completed version of the
+        # pivot APLD, CORZ, SLNH and VIP are partway through. EDGAR's own
+        # formerNames is where that came from, not from anybody's memory.
+        "cik": "0001769628",
+        # From the SEC fails files, swept for the literal symbol:
+        #
+        #   21873S108  COREWEAVE INC COM CL A  2026-04-16 to 2026-07-13
+        #
+        # "CL A" — this is a multi-class company, and only the Class A common
+        # is pinned. Six periods is three months against a 2025 listing, so
+        # the sweep is shallow rather than complete.
+        "cusips": ["21873S108"],
+        "alt_symbols": [],
+        # TWO VIABLE FEEDS, AND THE PROBE PICKED THE WRONG ONE. Both were
+        # live, both parsed, and both carried the SAME newest timestamp:
+        #
+        #   investors.coreweave.com/rss/pressrelease.aspx   10 entries
+        #   www.coreweave.com/blog/rss.xml                 100 entries
+        #
+        # Selecting by entry count chose the blog; selecting by freshness tied
+        # and fell through to the count, which chose the blog again. The blog
+        # carries "Why AI Factories Need Proof Before Production"; the feed
+        # below carries the Q2 2026 results and a $2.6bn loan facility. Only
+        # the titles separate them, so the probe now reports both and refuses
+        # to choose.
+        "ir_feed": "https://investors.coreweave.com/rss/pressrelease.aspx",
+    },
     # EVERY None ABOVE IS A MEASURED ABSENCE OF A FEED ON THE COMPANY'S OWN
     # NEWSROOM, and every one of those companies is still covered by something
     # faster than EDGAR. "Not looked for" no longer exists on this roster.
