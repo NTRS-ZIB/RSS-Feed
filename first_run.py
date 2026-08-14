@@ -109,6 +109,37 @@ def baseline_by_cik(state, companies, namespace="companies", today=None):
     return sorted(t for t, c in cik_of.items() if c in new)
 
 
+def newly_tracked(value, new_keys, old_keys, matches):
+    """Which newly tracked key covers `value` — or None if it is not new.
+
+    THE CAPABILITY AXIS. `baseline` answers "have I recorded this key", which
+    for a company is the whole question. For a form type it is not, because
+    three of the four tracked sets are matched by PREFIX.
+
+    A VALUE ALREADY COVERED BY AN ESTABLISHED KEY IS NOT NEW, and this is the
+    trap the axis brings with it. Adding `SCHEDULE 13D/A` beside an existing
+    `SCHEDULE 13D` adds no filings whatsoever — every one of them already
+    matched — so treating them as newly tracked would go quiet on a form the
+    channel has carried for months. The question is whether the PREVIOUS set
+    would have matched the value, not whether the new key does.
+
+    `matches(value, key)` is the component's own matcher: `str.startswith` for
+    a prefix set, `operator.eq` for an exact one, `press_monitor.form_matches`
+    for `FORM_TYPES`. It stays in the component because the components
+    genuinely disagree about it, and getting it wrong here would be wrong
+    everywhere at once.
+
+    Longest key first, so the returned key is the most specific one that
+    matched and the log names something a reader can find in the config.
+    """
+    if any(matches(value, k) for k in old_keys):
+        return None
+    for k in sorted(new_keys, key=len, reverse=True):
+        if matches(value, k):
+            return k
+    return None
+
+
 def backfilled(state, namespace="companies"):
     """Will the NEXT baseline() call be the backfill run? Ask before calling.
 
@@ -123,27 +154,38 @@ def backfilled(state, namespace="companies"):
     return state.get(namespace) is None
 
 
-def backfill_note(component, count):
-    """The line a component prints on the one run that establishes its record."""
-    return (f"FIRST-RUN RULE: {count} companies recorded as established in "
+def backfill_note(component, count, unit="companies"):
+    """The line a component prints on the one run that establishes its record.
+
+    `unit` names what was recorded, because the rule now runs over form types
+    as well as companies and "22 companies" against a set of form types would
+    be a confident wrong answer in a log nobody is reading closely.
+    """
+    thing = "a company added to the roster" if unit == "companies" else \
+        f"a {unit[:-1] if unit.endswith('s') else unit} added to the config"
+    return (f"FIRST-RUN RULE: {count} {unit} recorded as established in "
             f"{component}, nothing suppressed. This is the backfill and it "
-            f"happens once; from here a company added to the roster posts "
-            f"nothing on its first run.")
+            f"happens once; from here {thing} posts nothing on its first run.")
 
 
-def summary(component, new, counts=None):
+def summary(component, new, counts=None, unit="ticker"):
     """The line a component prints when it suppresses a first run.
 
     Shared only because the WORDING matters and drifts: this has to read as a
     deliberate act rather than as a failure, or the next person reads a quiet
     run as a broken one and goes looking. The counts are the caller's, because
     only the caller knows what it suppressed.
+
+    `unit` names what was added. It exists because the rule now runs over form
+    types too, and a form-type suppression that says "the intended behaviour
+    of adding a ticker" sends the reader to `watchlist.py` to look for a
+    roster change that never happened.
     """
     if not new:
         return ""
     line = (f"FIRST RUN for {', '.join(new)} in {component} — their existing "
             f"record is stored and NOTHING posts. This is the intended "
-            f"behaviour of adding a ticker, not a loss:")
+            f"behaviour of adding a {unit}, not a loss:")
     for k in new:
         n = (counts or {}).get(k)
         if n is None:

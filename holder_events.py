@@ -90,7 +90,8 @@ import requests
 import watchlist
 # Imported by name rather than as a module: this file already has a local
 # `first_run` for the whole-file guard, and the two names would collide.
-from first_run import backfill_note, backfilled, baseline_by_cik, summary
+from first_run import (backfill_note, backfilled, baseline, baseline_by_cik,
+                       newly_tracked, summary)
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -105,6 +106,14 @@ CIKS = watchlist.ciks()
 # legacy filing exists rather than skip it silently.
 STRUCTURED = ("SCHEDULE 13D", "SCHEDULE 13G")
 LEGACY = ("SC 13D", "SC 13G")
+
+# Everything this component tracks, on the CAPABILITY axis of the first-run
+# rule. Adding a prefix here is the same act as adding a company to the
+# roster, and with no age floor it carries the same cost: every filing that
+# matches the new prefix is a first appearance. EDGAR has already forced one
+# such edit — `SC 13D` became `SCHEDULE 13D` around December 2024 and 117
+# filings went missing until the new spelling was added.
+FORMS_TRACKED = STRUCTURED + LEGACY
 
 # A percentage moving by less than this is not an event. Institutions restate
 # to two decimals every quarter and the number drifts with the share count
@@ -448,6 +457,26 @@ def post(embed):
     return True
 
 
+def drop_newly_tracked(events, new_forms, old_forms):
+    """Events of a form type this component started tracking since last run.
+
+    The other axis of the same rule. This component has NO AGE FLOOR, so a
+    prefix added to STRUCTURED means every filing of that type on record is a
+    first appearance — the shape that cost 86 messages on the company axis,
+    reached by editing a constant instead of the roster.
+
+    Returns the survivors and a count per newly tracked prefix.
+    """
+    per, kept = Counter(), []
+    for e in events:
+        hit = newly_tracked(e[2]["form"], new_forms, old_forms, str.startswith)
+        if hit:
+            per[hit] += 1
+        else:
+            kept.append(e)
+    return kept, per
+
+
 def drop_newly_watched(events, newly_watched):
     """Events belonging to companies added since the last run, removed.
 
@@ -487,6 +516,14 @@ def main():
     newly_watched = set(baseline_by_cik(state, CIKS))
     if backfill:
         print("\n" + backfill_note("holder_events", len(CIKS)))
+    # THE CAPABILITY AXIS, its own namespace in the same state file. Adding a
+    # prefix to FORMS_TRACKED is the same act as adding a company, and this
+    # component has no age floor to blunt it.
+    backfill_forms = backfilled(state, "forms")
+    newly_forms = set(baseline(state, FORMS_TRACKED, namespace="forms"))
+    if backfill_forms:
+        print("\n" + backfill_note("holder_events", len(FORMS_TRACKED),
+                                   "form types"))
     events, legacy_seen = [], []
 
     for ticker, (cik, name) in sorted(CIKS.items()):
@@ -540,6 +577,16 @@ def main():
     if newly_watched:
         events, per = drop_newly_watched(events, newly_watched)
         print("\n" + summary("holder_events", sorted(newly_watched), per))
+
+    # THE COMPANY AXIS RUNS FIRST, deliberately. When a company and a form
+    # type are both new in the same run, the company line explains the whole
+    # of it and the form count stays honest instead of double-counting the
+    # same filings under both headings.
+    if newly_forms:
+        events, per = drop_newly_tracked(
+            events, newly_forms, set(FORMS_TRACKED) - newly_forms)
+        print("\n" + summary("holder_events forms", sorted(newly_forms), per,
+                             "form type"))
 
     # FIRST RUN POSTS NOTHING. Every structured filing is new on a cold start,
     # and 233 of them would arrive at once. The same rule press_monitor uses.

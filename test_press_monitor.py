@@ -381,21 +381,25 @@ def main():
                 "title": "Established", "form": "8-K"}
     every = [old_item, new_item, est_item]
 
+    # `watchlist.ciks()`: {ticker: (cik, name)}. The roster is passed whole
+    # because the RECORD IS KEYED BY CIK — see the rename check below.
+    ROSTER = {"NEW": ("0009999", "New Co"), "MARA": ("0001507605", "Mara")}
+
     # An ABSENT key is the backfill run: every roster company has been posting
     # for weeks, so all are recorded and nothing is suppressed.
     state = {}
-    new_co, sup = pm.baseline_companies(state, ["NEW", "MARA"], every,
+    new_co, sup = pm.baseline_companies(state, ROSTER, every,
                                         today="2026-08-13")
-    check("an absent baselined key suppresses nothing",
+    check("an absent companies key suppresses nothing",
           (new_co, sup) == ([], []),
           "first run under the rule; everyone is established by definition")
-    check("the backfill records the whole roster",
-          set(state["baselined"]) == {"NEW", "MARA"},
+    check("the backfill records the whole roster BY CIK",
+          set(state["companies"]) == {"0009999", "0001507605"},
           "so a later run can tell a genuinely new company from these")
 
     # A company missing from a PRESENT dict is the new one.
-    state = {"baselined": {"MARA": "2026-08-01"}}
-    new_co, sup = pm.baseline_companies(state, ["NEW", "MARA"], every,
+    state = {"companies": {"0001507605": "2026-08-01"}}
+    new_co, sup = pm.baseline_companies(state, ROSTER, every,
                                         today="2026-08-13")
     check("a company absent from a present dict is new", new_co == ["NEW"])
     check("EVERY item from a new company is suppressed, whatever its age",
@@ -404,12 +408,32 @@ def main():
     check("an established company's item is untouched",
           "e" not in {i["uid"] for i in sup})
     check("the new company is recorded, so it is new only once",
-          state["baselined"]["NEW"] == "2026-08-13")
+          state["companies"]["0009999"] == "2026-08-13")
 
-    state = {"baselined": {"MARA": "2026-08-01", "NEW": "2026-08-10"}}
+    state = {"companies": {"0001507605": "2026-08-01", "0009999": "2026-08-10"}}
     check("a roster with no new companies suppresses nothing",
-          pm.baseline_companies(state, ["NEW", "MARA"], every,
+          pm.baseline_companies(state, ROSTER, every,
                                 today="2026-08-13") == ([], []))
+
+    # THE REASON THE KEY MOVED. Items are marked seen by the caller BEFORE
+    # this runs, so anything suppressed here can never come back. Under a
+    # ticker key a rename read as a brand-new company and lost a run of its
+    # real filings permanently; six of nineteen have renamed in eighteen
+    # months.
+    state = {"companies": {"0001507605": "2026-08-01"}}
+    renamed = {"MARAX": ("0001507605", "Mara Holdings")}
+    check("a RENAMED company is not new, so its filings still post",
+          pm.baseline_companies(state, renamed, every,
+                                today="2026-08-13") == ([], []))
+
+    # The pre-migration record. Left behind it would sit in state.json for
+    # ever, and a reader would have two dicts claiming to answer the same
+    # question. Dropped in code because a state file is an output.
+    state = {"baselined": {"MARA": "2026-08-01"}}
+    pm.baseline_companies(state, ROSTER, every, today="2026-08-13")
+    check("the superseded ticker-keyed record is dropped",
+          "baselined" not in state,
+          "and its absence makes this the backfill, which suppresses nothing")
 
     print("\nWHAT COUNTS AS NEW, AND AS RECENT")
     # These three were nested inside main() until 2026-08-13 and so could not

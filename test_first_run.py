@@ -15,7 +15,9 @@ something was suppressed.
 """
 
 import inspect
+import operator
 import sys
+import types
 from datetime import date
 
 import comment_letters
@@ -23,6 +25,10 @@ import crossings
 import dilution
 import first_run
 import holder_events
+# press_monitor imports feedparser, which the suites do not need and
+# the offline runner does not install.
+sys.modules.setdefault("feedparser", types.ModuleType("feedparser"))
+import press_monitor
 import threshold_list
 
 PASS, FAIL = "PASS", "FAIL"
@@ -59,11 +65,17 @@ def wiring():
               "baseline_by_cik(state, watchlist.ciks())" in src
               or "baseline_by_cik(state, CIKS)" in src,
               "watchlist.tickers() would key the record by display label")
+        # Matched against the COMPANY-axis call specifically. A bare
+        # `"summary(" in src` stopped being able to fail the moment these two
+        # components grew a forms axis: deleting the company line left the
+        # forms line to satisfy it.
+        axes = 2 if mod in (holder_events, comment_letters) else 1
         check(f"{mod.__name__} prints the first-run summary",
-              "summary(" in src,
+              f'summary("{mod.__name__}", sorted(newly_watched)' in src,
               "a silent suppression reads as a broken component")
         check(f"{mod.__name__} announces the backfill run",
-              "backfilled(state)" in src and "backfill_note(" in src,
+              "backfilled(state)" in src
+              and src.count("backfill_note(") == axes,
               "or a rule that ran and one never wired log identically")
         # backfilled() answers about the NEXT call, so asking after baseline
         # always says False and the note never prints — green, and useless.
@@ -92,11 +104,12 @@ def wiring():
           "a plain assignment would wipe last_seen and break classify()")
 
 
-def event(ticker):
-    """A holder_events event tuple. Only field 0 is read by the filter, but
-    the arity has to match or the unpack in drop_newly_watched would pass
+def event(ticker, form="SCHEDULE 13D"):
+    """A holder_events event tuple. Fields 0 and 2 are read by the filters,
+    but the arity has to match or the unpack in drop_newly_watched would pass
     here and fail in production."""
-    return (ticker, "Name", {}, "ARRIVAL", ["A Holder"], 7.5, None, None, None)
+    return (ticker, "Name", {"form": form}, "ARRIVAL", ["A Holder"], 7.5,
+            None, None, None)
 
 
 def per_component():
@@ -193,6 +206,118 @@ def per_component():
     check("the backfill run counts a real move normally",
           dilution.is_change("RIOT", {"shares": 1, "date": "2026-05-01"}, m,
                              set(first_run.baseline({}, ["RIOT"]))) is True)
+
+
+def capability_axis():
+    """The other axis: a form type tracked for the first time.
+
+    `baseline` answers "have I recorded this key", which for a company is the
+    whole question and for a form type is not — three of the four tracked
+    sets are matched by PREFIX, so a value can be covered by a key that was
+    already there.
+    """
+    print("\nNEWLY TRACKED, WHICH IS NOT THE SAME AS NEWLY RECORDED")
+    pre = str.startswith
+    check("a value covered only by a new key IS newly tracked",
+          first_run.newly_tracked("SC 13G", {"SC 13G"}, {"SC 13D"}, pre)
+          == "SC 13G")
+    # The trap the axis brings with it.
+    check("a value an ESTABLISHED key already matched is NOT",
+          first_run.newly_tracked("S-3/A", {"S-3/A"}, {"S-3"}, pre) is None,
+          "adding S-3/A beside S-3 adds no filings; suppressing would go quiet")
+    check("a value nothing matches is not tracked at all",
+          first_run.newly_tracked("10-K", {"S-3"}, {"8-K"}, pre) is None)
+    check("the MOST SPECIFIC new key is the one reported",
+          first_run.newly_tracked("SCHEDULE 13D", {"SCHEDULE", "SCHEDULE 13D"},
+                                  set(), pre) == "SCHEDULE 13D",
+          "so the log names something findable in the config")
+    check("an exact matcher does not match a prefix",
+          first_run.newly_tracked("144/A", {"144"}, set(), operator.eq) is None,
+          "INSIDER_ALLOWED_FORMS is matched exactly, and 144/A is its own entry")
+    # NOT CHECKED, deliberately: "an empty new_keys tracks nothing". No
+    # one-line change to newly_tracked makes it fail — the loop simply does
+    # not run — so it would be a green line asserting the shape of a `for`.
+
+    print("\nholder_events — no age floor, so a new prefix is the whole record")
+    state = {"forms": {f: "2026-01-01" for f in holder_events.FORMS_TRACKED
+                       if f != "SC 13G"}}
+    new = set(first_run.baseline(state, holder_events.FORMS_TRACKED,
+                                 namespace="forms", today="2026-08-15"))
+    check("the newly tracked prefix is the only one that is new",
+          new == {"SC 13G"})
+    kept, per = holder_events.drop_newly_tracked(
+        [event("A", "SCHEDULE 13D"), event("B", "SC 13G"),
+         event("C", "SC 13G/A")], new,
+        set(holder_events.FORMS_TRACKED) - new)
+    check("events of a newly tracked form are dropped",
+          [e[2]["form"] for e in kept] == ["SCHEDULE 13D"])
+    check("including the ones matching it by PREFIX", per == {"SC 13G": 2},
+          "SC 13G/A is covered by the new prefix and by nothing established")
+    kept, _ = holder_events.drop_newly_tracked(
+        [event("A", "SCHEDULE 13D")],
+        set(first_run.baseline({}, holder_events.FORMS_TRACKED,
+                               namespace="forms")),
+        set(holder_events.FORMS_TRACKED))
+    check("the forms backfill suppresses NOTHING", len(kept) == 1)
+
+    print("\ncomment_letters — exact matching, 180-day window")
+    found = {"a": "UPLOAD", "b": "CORRESP", "c": "CORRESP"}
+    kept, per = comment_letters.drop_newly_tracked(
+        {"a", "b", "c"}, found, {"CORRESP"}, {"UPLOAD"})
+    check("accessions of a newly tracked form are dropped", kept == {"a"})
+    check("and counted", per == {"CORRESP": 2})
+    kept, _ = comment_letters.drop_newly_tracked({"a", "b"}, found, set(),
+                                                 {"UPLOAD", "CORRESP"})
+    check("the forms backfill suppresses NOTHING", kept == {"a", "b"})
+
+    print("\npress_monitor — two sets, two namespaces, two matchers")
+    item = lambda u, f: {"uid": u, "form": f, "ticker": "T"}
+    press = [item("a", "8-K"), item("b", "S-3"), item("c", "S-3/A")]
+    ins = [item("x", "4"), item("y", "144")]
+
+    state = {}
+    p_b, i_b = press_monitor.baseline_forms(state, press, ins,
+                                            today="2026-08-15")
+    # NOT CHECKED: "the backfill suppresses nothing here". On a backfill
+    # `baseline` returns nothing new, so no mutation of baseline_forms can
+    # make it block — the property belongs to `baseline`, where it IS
+    # checked, and asserting it again here only looks like coverage.
+    check("the backfill records BOTH sets, separately",
+          set(state["forms"]) == set(press_monitor.FORM_TYPES)
+          and set(state["insider_forms"])
+          == set(press_monitor.INSIDER_ALLOWED_FORMS),
+          "a form can be tracked for one channel and not the other")
+
+    state = {"forms": {f: "d" for f in press_monitor.FORM_TYPES if f != "S-3"},
+             "insider_forms": {f: "d" for f in
+                               press_monitor.INSIDER_ALLOWED_FORMS
+                               if f != "144"}}
+    p_b, i_b = press_monitor.baseline_forms(state, press, ins,
+                                            today="2026-08-15")
+    check("a newly tracked press form blocks its items, by PREFIX",
+          p_b == {"b", "c"}, "S-3 and S-3/A; form_matches is a prefix match")
+    check("an established press form is untouched", "a" not in p_b)
+    check("the insider namespace blocks independently", i_b == {"y"},
+          "144, the addition that escaped by luck on 2026-08-13")
+    check("and does not block an established insider form", "x" not in i_b)
+
+    state = {"forms": {f: "d" for f in press_monitor.FORM_TYPES},
+             "insider_forms": {f: "d" for f in
+                               press_monitor.INSIDER_ALLOWED_FORMS}}
+    check("no new forms suppresses nothing",
+          press_monitor.baseline_forms(state, press, ins, today="2026-08-15")
+          == (set(), set()))
+
+    print("\nTHE WORDING FOLLOWS THE AXIS")
+    check("a forms suppression does not say 'adding a ticker'",
+          "adding a form type" in
+          first_run.summary("x forms", ["144"], {"144": 1}, "form type"),
+          "or the reader goes to watchlist.py looking for a roster change")
+    check("the backfill note names what it recorded",
+          "6 form types" in first_run.backfill_note("x", 6, "form types"))
+    check("and still reads correctly for companies",
+          "22 companies" in first_run.backfill_note("x", 22)
+          and "a company added to the roster" in first_run.backfill_note("x", 22))
 
 
 def main():
@@ -305,6 +430,7 @@ def main():
           "a component that suppresses state rather than items has no count")
 
     per_component()
+    capability_axis()
     wiring()
 
     bad = sum(1 for r, _ in results if r == FAIL)
