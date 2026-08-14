@@ -312,6 +312,82 @@ The last two are the point. **They are undetectable when the data lives in
 eight files** — the `GREE → SLNH` bug took a live run and a wrong number to
 find. Here it is a startup warning.
 
+## What belongs on the roster
+
+**There is no test, and this section exists to say so rather than to leave the
+question looking answered.** Membership is a judgement, made case by case. Ask
+before adding, and expect the answer to be about the specific company rather
+than about a category it falls into.
+
+That is a real position, not an omission. Every candidate rule that was
+considered fails against the roster as it stands, and the failure is always
+the same shape: a rule tight enough to be useful excludes something already
+here, and a rule loose enough to admit everything here admits far more.
+
+### The composition, 2026-08-13
+
+Twenty-one companies. The grouping below is one reader's, offered so the shape
+is visible — it is **not** a taxonomy anything in the code uses:
+
+| | |
+|---|---|
+| Bitcoin miners | ABTC, ANY, BGDE, BTDR, CIFR, CLSK, CORZ, DGXX, HUT, IREN, MARA, RIOT, WULF |
+| Power or energy alongside digital | NUAI, SLNH, VIP |
+| Datacentre and HPC, no mining heritage | APLD, WYFI |
+| Crypto financial infrastructure | BKKT, GLXY |
+| Space and satellite | SPCX |
+
+**`SPCX` is the case that defeats every tidy rule.** SpaceX is on a roster
+described in the README as "digital infrastructure and bitcoin mining", and its
+entry runs to forty lines about identifiers without a word on why it is here.
+Any criterion narrow enough to exclude, say, an AI-datacentre operator also
+excludes SpaceX — and an AI-datacentre operator is a closer fit to the stated
+description than a launch company is.
+
+### Do not reverse-engineer a rule from the list
+
+This is the failure this section is written to prevent, and it is the one a
+careful reader is most likely to commit: reading the composition above,
+inferring the criterion that best fits it, and then applying that criterion
+confidently to the next candidate. The composition does not imply a rule. It is
+the record of a series of decisions, several of which would have gone the other
+way on a different day, and **an inferred rule would be this file's own
+`inferred` basis tag** — a reading presented with more confidence than its
+derivation supports.
+
+If a rule is ever wanted, it should be written down first and the roster
+reconciled against it, not extracted from the roster afterwards.
+
+### What can be required instead
+
+A criterion is a judgement; the work below is not, and applies to every
+addition however the judgement goes:
+
+- **Identifiers come from data a component reads.** CIK from EDGAR, CUSIP from
+  the SEC fails files with its `DESCRIPTION` column read. `probe_candidates.py`
+  does both and validates its own instrument against the existing roster.
+- **The feed is measured, never assumed.** Every `None` in `watchlist.py` is a
+  measured absence. And a company can have two live feeds where one is a
+  marketing blog: CORZ's site-wide feed was seventeen months stale while its
+  investor newsroom was three days old, and both answered 200.
+- **A dry run confirms the backlog is suppressed.** RIOT arrived with 17 items
+  and CORZ with 27, all recorded as seen rather than posted.
+- **Every addition costs a row.** Monospace blocks are capped at 28 characters
+  and the ceiling has no slack; one more company is one more line in every
+  table that lists them.
+
+### What is known about the calls already made
+
+- **RIOT and CORZ, 2026-08-13.** Both unambiguous by any reading — a top-tier
+  US miner and the archetype of the miner-to-HPC pivot. RIOT's absence until
+  then had no recorded reason and is more likely to have been an oversight than
+  a decision.
+- **CRWV was considered and not added** on the same day, precisely because the
+  question it raises is this one. It is resolved and identifier-swept, so it
+  can be added in twenty minutes whenever the judgement is made.
+- **BITF was rejected** on evidence: its ticker does not resolve in EDGAR's
+  index, against a control showing all existing roster tickers do.
+
 ## Adding a company
 
 Add one record. Nothing else changes, with two things worth checking:

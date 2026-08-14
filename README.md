@@ -30,7 +30,10 @@ lands above the performance table in the channel.
 
 **One roster, nine consumers.** Which companies are tracked, and how they are
 identified, lives once in [`watchlist.py`](docs/watchlist.md). Adding a company
-is one record. Each component derives the shape it needs — symbols, CIKs,
+is one record. The line above describes the roster; it is **not** a membership
+test, and SpaceX is on it — what qualifies is a judgement made case by case,
+recorded in
+[what belongs on the roster](docs/watchlist.md#what-belongs-on-the-roster). Each component derives the shape it needs — symbols, CIKs,
 CUSIPs, former tickers, IR feeds — so the same company cannot be spelled two
 ways or aliased in two directions.
 
