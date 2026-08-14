@@ -44,7 +44,7 @@ import watchlist
 
 # Edit this before running. These are the candidates as of 2026-08-13; the
 # point of the probe is that none of them is trusted until it answers.
-CANDIDATES = ["CORZ"]
+CANDIDATES = ["CRWV"]
 
 # Newsroom URLs to test for a real feed, per candidate. EVERY `None` in
 # watchlist.py means a MEASURED absence of a feed, not an unexamined one —
@@ -165,7 +165,31 @@ def main():
         kinds = sorted({f for _, f in fresh})
         print(f"  {len(fresh)} filing(s) in {RECENT_DAYS}d, newest "
               f"{newest[0]} {newest[1]}")
-        print(f"  forms seen: {', '.join(kinds[:14])}")
+        # THE MIX, NOT JUST THE LIST. A high filing count is only a cost if
+        # it lands in a channel with a cap: the insider channel posts at most
+        # MAX_INSIDER_POSTS_PER_RUN per run, so a heavy Form 4 filer competes
+        # with the whole roster for those slots. Counting separates a company
+        # that files constantly from one that files constantly IN THE FORMS
+        # THIS REPO POSTS.
+        from collections import Counter
+        mix = Counter(f for _, f in fresh)
+        print("  form mix: " + ", ".join(
+            f"{f} x{n}" for f, n in mix.most_common(10)))
+        # READ FROM press_monitor, NEVER RE-LISTED HERE. The first version
+        # hard-coded ("3", "4", "4/A", "3/A") and was wrong within hours:
+        # Form 144 joined the insider channel the same day, so a candidate
+        # filing 187 of them in 120 days was reported as costing 156 insider
+        # posts when the true figure was 343. A second copy of a list drifts
+        # from the first the moment either is edited alone, which is the
+        # argument watchlist.py exists for, one level down.
+        import press_monitor as _pm
+        insiderish = sum(n for f, n in mix.items()
+                         if f in _pm.INSIDER_ALLOWED_FORMS)
+        pressish = sum(n for f, n in mix.items()
+                       if f.startswith(("8-K", "10-", "S-3", "S-1", "424",
+                                        "DEF 14A", "PRE 14A", "6-K", "20-F")))
+        print(f"  -> {insiderish} would reach the insider channel, "
+              f"{pressish} the press channel, over {RECENT_DAYS} days")
         print()
 
     if FEED_CANDIDATES:
