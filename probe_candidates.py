@@ -55,12 +55,13 @@ CANDIDATES = ["CRWV"]
 # guessed at: a soft-404 answers 200 with the wrong content, so what decides
 # is how many entries actually parse, not the status code.
 FEED_CANDIDATES = {
-    "CORZ": [
-        "https://investors.corescientific.com/news-events/press-releases",
-        "https://investors.corescientific.com/rss/pressrelease.aspx",
-        "https://www.corescientific.com/news",
-        "https://www.corescientific.com/feed/",
-        "https://ir.corescientific.com/news-events/press-releases",
+    "CRWV": [
+        "https://investors.coreweave.com/news-events/press-releases",
+        "https://investors.coreweave.com/rss/pressrelease.aspx",
+        "https://ir.coreweave.com/news-events/press-releases",
+        "https://www.coreweave.com/news",
+        "https://www.coreweave.com/feed/",
+        "https://www.coreweave.com/blog/rss.xml",
     ],
 }
 
@@ -330,21 +331,34 @@ def feeds():
                     when = (e.get("published") or "")[:16]
                     print(f"              {when:<17}{title}")
                 found.append((url, len(entries), newest))
-        if found:
-            # BY FRESHNESS, NOT BY COUNT. CORZ has two feeds: its investor
-            # newsroom, 10 entries and three days old, and a site-wide
-            # WordPress blog, 9 entries and SEVENTEEN MONTHS old, carrying
-            # "How HPC Hosting Saves Costs for Businesses" rather than any
-            # press release. Picking the larger got that right by one entry;
-            # a blog with twenty posts would have won. What separates them is
-            # recency, so that is what decides, with the count as a tie-break.
-            best = max(found, key=lambda r: (r[2], r[1]))
-            age = time.strftime("%Y-%m-%d", time.gmtime(best[2])) if best[2] else "?"
-            print(f"  -> USE {best[0]}")
-            print(f"     ({best[1]} entries, newest {age})")
-            for url, n, stamp in sorted(found, key=lambda r: -r[2])[1:]:
+        if len(found) == 1:
+            url, n, stamp = found[0]
+            when = time.strftime("%Y-%m-%d", time.gmtime(stamp)) if stamp else "?"
+            print(f"  -> USE {url}")
+            print(f"     ({n} entries, newest {when})")
+        elif found:
+            # DO NOT PICK. THREE MECHANICAL CRITERIA HAVE NOW CHOSEN WRONG.
+            #
+            # Entry count picked CORZ's seventeen-month-old marketing blog
+            # over its investor newsroom, and got it right only by 10 against
+            # 9. Freshness fixed that, and then CRWV's blog and press-release
+            # feed came back with the SAME newest timestamp, so the count
+            # tie-break chose the blog, 100 entries against 10 — a feed of
+            # "Why AI Factories Need Proof Before Production" over one
+            # carrying the Q2 results and a $2.6bn loan facility.
+            #
+            # An investor-relations host is a good signal and not a rule:
+            # RIOT's real press releases sit on www.riotplatforms.com/feed/.
+            #
+            # What separates them is what the entries ARE, which is printed
+            # above. So this reports and stops. Choosing is a judgement, like
+            # roster membership itself, and a probe that guesses at it hides
+            # the one thing the reader needs to look at.
+            print(f"  -> {len(found)} VIABLE FEEDS. CHOOSE ONE BY READING THE "
+                  f"TITLES ABOVE, not by these numbers:")
+            for url, n, stamp in sorted(found, key=lambda r: -r[2]):
                 when = time.strftime("%Y-%m-%d", time.gmtime(stamp)) if stamp else "?"
-                print(f"     rejected: {url} ({n} entries, newest {when})")
+                print(f"     {n:>4} entries  newest {when}  {url}")
         else:
             print("  -> no feed on any URL tried. `ir_feed: None` would be a "
                   "measured absence,\n     and the company then needs a "
