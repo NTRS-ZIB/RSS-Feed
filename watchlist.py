@@ -652,6 +652,15 @@ WATCHLIST = [
         "cusips": ["21874A106"],
         "alt_symbols": [],
         # MEASURED, and the measurement had to choose between two live feeds.
+        # The human-facing page is
+        #
+        #   https://investors.corescientific.com/news-events/press-releases
+        #
+        # which is HTML and parses as zero entries; the value below is the
+        # feed discover_feed() found on it, the same page-plus-/rss pattern
+        # MARA and WULF use. Named because anyone checking this entry will
+        # open the page, not the feed.
+        #
         # The investor newsroom carries press releases and was three days old
         # when probed; corescientific.com/feed/ is a site-wide WordPress blog,
         # nine entries, SEVENTEEN MONTHS stale, carrying "How HPC Hosting
