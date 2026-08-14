@@ -152,3 +152,23 @@ suppressed a real company, because every state file still lacks the
 only be demonstrated after that, and only by adding a company. This is the
 same shape as the push-retry loop recorded in `CLAUDE.md` — do not read the
 surrounding work looking finished as evidence that this part ran.
+
+## What the whole-branch review found
+
+Four defects, all in the direction that matters — a real event silently
+withheld — and **not one of them failed a check or produced a log line.**
+Recorded because the shapes recur, not because the fixes are interesting.
+
+| Defect | Why the tests missed it |
+|---|---|
+| The record was keyed by TICKER, so a rename read as a new company: one run of its real events suppressed, and in `holder_events` and `comment_letters` marked seen in the same run, so never posted at all. A recycled ticker fails the other way — already in the record, no suppression, flood. | Every fixture used a stable symbol. Nothing in the suite modelled a rename, which the roster has done six times in eighteen months. |
+| `crossings` disarmed BOTH directions. Re-arming needs 25–75% of range, so a company added at 85% — crossing nothing, suppressing nothing, logging nothing — could never re-arm the high side, and a genuine breakout the next day vanished. | The checks only ever asked about a ticker that WAS crossing. The failing case is the one where the rule appears not to fire at all. |
+| `dilution` saved state only after a successful post, weeks apart for this component, so the `companies` record was rebuilt and discarded every run while every log line said the backfill had already happened. | The suite tested the decision, not whether the decision ever reached disk. |
+| `threshold_list` folded in memory and persisted only `last_date`, so the suppression delayed the unearned post by exactly one run. | Same: `fold_newly_watched` was correct in isolation and its result was thrown away. |
+
+The generalisation is one line: **a rule that decides correctly and does not
+persist its record is not a rule, it is a delay** — and it presents as a
+working feature for as long as nobody adds a company. Two of the four were
+that, in different components. The suite now carries source-level checks that
+each component writes state on its quiet path, which is a weak check and
+strictly better than the nothing that was there.
