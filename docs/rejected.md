@@ -1038,3 +1038,74 @@ sufficient.
 company added to the roster, or one taking a second listing, can make the two
 conditions hold together for the first time. The census makes that a
 one-command check instead of a probe.
+
+---
+
+## A first-run guard for newly added IR feeds
+
+**Would have added:** the first-run rule over `watchlist.ir_feeds()`, so that
+adding a feed suppresses its backlog the way adding a company or a form type
+now does. It was proposed as the last set in the repo protected only by
+`MAX_AGE_DAYS`, which [`press-monitor.md`](press-monitor.md) itself calls
+incidental rather than designed — the same wording used about Form 144, which
+did need the guard.
+
+**The event had already happened and was never measured.** Commit `20a42ac`,
+2026-08-08, added IR feeds for **APLD, BTDR and SPCX**, all three already on
+the roster for months. That is exactly the case: a new capability on a company
+already being watched. The first scheduled run afterwards, 2026-08-10 08:44
+UTC, reports it in its own log:
+
+```
+313 items seen, 60 new, 0 new insider.
+55 item(s) older than 7d — recorded, not posted.
+5 candidate(s) checked, 5 to post.
+Posted 4 press item(s).
+```
+
+| | |
+|---|---|
+| items the three new feeds served | 27 — APLD 10, BTDR 10, SPCX 7 |
+| new items that run, feeds and EDGAR together | 60 |
+| dropped by the age floor | **55** |
+| posted | **4**, and not all four came from the new feeds |
+
+So the measured cost of adding three feeds is at most four posts, or roughly
+one per feed. The guard would have prevented about one post.
+
+### Why this axis is not the other two
+
+The count is not the argument on its own — `crossings` and `dilution` carry the
+rule for one unearned post each. **What separates this case is whether the
+company was being watched at all.**
+
+| Adding | Watched before? | What the unguarded first run posts |
+|---|---|---|
+| a **company** | no | every item on record — 86 messages on 2026-08-14 |
+| a **form type** to `holder_events` | yes, but no age floor | every filing matching the new prefix |
+| a **feed** to a watched company | **yes, through EDGAR** | only items from the last 7 days |
+
+A three-day-old press release from a company already on the roster is not
+backfill. It is current news that the component just gained a second view of,
+and letting it through is the job `MAX_AGE_DAYS` was given. A new company's
+backlog is items that should never have been seen; a new feed's recent items
+are items that were wanted and could not yet be seen. Suppressing the second
+because it resembles the first would trade a real post for a theoretical one.
+
+### Verdict
+
+**Do not guard `ir_feeds`.** The age floor already bounds it to seven days,
+and inside that window the items are legitimate. This is deliberately left as
+the one tracked set with no first-run namespace, and the reason is in
+`MAX_AGE_DAYS`' own comment so nobody has to find this file first.
+
+**What is not closed**, and would reopen it: a feed source that serves items
+whose timestamps do not parse. `entry_time` returns `0` for those, which reads
+as 1970, so the floor drops them and `main()` has already marked them seen —
+they are lost rather than posted, which is a different failure and is tracked
+in [press-monitor.md](press-monitor.md). Measured 0 of 223 items across all
+twenty IR sources on 2026-08-13, so it is not currently occurring.
+
+This idea was proposed three times in one day on 2026-08-17 before anybody
+looked at what the 2026-08-08 addition had actually cost. **That is the reason
+this file exists.**

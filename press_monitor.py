@@ -276,6 +276,16 @@ KEYWORDS = []
 # measured maximum gap of about five hours — and it is visible from the run
 # history in a way a suppressed post is not. Kept on that trade, not because
 # it was already here.
+#
+# IT IS ALSO WHAT DELIBERATELY GUARDS IR FEEDS, and that is a decision rather
+# than an omission. `ir_feeds` is the one tracked set in this repo with no
+# first-run namespace. Adding a feed was measured: commit 20a42ac added three
+# on 2026-08-08, and the next run posted FOUR items out of 60 new, the floor
+# having dropped 55. Unlike a new company or a newly tracked form type, the
+# company was already being watched through EDGAR, so a three-day-old release
+# surfaced by a new feed is current news rather than backfill — exactly what
+# this floor exists to let through. See docs/rejected.md; the idea was
+# proposed three times in one day before anyone read that run's log.
 MAX_AGE_DAYS = 7
 
 # Only EDGAR filings from the last N days enter the dedupe set at all.
