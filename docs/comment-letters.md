@@ -105,8 +105,15 @@ replied" is the signal.
 
 This also bounds the output by watchlist size — eleven rows at absolute worst —
 which is why the component **posts on its first run** rather than bootstrapping
-silently the way the [press monitor](press-monitor.md#testing) does. There is
-no flood to guard against.
+silently the way the [press monitor](press-monitor.md#testing) does.
+
+**That reasoning is sound about the POST and was wrong about the flood**, and
+the sentence that used to end this paragraph said there was none to guard
+against. One post per run is indeed the ceiling. But the same argument was
+read as covering a company ADDED to an existing roster, and there the ceiling
+is not the issue: every letter inside a 180-day window is unseen for such a
+company, which is the widest window in the repo and so the largest possible
+backlog. See *adding a company* below.
 
 ## A partial fetch is not a partial post
 
@@ -126,6 +133,35 @@ Retention is bounded by the window rather than by count — anything outside
 `LOOKBACK_DAYS` can never appear again, so remembering it is dead weight. The
 file is rewritten on every run, including runs that post nothing, so the set
 tracks the window as it slides.
+
+## Adding a company, or a form type
+
+**A company added to the roster contributes nothing on its first run.** For a
+company absent from `letters_state.json` every letter inside `LOOKBACK_DAYS`
+is new, and at 180 days that is the widest window in the repo. The accessions
+are still recorded by `save_state`, so the next genuine letter posts normally.
+
+This component escaped the incident that established the rule. On 2026-08-14
+`holder_events` sent 86 messages from exactly this shape; the three companies
+added that week simply had no correspondence in window. **That is luck, not a
+guard**, and it is the reason the rule was applied here rather than only where
+it had already gone wrong.
+
+The `first_run` variable already in `main()` is NOT this rule. It asks whether
+the state FILE exists, is used only to annotate a log line, and suppresses
+nothing. Even as a guard it would cover a cold start and not a company added
+to a roster this component has watched for months.
+
+**The same rule runs over `FORMS`**, in its own namespace, matched exactly
+rather than by prefix — neither `UPLOAD` nor `CORRESP` has amendment variants.
+A third entry would otherwise post every such filing on the roster at once.
+
+**The backfill announces itself** with a `FIRST-RUN RULE:` line on the one run
+where a namespace is absent. Without it, a component that ran the rule and one
+where it was never wired produce identical logs.
+
+The decision lives in [`first_run.py`](../first_run.py); what suppression
+means stays here, because it differs in every component that has the rule.
 
 ## Known quirks
 

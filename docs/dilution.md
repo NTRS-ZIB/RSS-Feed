@@ -224,6 +224,38 @@ opposite of "unknown". The same reasoning as
 the output is an assertion about every company on the watchlist, so an omission
 inverts a row rather than just dropping it.
 
+## A newly watched company's first count is not a change
+
+A company added to the roster has no prior share count, so its first
+observation compares against nothing and reads as changed — which would post a
+dilution alert dated to the day it joined the roster rather than to any
+filing. Since 2026-08-14 it does not count toward `changed`, and its count is
+recorded so the next genuine move posts normally.
+
+The cost of getting this wrong here is one unearned row, not a flood: this
+component posts the latest count, not a history. It has the rule because a
+guard present in some components and absent in others is how `holder_events`
+came to send 86 messages — see
+[holder-events.md](holder-events.md#critical-a-company-added-to-the-roster-posts-nothing).
+
+**The record has to reach disk, and in the first version it did not.** State
+was written only after a successful post, which for this component can be
+weeks apart, so the rule's record was rebuilt and thrown away
+on every quiet run while the log said the backfill had already happened. The
+first company added in such a window would have been measured against an
+absent record — no suppression, and a share-count alert dated to its joining
+day. State is now written on the no-change path too. Caught in review before
+it merged.
+
+**The backfill announces itself** with a `FIRST-RUN RULE:` line on the one run
+where the record is absent, because a component that ran the rule and one
+where it was never wired otherwise produce identical logs.
+
+`CONCEPTS` is not guarded by the capability axis. Adding a concept changes
+which number is read for a company; it creates no backlog of unseen items.
+Switching concept can move a company's figure, which is why the log names the
+concept used per company — see *Known quirks* below.
+
 ## Known quirks
 
 - **Silence is not stability.** A company that has not filed since its last

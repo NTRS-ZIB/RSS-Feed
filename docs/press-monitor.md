@@ -1485,7 +1485,7 @@ which do the same job for the two tracked form sets — see *The second axis*
 below. The decision behind all three lives in [`first_run.py`](../first_run.py);
 only the filter is here.
 
-It was `baselined`, keyed by ticker, until 2026-08-15. The key moved because
+It was `baselined`, keyed by ticker, until 2026-08-14. The key moved because
 items are marked seen **before** this runs, so anything suppressed can never
 come back: a rename read as a brand-new company and lost a run of its real
 filings permanently. Six of nineteen have renamed in eighteen months. The old

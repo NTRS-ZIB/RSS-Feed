@@ -115,6 +115,46 @@ structured era for most of the roster.
 29 **declared** exits exist and are unambiguous. Silence is reported as
 silence, or not at all.
 
+## Critical: a company added to the roster posts nothing
+
+**This component sent 86 messages on 2026-08-14** — CORZ 39 of 39, CRWV 30 of
+32 — because three companies had been added the day before, and for a company
+absent from `holder_state.json` every 13D/G on record is a first appearance,
+which is exactly what this file reports. Every one of those posts was
+individually correct.
+
+The cold-start rule below did not cover it and was never going to. It asks
+whether the STATE FILE exists, which is a fact about this component's history,
+not about the company's. A roster that has been running for months has a state
+file; a company added to it this morning has no record in that file at all.
+The two questions look identical in the log and are not the same question.
+
+Since 2026-08-14 the rule is per company, and it lives in
+[`first_run.py`](../first_run.py) because five components shared the shape.
+What suppression MEANS stays here: the filings are still read and still
+recorded — accessions into `seen`, percentages into `holders`, the era floor
+into `era` — and only the OUTPUT is withheld, so the next genuine change for
+that company posts normally.
+
+**It filters in a dry run too**, unlike the cold-start rule. That exception
+exists so an unrendered embed can be previewed on the only run where events
+are available; these embeds render every week, and a dry run that showed the
+suppressed events could not demonstrate that they were suppressed, which is
+the one thing anyone verifying the change needs to see.
+
+**The same rule runs over FORM TYPES**, in its own namespace. `FORMS_TRACKED`
+is `STRUCTURED` only — adding a prefix there makes every filing matching it a
+first appearance at once, and this component has no age floor to blunt that.
+`LEGACY` is deliberately excluded: legacy filings never become events, so
+guarding them would print a first-run line claiming a suppression that could
+not have happened.
+
+**The backfill announces itself.** On the one run where the namespace is
+absent, every key is recorded, nothing is suppressed, and a `FIRST-RUN RULE:`
+line says so. Without it a component that ran the rule and one where it was
+never wired produce identical logs — which is what the first five dry runs
+looked like, all green and all silent.
+
 ## In the weekly digest
 
 A `holders` contributor at cadence `event`, so `weekly_digest.mk()` refuses any
@@ -127,5 +167,8 @@ submissions payload the filings contributor already fetches.
 - **Legacy `SC`-spelling filings are not read.** They predate the structured
   schema and carry no parseable holder record. The count per company is printed
   so their absence is a measurement rather than a gap.
-- **The first run posts nothing** — every filing is new on a cold start. A dry
-  run still shows them, because it saves no state.
+- **A cold start posts nothing** — every filing is new when there is no state
+  file at all. A dry run still shows them, because it saves no state. This is
+  the WHOLE-FILE rule and it is not the one that matters; see *a company added
+  to the roster posts nothing* above, which is the case that cost 86 messages
+  while this bullet read as though the component were covered.
