@@ -36,6 +36,34 @@ those are two events.
 
 `crossings_state.json` holds the armed flag per ticker per direction.
 
+### A newly watched ticker starts disarmed, in one direction only
+
+A company added to the roster while already sitting above its 52-week high
+would fire on its first run under the default flags. **It crossed nothing
+while we were watching** — the crossing predates the watch, so announcing it
+asserts an event that did not happen. Since 2026-08-14 a ticker seen for the
+first time is created disarmed in whichever direction it is currently
+crossing, and the re-arm above restores it the moment the price comes back
+through the middle of the range.
+
+**Disarming BOTH directions is worse than the bug it fixes**, and the first
+version of this did exactly that. Re-arming needs `REARM_LOW <= pos <=
+REARM_HIGH`, so a company added at 85% of its range — crossing nothing,
+suppressing nothing, printing nothing — would have `armed_hi` false and no way
+to recover it until the price fell back to 75%. A genuine breakout the next
+day, observed start to finish, would be dropped in silence. Caught in review
+before it merged.
+
+Unlike `holder_events`, the cost here was never a flood: this component posts
+crossings, not history, so an unguarded first run is worth **one** unearned
+post. It has the rule anyway, because a guard that lives in some components
+and not others is how the 86-message incident happened — see
+[holder-events.md](holder-events.md#critical-a-company-added-to-the-roster-posts-nothing).
+
+There is no capability axis here. Nothing in this component is a configurable
+set of things it collects; the window and the band are thresholds, not a
+roster of form types.
+
 ## What a crossing is, and what it is worth here
 
 A **closing** price beyond the extreme of the prior 252 sessions. Not an

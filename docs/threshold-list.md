@@ -147,6 +147,38 @@ confirmation that the diff has something to diff against.
 the settlement date it read and what it found, so a run that posts nothing is
 still distinguishable from a run that failed.
 
+### A company already listed when it joins the roster is not an addition
+
+It was on the list before anyone here was looking, so reporting it as *added*
+dates an event to the day we started watching. Since 2026-08-14 a newly
+watched company that is already on the list is folded into `previous` rather
+than reported.
+
+**Folded in, not dropped from `current`** — and the difference is the whole
+point. Dropping it would make the component blind to its eventual REMOVAL,
+which is a real event and the one worth having. Folding leaves the diff able
+to see it go.
+
+A company added while NOT on the list is left alone, so its first genuine
+listing posts normally.
+
+**The fold has to be persisted, and in the first version it was not.**
+`previous` was widened in memory, nothing posted, and `on_list` kept its old
+value — so on the next run the company was no longer newly watched, it
+reloaded as absent from `previous`, and it posted as an addition. The
+suppression delayed the unearned post by exactly one run and did nothing else.
+`on_list` is now written on the no-change path too. Caught in review before it
+merged.
+
+The cost here was one unearned post, not a flood. The rule is present anyway
+because a guard in some components and not others is how `holder_events` sent
+86 messages — see
+[holder-events.md](holder-events.md#critical-a-company-added-to-the-roster-posts-nothing).
+
+**The backfill announces itself** with a `FIRST-RUN RULE:` line on the one run
+where the record is absent, so it cannot be confused with a rule that was
+never wired.
+
 ## Aliases
 
 Shared with [short interest](short-interest.md#aliases) and
