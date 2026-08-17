@@ -1210,7 +1210,14 @@
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-090516",
   "urn:tag:sec.gov,2008:accession-number=0001628280-26-057243",
   "urn:tag:sec.gov,2008:accession-number=0001959173-26-006054",
-  "urn:tag:sec.gov,2008:accession-number=0001959173-26-006057"
+  "urn:tag:sec.gov,2008:accession-number=0001959173-26-006057",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-008238",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-008237",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-008236",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-008235",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-008232",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-008231",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-008230"
  ],
  "initialized": true,
  "feeds": {
