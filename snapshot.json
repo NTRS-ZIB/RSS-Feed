@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-17T11:16:44+00:00",
+  "generated": "2026-08-18T11:15:51+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -590,7 +590,7 @@
     },
     "BKKT": {
       "cik": "0001820302",
-      "filing_count": 758,
+      "filing_count": 759,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019870",
@@ -636,12 +636,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001628280-26-055276",
-          "count": 122,
-          "filed": "2026-08-10",
+          "accession": "0001193125-26-353239",
+          "count": 123,
+          "filed": "2026-08-17",
           "form": "8-K",
-          "period": "2026-08-10",
-          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026055276/bakkt-20260810.htm"
+          "period": "2026-08-11",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000119312526353239/d145238d8k.htm"
         },
         "DEF 14A": {
           "accession": "0001628280-26-029018",
@@ -722,7 +722,7 @@
         "Bakkt Holdings, Inc.",
         "VPC Impact Acquisition Holdings"
       ],
-      "latest_filing_date": "2026-08-14",
+      "latest_filing_date": "2026-08-17",
       "name": "Bakkt, Inc.",
       "projection": {
         "confidence": "normal",
@@ -737,7 +737,7 @@
     },
     "BTDR": {
       "cik": "0001899123",
-      "filing_count": 275,
+      "filing_count": 276,
       "filings": {
         "10-K": null,
         "10-Q": null,
@@ -758,12 +758,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026065491/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001213900-26-088668",
-          "count": 6,
-          "filed": "2026-08-13",
+          "accession": "0001213900-26-090516",
+          "count": 7,
+          "filed": "2026-08-17",
           "form": "4",
-          "period": "2026-08-12",
-          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026088668/xslF345X06/ownership.xml"
+          "period": "2026-08-14",
+          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026090516/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -824,7 +824,7 @@
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-08-14",
+      "latest_filing_date": "2026-08-17",
       "name": "Bitdeer Technologies Group",
       "projection": {
         "confidence": "low",
@@ -1244,7 +1244,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1053,
+      "filing_count": 1063,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1272,12 +1272,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000155/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0001104659-26-097436",
-          "count": 437,
-          "filed": "2026-08-14",
+          "accession": "0001769628-26-000382",
+          "count": 439,
+          "filed": "2026-08-17",
           "form": "4",
-          "period": "2026-08-14",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000110465926097436/xslF345X06/tm2623282-6_4seq1.xml"
+          "period": "2026-08-13",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000382/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1347,7 +1347,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-08-14",
+      "latest_filing_date": "2026-08-17",
       "name": "CoreWeave, Inc.",
       "projection": {
         "confidence": "normal",
@@ -1728,7 +1728,7 @@
     },
     "IREN": {
       "cik": "0001878848",
-      "filing_count": 314,
+      "filing_count": 315,
       "filings": {
         "10-K": {
           "accession": "0001878848-25-000063",
@@ -1839,7 +1839,7 @@
         "Iris Energy Ltd",
         "Iris Energy Pty Ltd"
       ],
-      "latest_filing_date": "2026-08-13",
+      "latest_filing_date": "2026-08-18",
       "name": "IREN Ltd",
       "projection": {
         "confidence": "normal",
@@ -1854,7 +1854,7 @@
     },
     "MARA": {
       "cik": "0001507605",
-      "filing_count": 1100,
+      "filing_count": 1102,
       "filings": {
         "10-K": {
           "accession": "0001507605-26-000007",
@@ -1981,7 +1981,7 @@
         "American Strategic Minerals Corp",
         "VERVE VENTURES INC"
       ],
-      "latest_filing_date": "2026-08-10",
+      "latest_filing_date": "2026-08-17",
       "name": "MARA Holdings, Inc.",
       "projection": {
         "confidence": "normal",
@@ -1996,7 +1996,7 @@
     },
     "NUAI": {
       "cik": "0002028336",
-      "filing_count": 185,
+      "filing_count": 186,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-027143",
@@ -2042,12 +2042,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001213900-26-083411",
-          "count": 52,
-          "filed": "2026-07-30",
+          "accession": "0001213900-26-090827",
+          "count": 53,
+          "filed": "2026-08-17",
           "form": "8-K",
-          "period": "2026-07-24",
-          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026083411/ea0299918-8k_newera.htm"
+          "period": "2026-08-17",
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026090827/ea0302467-8k_newera.htm"
         },
         "DEF 14A": {
           "accession": "0001213900-26-028314",
@@ -2100,7 +2100,7 @@
         "NEW ERA HELIUM INC.",
         "Roth CH V Holdings, Inc."
       ],
-      "latest_filing_date": "2026-08-14",
+      "latest_filing_date": "2026-08-17",
       "name": "New ERA Energy & Digital, Inc.",
       "projection": {
         "confidence": "normal",
@@ -2485,7 +2485,7 @@
     },
     "VIP": {
       "cik": "0001844971",
-      "filing_count": 423,
+      "filing_count": 425,
       "filings": {
         "10-K": {
           "accession": "0001844971-26-000011",
@@ -2531,12 +2531,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001628280-26-057153",
-          "count": 112,
-          "filed": "2026-08-14",
+          "accession": "0001628280-26-057243",
+          "count": 113,
+          "filed": "2026-08-17",
           "form": "8-K",
-          "period": "2026-08-14",
-          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828026057153/gree-20260814.htm"
+          "period": "2026-08-17",
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828026057243/gree-20260817.htm"
         },
         "DEF 14A": {
           "accession": "0001193805-26-000547",
@@ -2602,7 +2602,7 @@
       "former_names": [
         "Greenidge Generation Holdings Inc."
       ],
-      "latest_filing_date": "2026-08-14",
+      "latest_filing_date": "2026-08-17",
       "name": "Vulcan Infrastructure & Power Inc.",
       "projection": {
         "confidence": "normal",
@@ -2617,7 +2617,7 @@
     },
     "WULF": {
       "cik": "0001083301",
-      "filing_count": 1229,
+      "filing_count": 1231,
       "filings": {
         "10-K": {
           "accession": "0001083301-26-000031",
@@ -2645,12 +2645,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1083301/000207478625000007/xslF345X02/wk-form3a_1755567904.xml"
         },
         "4": {
-          "accession": "0001083301-26-000154",
-          "count": 552,
-          "filed": "2026-08-03",
+          "accession": "0001083301-26-000170",
+          "count": 554,
+          "filed": "2026-08-17",
           "form": "4",
-          "period": "2026-08-01",
-          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000108330126000154/xslF345X06/wk-form4_1785805538.xml"
+          "period": "2026-08-14",
+          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000108330126000170/xslF345X06/wk-form4_1787004706.xml"
         },
         "40-F": null,
         "424": {
@@ -2735,7 +2735,7 @@
         "IKONICS CORP",
         "CHROMALINE CORP"
       ],
-      "latest_filing_date": "2026-08-13",
+      "latest_filing_date": "2026-08-17",
       "name": "TERAWULF INC.",
       "projection": {
         "confidence": "normal",
@@ -2750,7 +2750,7 @@
     },
     "WYFI": {
       "cik": "0002042022",
-      "filing_count": 78,
+      "filing_count": 79,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-034341",
@@ -2796,12 +2796,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001213900-26-084223",
-          "count": 12,
-          "filed": "2026-08-03",
+          "accession": "0001213900-26-090492",
+          "count": 13,
+          "filed": "2026-08-17",
           "form": "8-K",
-          "period": "2026-07-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026084223/ea0299775-8k_whitefiber.htm"
+          "period": "2026-08-16",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026090492/ea0302334-8k_whitefiber.htm"
         },
         "DEF 14A": null,
         "NT 10-K": null,
@@ -2832,7 +2832,7 @@
       "former_names": [
         "White Fiber, Inc."
       ],
-      "latest_filing_date": "2026-08-12",
+      "latest_filing_date": "2026-08-17",
       "name": "WhiteFiber, Inc.",
       "projection": {
         "confidence": "normal",
