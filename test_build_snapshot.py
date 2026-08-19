@@ -83,9 +83,15 @@ def main():
     print("\nONE FILING IS NOT A CADENCE")
     # SPCX: exactly one 10-Q, and it was published as kind "quarterly",
     # sample 1. earnings_calendar refuses the same company on the same floor.
+    one = bs.projection(quarterly(date(2026, 6, 30)))
     check("a single 10-Q does not produce a quarterly projection",
-          bs.projection(quarterly(date(2026, 6, 30))) is None,
+          one["available"] is False and one["period_end"] is None,
           "sample 1 was published as a confident cadence")
+    # NOT null, and not a bare absence either. CLAUDE.md: absence is a
+    # measurement, reported with a COUNT AGAINST THE FLOOR.
+    check("and it says how far short it is",
+          one["reason"] == "1/2 quarterly and 0/2 annual filings",
+          "a name in a list is an excuse; a count is a measurement")
     two = bs.projection(quarterly(date(2026, 6, 30), date(2026, 3, 31)))
     check("two 10-Qs clear the floor", two is not None
           and two["kind"] == "quarterly")
@@ -101,8 +107,9 @@ def main():
     check("one 10-Q beside real annuals still projects the ANNUAL cycle",
           mixed["kind"] == "annual" and mixed["period_end"] == "2026-12-31",
           "a stray quarterly must not set the cycle")
+    none = bs.projection(rows(("8-K", "2026-08-01", "2026-08-01")))
     check("a company with no periodic filings at all projects nothing",
-          bs.projection(rows(("8-K", "2026-08-01", "2026-08-01"))) is None)
+          none["available"] is False and none["reason"].startswith("0/2"))
 
     print("\nTHE QUARTERLY ROLL, WHICH DECEMBER BREAKS")
     # Fixed by 5fc24a1 and left unguarded: the roll is "first of the FOLLOWING
@@ -143,6 +150,10 @@ def main():
     print("\nONE PUBLISHED SHAPE, BOTH PATHS")
     a = bs.projection(annual(2025, 2024))
     q = bs.projection(quarterly(date(2026, 6, 30), date(2026, 3, 31)))
+    unavail = bs.projection(quarterly(date(2026, 6, 30)))
+    check("and the unavailable shape carries them too",
+          set(a) - set(unavail) == set(),
+          "a strict superset, which is why this can ship without warning")
     check("the annual and quarterly paths publish the same keys",
           set(a) == set(q),
           "a consumer must not find a field that depends on the branch")
@@ -152,9 +163,15 @@ def main():
     # This used to pin `sample: 1` as an intended output, which was the
     # behaviour the published note denied. A single annual filing is now
     # refused, matching cadence() and making that note true.
+    lone = bs.projection(rows(("20-F", "2026-04-30", "2025-12-31")))
     check("a single annual filing is refused outright",
-          bs.projection(rows(("20-F", "2026-04-30", "2025-12-31"))) is None,
+          lone["available"] is False,
           "one observation is a period with no lag worth the name")
+    check("and every estimate key is still present, so nothing raises",
+          all(k in lone for k in ("period_end", "expected", "kind",
+                                  "median_lag_days", "spread_days",
+                                  "sample", "confidence")),
+          "a consumer reading projection['expected'] gets None, not a crash")
     wide = bs.projection(rows(("20-F", "2026-06-30", "2025-12-31"),
                               ("20-F", "2025-03-01", "2024-12-31")))
     check("a wide spread is low confidence too",

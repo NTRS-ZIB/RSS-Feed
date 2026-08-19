@@ -126,8 +126,9 @@ NT_KNOWN = ["NT 10-K", "NT 10-Q", "NT 20-F", "NT 40-F"]
 # very values the change was making correct. The absent pip step is the only
 # thing that catches this: tests.yml installs requests and cannot see it.
 from filing_cadence import (ANNUAL_FORMS as ANNUAL, LAG_SAMPLE,
-                            MIN_QUARTERLY_FILINGS, PERIODIC_FORMS,
-                            QUARTERLY_FORMS as QUARTERLY, cadence,
+                            MIN_ANNUAL_FILINGS, MIN_QUARTERLY_FILINGS,
+                            PERIODIC_FORMS, QUARTERLY_FORMS as QUARTERLY,
+                            cadence, fiscal_year_end_month,
                             next_annual_period_end)
 
 
@@ -232,12 +233,36 @@ def projection(rows):
     # because the other caller orders by FILED date instead.
     filings.sort(key=lambda t: t[0], reverse=True)
 
+    annual = [f for f in filings if f[2] in ANNUAL]
+    quarterly = [f for f in filings if f[2] in QUARTERLY]
+
     c = cadence(filings)
     if c is None:
-        return None
+        # NOT null. An absent projection is a MEASUREMENT — this issuer has
+        # not filed enough to project from — and CLAUDE.md is explicit that
+        # absence is reported with a COUNT AGAINST THE FLOOR rather than a
+        # bare gap: "a name in a list is an excuse; a count is a measurement".
+        #
+        # It also keeps every key present, so a consumer reading
+        # projection["expected"] gets None instead of raising on a null
+        # object. The shape is a strict superset of the old one, which is why
+        # this can ship without every reader being warned first.
+        return {
+            "available": False,
+            "reason": ("%d/%d quarterly and %d/%d annual filings"
+                       % (len(quarterly), MIN_QUARTERLY_FILINGS,
+                          len(annual), MIN_ANNUAL_FILINGS)),
+            "period_end": None, "expected": None, "kind": None,
+            "median_lag_days": None, "spread_days": None,
+            "sample": len(filings),
+            "fiscal_year_end_month": fiscal_year_end_month(annual),
+            "confidence": None,
+        }
     lags = c["lags"]
     spread = (max(lags) - min(lags)) // 2 if len(lags) > 1 else None
     return {
+        "available": True,
+        "reason": None,
         "period_end": c["period"].isoformat(),
         "expected": c["expected"].isoformat(),
         "kind": c["kind"],
@@ -272,7 +297,9 @@ def diff_projections(out):
 
     def fmt(p):
         if not p:
-            return "null"
+            return "absent"
+        if p.get("available") is False:
+            return "no estimate (%s)" % p.get("reason")
         return ("%s exp %s %s sample %s spread %s %s"
                 % (p["period_end"], p["expected"], p["kind"], p["sample"],
                    p["spread_days"], p["confidence"]))
@@ -303,10 +330,13 @@ def main():
                  "and cite an accession number that must be opened before use. Fields "
                  "under 'projection' are ESTIMATE, derived from this issuer's own "
                  "filing lags, over the sample stated in that block. "
-                 "'projection' IS NULL when the issuer's filing history is too thin "
-                 "to project from - fewer than two quarterly reports and fewer than "
-                 "two annual ones - and an issuer whose fetch failed carries 'error' "
-                 "and no 'projection' key at all. Both mean 'not known', never zero. "
+                 "'projection' ALWAYS carries the same keys. When the filing "
+                 "history is too thin to project from, 'available' is false, every "
+                 "estimate field is null, and 'reason' states the counts against the "
+                 "floors, e.g. '1/2 quarterly and 0/2 annual filings' - an absence "
+                 "reported as a measurement rather than a gap. An issuer whose fetch "
+                 "failed is different again: it carries 'error' and no 'projection' "
+                 "key. Neither means zero. "
                  "'spread_days' is HALF the observed range of filing lags."),
         "issuers": {},
     }
