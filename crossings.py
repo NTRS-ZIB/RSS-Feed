@@ -58,7 +58,8 @@ from pathlib import Path
 import requests
 
 import watchlist
-from first_run import backfill_note, backfilled, baseline_by_cik, summary
+from first_run import (backfill_note, backfilled, baseline_by_cik,
+                       held_by_cik, prune_unmeasured, summary)
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -164,6 +165,21 @@ def fetch(symbols):
 
 
 # ---------------------------------------------------------------- ANALYSIS
+
+
+def measured_tickers(tickers, young, missing):
+    """Tickers this run actually assessed — the ones that reached setdefault.
+
+    The loop has four `continue` paths and no other exit, so the survivors are
+    exactly the roster minus the young and the unusable. `young` is
+    [(ticker, bars)], `missing` is a flat list.
+
+    A ticker below MIN_BARS is the case that matters, and it is not a fault:
+    the component has simply not seen enough of it to say anything. Recording
+    it as established anyway is what would let SPCX arrive armed on the run it
+    finally clears the floor.
+    """
+    return set(tickers) - {t for t, _ in young} - set(missing)
 
 
 def initial_flags(ticker, newly_watched, crossed):
@@ -362,9 +378,8 @@ def main():
     newly_watched = set(baseline_by_cik(state, watchlist.ciks()))
     if backfill:
         print("\n" + backfill_note("crossings", len(tickers)))
-    if newly_watched:
-        print()
-        print(summary("crossings", sorted(newly_watched)))
+    # The summary moved BELOW the loop: it now names only tickers this run
+    # actually measured, and that set does not exist yet here.
     crossed, missing, young, rearmed = [], [], [], []
 
     for ticker in sorted(tickers):
@@ -416,6 +431,44 @@ def main():
         if fires:
             crossed.append({"ticker": ticker, "m": m})
         st["last_seen"] = m["date"].isoformat()
+
+    # A TICKER THIS RUN DID NOT MEASURE IS NOT ESTABLISHED, and here that is
+    # not hypothetical: SPCX was recorded on 2026-08-14 while sitting at 46 of
+    # MIN_BARS=60 sessions, so on the run it clears the floor `setdefault`
+    # would have created it ARMED — `initial_flags` disarms only a ticker in
+    # `newly_watched`, and SPCX was no longer in it. It would have announced a
+    # 52-week crossing that predates the watch, which is the one assertion
+    # this component must never make.
+    measured = measured_tickers(tickers, young, missing)
+    cik_of = {t: c for t, (c, _) in watchlist.ciks().items()}
+    # A ticker with armed flags has been assessed before, so a run where its
+    # bars fail to arrive must not un-establish it.
+    has_state = held_by_cik(state, watchlist.ciks(), watchlist.alt_by_ticker())
+    deferred = prune_unmeasured(state, {cik_of[t] for t in measured if t in cik_of},
+                                set(cik_of.values()), has_state)
+    if deferred:
+        by_cik = {c: t for t, c in cik_of.items()}
+        bars = dict(young)
+        names = [by_cik.get(c, c) for c in deferred]
+        # TWO MEASUREMENTS, TWO LINES. `deferred` mixes tickers below the
+        # floor with tickers whose bars did not arrive, and CLAUDE.md is
+        # explicit that those must never share a label. An earlier version
+        # printed both in the sessions unit with '?' standing in for the
+        # count, which gives a source failure the shape of a young listing
+        # and fakes the very number that makes the young line benign.
+        short = [t for t in names if t in bars]
+        failed = [t for t in names if t not in bars]
+        if short:
+            print(f"\n  first-run record DEFERRED (too little history): "
+                  + ", ".join(f"{t} {bars[t]}/{MIN_BARS} sessions"
+                              for t in sorted(short)))
+        if failed:
+            print(f"\n  first-run record DEFERRED (no usable data): "
+                  + ", ".join(sorted(failed)))
+    newly_watched &= measured
+    if newly_watched:
+        print()
+        print(summary("crossings", sorted(newly_watched)))
 
     if rearmed:
         print(f"\n  re-armed (back inside {REARM_LOW:.0f}–{REARM_HIGH:.0f}%): "

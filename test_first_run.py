@@ -80,7 +80,9 @@ def wiring():
         # backfilled() answers about the NEXT call, so asking after baseline
         # always says False and the note never prints — green, and useless.
         check(f"{mod.__name__} asks backfilled() BEFORE baseline()",
-              src.index("backfilled(state)") < src.index("baseline_by_cik(state,"),
+              "backfilled(state)" in src and "baseline_by_cik(state," in src
+              and src.index("backfilled(state)")
+              < src.index("baseline_by_cik(state,"),
               "asked afterwards it is always False")
 
     # THE RECORD MUST REACH DISK ON THE QUIET PATH. Both of these components
@@ -235,6 +237,172 @@ def per_component():
     check("the backfill run counts a real move normally",
           dilution.is_change("RIOT", {"shares": 1, "date": "2026-05-01"}, m,
                              set(first_run.baseline({}, ["RIOT"]))) is True)
+
+
+def measured_only():
+    """A company the run never observed must not be recorded as established.
+
+    The rotation of the original bug. `baseline_by_cik` marks every roster
+    company established on the backfill run whether or not the component
+    produced the state its suppression rests on, so the record claims
+    something the run never measured. Verified on 2026-08-18: dilution held 22
+    CIKs against 18 share counts, crossings 22 against 21 armed flags.
+    """
+    print("\nPRUNE — a key NOTHING has ever measured is not established")
+    state = {"companies": {"C1": "d", "C2": "d", "C3": "d"}}
+    gone = first_run.prune_unmeasured(state, {"C1"}, {"C1", "C2", "C3"}, set())
+    check("an unmeasured key with no state is removed", gone == ["C2", "C3"])
+    check("a measured key is kept", set(state["companies"]) == {"C1"})
+
+    # THE CONDITION THAT MAKES THIS SAFE AT ALL. The first draft pruned on
+    # "not measured" alone, which un-established a company on a transient
+    # fetch failure — and in dilution and holder_events a suppressed item is
+    # ALREADY in `seen`, or already overwritten by `record()`, so the next run
+    # lost a real event permanently, under a line reading "not a loss".
+    # The concrete regression: one company's fetch fails, the rest succeed.
+    # `measured` MUST be non-empty here — with an empty one the guard above
+    # returns early and the check passes without reaching the condition it
+    # names. The first version of this check made exactly that mistake.
+    state = {"companies": {"C1": "d", "C2": "d", "C3": "d"}}
+    gone = first_run.prune_unmeasured(state, {"C1", "C3"},
+                                      {"C1", "C2", "C3"}, {"C1", "C2", "C3"})
+    check("an established company whose fetch FAILED is not pruned",
+          gone == [] and set(state["companies"]) == {"C1", "C2", "C3"},
+          "the first draft lost its next real event permanently")
+    state = {"companies": {"C1": "d", "C2": "d"}}
+    first_run.prune_unmeasured(state, {"C1"}, {"C1", "C2"}, {"C2"})
+    check("held state is enough on its own, without being measured",
+          set(state["companies"]) == {"C1", "C2"})
+    # And the converse, or a company would be pruned on the very run it is
+    # first measured, because dilution's record() writes after this runs.
+    state = {"companies": {"C1": "d"}}
+    check("being measured is enough on its own, without held state",
+          first_run.prune_unmeasured(state, {"C1"}, {"C1"}, set()) == [])
+
+    # A company REMOVED from the watchlist is outside the roster, and its
+    # record must survive — otherwise re-adding it later floods.
+    state = {"companies": {"C1": "d", "OLD": "d"}}
+    first_run.prune_unmeasured(state, {"C1"}, {"C1"}, set())
+    check("a key outside the roster is never touched", "OLD" in state["companies"],
+          "a departed company keeps its record, so a re-add cannot flood")
+
+    # A total outage measured nothing, and so knows nothing about the record.
+    state = {"companies": {"C1": "d", "C2": "d"}}
+    check("an empty measured set prunes NOTHING",
+          first_run.prune_unmeasured(state, set(), {"C1", "C2"}, set()) == []
+          and len(state["companies"]) == 2,
+          "or one bad run un-establishes the whole roster and the next floods")
+
+    state = {"companies": {"C1": "d"}}
+    first_run.prune_unmeasured(state, {"C2"}, {"C1", "C2"}, set())
+    check("the namespace SURVIVES pruning every key",
+          state.get("companies") == {},
+          "absent means backfill; a pruned-empty namespace must not read as one")
+
+    state = {}
+    check("an absent namespace is not created by pruning",
+          first_run.prune_unmeasured(state, {"C1"}, {"C1"}, set()) == []
+          and "companies" not in state)
+
+    print("\nHELD STATE SURVIVES A RENAME")
+    # State is TICKER-keyed and the record is CIK-keyed, so the run after a
+    # rename finds the state under the OLD symbol. Reporting the company as
+    # holding nothing would prune an established one in exactly the window
+    # where an unmeasured reading is most likely: the run after a roster edit.
+    named = {"BAR": ("0001000", "Bar Inc")}
+    alts = {"BAR": ["FOO"]}
+    check("state under a FORMER ticker still counts as held",
+          first_run.held_by_cik({"FOO"}, named, alts) == {"0001000"},
+          "six of nineteen renamed in eighteen months")
+    check("state under the current ticker counts too",
+          first_run.held_by_cik({"BAR"}, named, alts) == {"0001000"})
+    check("a namespace key in the state is not read as a ticker",
+          first_run.held_by_cik({"companies", "forms"}, named, alts) == set(),
+          "dilution and crossings iterate state, which carries both")
+
+    print("\nWHAT EACH COMPONENT COUNTS AS MEASURED")
+    roster = {"AAA": ("0001", "A Co"), "BBB": ("0002", "B Co")}
+    rows = [{"ticker": "AAA", "m": {}, "concept": "x"}]
+    check("dilution counts only tickers that produced a share count",
+          dilution.measured_ciks(rows, roster) == {"0001"},
+          "the untagged, withheld and failed paths all leave no count")
+    check("and returns CIKs, because the record is CIK-keyed",
+          all(c.startswith("000") for c in dilution.measured_ciks(rows, roster)))
+
+    # Calls the module. Recomputing the arithmetic here instead would pin
+    # the test against itself, and no change to crossings.py could fail it.
+    measured = crossings.measured_tickers(["AAA", "BBB", "CCC"],
+                                          [("BBB", 46)], ["CCC"])
+    check("crossings excludes a ticker below MIN_BARS", "BBB" not in measured,
+          "SPCX at 46 of 60 was recorded anyway on 2026-08-14")
+    check("crossings excludes a ticker with no usable data",
+          "CCC" not in measured)
+    check("crossings keeps a ticker that reached setdefault",
+          measured == {"AAA"})
+
+    print("\nTHE WIRING, WHICH IS WHERE IT GOES SILENT")
+    for mod, save in ((dilution, "save_state(state)"),
+                      (crossings, "save_state(state)"),
+                      (holder_events, "save_state(state)")):
+        src = inspect.getsource(mod.main)
+        check(f"{mod.__name__} passes its held state to the prune",
+              "held_by_cik(" in src and "has_state)" in src,
+              "`has_state = set()` is one line and reinstates permanent loss")
+        check(f"{mod.__name__} prunes before it saves",
+              "prune_unmeasured(" in src
+              and src.index("prune_unmeasured(") < src.index(save),
+              "pruning after the write records the unmeasured company anyway")
+        # summary() must print AFTER the prune, or it names a company every
+        # run until it is measured — fourteen sessions of it, for SPCX.
+        # POSITION, not presence. The comment above claims an ordering and the
+        # first version of this check asserted only that the line existed, so
+        # moving it below the summary left the suite green while SPCX was
+        # named on every run for fourteen sessions.
+        narrow = "newly_watched &= measured"
+        check(f"{mod.__name__} narrows the summary to measured",
+              narrow in src and "summary(" in src
+              and src.index(narrow) < src.index("summary("),
+              "or the line built to be read once is printed daily")
+        # The only external evidence the prune ran. `if False:` here left
+        # every check green, which is the same invisible-by-construction
+        # shape that backfill_note exists to answer.
+        check(f"{mod.__name__} announces what it deferred",
+              "if deferred:" in src,
+              "a run that pruned and one never wired log identically")
+
+    # press_monitor deliberately does NOT prune. Pin the decision so the
+    # absence reads as a choice rather than the omission it looks like.
+    # The call sites, not just the helpers. Both helpers are unit-tested, and
+    # neither test can see main() passing the wrong arguments to them — which
+    # is a one-line change that reinstates the SPCX bug, green.
+    csrc = inspect.getsource(crossings.main)
+    check("crossings passes young AND missing to measured_tickers",
+          "measured_tickers(tickers, young, missing)" in csrc,
+          "dropping `young` re-arms SPCX on the run it clears the floor")
+    dsrc = inspect.getsource(dilution.main)
+    check("dilution measures from rows, not the roster",
+          "measured_ciks(rows, watchlist.ciks())" in dsrc)
+    # holder_events has no extractable helper — its measured set is built in
+    # the loop — so this pins the one line that implements its half, and that
+    # the line sits AFTER the except, where a failed fetch cannot reach it.
+    hsrc = inspect.getsource(holder_events.main)
+    # `era` is written only inside `if structured:`, so a company read cleanly
+    # every run that simply has no 13D/G holds no era entry — and that is the
+    # case where pruning is catastrophic rather than harmless.
+    check("holder_events holds state from `read`, not `era` alone",
+          'state.get("read"' in hsrc and 'setdefault("read"' in hsrc,
+          "era answers `has filings`, not `has been read`")
+    check("holder_events records measured only after a successful fetch",
+          "measured.add(ticker)" in hsrc
+          and "except Exception" in hsrc
+          and hsrc.index("except Exception") < hsrc.index("measured.add(ticker)"),
+          "above the except, a failed fetch counts as measured and nothing prunes")
+
+    src = inspect.getsource(press_monitor.main)
+    check("press_monitor does NOT prune, deliberately",
+          "prune_unmeasured(" not in src
+          and "KNOWN EXPOSURE" in src,
+          "record and suppression are one lever there; a prune loses items")
 
 
 def capability_axis():
@@ -500,6 +668,7 @@ def main():
 
     per_component()
     capability_axis()
+    measured_only()
     wiring()
 
     bad = sum(1 for r, _ in results if r == FAIL)

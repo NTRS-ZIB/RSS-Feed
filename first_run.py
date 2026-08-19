@@ -150,6 +150,122 @@ def newly_tracked(value, new_keys, old_keys, matches):
     return None
 
 
+def held_by_cik(keys, companies, aliases):
+    """CIKs a ticker-keyed state holds an entry for, aliases included.
+
+    The units problem again, in the direction that bites on a rename. Every
+    component's per-company state is keyed by TICKER while the first-run
+    record is keyed by CIK, so on the run after a rename the state still sits
+    under the OLD symbol and a naive lookup reports the company as holding
+    nothing — which would prune an established company in exactly the window
+    where an unmeasured reading is most likely, the run after a roster edit.
+    Six of nineteen have renamed in eighteen months.
+
+    `aliases` is `watchlist.alt_by_ticker()`, {ticker: [former symbols]}.
+    """
+    cik_of = {t: c for t, (c, _) in companies.items()}
+    canonical = {a.upper(): t for t, alts in aliases.items() for a in alts}
+    out = set()
+    for k in keys:
+        t = canonical.get(str(k).upper(), k)
+        if t in cik_of:
+            out.add(cik_of[t])
+    return out
+
+
+def prune_unmeasured(state, measured, roster, has_state, namespace="companies"):
+    """Drop recorded keys nothing has ever measured. Returns them, sorted.
+
+    TWO CONDITIONS, AND THE SECOND ONE IS THE WHOLE SAFETY OF THIS FUNCTION.
+    A key is pruned only when this run did not measure it AND the component
+    holds no per-company state for it. The first draft pruned on the first
+    condition alone, and that was a worse bug than the one it fixed.
+
+    Why: in `dilution` and `holder_events` a suppressed item is ALREADY
+    RECORDED by the time it is suppressed — accessions go into `seen` inside
+    the loop, share counts are written by `record()` whatever `is_change`
+    returned. Suppression there is only safe for a company that has nothing
+    worth keeping. Prune an ESTABLISHED company on a transient fetch failure
+    and the next run treats it as new: its genuinely new 13D/G is marked seen,
+    then dropped, and no later run can return it. A missed run became a
+    permanent loss, under a log line reading "not a loss".
+
+    That is the same criterion used to exempt `press_monitor`, and the first
+    draft applied the rule to two components the criterion also disqualifies.
+    The second condition is what makes it safe: a company with per-company
+    state has been measured before, so it is established whatever this
+    particular run managed, and it is never pruned.
+
+    Measured 2026-08-18, and the two conditions agree exactly with the damage:
+    the roster members holding no per-company state were ABTC, CRWV, GLXY and
+    SPCX in `dilution` and SPCX in `crossings` — precisely the five wrongly
+    recorded, and nobody else.
+
+    BOTH CONDITIONS ARE LOAD-BEARING, not one with a belt. `has_state` alone
+    would prune a company on the very run it is first measured, because
+    `dilution.record()` writes after this runs. `measured` alone is the bug
+    above.
+
+    RECORDING A COMPANY THE RUN NEVER OBSERVED IS THE SAME BUG AS NOT
+    RECORDING ONE, ROTATED. `baseline_by_cik` marks every roster company
+    established on the run the namespace is absent, whether or not the
+    component produced the per-company state its suppression rests on. Measured
+    2026-08-18, four days after the rule landed: `dilution_state.json` held 22
+    CIKs against 18 share counts — ABTC, CRWV, GLXY and SPCX recorded and never
+    measured — and `crossings_state.json` held 22 against 21 armed flags.
+
+    What that costs is not theoretical and has a date. SPCX was at **46 of
+    MIN_BARS=60 sessions** and already recorded, so on the run it clears the
+    floor `state.setdefault` creates it ARMED — `initial_flags` disarms only a
+    ticker in `newly_watched`, and SPCX is no longer in it. It would then fire
+    "above its 52-week high" for a crossing the component never watched, which
+    is the exact assertion `initial_flags` exists to refuse.
+
+    PRUNING RATHER THAN RECORDING LATE, for two reasons. Both callers consume
+    `newly_watched` INSIDE their per-company loop while the measured set only
+    exists after it, so recording late means splitting `baseline` into a read
+    half and a write half at every call site — duplicating the absent-versus-
+    empty asymmetry that is the easiest thing here to get wrong. And `baseline`
+    is append-only, so narrowing what it writes from now on would leave the
+    four already-wrong records in place for ever; a delete repairs them on the
+    next saving run, without hand-editing an output file.
+
+    THREE PROPERTIES ARE LOAD-BEARING:
+
+    - It never removes the namespace itself. Absent still means backfill, so a
+      run that pruned everything must not read as the rule having never landed.
+    - It never touches a key outside `roster`. A company REMOVED from the
+      watchlist keeps its record, so re-adding it later does not flood.
+    - An empty `measured` prunes nothing. A run that measured nothing has
+      measured nothing about the record either, and a total outage must not
+      quietly un-establish the whole roster.
+
+    STARVATION IS NOT POSSIBLE. A company that legitimately never produces the
+    state is never suppressed, because there is nothing to suppress: the
+    suppression is only REACHABLE for a company being measured — `is_change`
+    is called only for tickers in `rows`, `initial_flags` only through
+    `setdefault`. It carries no record until the day it is measured, and on
+    that day exactly one first observation is withheld and both the record and
+    the per-company state are written, so it is never pruned again.
+
+    An earlier version of this paragraph claimed the same thing while pruning
+    on `measured` alone, and was wrong: it did not cover a company measured on
+    an EARLIER run whose record this function had since deleted. That gap was
+    the defect described above, and `has_state` is what closes it.
+
+    `measured` and `roster` are both key sets in the namespace's own units,
+    which for `companies` means CIKs and not tickers.
+    """
+    known = state.get(namespace)
+    if not measured or known is None:
+        return []
+    gone = sorted(k for k in roster
+                  if k in known and k not in measured and k not in has_state)
+    for k in gone:
+        del known[k]
+    return gone
+
+
 def backfilled(state, namespace="companies"):
     """Will the NEXT baseline() call be the backfill run? Ask before calling.
 

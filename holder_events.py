@@ -91,7 +91,7 @@ import watchlist
 # Imported by name rather than as a module: this file already has a local
 # `first_run` for the whole-file guard, and the two names would collide.
 from first_run import (backfill_note, backfilled, baseline, baseline_by_cik,
-                       newly_tracked, summary)
+                       held_by_cik, newly_tracked, prune_unmeasured, summary)
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -530,7 +530,7 @@ def main():
     if backfill_forms:
         print("\n" + backfill_note("holder_events", len(FORMS_TRACKED),
                                    "form types"))
-    events, legacy_seen = [], []
+    events, legacy_seen, measured = [], [], set()
 
     for ticker, (cik, name) in sorted(CIKS.items()):
         try:
@@ -538,6 +538,11 @@ def main():
         except Exception as e:                                  # noqa: BLE001
             print(f"  {ticker}: FAILED {type(e).__name__}")
             continue
+        # Reached only once the submissions request succeeded, which is the
+        # whole distinction: an empty result means the company has no 13D/G,
+        # and an exception means this run does not know.
+        measured.add(ticker)
+        state.setdefault("read", {})[ticker] = date.today().isoformat()
         structured = [r for r in rows if r["form"].startswith(STRUCTURED)]
         legacy = [r for r in rows if r["form"].startswith(LEGACY)]
         if legacy:
@@ -580,6 +585,36 @@ def main():
     # Their filings were still read and recorded above: accessions into `seen`,
     # percentages into `holders`, the era floor into `era`. Only the OUTPUT is
     # withheld, so the next genuine change for these companies posts normally.
+    # A COMPANY THIS RUN COULD NOT REACH IS NOT ESTABLISHED. Unlike dilution
+    # and crossings, nothing here is wrong today — the record and the filings
+    # match, because no fetch has failed on a run that mattered. That is
+    # ORDERING, not construction: a roster addition landing on a run where the
+    # SEC refuses one request would record the company having read none of its
+    # 13D/G, and the next run posts every one of them. Which is 2026-08-14
+    # exactly, arriving through a transient instead of a floor.
+    cik_of = {t: c for t, (c, _) in CIKS.items()}
+    # THE CONDITION THAT MAKES THIS SAFE HERE AT ALL. A suppressed event is
+    # already in `seen` by this point, so pruning an established company on a
+    # transient fetch failure would lose its next real 13D/G permanently. A
+    # company with an era floor has been read before and is never pruned.
+    # UNION, because `era` alone answers the wrong question. It is written
+    # only inside `if structured:`, so a company read successfully every run
+    # that simply HAS no 13D/G holds no era entry — and pruning that one is
+    # the catastrophic case: its first-ever 13D lands, is marked seen, then
+    # suppressed, and no run can recover it. `read` records every successful
+    # fetch, which is the fact the guard actually needs.
+    has_state = held_by_cik(set(state.get("era", {})) | set(state.get("read", {})),
+                            CIKS, watchlist.alt_by_ticker())
+    deferred = prune_unmeasured(state,
+                                {cik_of[t] for t in measured if t in cik_of},
+                                set(cik_of.values()), has_state)
+    if deferred:
+        by_cik = {c: t for t, c in cik_of.items()}
+        print("\nFirst-run record DEFERRED for "
+              + ", ".join(by_cik.get(c, c) for c in deferred)
+              + " — their filings could not be read this run.")
+    newly_watched &= measured
+
     if newly_watched:
         events, per = drop_newly_watched(events, newly_watched)
         print("\n" + summary("holder_events", sorted(newly_watched), per))

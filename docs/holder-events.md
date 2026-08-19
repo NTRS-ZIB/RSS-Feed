@@ -155,6 +155,31 @@ line says so. Without it a component that ran the rule and one where it was
 never wired produce identical logs — which is what the first five dry runs
 looked like, all green and all silent.
 
+## A company this run could not reach is not established
+
+Nothing is wrong here today, and that is ORDERING rather than construction.
+The fetch-failure path records a company whose 13D/G were never read, and the
+next run then posts every one of them — 2026-08-14 exactly, arriving through
+a transient instead of a floor. `dilution` and `crossings` were both found
+genuinely wrong on 2026-08-18; this one was one bad SEC response away.
+
+**Pruned only when the component has never successfully read it**, and that
+second condition is the whole safety of the rule. The first version pruned
+on "not measured this run" alone, so one 503 un-established a company — and
+because an event's accession enters `seen` before the suppression runs, the
+next run's genuinely new 13D/G was dropped and no later run could recover
+it. Caught in review before merge.
+
+The held-state signal is `read`, a record of every successful fetch, UNIONED
+with the older `era` floor. `era` alone answers the wrong question: it is
+written only when structured filings exist, so a company read cleanly every
+run that simply has no 13D/G would hold nothing — and that is precisely the
+case where pruning is catastrophic rather than harmless.
+
+`measured` is added inside the loop only after the submissions request
+succeeds, which is the whole distinction: an empty result means the company
+has no 13D/G, an exception means this run does not know.
+
 ## In the weekly digest
 
 A `holders` contributor at cadence `event`, so `weekly_digest.mk()` refuses any

@@ -2539,6 +2539,34 @@ def main():
     # A company appearing for the first time posts nothing at all, press or
     # insider. This runs AFTER the marking above, so its items are recorded as
     # seen exactly like any other suppressed item and cannot return next run.
+    # THIS RECORDS A COMPANY THIS RUN MAY NEVER HAVE READ, and that is a
+    # KNOWN EXPOSURE rather than an oversight. `company_filings()` returns []
+    # on a fetch fault and `collect_all()` prints "no filings returned" and
+    # continues, so a genuinely quiet company and a failed request are the
+    # same value here — there is nothing to test. A roster addition landing on
+    # a run where that company's request fails is recorded as established, and
+    # its filings post on the next run.
+    #
+    # `dilution`, `crossings` and `holder_events` fixed the identical shape on
+    # 2026-08-18 by pruning unmeasured keys before saving. THAT FIX IS UNSAFE
+    # HERE, and an earlier version of this comment gave the wrong reason: it
+    # claimed the record and the suppression are separate in those three. They
+    # are NOT — in `holder_events` and `dilution` a suppressed item is already
+    # in `seen` or already overwritten, which is the same hazard as here, and
+    # pruning on unmeasured-alone genuinely lost real events until `has_state`
+    # was added. What is different is that those three can ASK whether they
+    # have ever measured a company — a stored count, armed flags, an era floor
+    # — so `has_state` makes the prune safe. This component cannot: uids carry
+    # no company and `seen` is capped and evicting, which is the measured
+    # reason `baselined` was never keyed off it. With no such question to ask,
+    # a prune here is unmeasured-alone by construction, and that is the version
+    # that loses items.
+    #
+    # WHAT BOUNDS IT: MAX_AGE_DAYS, to seven days of that company's items. The
+    # real fix is upstream — make `company_filings` distinguish a fault from an
+    # empty result — which is a change to the fetch path of the component that
+    # posts most, and belongs in its own session rather than bolted onto this
+    # one.
     new_companies, _suppressed = baseline_companies(
         state, EXTRA_CIKS, fresh + insider_fresh)
     if new_companies:

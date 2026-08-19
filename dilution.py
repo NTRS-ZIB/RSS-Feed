@@ -39,7 +39,8 @@ from pathlib import Path
 import requests
 
 import watchlist
-from first_run import backfill_note, backfilled, baseline_by_cik, summary
+from first_run import (backfill_note, backfilled, baseline_by_cik,
+                       held_by_cik, prune_unmeasured, summary)
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -310,6 +311,25 @@ def summarise(series):
             "year_base": year_base}
 
 
+def measured_ciks(rows, roster):
+    """CIKs this run actually produced a share count for.
+
+    `rows` is exactly the set `record()` writes, so this is the same question
+    asked one step earlier: which companies does the state now say something
+    about. The three `continue` paths above it — a fetch fault, an untagged
+    filer, a count withheld as stale or implausible — all leave the company
+    with no count, and none of them may claim it as established.
+
+    The untagged case is the one worth naming, because it is not a fault and
+    reads like a settled fact. A company that tags no share-count concept has
+    nothing to suppress today; recording it anyway means its FIRST count, the
+    day it starts tagging one, compares against nothing and posts as a change.
+    ABTC, CRWV, GLXY and SPCX all sat in exactly that state on 2026-08-18.
+    """
+    cik_of = {t: c for t, (c, _) in roster.items()}
+    return {cik_of[r["ticker"]] for r in rows if r["ticker"] in cik_of}
+
+
 def record(state, rows):
     """Store each company's current count. Called on every saving path.
 
@@ -509,9 +529,8 @@ def main():
     newly_watched = set(baseline_by_cik(state, watchlist.ciks()))
     if backfill:
         print("\n" + backfill_note("dilution", len(watchlist.tickers())))
-    if newly_watched:
-        print()
-        print(summary("dilution", sorted(newly_watched)))
+    # The summary moved BELOW the loop, because it now names only companies
+    # this run actually measured and that set does not exist yet here.
     any_drop = False
 
     for ticker, (cik, name) in sorted(watchlist.ciks().items()):
@@ -592,6 +611,39 @@ def main():
         print("Not posting — this is a fault, not a measurement, and a company")
         print("shown as n/a for a network error asserts the wrong thing.")
         return 1
+
+    # A COMPANY THIS RUN DID NOT MEASURE IS NOT ESTABLISHED. Placed after the
+    # loop because that is the first point the measured set exists, and before
+    # every save below. A pruned company is suppressed on the day it is first
+    # measured instead, which is the whole intent.
+    # TWO UNITS, deliberately kept apart. The RECORD is keyed by CIK, because
+    # a ticker is a display label; `newly_watched` is tickers, because that is
+    # what the loop above and every log line speak. Intersecting one with the
+    # other would silently empty the set.
+    cik_of = {t: c for t, (c, _) in watchlist.ciks().items()}
+    measured_tickers = {r["ticker"] for r in rows}
+    # Held state, computed BEFORE record() writes: a company with a stored
+    # count has been measured on some earlier run and is established whatever
+    # this one managed. Without it, a single withheld or untagged reading
+    # would un-establish an established company, and the next run would
+    # suppress a real share-count move that record() then overwrites.
+    has_state = held_by_cik(state, watchlist.ciks(), watchlist.alt_by_ticker())
+    deferred = prune_unmeasured(state, measured_ciks(rows, watchlist.ciks()),
+                                set(cik_of.values()), has_state)
+    if deferred:
+        by_cik = {c: t for t, c in cik_of.items()}
+        why = dict(unavailable)
+        print("\nFirst-run record DEFERRED for "
+              + ", ".join(f"{by_cik.get(c, c)} ({why.get(by_cik.get(c, c), 'no count')})"
+                          for c in deferred)
+              + " — not measured this run, so nothing is claimed about them.")
+    # And the log line follows the record: without this, `summary` names a
+    # company every run until it is finally measured, which for SPCX at 46 of
+    # 60 sessions would be fourteen sessions of a line built to be read once.
+    newly_watched &= measured_tickers
+    if newly_watched:
+        print()
+        print(summary("dilution", sorted(newly_watched)))
 
     rows.sort(key=lambda r: (r["m"]["year"] if r["m"]["year"] is not None else -1e9),
               reverse=True)

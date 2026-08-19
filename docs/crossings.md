@@ -64,6 +64,36 @@ There is no capability axis here. Nothing in this component is a configurable
 set of things it collects; the window and the band are thresholds, not a
 roster of form types.
 
+### A ticker this run did not measure is not established
+
+The rotation of the same bug, found 2026-08-18 and dated: `baseline_by_cik`
+recorded every roster company on the backfill run whether or not this
+component had assessed it. SPCX was recorded on 2026-08-14 while sitting at
+**46 of MIN_BARS=60 sessions**, so on the run it cleared the floor
+`state.setdefault` would have created it ARMED — `initial_flags` disarms only
+a ticker in `newly_watched`, and SPCX was no longer in it. It would have
+announced a 52-week crossing that predates the watch, which is the single
+assertion this component must never make.
+
+**Pruned only when the component holds no armed flags for it**, and that
+second condition is the whole safety of the rule rather than a belt on it.
+The first version pruned on "not measured this run" alone, which
+un-established a ticker whose bars failed to arrive. Here the cost is only
+the false log line below — `setdefault` returns the surviving flags, so
+nothing is re-disarmed — but in `dilution` and `holder_events` the same
+predicate lost real events permanently, and the rule is shared. Caught in
+review before merge.
+
+`measured_tickers()` is the roster minus the young and the unusable, and
+`first_run.prune_unmeasured` deletes anything else from the record before it
+is saved. Deleting rather than withholding is what repairs the run already on
+disk, without hand-editing an output file.
+
+Nothing starves. The suppression is only REACHABLE through `setdefault`, so a
+ticker that never clears the floor is never suppressed — there is nothing to
+suppress. It carries no record until the day it is measured, and on that day
+exactly one crossing direction is disarmed.
+
 ## What a crossing is, and what it is worth here
 
 A **closing** price beyond the extreme of the prior 252 sessions. Not an
