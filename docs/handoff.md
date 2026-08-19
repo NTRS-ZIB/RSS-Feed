@@ -40,19 +40,28 @@ What that run will do, measured by dry run against live SEC data:
 | | was | will be |
 |---|---|---|
 | APLD | `2026-05-31`, expected `2026-08-03` | `2026-08-31`, expected `2026-10-12` |
-| BTDR | `2026-03-31`, expected `2026-07-20` | `2026-12-31`, expected `2027-04-21` |
+| BTDR | `2026-03-31`, expected `2026-07-20`, `spread 57`, `sample 5` | `2026-12-31`, expected `2027-04-26`, **`spread 16`**, **`sample 4`** |
 | IREN | `sample 3` | `sample 4` |
 | SPCX | `quarterly, sample 1` | no estimate, `1/2 quarterly and 0/2 annual filings` |
 | CLSK | `spread 25`, `normal` | `spread 25`, **`low`** |
 | WYFI | `spread 18`, `normal` | `spread 18`, **`low`** |
 | all 22 | — | two fields added: `available`, `reason` |
 
-The last two are the spread unification rather than the earlier merge, and
-they are the only fields it moves here: `spread_days` is unchanged for every
-issuer and only the verdict on it changed. **APLD is not in that pair even
-though it sat in the band in the committed file**, because the merge moved it
-onto a quarterly pool whose range is 8. A company leaves the band because its
-own history changed, not only because a threshold did.
+**Three separate changes are stacked in that one write**, which is worth
+untangling before reading the table as one thing.
+
+- The **shared-rule merge** moves APLD, BTDR's period, IREN and SPCX.
+- The **spread unification** moves CLSK and WYFI, and nothing else: it changes
+  no `spread_days` anywhere, only the verdict on it. **APLD is not in that
+  pair even though it sat in the band in the committed file**, because the
+  merge had already moved it onto a quarterly pool whose range is 8. A company
+  leaves the band because its own history changed, not only because a
+  threshold did.
+- The **period-end guard** moves BTDR's `spread_days` 57 to 16 and its sample
+  5 to 4, by dropping a 20-F whose `reportDate` is a SPAC transaction date.
+  BTDR stays `low`, because its four genuine 20-F lags do span 32 days.
+
+BTDR is the only issuer touched by more than one of the three.
 
 **Check that run.** It is the only thing that confirms the change reached the
 consumer, and `build_snapshot` now takes `DRY_RUN` if you want to preview
@@ -122,6 +131,14 @@ nothing" guards were each demonstrated by making them fire, and `tests.yml`
 runs `--branches` on every push so the coverage assertion is itself checked.
 Nothing was done about the two unreachable branches it names; they are
 defensive and listed in its docstring.
+
+**And its second real use found another.** Its snapshot classifier still read
+`spread_days > 30` after the threshold moved onto the range, so 1,021 of
+7,710 cases fell through all four confidence arms and were counted under
+none. **Every branch was still reached, so the coverage guard stayed green**
+throughout. A classifier that reads a different quantity from the code it
+classifies goes stale in silence, exactly as a literal threshold does; both
+now read the module's own constant. The arms partition.
 
 **Its first real use found a hole in itself.** Every case held its lag
 constant within a pool, so the spread was zero for all but four of 2,574
