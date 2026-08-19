@@ -304,17 +304,30 @@ def diff_projections(out):
                 % (p["period_end"], p["expected"], p["kind"], p["sample"],
                    p["spread_days"], p["confidence"]))
 
+    # COMPARED ON THE SHARED KEYS ONLY. Adding a field makes every dict
+    # unequal, so a plain == reported "22 of 22 would change" on a run where
+    # twenty of them held identical values — which is the kind of report that
+    # gets skimmed once and ignored after. New and dropped keys are named
+    # separately, because a shape change is a different fact from a value one.
+    added, dropped = set(), set()
     lines, changed = [], 0
     for t in sorted(out["issuers"]):
-        a = (old.get(t) or {}).get("projection")
-        b = (out["issuers"][t] or {}).get("projection")
-        if a == b:
+        a = (old.get(t) or {}).get("projection") or {}
+        b = (out["issuers"][t] or {}).get("projection") or {}
+        added |= set(b) - set(a)
+        dropped |= set(a) - set(b)
+        shared = set(a) & set(b)
+        if bool(a) == bool(b) and all(a[k] == b[k] for k in shared):
             continue
         changed += 1
-        lines.append("  %-6s was  %s" % (t, fmt(a)))
-        lines.append("  %-6s now  %s" % ("", fmt(b)))
-    head = "\n%d of %d projection(s) would change:" % (changed, len(out["issuers"]))
-    return head + ("\n" + "\n".join(lines) if lines else " none")
+        lines.append("  %-6s was  %s" % (t, fmt(a or None)))
+        lines.append("  %-6s now  %s" % ("", fmt(b or None)))
+    head = "\n%d of %d projection(s) change VALUE:" % (changed, len(out["issuers"]))
+    shape = ""
+    if added or dropped:
+        shape = ("\nshape: %d field(s) added %s, %d dropped %s"
+                 % (len(added), sorted(added), len(dropped), sorted(dropped)))
+    return head + ("\n" + "\n".join(lines) if lines else " none") + shape
 
 
 def main():
