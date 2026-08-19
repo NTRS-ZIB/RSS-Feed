@@ -100,10 +100,6 @@ it; nobody has asked.
 one with an external consumer does not. The `note` inside the file is
 currently the whole contract.
 
-**6. Two scheduled tasks are redundant.** `first-run-backfill-check-1` and
-`-2` were set up to verify the backfill; it was verified directly instead.
-They can be deleted.
-
 ---
 
 ## What is NOT proven, and would be easy to assume is
