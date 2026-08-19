@@ -592,9 +592,14 @@ def main():
     # 13D/G, and the next run posts every one of them. Which is 2026-08-14
     # exactly, arriving through a transient instead of a floor.
     cik_of = {t: c for t, (c, _) in CIKS.items()}
+    # THE CONDITION THAT MAKES THIS SAFE HERE AT ALL. A suppressed event is
+    # already in `seen` by this point, so pruning an established company on a
+    # transient fetch failure would lose its next real 13D/G permanently. A
+    # company with an era floor has been read before and is never pruned.
+    has_state = {cik_of[t] for t in state.get("era", {}) if t in cik_of}
     deferred = prune_unmeasured(state,
                                 {cik_of[t] for t in measured if t in cik_of},
-                                set(cik_of.values()))
+                                set(cik_of.values()), has_state)
     if deferred:
         by_cik = {c: t for t, c in cik_of.items()}
         print("\nFirst-run record DEFERRED for "

@@ -622,8 +622,14 @@ def main():
     # other would silently empty the set.
     cik_of = {t: c for t, (c, _) in watchlist.ciks().items()}
     measured_tickers = {r["ticker"] for r in rows}
+    # Held state, computed BEFORE record() writes: a company with a stored
+    # count has been measured on some earlier run and is established whatever
+    # this one managed. Without it, a single withheld or untagged reading
+    # would un-establish an established company, and the next run would
+    # suppress a real share-count move that record() then overwrites.
+    has_state = {cik_of[t] for t in state if t in cik_of}
     deferred = prune_unmeasured(state, measured_ciks(rows, watchlist.ciks()),
-                                set(cik_of.values()))
+                                set(cik_of.values()), has_state)
     if deferred:
         by_cik = {c: t for t, c in cik_of.items()}
         why = dict(unavailable)

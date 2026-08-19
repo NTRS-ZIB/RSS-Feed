@@ -75,6 +75,15 @@ a ticker in `newly_watched`, and SPCX was no longer in it. It would have
 announced a 52-week crossing that predates the watch, which is the single
 assertion this component must never make.
 
+**Pruned only when the component holds NO state for it**, and that second
+condition is the whole safety of the rule rather than a belt on it. The first
+version pruned on "not measured this run" alone, which un-established a
+company on a transient failure — and because a suppressed item is already in
+`seen`, or already overwritten by `record()`, the next run then lost a real
+event permanently, under a log line reading "not a loss". Caught in review
+before merge. A company with per-company state has been measured before and is
+established whatever this particular run managed.
+
 `measured_tickers()` is the roster minus the young and the unusable, and
 `first_run.prune_unmeasured` deletes anything else from the record before it
 is saved. Deleting rather than withholding is what repairs the run already on

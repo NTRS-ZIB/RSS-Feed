@@ -441,16 +441,30 @@ def main():
     # this component must never make.
     measured = measured_tickers(tickers, young, missing)
     cik_of = {t: c for t, (c, _) in watchlist.ciks().items()}
+    # A ticker with armed flags has been assessed before, so a run where its
+    # bars fail to arrive must not un-establish it.
+    has_state = {cik_of[t] for t in state if t in cik_of}
     deferred = prune_unmeasured(state, {cik_of[t] for t in measured if t in cik_of},
-                                set(cik_of.values()))
+                                set(cik_of.values()), has_state)
     if deferred:
         by_cik = {c: t for t, c in cik_of.items()}
         bars = dict(young)
-        print("\n  first-run record DEFERRED for "
-              + ", ".join(f"{by_cik.get(c, c)} "
-                          f"{bars.get(by_cik.get(c, c), '?')}/{MIN_BARS} sessions"
-                          for c in deferred)
-              + " — not measured this run, so nothing is claimed about them.")
+        names = [by_cik.get(c, c) for c in deferred]
+        # TWO MEASUREMENTS, TWO LINES. `deferred` mixes tickers below the
+        # floor with tickers whose bars did not arrive, and CLAUDE.md is
+        # explicit that those must never share a label. An earlier version
+        # printed both in the sessions unit with '?' standing in for the
+        # count, which gives a source failure the shape of a young listing
+        # and fakes the very number that makes the young line benign.
+        short = [t for t in names if t in bars]
+        failed = [t for t in names if t not in bars]
+        if short:
+            print(f"\n  first-run record DEFERRED (too little history): "
+                  + ", ".join(f"{t} {bars[t]}/{MIN_BARS} sessions"
+                              for t in sorted(short)))
+        if failed:
+            print(f"\n  first-run record DEFERRED (no usable data): "
+                  + ", ".join(sorted(failed)))
     newly_watched &= measured
     if newly_watched:
         print()

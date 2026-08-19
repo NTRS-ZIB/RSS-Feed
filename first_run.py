@@ -150,8 +150,38 @@ def newly_tracked(value, new_keys, old_keys, matches):
     return None
 
 
-def prune_unmeasured(state, measured, roster, namespace="companies"):
-    """Drop recorded keys this run did not measure. Returns them, sorted.
+def prune_unmeasured(state, measured, roster, has_state, namespace="companies"):
+    """Drop recorded keys nothing has ever measured. Returns them, sorted.
+
+    TWO CONDITIONS, AND THE SECOND ONE IS THE WHOLE SAFETY OF THIS FUNCTION.
+    A key is pruned only when this run did not measure it AND the component
+    holds no per-company state for it. The first draft pruned on the first
+    condition alone, and that was a worse bug than the one it fixed.
+
+    Why: in `dilution` and `holder_events` a suppressed item is ALREADY
+    RECORDED by the time it is suppressed — accessions go into `seen` inside
+    the loop, share counts are written by `record()` whatever `is_change`
+    returned. Suppression there is only safe for a company that has nothing
+    worth keeping. Prune an ESTABLISHED company on a transient fetch failure
+    and the next run treats it as new: its genuinely new 13D/G is marked seen,
+    then dropped, and no later run can return it. A missed run became a
+    permanent loss, under a log line reading "not a loss".
+
+    That is the same criterion used to exempt `press_monitor`, and the first
+    draft applied the rule to two components the criterion also disqualifies.
+    The second condition is what makes it safe: a company with per-company
+    state has been measured before, so it is established whatever this
+    particular run managed, and it is never pruned.
+
+    Measured 2026-08-18, and the two conditions agree exactly with the damage:
+    the roster members holding no per-company state were ABTC, CRWV, GLXY and
+    SPCX in `dilution` and SPCX in `crossings` — precisely the five wrongly
+    recorded, and nobody else.
+
+    BOTH CONDITIONS ARE LOAD-BEARING, not one with a belt. `has_state` alone
+    would prune a company on the very run it is first measured, because
+    `dilution.record()` writes after this runs. `measured` alone is the bug
+    above.
 
     RECORDING A COMPANY THE RUN NEVER OBSERVED IS THE SAME BUG AS NOT
     RECORDING ONE, ROTATED. `baseline_by_cik` marks every roster company
@@ -187,13 +217,18 @@ def prune_unmeasured(state, measured, roster, namespace="companies"):
       measured nothing about the record either, and a total outage must not
       quietly un-establish the whole roster.
 
-    STARVATION IS NOT POSSIBLE, and structurally rather than by mitigation: in
-    both callers the suppression is only REACHABLE for a company that was
-    measured — `is_change` is called only for tickers in `rows`, `initial_flags`
-    only through `setdefault`. A company that legitimately never produces the
-    state is never suppressed, because there is nothing to suppress. It carries
-    no record until the day it is measured, and on that day exactly one first
-    observation is withheld and the record is written in the same run.
+    STARVATION IS NOT POSSIBLE. A company that legitimately never produces the
+    state is never suppressed, because there is nothing to suppress: the
+    suppression is only REACHABLE for a company being measured — `is_change`
+    is called only for tickers in `rows`, `initial_flags` only through
+    `setdefault`. It carries no record until the day it is measured, and on
+    that day exactly one first observation is withheld and both the record and
+    the per-company state are written, so it is never pruned again.
+
+    An earlier version of this paragraph claimed the same thing while pruning
+    on `measured` alone, and was wrong: it did not cover a company measured on
+    an EARLIER run whose record this function had since deleted. That gap was
+    the defect described above, and `has_state` is what closes it.
 
     `measured` and `roster` are both key sets in the namespace's own units,
     which for `companies` means CIKs and not tickers.
@@ -201,7 +236,8 @@ def prune_unmeasured(state, measured, roster, namespace="companies"):
     known = state.get(namespace)
     if not measured or known is None:
         return []
-    gone = sorted(k for k in roster if k in known and k not in measured)
+    gone = sorted(k for k in roster
+                  if k in known and k not in measured and k not in has_state)
     for k in gone:
         del known[k]
     return gone

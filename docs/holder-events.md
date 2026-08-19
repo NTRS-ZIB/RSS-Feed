@@ -163,6 +163,15 @@ next run then posts every one of them — 2026-08-14 exactly, arriving through
 a transient instead of a floor. `dilution` and `crossings` were both found
 genuinely wrong on 2026-08-18; this one was one bad SEC response away.
 
+**Pruned only when the component holds NO state for it**, and that second
+condition is the whole safety of the rule rather than a belt on it. The first
+version pruned on "not measured this run" alone, which un-established a
+company on a transient failure — and because a suppressed item is already in
+`seen`, or already overwritten by `record()`, the next run then lost a real
+event permanently, under a log line reading "not a loss". Caught in review
+before merge. A company with per-company state has been measured before and is
+established whatever this particular run managed.
+
 `measured` is added inside the loop only after the submissions request
 succeeds, which is the whole distinction: an empty result means the company
 has no 13D/G, an exception means this run does not know.

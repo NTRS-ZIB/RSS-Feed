@@ -271,6 +271,15 @@ suppress today; recorded anyway, its FIRST count on the day it starts tagging
 one compares against nothing and posts as a change, dated to the day the data
 became readable rather than to any filing.
 
+**Pruned only when the component holds NO state for it**, and that second
+condition is the whole safety of the rule rather than a belt on it. The first
+version pruned on "not measured this run" alone, which un-established a
+company on a transient failure — and because a suppressed item is already in
+`seen`, or already overwritten by `record()`, the next run then lost a real
+event permanently, under a log line reading "not a loss". Caught in review
+before merge. A company with per-company state has been measured before and is
+established whatever this particular run managed.
+
 `measured_ciks()` is exactly the set `record()` writes, and
 `first_run.prune_unmeasured` drops the rest before either save. The four
 already wrong are repaired by the delete on the next saving run.
