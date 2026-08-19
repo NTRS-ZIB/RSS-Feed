@@ -220,9 +220,17 @@ def projection(rows):
     `confidence` CHANGED ON 2026-08-19 and this is the one consumer-visible
     move. It gates on the RANGE against LOW_CONFIDENCE_SPREAD, where it used
     to gate on the halved figure against the same number: an effective
-    threshold of 60 days where the Discord post used 30. APLD, WYFI and CLSK
-    were published `normal` here and `~` there on the same day, off the same
-    lags. They now read `low` in both.
+    threshold of 60 days where the Discord post used 30.
+
+    MEASURED BY DRY RUN AGAINST LIVE SEC DATA, it moves exactly two issuers,
+    CLSK and WYFI, `normal` to `low` with every other field of their block
+    identical. BTDR was already `low`. APLD sat in the gap in the committed
+    file at a range of 32 and does NOT move: the shared-rule merge earlier the
+    same day switched it from an annual projection to a quarterly one, and its
+    range on that pool is 8. That is worth knowing rather than tidying away -
+    a company leaves this band because its own history changed, not only
+    because a threshold did, so the set is not stable and reasoning from a
+    stale copy of the file gets it wrong.
     """
     filings = []
     for form, filed, period, *_ in rows:

@@ -43,7 +43,16 @@ What that run will do, measured by dry run against live SEC data:
 | BTDR | `2026-03-31`, expected `2026-07-20` | `2026-12-31`, expected `2027-04-21` |
 | IREN | `sample 3` | `sample 4` |
 | SPCX | `quarterly, sample 1` | no estimate, `1/2 quarterly and 0/2 annual filings` |
+| CLSK | `spread 25`, `normal` | `spread 25`, **`low`** |
+| WYFI | `spread 18`, `normal` | `spread 18`, **`low`** |
 | all 22 | — | two fields added: `available`, `reason` |
+
+The last two are the spread unification rather than the earlier merge, and
+they are the only fields it moves here: `spread_days` is unchanged for every
+issuer and only the verdict on it changed. **APLD is not in that pair even
+though it sat in the band in the committed file**, because the merge moved it
+onto a quarterly pool whose range is 8. A company leaves the band because its
+own history changed, not only because a threshold did.
 
 **Check that run.** It is the only thing that confirms the change reached the
 consumer, and `build_snapshot` now takes `DRY_RUN` if you want to preview
@@ -63,15 +72,7 @@ them.
 
 ## Open, ranked
 
-**1. Two components still disagree about `spread`.** `earnings_calendar`
-publishes the full lag range (`max - min`, thresholded at 30 for the `~`
-marker); `build_snapshot` publishes **half** of it. Both read the same
-`lags` list from `filing_cadence`. This is now visible in one docstring
-instead of buried in two files, which is an improvement and not a fix: it is
-still two answers to one question, which is the shape the whole exercise was
-about. Deliberately not unified, because either choice moves a live output.
-
-**2. `press_monitor` records companies it never read, and it is documented
+**1. `press_monitor` records companies it never read, and it is documented
 rather than fixed.** `company_filings()` returns `[]` on a fetch fault and
 `collect_all()` prints "no filings returned" and continues, so a quiet
 company and a failed request are the same value — there is nothing to test.
@@ -83,12 +84,12 @@ upstream** — make `company_filings` distinguish a fault from an empty result
 — and belongs in its own session. Reasoning is at the `baseline_companies`
 call site.
 
-**3. `degraded` has no field in the wire format.** It folds into
+**2. `degraded` has no field in the wire format.** It folds into
 `confidence: "low"`. A consumer cannot distinguish "annual date, quarterly
 lag" the way the Discord post's `?` marker does. Cheap to add if anyone wants
 it; nobody has asked.
 
-**4. There is no `docs/snapshot.md`.** Every other component has a doc; the
+**3. There is no `docs/snapshot.md`.** Every other component has a doc; the
 one with an external consumer does not. The `note` inside the file is
 currently the whole contract.
 
@@ -105,7 +106,7 @@ the test.
 
 **`press_monitor`'s carve-out is an argument, not a measurement.** Nobody has
 measured how often the SEC submissions endpoint fails per company, so the
-frequency of item 2 above is unknown — only its cost.
+frequency of item 1 above is unknown — only its cost.
 
 **The mutation harnesses live in scratch.** 118 mutations for
 `test_first_run.py` and 20 for `test_build_snapshot.py`. Both print their
@@ -119,8 +120,15 @@ fault. If you re-run one and the count has dropped, that is the reason.
 compares the working tree against any git ref. Its two "this measured
 nothing" guards were each demonstrated by making them fire, and `tests.yml`
 runs `--branches` on every push so the coverage assertion is itself checked.
-Nothing was done about the three unreachable branches it names; they are
+Nothing was done about the two unreachable branches it names; they are
 defensive and listed in its docstring.
+
+**Its first real use found a hole in itself.** Every case held its lag
+constant within a pool, so the spread was zero for all but four of 2,574
+cases and a candidate change to `spread` reported "4 cases moved" over a grid
+that could not see the field. `JITTERS` fixes it, 7,710 cases now. **Reaching
+a branch is the weaker claim**, and a coverage assertion cannot tell you the
+quantity inside it never varies.
 
 ---
 
