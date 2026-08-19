@@ -7,7 +7,7 @@ WHAT IT MEASURES, AND WHY IT IS NOT A SUITE
 the other reaches `snapshot.json`, a wire format another project reads every
 weekday. `test_filing_cadence.py` and `test_build_snapshot.py` say what those
 three SHOULD do on the cases somebody thought of. This says what they DO do,
-over 2,600 generated ones, so that a change to any of them is measured before
+over 7,700 generated ones, so that a change to any of them is measured before
 it ships rather than after.
 
 Run it, change the code, run it again. It names every case whose output moved,
@@ -118,10 +118,35 @@ BRANCHES = (
     "expected_rolled_off_weekend",
     "project_kind_10q",
     "project_kind_annual",
+    "project_spread_wide",
     "snapshot_unavailable",
     "snapshot_confidence_normal",
     "snapshot_low_via_spread",
     "snapshot_low_via_degraded",
+)
+
+
+# Per-filing offsets applied to a case's base lag, cycling over the filings in
+# each form family.
+#
+# WITHOUT THESE THE CORPUS IS BLIND TO SPREAD. Every case used to hold its lag
+# constant within a pool, so `max(lags) - min(lags)` was zero for all but four
+# of 2,574 cases: `snapshot.low_via_spread` was reached three times, the
+# `~` marker in `earnings_calendar` never, and a change to either would have
+# been measured over a population where the quantity does not vary. Reaching a
+# branch is the weaker claim, and it was the only one the guard could make.
+#
+# Found by putting a real candidate change through the corpus. The result read
+# as "4 of 2,574 cases moved, one shape", which is a true statement about a
+# grid that cannot see the field being changed.
+#
+# The tight pattern stays inside the 30-day thresholds and the wide one clears
+# both; the flat one keeps the original zero-spread population rather than
+# replacing it, because a spread of zero is the common real case.
+JITTERS = (
+    (0, 0, 0, 0, 0, 0),
+    (0, 6, -4, 9, -7, 3),
+    (0, 25, -15, 40, -30, 12),
 )
 
 
@@ -146,29 +171,30 @@ def grid():
     # quarterly cycle relative to the fiscal year end; anchoring both on the
     # same month is what left the first version of this corpus unable to enter
     # the is_annual branch at all.
-    for n_ann, n_qtr, fy, qshift, al, ql in itertools.product(
+    for n_ann, n_qtr, fy, qshift, al, ql, j in itertools.product(
             range(0, 5), range(0, 7), (12, 5, 6, 2), (0, 1, 2),
-            (60, 90, 120), (35, 45)):
+            (60, 90, 120), (35, 45), range(len(JITTERS))):
         filings = []
         for i in range(n_ann):
             p = D(2026 - i, fy, 28 if fy == 2 else 30)
-            filings.append((p, p + TD(days=al), "10-K"))
+            filings.append((p, p + TD(days=al + JITTERS[j][i % len(JITTERS[j])]), "10-K"))
         for i in range(n_qtr):
             m = fy - 3 * i - qshift
             y = 2026 + (m - 1) // 12
             m = (m - 1) % 12 + 1
             p = D(y, m, 28)
-            filings.append((p, p + TD(days=ql), "10-Q"))
-        cases["a%d_q%d_fy%d_s%d_al%d_ql%d"
-              % (n_ann, n_qtr, fy, qshift, al, ql)] = filings
+            filings.append((p, p + TD(days=ql + JITTERS[j][i % len(JITTERS[j])]), "10-Q"))
+        cases["a%d_q%d_fy%d_s%d_al%d_ql%d_j%d"
+              % (n_ann, n_qtr, fy, qshift, al, ql, j)] = filings
 
     # TARGETED, because the grid above reaches neither the is_annual nor the
     # degraded branch: it leaves an annual period NEWER than every quarterly
     # one, so `upcoming` never lands on the fiscal month. Real filers are the
     # other way round, with the 10-K covering a year already closed while the
     # quarterlies run ahead of it.
-    for fy, n_ann, ql, al in itertools.product((12, 5, 6), (1, 2, 3, 5),
-                                               (35, 45), (60, 90)):
+    for fy, n_ann, ql, al, j in itertools.product((12, 5, 6), (1, 2, 3, 5),
+                                                  (35, 45), (60, 90),
+                                                  range(len(JITTERS))):
         # Newest quarterly one quarter BEFORE the fiscal year end, so the next
         # quarter end lands on it. n_ann == 1 leaves the annual pool too thin
         # to carry a median, which is the degraded branch.
@@ -181,11 +207,11 @@ def grid():
             y = qy + (m - 1) // 12
             m = (m - 1) % 12 + 1
             pp = D(y, m, 28)
-            filings.append((pp, pp + TD(days=ql), "10-Q"))
+            filings.append((pp, pp + TD(days=ql + JITTERS[j][i % len(JITTERS[j])]), "10-Q"))
         for i in range(n_ann):
             pp = D(2025 - i, fy, 28 if fy == 2 else 30)
-            filings.append((pp, pp + TD(days=al), "10-K"))
-        cases["fyend_fy%d_a%d_ql%d_al%d" % (fy, n_ann, ql, al)] = filings
+            filings.append((pp, pp + TD(days=al + JITTERS[j][i % len(JITTERS[j])]), "10-K"))
+        cases["fyend_fy%d_a%d_ql%d_al%d_j%d" % (fy, n_ann, ql, al, j)] = filings
 
     # Amendments filed long after their period: the shape that separates the
     # two callers' orderings, and the only place their disagreement about
@@ -293,6 +319,11 @@ def branches_of(filings, out):
 
     if p is not None:
         hit.add("project_kind_10q" if p["kind"] == "10-Q" else "project_kind_annual")
+        # The population the `~` marker fires on. Read through the module's own
+        # constant rather than a literal 30, so moving the threshold moves the
+        # branch with it instead of silently emptying it.
+        if p["spread"] > ec.LOW_CONFIDENCE_SPREAD:
+            hit.add("project_spread_wide")
 
     if not s["available"]:
         hit.add("snapshot_unavailable")
