@@ -49,6 +49,11 @@ channel invites.
 closed, with the numbers that closed them. Check it before probing something —
 it exists to stop a re-probe six months later.
 
+**Picking this up after a break?** [`docs/handoff.md`](docs/handoff.md) is the
+current open state: what is merged but not yet observed running, what is
+outstanding, and what is deliberately unproven. Point-in-time — replace it
+rather than append to it.
+
 ## Output width
 
 Every monospace block is kept to **≤28 characters**. Discord mobile wraps code
@@ -148,6 +153,7 @@ earnings_dates.json               auto-generated; announced reporting dates by C
 docs/                             per-component documentation
 digest/                           auto-generated; one file per ISO week, never rewritten
 docs/local-workflow.md            working from a clone; state-file merges
+docs/handoff.md                   current open state; replace, do not append
 ```
 
 ## Secrets
