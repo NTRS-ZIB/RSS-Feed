@@ -25,6 +25,16 @@ from datetime import date, datetime, timedelta, timezone
 import requests
 
 import watchlist
+# The cadence decision, shared with build_snapshot so the two cannot answer
+# the same question differently again. Re-exported by name: existing readers
+# of earnings_calendar.LAG_SAMPLE and friends still resolve, and
+# test_earnings_dates.py monkeypatches through this module's namespace.
+from filing_cadence import (ANNUAL_FORMS, FY_MONTH_SAMPLE, LAG_SAMPLE,
+                            MIN_ANNUAL_FILINGS, MIN_PERIODIC_FILINGS,
+                            MIN_QUARTERLY_FILINGS, PERIODIC_FORMS,
+                            QUARTERLY_FORMS, cadence, fiscal_year_end_month,
+                            next_annual_period_end, next_period_end,
+                            roll_to_business_day)
 import earnings_dates as ed
 # ------------------------------------------------------------------ CONFIG
 
@@ -34,18 +44,17 @@ COMPANIES = watchlist.ciks()           # {ticker: (cik, name)}
 
 # Annual and quarterly lags differ by 20-50 days, so they must never be pooled.
 # Doing so yields a median fitting neither and a spread spanning the gap.
-ANNUAL_FORMS = {"10-K", "20-F", "40-F"}
-QUARTERLY_FORMS = {"10-Q"}
-PERIODIC_FORMS = ANNUAL_FORMS | QUARTERLY_FORMS
+# Cadence facts live in filing_cadence, imported below and re-exported here
+# so existing readers of earnings_calendar.ANNUAL_FORMS still resolve.
 
 # How many past filings to use when estimating the lag.
-LAG_SAMPLE = 8
+
 
 # project() needs at least this many periodic filings before it will attempt
 # a projection at all. Named so the "too little history" message can cite the
 # same number it's measured against, rather than a magic 2 duplicated in a
 # log line.
-MIN_PERIODIC_FILINGS = 2
+
 
 # Below this many QUARTERLY filings, a company gets no quarterly projection at
 # all. Two is not a tuning knob: it is the number needed to compute a median
@@ -58,7 +67,7 @@ MIN_PERIODIC_FILINGS = 2
 # filing in the quarterly pool, takes the degraded path, and applies an annual
 # lag to a quarter end — the exact defect this exists to remove, back for the
 # three months until a second one arrives.
-MIN_QUARTERLY_FILINGS = 2
+
 
 # Horizon for the "upcoming" section.
 HORIZON_DAYS = 45
@@ -129,96 +138,32 @@ def periodic_filings(cik):
     return out
 
 
-def next_period_end(last_period):
-    """The quarter end following `last_period`, preserving the fiscal cycle."""
-    month = last_period.month + 3
-    year = last_period.year + (month - 1) // 12
-    month = (month - 1) % 12 + 1
-    # Last day of that month.
-    if month == 12:
-        return date(year, 12, 31)
-    return date(year, month + 1, 1) - timedelta(days=1)
-
-
-def next_annual_period_end(last_period):
-    """Twelve months on, preserving the fiscal date.
-
-    next_period_end() advances three months unconditionally. Using it for an
-    annual filer produces a quarter end the company never reports on, which is
-    how BTDR came to be projected against 31 March.
-    """
-    try:
-        return last_period.replace(year=last_period.year + 1)
-    except ValueError:            # 29 February
-        return last_period.replace(year=last_period.year + 1, day=28)
-
-
-def roll_to_business_day(d):
-    """Nobody files on a weekend; push Sat/Sun to the following Monday."""
-    while d.weekday() >= 5:
-        d += timedelta(days=1)
-    return d
-
-
-def fiscal_year_end_month(annual):
-    """Most common month among annual report periods, or None."""
-    months = [rd.month for rd, _, _ in annual[:6]]
-    if not months:
-        return None
-    return max(set(months), key=months.count)
-
-
 def project(label, name, filings):
-    """Estimate the next report date, or None if history is too thin."""
-    if len(filings) < MIN_PERIODIC_FILINGS:
+    """Estimate the next report date, or None if history is too thin.
+
+    THE DECISION LIVES IN `filing_cadence`, shared with `build_snapshot`,
+    which projected the same issuers off the same index and disagreed with
+    this component about three of them. Only the presentation is here: the
+    `10-Q` label this post prints, and `spread` as the FULL range, which the
+    snapshot publishes halved. See that module for why neither is shared.
+    """
+    c = cadence(filings)
+    if c is None:
         return None
-
-    annual = [f for f in filings if f[2] in ANNUAL_FORMS]
-    quarterly = [f for f in filings if f[2] in QUARTERLY_FORMS]
-
-    last_period = max(rd for rd, _, _ in filings)
-    last_filed = max(fd for _, fd, _ in filings)
-
-    # A company whose filings never described a quarterly cadence does not get
-    # one invented. It projects its annual cycle, which is real, and nothing
-    # else. See MIN_QUARTERLY_FILINGS.
-    annual_only = len(quarterly) < MIN_QUARTERLY_FILINGS
-    if annual_only:
-        if len(annual) < 2:
-            return None
-        # The last ANNUAL period, not the last of any filing: a stray 10-Q
-        # would otherwise set the cycle this projection is built on.
-        upcoming = next_annual_period_end(max(rd for rd, _, _ in annual))
-        pool, kind, degraded = annual, "annual", False
-    else:
-        upcoming = next_period_end(last_period)
-        fy_month = fiscal_year_end_month(annual)
-        is_annual = fy_month is not None and upcoming.month == fy_month
-        pool = annual if is_annual else quarterly
-        degraded = False
-        if len(pool) < 2:
-            pool = annual if len(annual) >= 2 else quarterly
-            degraded = True
-        if len(pool) < 2:
-            return None
-        kind = "annual" if (is_annual or (degraded and pool is annual)) else "10-Q"
-
-    lags = [(fd - rd).days for rd, fd, _ in pool[:LAG_SAMPLE]]
-    lag = int(statistics.median(lags))
-
+    lags = c["lags"]
     return {
         "label": label,
         "name": name,
-        "period": upcoming,
-        "expected": roll_to_business_day(upcoming + timedelta(days=lag)),
-        "lag": lag,
+        "period": c["period"],
+        "expected": c["expected"],
+        "lag": c["lag"],
         "spread": max(lags) - min(lags),
-        "kind": kind,
-        "degraded": degraded,
-        "annual_only": annual_only,
-        "last_period": last_period,
-        "last_filed": last_filed,
-        "samples": len(lags),
+        "kind": "10-Q" if c["kind"] == "quarterly" else c["kind"],
+        "degraded": c["degraded"],
+        "annual_only": c["annual_only"],
+        "last_period": c["last_period"],
+        "last_filed": c["last_filed"],
+        "samples": c["sample"],
     }
 
 

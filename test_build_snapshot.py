@@ -14,6 +14,7 @@ and publishing different answers, with only one of them tested.
 """
 
 import os
+import subprocess
 import sys
 from datetime import date
 
@@ -157,6 +158,32 @@ def main():
           wide["spread_days"] > 30 and wide["confidence"] == "low")
     check("a tight, deep sample is normal",
           bs.projection(annual(2025, 2024, 2023))["confidence"] == "normal")
+
+    print("\nSTDLIB ONLY, WHICH IS NOT A STYLE PREFERENCE")
+    # snapshot.yml has NO pip install step, so a third-party import anywhere in
+    # build_snapshot's transitive closure kills the 11:00 UTC run before it
+    # reads a filing. tests.yml installs requests, so CI cannot see it — this
+    # check is the only thing that can. It caught a real one: importing the
+    # shared rule from earnings_calendar, which imports requests at module
+    # scope, would have frozen snapshot.json on the values it was correcting.
+    probe = "\n".join([
+        "import sys",
+        "class B:",
+        "    def find_spec(self, name, path=None, target=None):",
+        "        if name.split('.')[0] in ('requests','feedparser','matplotlib'):",
+        "            raise ModuleNotFoundError(name)",
+        "        return None",
+        "sys.meta_path.insert(0, B())",
+        "import build_snapshot, filing_cadence",
+        "print('ok')",
+    ])
+    r = subprocess.run(
+        [sys.executable, "-c", probe], capture_output=True, text=True,
+        cwd=os.path.dirname(os.path.abspath(__file__)) or ".",
+        env={**os.environ, "SEC_USER_AGENT": "probe t@example.invalid"})
+    check("build_snapshot imports with no third-party module available",
+          r.stdout.strip().endswith("ok"),
+          (r.stderr.strip().splitlines() or ["?"])[-1][:70])
 
     print("\nFORM MATCHING")
     # EDGAR prefix semantics, except that 4 would swallow 424. NOT CHECKED:

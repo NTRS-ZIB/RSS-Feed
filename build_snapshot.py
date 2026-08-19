@@ -108,13 +108,18 @@ ANNUAL = {"10-K", "20-F", "40-F"}
 QUARTERLY = {"10-Q"}
 LAG_SAMPLE = 8
 
-# DERIVED FROM earnings_calendar, never restated. Both components project the
+# DERIVED FROM filing_cadence, never restated. Both components project the
 # next report for the same issuers off the same EDGAR index, and they gave
-# DIFFERENT ANSWERS about two companies until 2026-08-19: this one rolled three
-# months for an annual-only filer and invented a quarterly cadence from a single
-# 10-Q. Importing the rule is what stops them drifting again — the same reason
-# threshold_list derives its two roster maps rather than hand-maintaining them.
-from earnings_calendar import MIN_QUARTERLY_FILINGS, next_annual_period_end
+# DIFFERENT ANSWERS about three companies until 2026-08-19.
+#
+# IMPORTED FROM filing_cadence AND NOT FROM earnings_calendar, which is not a
+# style preference. That module imports `requests` at module scope, this one
+# is deliberately stdlib-only, and .github/workflows/snapshot.yml has NO pip
+# install step — so importing it there killed the 11:00 UTC run with
+# ModuleNotFoundError before it read a filing, freezing snapshot.json on the
+# very values the change was making correct. The absent pip step is the only
+# thing that catches this: tests.yml installs requests and cannot see it.
+from filing_cadence import MIN_QUARTERLY_FILINGS, next_annual_period_end
 
 
 def fetch(url):
