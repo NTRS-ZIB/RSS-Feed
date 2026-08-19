@@ -98,7 +98,18 @@ call site.
 lag" the way the Discord post's `?` marker does. Cheap to add if anyone wants
 it; nobody has asked.
 
-**3. There is no `docs/snapshot.md`.** Every other component has a doc; the
+**3. The `±` column has no stated coverage target.** Measured: the published
+interval contains the next filing **75.7%** of the time (371 real events,
+k=8). Nobody has ever said what it should be. A median-based half-width was
+proposed, measured and **rejected** because it is dominated on coverage AND
+width by a flat `+2`, written up in
+[`rejected.md`](rejected.md#a-median-based-half-width-for-the-published-spread) with
+[`probe_lag_coverage.py`](../probe_lag_coverage.py) as the evidence. What is
+left is not an estimator question: pick a target and the rule follows
+(`floor+1` gives 83.8%, `floor+2` gives 89.5%). That is a decision about what
+`±` promises a reader.
+
+**4. There is no `docs/snapshot.md`.** Every other component has a doc; the
 one with an external consumer does not. The `note` inside the file is
 currently the whole contract.
 

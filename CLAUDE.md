@@ -103,6 +103,19 @@ session opens 4am ET" — which says when data exists, not when spikes occur —
 used to argue a window start. Ask what population the number was measured over
 before letting it decide anything.
 
+**When one candidate is WIDER than another by construction, comparing them on
+a metric that width improves measures nothing.** Three rules for the published
+`±` figure were compared on how often the next filing landed inside, and the
+winner beat the incumbent by 12 points. All three were symmetric about the same
+centre and `(lag - min) + (max - lag) = range` forces them to NEST, so the
+ranking was a theorem before the data was read and would hold on any
+population, at any window, forever. Held at equal width the ordering reverses,
+and a flat `+2` beats the proposal on coverage AND width at every window
+tested. **Ask what the losing candidate would score if you simply gave it the
+winner's width**, and if that is not measured, nothing has been. The numbers
+are in [rejected.md](docs/rejected.md) and
+[`probe_lag_coverage.py`](probe_lag_coverage.py).
+
 **A test that has never failed proves nothing.** Adding a guard means first
 demonstrating the failure it prevents, with the guard removed. The drift
 detector below was validated that way — `SCHEDULE 13D` was taken back out of

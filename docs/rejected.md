@@ -1109,3 +1109,89 @@ twenty IR sources on 2026-08-13, so it is not currently occurring.
 This idea was proposed three times in one day on 2026-08-17 before anybody
 looked at what the 2026-08-08 addition had actually cost. **That is the reason
 this file exists.**
+
+---
+
+## A median-based half-width for the published spread
+
+**Would have changed:** the uncertainty figure both components print beside a
+projected report date. Today that is `floor(range/2)`. The proposal was
+`medhw = max(lag - min, max - lag)`, the smallest symmetric interval around
+the published lag that contains every observed lag. The motivating argument
+was strong and correct as far as it went: the published lag is a MEDIAN, so a
+half-width should be measured from the median, and `range/2` is a half-width
+around the MIDRANGE. Measured on the roster with the period-end guard on,
+**18 of 21 published intervals do not contain a lag they were computed from.**
+
+**It failed on the only comparison that discriminates.** Every candidate is
+symmetric about the same centre, and `(lag - min) + (max - lag) = range`
+forces `medhw >= ceil(range/2) >= floor(range/2)` POINTWISE. The intervals
+nest, so the miss sets nest, so a wider rule cannot score worse on any
+population at any `k`. Ranking by raw coverage reports the width ordering back
+in coverage units. The 75.7% against 87.9% headline was a theorem, not a
+measurement.
+
+Held at equal width, over 371 real next-filing events at k=8
+([`probe_lag_coverage.py`](../probe_lag_coverage.py)):
+
+| mean width | `range/2` scaled | `medhw` scaled |
+|---|---|---|
+| 5.0d | **60.6%** | 57.1% |
+| 10.0d | **80.1%** | 76.8% |
+| 15.0d | **90.0%** | 87.9% |
+| 20.0d | **94.1%** | 92.5% |
+
+And a flat additive constant beats it outright at every `k` tested, on both
+axes at once:
+
+| k | `floor+2` | `medhw` |
+|---|---|---|
+| 4 | **80.8%** at 8.40d | 78.5% at 9.74d |
+| 6 | **87.2%** at 10.38d | 85.3% at 12.92d |
+| 8 | **89.5%** at 11.65d | 87.9% at 14.96d |
+| 12 | **91.7%** at 13.33d | 91.0% at 17.99d |
+
+**Why additive wins is the part worth keeping.** The failures are concentrated
+in the metronomic filers, not the erratic ones:
+
+| published | cases | misses | miss rate | share of all misses |
+|---|---|---|---|---|
+| `±0d` | 23 | 11 | **48%** | 12% |
+| `±1-2d` | 85 | 29 | 34% | 32% |
+| `±3-5d` | 86 | 25 | 29% | 28% |
+| `±6-10d` | 91 | 13 | 14% | 14% |
+| `±11+d` | 86 | 12 | 14% | 13% |
+
+**44% of all misses come from rows publishing `±0d` to `±2d`**, and a
+multiplicative rule cannot fix a published zero. `medhw` barely helps there
+either: SLNH's `[44,45,45,45,45,45,45,45]` goes from 0 to 1.
+
+`medhw` also manufactures bounds nothing supports. WYFI's
+`[43, 44, 44, 79]` would publish a window opening **9 days after quarter end**,
+fifteen days below the roster's all-time quarterly minimum of 24.
+
+**MAD was measured and is much worse than either**: 42.6% at k=8, because it
+publishes `±1d` for a company whose lags run 34 to 45.
+
+**What is NOT closed, and is the real finding.** The column has never had a
+stated coverage target, which is why this argument could run at all: with no
+criterion, every candidate is defensible by redefining the goal. Set one and
+the rule falls out arithmetically, with no estimator debate needed:
+
+| target | rule | mean width |
+|---|---|---|
+| 75.7% | `floor(range/2)`, today | 9.65d |
+| 83.8% | `floor+1` | 10.65d |
+| 89.5% | `floor+2` | 11.65d |
+
+That is a decision about what `±` promises a reader, not a measurement, and it
+is open.
+
+**Four population caveats**, recorded because the percentages read more precise
+than they are: coverage is measured in LAG space while the published centre is
+weekend-rolled; k=8 covers fourteen of twenty-one live rows, since `cadence`
+truncates at `min(8, available)`; the annual arm contains NEITHER 20-F filer it
+would govern, because BTDR and IREN hold five annual filings each against the
+nine k=8 needs; and the corpus is EDGAR's `recent` arrays while
+`build_snapshot` reads full history. None of the four touches the width-matched
+ordering, which is internal to one population.
