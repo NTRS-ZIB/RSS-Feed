@@ -149,9 +149,12 @@ def main():
     # `in ("low", "normal")` was written here first, which is every possible
     # value and so asserts nothing. Confidence is the field a consumer uses to
     # decide whether to believe the date, so it gets a real boundary.
-    one = bs.projection(rows(("20-F", "2026-04-30", "2025-12-31")))
-    check("a sample of one is low confidence", one["confidence"] == "low",
-          "sample 1 is exactly what SPCX was published with")
+    # This used to pin `sample: 1` as an intended output, which was the
+    # behaviour the published note denied. A single annual filing is now
+    # refused, matching cadence() and making that note true.
+    check("a single annual filing is refused outright",
+          bs.projection(rows(("20-F", "2026-04-30", "2025-12-31"))) is None,
+          "one observation is a period with no lag worth the name")
     wide = bs.projection(rows(("20-F", "2026-06-30", "2025-12-31"),
                               ("20-F", "2025-03-01", "2024-12-31")))
     check("a wide spread is low confidence too",
@@ -167,10 +170,12 @@ def main():
     # shared rule from earnings_calendar, which imports requests at module
     # scope, would have frozen snapshot.json on the values it was correcting.
     probe = "\n".join([
-        "import sys",
+        "import sys, glob, os",
+        "LOCAL = {os.path.basename(p)[:-3] for p in glob.glob('*.py')}",
         "class B:",
         "    def find_spec(self, name, path=None, target=None):",
-        "        if name.split('.')[0] in ('requests','feedparser','matplotlib'):",
+        "        root = name.split('.')[0]",
+        "        if root not in sys.stdlib_module_names and root not in LOCAL:",
         "            raise ModuleNotFoundError(name)",
         "        return None",
         "sys.meta_path.insert(0, B())",

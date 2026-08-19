@@ -109,11 +109,12 @@ FORMS = ["8-K", "6-K", "10-Q", "10-K", "20-F", "40-F", "S-1", "S-3", "424",
 NT_FAMILY = "NT "
 NT_KNOWN = ["NT 10-K", "NT 10-Q", "NT 20-F", "NT 40-F"]
 
-ANNUAL = {"10-K", "20-F", "40-F"}
-QUARTERLY = {"10-Q"}
-LAG_SAMPLE = 8
-
-# DERIVED FROM filing_cadence, never restated. Both components project the
+# DERIVED FROM filing_cadence, never restated. ANNUAL, QUARTERLY and
+# LAG_SAMPLE were hand-maintained duplicates two lines above this comment,
+# which said "never restated" while three of the four cadence facts were.
+# docs/earnings.md tells a maintainer to reduce LAG_SAMPLE to 4 if
+# projections run late: under the duplicates that moved the Discord post and
+# left the wire format on 8, silently. Both components project the
 # next report for the same issuers off the same EDGAR index, and they gave
 # DIFFERENT ANSWERS about three companies until 2026-08-19.
 #
@@ -124,7 +125,10 @@ LAG_SAMPLE = 8
 # ModuleNotFoundError before it read a filing, freezing snapshot.json on the
 # very values the change was making correct. The absent pip step is the only
 # thing that catches this: tests.yml installs requests and cannot see it.
-from filing_cadence import MIN_QUARTERLY_FILINGS, next_annual_period_end
+from filing_cadence import (ANNUAL_FORMS as ANNUAL, LAG_SAMPLE,
+                            MIN_QUARTERLY_FILINGS, PERIODIC_FORMS,
+                            QUARTERLY_FORMS as QUARTERLY, cadence,
+                            next_annual_period_end)
 
 
 def fetch(url):
@@ -199,110 +203,55 @@ def latest_per_form(rows, cik):
     return out
 
 
-def _projection(nxt, expected, kind, median, spread, sample, fy_month):
-    """The published shape, built in one place.
-
-    Both the annual-only path and the quarterly one return through here, so a
-    field added to one cannot be missing from the other. `snapshot.json` is a
-    wire format another project reads; a projection whose keys depend on which
-    branch produced it is the kind of difference a consumer discovers in
-    production.
-    """
-    return {
-        "period_end": nxt.isoformat(),
-        "expected": expected.isoformat(),
-        "kind": kind,
-        "median_lag_days": median,
-        "spread_days": spread,
-        "sample": sample,
-        "fiscal_year_end_month": fy_month,
-        "confidence": "low" if (spread or 0) > 30 or sample < 2 else "normal",
-    }
-
-
 def projection(rows):
-    """Expected next report, from this issuer's own filing lags.
+    """Expected next report, from `filing_cadence`. The DECISION is not here.
 
-    Annual and quarterly lags are never pooled: annual reports are filed 60 to 90
-    days after year end, quarterlies around 40, and a pooled median fits neither.
+    This was a second implementation of that rule and disagreed with
+    `earnings_calendar` about three companies: it rolled three months for an
+    annual-only filer, accepted a single 10-Q as a cadence, and took its roll
+    base from the newest QUARTERLY period rather than the newest periodic
+    filing — so it named as `next` a 10-K it had already recorded as filed.
+
+    What stays here is the published SHAPE: this file's field names, and
+    `spread_days` as HALF the observed range where the Discord post prints the
+    full one. Sharing those would move one output or the other.
     """
-    def lags(families):
-        out = []
-        for form, filed, period, _, _ in rows:
-            if form in families and period and filed:
-                try:
-                    f = datetime.date.fromisoformat(filed)
-                    p = datetime.date.fromisoformat(period)
-                except ValueError:
-                    continue
-                out.append(((f - p).days, p))
-        out.sort(key=lambda x: x[1], reverse=True)
-        return out[:LAG_SAMPLE]
+    filings = []
+    for form, filed, period, *_ in rows:
+        if form not in PERIODIC_FORMS or not period or not filed:
+            continue
+        try:
+            p = datetime.date.fromisoformat(period)
+            f = datetime.date.fromisoformat(filed)
+        except (TypeError, ValueError):
+            continue
+        if f >= p:
+            filings.append((p, f, form))
+    # Newest period first: LAG_SAMPLE truncates positionally and this file has
+    # always meant "most recent history". `cadence` deliberately does not sort,
+    # because the other caller orders by FILED date instead.
+    filings.sort(key=lambda t: t[0], reverse=True)
 
-    ann, qtr = lags(ANNUAL), lags(QUARTERLY)
-    if not ann and not qtr:
+    c = cadence(filings)
+    if c is None:
         return None
-
-    # Fiscal year end: the most common period month among annual reports.
-    fy_month = None
-    if ann:
-        months = [p.month for _, p in ann]
-        fy_month = max(set(months), key=months.count)
-
-    # A SINGLE 10-Q IS NOT A QUARTERLY CADENCE. `qtr or ann` accepted one
-    # filing as evidence of a cycle, and SPCX has exactly one: it was published
-    # with kind "quarterly" and sample 1, a confident projection off a sample
-    # nobody would accept anywhere else in this repo. `earnings_calendar`
-    # refuses the same company against the same floor and reports `SPCX 1/2`,
-    # so the two components asserted different things about it every day.
-    annual_only = len(qtr) < MIN_QUARTERLY_FILINGS
-    src = ann if annual_only else qtr
-    if not src:
-        return None
-    kind = "annual" if annual_only else "quarterly"
-    days = [d for d, _ in src]
-    median = int(statistics.median(days))
-    spread = (max(days) - min(days)) // 2 if len(days) > 1 else None
-    last_period = src[0][1]
-
-    # AN ANNUAL FILER'S NEXT PERIOD IS TWELVE MONTHS ON, NOT THREE. Rolling a
-    # quarter for a company that files only annually produces a period end it
-    # never reports on: BTDR is a 20-F filer with a December year end and was
-    # published against 31 March, with an `expected` date already a month in
-    # the past. `earnings_calendar` fixed this and names BTDR in its own
-    # docstring; the rule is imported from there so the two cannot disagree
-    # about it again.
-    if annual_only:
-        nxt = next_annual_period_end(last_period)
-        expected = nxt + datetime.timedelta(days=median)
-        while expected.weekday() >= 5:
-            expected += datetime.timedelta(days=1)
-        return _projection(nxt, expected, kind, median, spread, len(src),
-                           fy_month)
-
-    # Next period end: three months on, rolled to month end.
-    m = last_period.month + 3
-    y = last_period.year + (m - 1) // 12
-    m = (m - 1) % 12 + 1
-    # The roll is "first of the FOLLOWING month, minus a day", so December has
-    # to cross the year: January of y+1, not January of y. Getting this wrong
-    # returned 30 November for every December period end, and December is the
-    # case that matters most — most of this roster has a December year end, and
-    # it is the annual report that carries the projection.
-    nxt = (datetime.date(y + 1, 1, 1) if m == 12
-           else datetime.date(y, m + 1, 1)) - datetime.timedelta(days=1)
-
-    if fy_month and nxt.month == fy_month and ann:
-        adays = [d for d, _ in ann]
-        median = int(statistics.median(adays))
-        spread = (max(adays) - min(adays)) // 2 if len(adays) > 1 else None
-        kind = "annual"
-
-    expected = nxt + datetime.timedelta(days=median)
-    while expected.weekday() >= 5:
-        expected += datetime.timedelta(days=1)
-
-    return _projection(nxt, expected, kind, median, spread, len(src), fy_month)
+    lags = c["lags"]
+    spread = (max(lags) - min(lags)) // 2 if len(lags) > 1 else None
+    return {
+        "period_end": c["period"].isoformat(),
+        "expected": c["expected"].isoformat(),
+        "kind": c["kind"],
+        "median_lag_days": c["lag"],
+        "spread_days": spread,
+        "sample": c["sample"],
+        "fiscal_year_end_month": c["fy_month"],
+        # `degraded` joins the low-confidence condition rather than becoming a
+        # field: it means the lag came from the other pool, which is exactly
+        # what a consumer gating on confidence needs to know, and the file has
+        # no way to say it otherwise.
+        "confidence": ("low" if (spread or 0) > 30 or c["sample"] < 2
+                       or c["degraded"] else "normal"),
+    }
 
 
 def diff_projections(out):
