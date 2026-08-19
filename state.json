@@ -1247,8 +1247,8 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 3,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "BKKT": {
    "fails": 0,
