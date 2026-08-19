@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-18T11:15:51+00:00",
+  "generated": "2026-08-19T11:16:36+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -455,7 +455,7 @@
     },
     "BGDE": {
       "cik": "0001218683",
-      "filing_count": 726,
+      "filing_count": 727,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-037417",
@@ -483,12 +483,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026045631/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0000912282-26-000968",
-          "count": 131,
-          "filed": "2026-07-10",
-          "form": "4/A",
-          "period": "2026-06-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000091228226000968/xslF345X06/form4a.xml"
+          "accession": "0000912282-26-001130",
+          "count": 132,
+          "filed": "2026-08-18",
+          "form": "4",
+          "period": "2026-08-14",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000091228226001130/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -575,7 +575,7 @@
         "OphthaliX, Inc.",
         "DENALI CONCRETE MANAGEMENT INC"
       ],
-      "latest_filing_date": "2026-08-14",
+      "latest_filing_date": "2026-08-18",
       "name": "Big Digital Energy, Inc.",
       "projection": {
         "confidence": "normal",
@@ -1244,7 +1244,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1063,
+      "filing_count": 1066,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1272,12 +1272,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000155/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0001769628-26-000382",
-          "count": 439,
-          "filed": "2026-08-17",
-          "form": "4",
-          "period": "2026-08-13",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000382/xslF345X06/form4.xml"
+          "accession": "0001104659-26-098473",
+          "count": 440,
+          "filed": "2026-08-18",
+          "form": "4/A",
+          "period": "2026-08-14",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000110465926098473/xslF345X06/tm2623554-1_4aseq1.xml"
         },
         "40-F": null,
         "424": {
@@ -1347,7 +1347,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-08-17",
+      "latest_filing_date": "2026-08-18",
       "name": "CoreWeave, Inc.",
       "projection": {
         "confidence": "normal",
@@ -1494,7 +1494,7 @@
     },
     "GLXY": {
       "cik": "0001859392",
-      "filing_count": 272,
+      "filing_count": 273,
       "filings": {
         "10-K": {
           "accession": "0001859392-26-000016",
@@ -1522,12 +1522,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1859392/000140703626000002/xslF345X06/wk-form3_1783974970.xml"
         },
         "4": {
-          "accession": "0001079500-26-000008",
-          "count": 59,
-          "filed": "2026-08-14",
+          "accession": "0001912609-26-000008",
+          "count": 60,
+          "filed": "2026-08-18",
           "form": "4",
-          "period": "2026-08-12",
-          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000107950026000008/xslF345X06/wk-form4_1786704865.xml"
+          "period": "2026-08-18",
+          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000191260926000008/xslF345X06/wk-form4_1787083837.xml"
         },
         "40-F": null,
         "424": {
@@ -1590,7 +1590,7 @@
       "former_names": [
         "Galaxy Digital Pubco Inc."
       ],
-      "latest_filing_date": "2026-08-14",
+      "latest_filing_date": "2026-08-18",
       "name": "Galaxy Digital Inc.",
       "projection": {
         "confidence": "normal",
@@ -2265,7 +2265,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1552,
+      "filing_count": 1553,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2293,12 +2293,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226034093/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001493152-26-036036",
-          "count": 602,
-          "filed": "2026-08-04",
+          "accession": "0001493152-26-039022",
+          "count": 603,
+          "filed": "2026-08-18",
           "form": "4",
-          "period": "2026-08-01",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226036036/xslF345X06/ownership.xml"
+          "period": "2026-08-17",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226039022/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -2382,7 +2382,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-08-14",
+      "latest_filing_date": "2026-08-18",
       "name": "Soluna Holdings, Inc",
       "projection": {
         "confidence": "normal",
