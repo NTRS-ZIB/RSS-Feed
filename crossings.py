@@ -59,7 +59,7 @@ import requests
 
 import watchlist
 from first_run import (backfill_note, backfilled, baseline_by_cik,
-                       prune_unmeasured, summary)
+                       held_by_cik, prune_unmeasured, summary)
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -443,7 +443,7 @@ def main():
     cik_of = {t: c for t, (c, _) in watchlist.ciks().items()}
     # A ticker with armed flags has been assessed before, so a run where its
     # bars fail to arrive must not un-establish it.
-    has_state = {cik_of[t] for t in state if t in cik_of}
+    has_state = held_by_cik(state, watchlist.ciks(), watchlist.alt_by_ticker())
     deferred = prune_unmeasured(state, {cik_of[t] for t in measured if t in cik_of},
                                 set(cik_of.values()), has_state)
     if deferred:

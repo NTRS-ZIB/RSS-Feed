@@ -40,7 +40,7 @@ import requests
 
 import watchlist
 from first_run import (backfill_note, backfilled, baseline_by_cik,
-                       prune_unmeasured, summary)
+                       held_by_cik, prune_unmeasured, summary)
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -627,7 +627,7 @@ def main():
     # this one managed. Without it, a single withheld or untagged reading
     # would un-establish an established company, and the next run would
     # suppress a real share-count move that record() then overwrites.
-    has_state = {cik_of[t] for t in state if t in cik_of}
+    has_state = held_by_cik(state, watchlist.ciks(), watchlist.alt_by_ticker())
     deferred = prune_unmeasured(state, measured_ciks(rows, watchlist.ciks()),
                                 set(cik_of.values()), has_state)
     if deferred:

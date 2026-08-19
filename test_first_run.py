@@ -80,7 +80,9 @@ def wiring():
         # backfilled() answers about the NEXT call, so asking after baseline
         # always says False and the note never prints — green, and useless.
         check(f"{mod.__name__} asks backfilled() BEFORE baseline()",
-              src.index("backfilled(state)") < src.index("baseline_by_cik(state,"),
+              "backfilled(state)" in src and "baseline_by_cik(state," in src
+              and src.index("backfilled(state)")
+              < src.index("baseline_by_cik(state,"),
               "asked afterwards it is always False")
 
     # THE RECORD MUST REACH DISK ON THE QUIET PATH. Both of these components
@@ -302,6 +304,22 @@ def measured_only():
           first_run.prune_unmeasured(state, {"C1"}, {"C1"}, set()) == []
           and "companies" not in state)
 
+    print("\nHELD STATE SURVIVES A RENAME")
+    # State is TICKER-keyed and the record is CIK-keyed, so the run after a
+    # rename finds the state under the OLD symbol. Reporting the company as
+    # holding nothing would prune an established one in exactly the window
+    # where an unmeasured reading is most likely: the run after a roster edit.
+    named = {"BAR": ("0001000", "Bar Inc")}
+    alts = {"BAR": ["FOO"]}
+    check("state under a FORMER ticker still counts as held",
+          first_run.held_by_cik({"FOO"}, named, alts) == {"0001000"},
+          "six of nineteen renamed in eighteen months")
+    check("state under the current ticker counts too",
+          first_run.held_by_cik({"BAR"}, named, alts) == {"0001000"})
+    check("a namespace key in the state is not read as a ticker",
+          first_run.held_by_cik({"companies", "forms"}, named, alts) == set(),
+          "dilution and crossings iterate state, which carries both")
+
     print("\nWHAT EACH COMPONENT COUNTS AS MEASURED")
     roster = {"AAA": ("0001", "A Co"), "BBB": ("0002", "B Co")}
     rows = [{"ticker": "AAA", "m": {}, "concept": "x"}]
@@ -328,8 +346,8 @@ def measured_only():
                       (holder_events, "save_state(state)")):
         src = inspect.getsource(mod.main)
         check(f"{mod.__name__} passes its held state to the prune",
-              "has_state" in src,
-              "without it, one bad fetch un-establishes an established company")
+              "held_by_cik(" in src and "has_state)" in src,
+              "`has_state = set()` is one line and reinstates permanent loss")
         check(f"{mod.__name__} prunes before it saves",
               "prune_unmeasured(" in src
               and src.index("prune_unmeasured(") < src.index(save),
@@ -368,8 +386,15 @@ def measured_only():
     # the loop — so this pins the one line that implements its half, and that
     # the line sits AFTER the except, where a failed fetch cannot reach it.
     hsrc = inspect.getsource(holder_events.main)
+    # `era` is written only inside `if structured:`, so a company read cleanly
+    # every run that simply has no 13D/G holds no era entry — and that is the
+    # case where pruning is catastrophic rather than harmless.
+    check("holder_events holds state from `read`, not `era` alone",
+          'state.get("read"' in hsrc and 'setdefault("read"' in hsrc,
+          "era answers `has filings`, not `has been read`")
     check("holder_events records measured only after a successful fetch",
           "measured.add(ticker)" in hsrc
+          and "except Exception" in hsrc
           and hsrc.index("except Exception") < hsrc.index("measured.add(ticker)"),
           "above the except, a failed fetch counts as measured and nothing prunes")
 

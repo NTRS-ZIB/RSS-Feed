@@ -91,7 +91,7 @@ import watchlist
 # Imported by name rather than as a module: this file already has a local
 # `first_run` for the whole-file guard, and the two names would collide.
 from first_run import (backfill_note, backfilled, baseline, baseline_by_cik,
-                       newly_tracked, prune_unmeasured, summary)
+                       held_by_cik, newly_tracked, prune_unmeasured, summary)
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -542,6 +542,7 @@ def main():
         # whole distinction: an empty result means the company has no 13D/G,
         # and an exception means this run does not know.
         measured.add(ticker)
+        state.setdefault("read", {})[ticker] = date.today().isoformat()
         structured = [r for r in rows if r["form"].startswith(STRUCTURED)]
         legacy = [r for r in rows if r["form"].startswith(LEGACY)]
         if legacy:
@@ -596,7 +597,14 @@ def main():
     # already in `seen` by this point, so pruning an established company on a
     # transient fetch failure would lose its next real 13D/G permanently. A
     # company with an era floor has been read before and is never pruned.
-    has_state = {cik_of[t] for t in state.get("era", {}) if t in cik_of}
+    # UNION, because `era` alone answers the wrong question. It is written
+    # only inside `if structured:`, so a company read successfully every run
+    # that simply HAS no 13D/G holds no era entry — and pruning that one is
+    # the catastrophic case: its first-ever 13D lands, is marked seen, then
+    # suppressed, and no run can recover it. `read` records every successful
+    # fetch, which is the fact the guard actually needs.
+    has_state = held_by_cik(set(state.get("era", {})) | set(state.get("read", {})),
+                            CIKS, watchlist.alt_by_ticker())
     deferred = prune_unmeasured(state,
                                 {cik_of[t] for t in measured if t in cik_of},
                                 set(cik_of.values()), has_state)

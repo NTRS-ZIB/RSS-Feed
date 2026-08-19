@@ -75,14 +75,14 @@ a ticker in `newly_watched`, and SPCX was no longer in it. It would have
 announced a 52-week crossing that predates the watch, which is the single
 assertion this component must never make.
 
-**Pruned only when the component holds NO state for it**, and that second
-condition is the whole safety of the rule rather than a belt on it. The first
-version pruned on "not measured this run" alone, which un-established a
-company on a transient failure — and because a suppressed item is already in
-`seen`, or already overwritten by `record()`, the next run then lost a real
-event permanently, under a log line reading "not a loss". Caught in review
-before merge. A company with per-company state has been measured before and is
-established whatever this particular run managed.
+**Pruned only when the component holds no armed flags for it**, and that
+second condition is the whole safety of the rule rather than a belt on it.
+The first version pruned on "not measured this run" alone, which
+un-established a ticker whose bars failed to arrive. Here the cost is only
+the false log line below — `setdefault` returns the surviving flags, so
+nothing is re-disarmed — but in `dilution` and `holder_events` the same
+predicate lost real events permanently, and the rule is shared. Caught in
+review before merge.
 
 `measured_tickers()` is the roster minus the young and the unusable, and
 `first_run.prune_unmeasured` deletes anything else from the record before it

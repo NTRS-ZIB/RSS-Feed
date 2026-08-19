@@ -2549,12 +2549,18 @@ def main():
     #
     # `dilution`, `crossings` and `holder_events` fixed the identical shape on
     # 2026-08-18 by pruning unmeasured keys before saving. THAT FIX IS UNSAFE
-    # HERE, and the asymmetry is the reason: in those three the record and the
-    # suppression are separate, so withholding the record only defers. Here
-    # they are one lever — `blocked` below is derived from this return — and
-    # items were marked seen at the top of this block, so a prune would convert
-    # a bounded flood into permanent item loss. That trade is the wrong way
-    # round.
+    # HERE, and an earlier version of this comment gave the wrong reason: it
+    # claimed the record and the suppression are separate in those three. They
+    # are NOT — in `holder_events` and `dilution` a suppressed item is already
+    # in `seen` or already overwritten, which is the same hazard as here, and
+    # pruning on unmeasured-alone genuinely lost real events until `has_state`
+    # was added. What is different is that those three can ASK whether they
+    # have ever measured a company — a stored count, armed flags, an era floor
+    # — so `has_state` makes the prune safe. This component cannot: uids carry
+    # no company and `seen` is capped and evicting, which is the measured
+    # reason `baselined` was never keyed off it. With no such question to ask,
+    # a prune here is unmeasured-alone by construction, and that is the version
+    # that loses items.
     #
     # WHAT BOUNDS IT: MAX_AGE_DAYS, to seven days of that company's items. The
     # real fix is upstream — make `company_filings` distinguish a fault from an

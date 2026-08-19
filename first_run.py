@@ -150,6 +150,29 @@ def newly_tracked(value, new_keys, old_keys, matches):
     return None
 
 
+def held_by_cik(keys, companies, aliases):
+    """CIKs a ticker-keyed state holds an entry for, aliases included.
+
+    The units problem again, in the direction that bites on a rename. Every
+    component's per-company state is keyed by TICKER while the first-run
+    record is keyed by CIK, so on the run after a rename the state still sits
+    under the OLD symbol and a naive lookup reports the company as holding
+    nothing — which would prune an established company in exactly the window
+    where an unmeasured reading is most likely, the run after a roster edit.
+    Six of nineteen have renamed in eighteen months.
+
+    `aliases` is `watchlist.alt_by_ticker()`, {ticker: [former symbols]}.
+    """
+    cik_of = {t: c for t, (c, _) in companies.items()}
+    canonical = {a.upper(): t for t, alts in aliases.items() for a in alts}
+    out = set()
+    for k in keys:
+        t = canonical.get(str(k).upper(), k)
+        if t in cik_of:
+            out.add(cik_of[t])
+    return out
+
+
 def prune_unmeasured(state, measured, roster, has_state, namespace="companies"):
     """Drop recorded keys nothing has ever measured. Returns them, sorted.
 
