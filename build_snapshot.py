@@ -108,6 +108,14 @@ ANNUAL = {"10-K", "20-F", "40-F"}
 QUARTERLY = {"10-Q"}
 LAG_SAMPLE = 8
 
+# DERIVED FROM earnings_calendar, never restated. Both components project the
+# next report for the same issuers off the same EDGAR index, and they gave
+# DIFFERENT ANSWERS about two companies until 2026-08-19: this one rolled three
+# months for an annual-only filer and invented a quarterly cadence from a single
+# 10-Q. Importing the rule is what stops them drifting again — the same reason
+# threshold_list derives its two roster maps rather than hand-maintaining them.
+from earnings_calendar import MIN_QUARTERLY_FILINGS, next_annual_period_end
+
 
 def fetch(url):
     req = urllib.request.Request(url, headers={"User-Agent": UA,
@@ -181,6 +189,27 @@ def latest_per_form(rows, cik):
     return out
 
 
+def _projection(nxt, expected, kind, median, spread, sample, fy_month):
+    """The published shape, built in one place.
+
+    Both the annual-only path and the quarterly one return through here, so a
+    field added to one cannot be missing from the other. `snapshot.json` is a
+    wire format another project reads; a projection whose keys depend on which
+    branch produced it is the kind of difference a consumer discovers in
+    production.
+    """
+    return {
+        "period_end": nxt.isoformat(),
+        "expected": expected.isoformat(),
+        "kind": kind,
+        "median_lag_days": median,
+        "spread_days": spread,
+        "sample": sample,
+        "fiscal_year_end_month": fy_month,
+        "confidence": "low" if (spread or 0) > 30 or sample < 2 else "normal",
+    }
+
+
 def projection(rows):
     """Expected next report, from this issuer's own filing lags.
 
@@ -210,12 +239,36 @@ def projection(rows):
         months = [p.month for _, p in ann]
         fy_month = max(set(months), key=months.count)
 
-    src = qtr or ann
-    kind = "quarterly" if qtr else "annual"
+    # A SINGLE 10-Q IS NOT A QUARTERLY CADENCE. `qtr or ann` accepted one
+    # filing as evidence of a cycle, and SPCX has exactly one: it was published
+    # with kind "quarterly" and sample 1, a confident projection off a sample
+    # nobody would accept anywhere else in this repo. `earnings_calendar`
+    # refuses the same company against the same floor and reports `SPCX 1/2`,
+    # so the two components asserted different things about it every day.
+    annual_only = len(qtr) < MIN_QUARTERLY_FILINGS
+    src = ann if annual_only else qtr
+    if not src:
+        return None
+    kind = "annual" if annual_only else "quarterly"
     days = [d for d, _ in src]
     median = int(statistics.median(days))
     spread = (max(days) - min(days)) // 2 if len(days) > 1 else None
     last_period = src[0][1]
+
+    # AN ANNUAL FILER'S NEXT PERIOD IS TWELVE MONTHS ON, NOT THREE. Rolling a
+    # quarter for a company that files only annually produces a period end it
+    # never reports on: BTDR is a 20-F filer with a December year end and was
+    # published against 31 March, with an `expected` date already a month in
+    # the past. `earnings_calendar` fixed this and names BTDR in its own
+    # docstring; the rule is imported from there so the two cannot disagree
+    # about it again.
+    if annual_only:
+        nxt = next_annual_period_end(last_period)
+        expected = nxt + datetime.timedelta(days=median)
+        while expected.weekday() >= 5:
+            expected += datetime.timedelta(days=1)
+        return _projection(nxt, expected, kind, median, spread, len(src),
+                           fy_month)
 
     # Next period end: three months on, rolled to month end.
     m = last_period.month + 3
@@ -239,16 +292,7 @@ def projection(rows):
     while expected.weekday() >= 5:
         expected += datetime.timedelta(days=1)
 
-    return {
-        "period_end": nxt.isoformat(),
-        "expected": expected.isoformat(),
-        "kind": kind,
-        "median_lag_days": median,
-        "spread_days": spread,
-        "sample": len(src),
-        "fiscal_year_end_month": fy_month,
-        "confidence": "low" if (spread or 0) > 30 or len(src) < 2 else "normal",
-    }
+    return _projection(nxt, expected, kind, median, spread, len(src), fy_month)
 
 
 def main():
