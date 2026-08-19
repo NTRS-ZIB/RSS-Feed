@@ -26,6 +26,11 @@ UA = os.environ.get("SEC_USER_AGENT", "").strip()
 if not UA:
     raise SystemExit("SEC_USER_AGENT is not set. SEC throttles anonymous traffic.")
 
+# EVERY OTHER COMPONENT TAKES THIS and this one did not, which is exactly why
+# a change to the published projection could not be seen before it shipped. A
+# dry run fetches normally, reports what would change, and writes nothing.
+DRY_RUN = os.environ.get("DRY_RUN", "").strip().lower() in ("1", "true", "yes")
+
 # Derived from watchlist.py, never copied. A hardcoded duplicate drifts the moment
 # a company is added or renamed, and it drifts SILENTLY: the script goes on
 # producing a clean-looking snapshot of a stale roster, with no error and no gap in
@@ -300,6 +305,42 @@ def projection(rows):
     return _projection(nxt, expected, kind, median, spread, len(src), fy_month)
 
 
+def diff_projections(out):
+    """Every projection this run would change, against the committed file.
+
+    THE ONLY WAY TO SEE THIS CHANGE BEFORE IT SHIPS. The `projection` block is
+    derived from the FULL filing history, which `latest_per_form()` does not
+    keep — it holds one entry per family. So the published file cannot be
+    replayed through `projection()` to predict a change: doing that hands
+    every issuer a single quarterly filing and answers a question about a
+    different population. That was tried on 2026-08-19 and reported all
+    twenty-two issuers changing to values none of them would ever have had.
+    """
+    try:
+        old = json.loads(OUT.read_text())["issuers"]
+    except (OSError, ValueError, KeyError):
+        return "\nNo committed snapshot.json to compare against."
+
+    def fmt(p):
+        if not p:
+            return "null"
+        return ("%s exp %s %s sample %s spread %s %s"
+                % (p["period_end"], p["expected"], p["kind"], p["sample"],
+                   p["spread_days"], p["confidence"]))
+
+    lines, changed = [], 0
+    for t in sorted(out["issuers"]):
+        a = (old.get(t) or {}).get("projection")
+        b = (out["issuers"][t] or {}).get("projection")
+        if a == b:
+            continue
+        changed += 1
+        lines.append("  %-6s was  %s" % (t, fmt(a)))
+        lines.append("  %-6s now  %s" % ("", fmt(b)))
+    head = "\n%d of %d projection(s) would change:" % (changed, len(out["issuers"]))
+    return head + ("\n" + "\n".join(lines) if lines else " none")
+
+
 def main():
     out = {
         "generated": datetime.datetime.now(datetime.timezone.utc)
@@ -334,6 +375,14 @@ def main():
         print("  %-5s %-42s %5d filings, latest %s"
               % (ticker, (data.get("name") or "")[:42], len(rows), latest))
         time.sleep(0.2)
+
+    if DRY_RUN:
+        print(diff_projections(out))
+        print("\nDRY RUN — %s not written. %d issuer(s), %d problem(s)."
+              % (OUT.name, len(out["issuers"]), len(problems)))
+        for p in problems:
+            print("  PROBLEM", p)
+        return
 
     OUT.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n")
     print("\nWrote %s: %d issuers, %d problem(s)"
