@@ -345,11 +345,20 @@ def main():
     out = {
         "generated": datetime.datetime.now(datetime.timezone.utc)
                       .replace(microsecond=0).isoformat(),
+        # A VERSION, because this file is read by another project and had no
+        # way to say its shape had changed. Raise it when a consumer would
+        # have to alter code, not when a value moves.
+        "schema": 1,
         "note": ("Restatement of what the EDGAR submissions index holds. The filing is "
                  "the source; this is an index to it. Fields under 'filings' are FILED "
                  "and cite an accession number that must be opened before use. Fields "
                  "under 'projection' are ESTIMATE, derived from this issuer's own "
-                 "filing lags, and carry their sample and spread."),
+                 "filing lags, over the sample stated in that block. "
+                 "'projection' IS NULL when the issuer's filing history is too thin "
+                 "to project from - fewer than two quarterly reports and fewer than "
+                 "two annual ones - and an issuer whose fetch failed carries 'error' "
+                 "and no 'projection' key at all. Both mean 'not known', never zero. "
+                 "'spread_days' is HALF the observed range of filing lags."),
         "issuers": {},
     }
     problems = []
