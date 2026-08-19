@@ -30,11 +30,11 @@ import watchlist
 # of earnings_calendar.LAG_SAMPLE and friends still resolve, and
 # test_earnings_dates.py monkeypatches through this module's namespace.
 from filing_cadence import (ANNUAL_FORMS, FY_MONTH_SAMPLE, LAG_SAMPLE,
-                            MIN_ANNUAL_FILINGS, MIN_PERIODIC_FILINGS,
-                            MIN_QUARTERLY_FILINGS, PERIODIC_FORMS,
-                            QUARTERLY_FORMS, cadence, fiscal_year_end_month,
-                            next_annual_period_end, next_period_end,
-                            roll_to_business_day)
+                            LOW_CONFIDENCE_SPREAD, MIN_ANNUAL_FILINGS,
+                            MIN_PERIODIC_FILINGS, MIN_QUARTERLY_FILINGS,
+                            PERIODIC_FORMS, QUARTERLY_FORMS, cadence,
+                            fiscal_year_end_month, next_annual_period_end,
+                            next_period_end, roll_to_business_day)
 import earnings_dates as ed
 # ------------------------------------------------------------------ CONFIG
 
@@ -79,9 +79,10 @@ OVERDUE_GRACE = 10
 # spread; the effect wanted is the same, so the constant is shared rather
 # than duplicated. See is_overdue.
 
-# Above this spread in its historical lags, a company files too erratically for
-# the projection to mean much. Shown with ~ and called out separately.
-LOW_CONFIDENCE_SPREAD = 30
+# LOW_CONFIDENCE_SPREAD moved to filing_cadence and is re-exported through the
+# import above. It is not a presentation choice: build_snapshot gates its
+# published `confidence` on the same number, and while each module held its
+# own the two compared it against different quantities.
 
 # ------------------------------------------------------------------ RUNTIME
 
@@ -144,20 +145,23 @@ def project(label, name, filings):
     THE DECISION LIVES IN `filing_cadence`, shared with `build_snapshot`,
     which projected the same issuers off the same index and disagreed with
     this component about three of them. Only the presentation is here: the
-    `10-Q` label this post prints, and `spread` as the FULL range, which the
-    snapshot publishes halved. See that module for why neither is shared.
+    `10-Q` label this post prints, and the halving of `spread` at the point it
+    is rendered.
+
+    `spread` HERE IS THE RANGE, which is what `marker()` thresholds, and
+    `row()` prints half of it because the column is labelled `+/-`. Returning
+    the halved figure instead would move every `~` on a range of exactly 31.
     """
     c = cadence(filings)
     if c is None:
         return None
-    lags = c["lags"]
     return {
         "label": label,
         "name": name,
         "period": c["period"],
         "expected": c["expected"],
         "lag": c["lag"],
-        "spread": max(lags) - min(lags),
+        "spread": c["spread"],
         "kind": "10-Q" if c["kind"] == "quarterly" else c["kind"],
         "degraded": c["degraded"],
         "annual_only": c["annual_only"],
@@ -226,7 +230,13 @@ def build_message(rows, announced=None):
         # nothing for it to describe, and printing 0 would read as a claim of
         # perfect precision rather than as absence. Four spaces keeps the
         # column aligned against "  6d".
-        tail = "    " if r.get("disclosed") else f"{r['spread']:>3}d"
+        #
+        # HALVED, BECAUSE THE COLUMN IS LABELLED `+/-`. `r["spread"]` is the
+        # full range of the company's past lags, and a ±N beside a date claims
+        # a 2N-day window: printing the range there doubled every figure in
+        # this column against its own header. The marker above still reads the
+        # range, so no row's `~` moves.
+        tail = "    " if r.get("disclosed") else f"{r['spread'] // 2:>3}d"
         return (f"{r['label']:<4}{marker(r)} {when}"
                 f"{days:>4}d {tail}")
 
@@ -336,7 +346,7 @@ def build_message(rows, announced=None):
 def post(text, missing):
     desc = ("Projected from each company's own filing history — period end plus "
             "its median filing lag. These are estimates, not announced dates; "
-            "the ± figure is the spread in that company's past lags.")
+            "the ± figure is half the spread in that company's past lags.")
     if missing:
         # Each entry already carries its count against the floor, e.g.
         # "SPCX 1/2" — see where `missing` is built.
@@ -387,7 +397,7 @@ def main():
             rows.append(projection)
             print(f"    {len(filings)} periodic filing(s), "
                   f"median lag {projection['lag']}d "
-                  f"(±{projection['spread']}d over {projection['samples']})")
+                  f"(±{projection['spread'] // 2}d over {projection['samples']})")
         else:
             # A COUNT AGAINST THE FLOOR, NOT A BARE NAME. A name in a list is
             # an excuse; a count tells the reader both that nothing is wrong

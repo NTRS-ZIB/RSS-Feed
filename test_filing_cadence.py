@@ -134,11 +134,26 @@ def main():
           fc.cadence([f("2026-05-31", "2026-08-01", "10-K"),
                       f("2026-02-28", "2026-04-09", "10-Q")]) is None)
 
+    print("\nSPREAD IS THE RANGE, AND BOTH CALLERS PRINT HALF OF IT")
+    # Lags of 30 and 60. Half would be 15, which is what the Discord column
+    # and `spread_days` each show; the RANGE is what the threshold reads, and
+    # sharing the halved figure instead would move a `~` on a range of 31,
+    # because `range // 2 > 15` is `range >= 32` where `range > 30` is 31.
+    varied = fc.cadence([f("2026-06-30", "2026-07-30", "10-Q"),
+                         f("2026-03-31", "2026-05-30", "10-Q")])
+    check("spread is the RANGE of the lags", varied["spread"] == 30,
+          "half of it is 15, and that is a presentation choice, not this one")
+    check("the raw lags are still returned alongside it",
+          varied["lags"] == [30, 60])
+    check("a uniform history spreads zero rather than None",
+          fc.cadence(qtr("2026-06-30", "2026-03-31"))["spread"] == 0,
+          "a spread of zero is a measurement; the callers print 0d, not blank")
+    check("the low-confidence threshold lives here, not in either caller",
+          fc.LOW_CONFIDENCE_SPREAD == 30,
+          "each held its own and compared it against a different quantity")
+
     print("\nWHAT IS DELIBERATELY NOT SHARED")
     c = fc.cadence(qtr("2026-06-30", "2026-03-31"))
-    check("it returns the raw lags, not a spread",
-          "lags" in c and "spread" not in c,
-          "the calendar reports the full range, the snapshot half of it")
     check("and says 'quarterly', not '10-Q'", c["kind"] == "quarterly",
           "the calendar maps the vocabulary at its own boundary")
     check("it carries no label, name or cik",

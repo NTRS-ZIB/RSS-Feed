@@ -56,17 +56,19 @@ indistinguishable to it and the second run silently re-executes the first;
 that has happened in this repo, and the wrong answer looked like a real
 measurement.
 
-THREE BRANCHES ARE ABSENT FROM `BRANCHES` BECAUSE THEY CANNOT BE REACHED, and
+TWO BRANCHES ARE ABSENT FROM `BRANCHES` BECAUSE THEY CANNOT BE REACHED, and
 they are named here so the next reader does not spend an afternoon building a
-case for them. All three are defensive and harmless; none is a defect.
+case for them. Both are defensive and harmless; neither is a defect.
 
   * `filing_cadence.cadence`, the SECOND `if len(pool) < 2: return None`. It
     sits on the path where `len(quarterly) >= 2` is already established, so
     the fallback above it can always choose `quarterly` and satisfy it.
-  * `build_snapshot.projection`, the `else None` arm of `spread`. Every path
-    reaching it has a pool of at least two, so `len(lags) > 1` always holds.
   * `build_snapshot.projection`, `c["sample"] < 2` in the confidence
-    expression, unreachable for the same reason.
+    expression. Every path reaching it has a pool of at least two.
+
+A third was listed here until the spread unification: `projection`'s
+`else None` arm for `spread`, guarding `len(lags) > 1`. It went with the
+rewrite of that line rather than being removed on purpose.
 
 TEMPORARY is what the other probes say about themselves. This one is not: it
 is the before-and-after for a rule two live outputs depend on, and it is worth

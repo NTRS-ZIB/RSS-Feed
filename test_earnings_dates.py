@@ -281,6 +281,31 @@ def main():
     check("an announced row's spread column is blank, not zero",
           "999d" not in line and line.endswith("    "), repr(line))
 
+    # THE COLUMN IS LABELLED `+/-`, SO IT PRINTS HALF THE RANGE. It used to
+    # print the range itself, which claimed a window twice as wide as anything
+    # ever observed: a company whose lags spanned 33 days was published as
+    # ±33d. `r["spread"]` is still the range, because that is what the marker
+    # reads, and 31 is the value that separates the two: it is `~` on the
+    # range and would not be if the marker read the halved figure.
+    halved = calendar_row("HALF", upcoming_date, spread=33)
+    line = next(l for l in ec.build_message([halved]).split("\n")
+                if l.startswith("HALF"))
+    check("the +/- column prints HALF the range", line.endswith(" 16d"),
+          repr(line) + " - the range 33 would have printed 33d")
+    check("and a 33-day range still carries the ~ marker",
+          line.startswith("HALF~"), repr(line))
+
+    boundary = calendar_row("EDGE", upcoming_date, spread=31)
+    line = next(l for l in ec.build_message([boundary]).split("\n")
+                if l.startswith("EDGE"))
+    check("a range of 31 is still ~, though half of it is only 15",
+          line.startswith("EDGE~") and line.endswith(" 15d"), repr(line))
+    line = next(l for l in ec.build_message(
+        [calendar_row("EVEN", upcoming_date, spread=30)]).split("\n")
+        if l.startswith("EVEN"))
+    check("a range of exactly 30 is not ~", not line.startswith("EVEN~"),
+          repr(line))
+
     # (c) a passed announced date lands in Overdue with no grace, while a
     # projected row the same number of days past its estimate — inside
     # OVERDUE_GRACE — keeps its grace and is not flagged.

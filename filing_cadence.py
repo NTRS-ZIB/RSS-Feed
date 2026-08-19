@@ -27,11 +27,20 @@ how much the estimate is worth. Presentation stays in the components, because
 they genuinely differ and sharing what differs is how a refactor moves a live
 output. Three things were deliberately left OUT of the return value:
 
-- **`spread` is not returned; `lags` is.** `earnings_calendar` reports the
-  full range and thresholds it at 30 days; `build_snapshot` publishes half the
-  range. Returning one number would either double every `spread_days` in the
-  wire format or halve every `±Nd` in the Discord post. The divergence is real
-  and is now visible here rather than buried in two files.
+- **`spread` IS returned, as the full range, and BOTH callers publish half of
+  it.** This was the last thing the two disagreed about, and it turned out not
+  to be a choice between two conventions. `earnings_calendar` computed
+  `max - min` and printed it under a column header reading `+/- spread`, so a
+  company whose lags spanned 33 days was published as `±33d`: a claim of a
+  66-day window, twice the observed spread, on every projected row since the
+  column was written. `build_snapshot` published half and its note said so.
+  One was right and labelled truthfully; the other was off by two against its
+  own header.
+
+  THE RANGE IS WHAT IS SHARED BECAUSE THE THRESHOLD READS IT. Halving first
+  and thresholding after loses a day to integer division: `range // 2 > 15` is
+  `range >= 32` where `range > 30` is `range >= 31`. Sharing the range keeps
+  every existing `~` marker exactly where it was.
 - **No vocabulary mapping.** This returns `"quarterly"`. The calendar maps it
   to `"10-Q"` at its own boundary; the snapshot uses it as-is. Both published
   strings are unchanged.
@@ -70,6 +79,19 @@ MIN_PERIODIC_FILINGS = 2
 # A company whose filings never described a quarterly cadence does not get one
 # invented. It projects its annual cycle, which is real, and nothing else.
 MIN_QUARTERLY_FILINGS = 2
+
+# Above this spread in its historical lags, a company files too erratically for
+# the projection to mean much: `earnings_calendar` marks the row `~`,
+# `build_snapshot` publishes `confidence: "low"`.
+#
+# IT GATES ON THE RANGE, NOT ON THE HALF EACH CALLER PRINTS, and until
+# 2026-08-19 both compared 30 against a different quantity. The calendar read
+# the range, the snapshot read half of it, so one constant meant `range > 30`
+# in the Discord post and `range > 60` in the wire format. Three of
+# twenty-two issuers sat in the gap and were published, on the same day and
+# off the same lags, as too erratic to project in one output and `normal` in
+# the other: APLD at a range of 32, WYFI at 36, CLSK at 50.
+LOW_CONFIDENCE_SPREAD = 30
 
 # And an annual cycle needs two observations for the same reason. One filing
 # gives a period with no lag worth the name — `build_snapshot` published
@@ -188,6 +210,9 @@ def cadence(filings):
         "kind": kind,
         "lag": lag,
         "lags": lags,
+        # THE RANGE. Both callers print half of it; see the module docstring
+        # for why the halving happens at the boundary and not here.
+        "spread": max(lags) - min(lags),
         "sample": len(lags),
         "degraded": degraded,
         "annual_only": annual_only,

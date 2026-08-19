@@ -126,10 +126,10 @@ NT_KNOWN = ["NT 10-K", "NT 10-Q", "NT 20-F", "NT 40-F"]
 # very values the change was making correct. The absent pip step is the only
 # thing that catches this: tests.yml installs requests and cannot see it.
 from filing_cadence import (ANNUAL_FORMS as ANNUAL, LAG_SAMPLE,
-                            MIN_ANNUAL_FILINGS, MIN_QUARTERLY_FILINGS,
-                            PERIODIC_FORMS, QUARTERLY_FORMS as QUARTERLY,
-                            cadence, fiscal_year_end_month,
-                            next_annual_period_end)
+                            LOW_CONFIDENCE_SPREAD, MIN_ANNUAL_FILINGS,
+                            MIN_QUARTERLY_FILINGS, PERIODIC_FORMS,
+                            QUARTERLY_FORMS as QUARTERLY, cadence,
+                            fiscal_year_end_month, next_annual_period_end)
 
 
 def fetch(url):
@@ -213,9 +213,16 @@ def projection(rows):
     base from the newest QUARTERLY period rather than the newest periodic
     filing — so it named as `next` a 10-K it had already recorded as filed.
 
-    What stays here is the published SHAPE: this file's field names, and
-    `spread_days` as HALF the observed range where the Discord post prints the
-    full one. Sharing those would move one output or the other.
+    What stays here is the published SHAPE: this file's field names, and the
+    halving of the range into `spread_days`. The Discord post now halves it
+    too, at its own boundary, so the two publish the same quantity.
+
+    `confidence` CHANGED ON 2026-08-19 and this is the one consumer-visible
+    move. It gates on the RANGE against LOW_CONFIDENCE_SPREAD, where it used
+    to gate on the halved figure against the same number: an effective
+    threshold of 60 days where the Discord post used 30. APLD, WYFI and CLSK
+    were published `normal` here and `~` there on the same day, off the same
+    lags. They now read `low` in both.
     """
     filings = []
     for form, filed, period, *_ in rows:
@@ -258,8 +265,12 @@ def projection(rows):
             "fiscal_year_end_month": fiscal_year_end_month(annual),
             "confidence": None,
         }
-    lags = c["lags"]
-    spread = (max(lags) - min(lags)) // 2 if len(lags) > 1 else None
+    # HALF THE RANGE, unchanged, and this file's published figure. What did
+    # change is what `confidence` compares: it used to threshold this halved
+    # number against 30, while the Discord post thresholded the RANGE against
+    # the same 30, so one constant meant `range > 30` in one output and
+    # `range > 60` in the other. APLD, WYFI and CLSK sat in that gap.
+    spread = c["spread"] // 2
     return {
         "available": True,
         "reason": None,
@@ -274,8 +285,8 @@ def projection(rows):
         # field: it means the lag came from the other pool, which is exactly
         # what a consumer gating on confidence needs to know, and the file has
         # no way to say it otherwise.
-        "confidence": ("low" if (spread or 0) > 30 or c["sample"] < 2
-                       or c["degraded"] else "normal"),
+        "confidence": ("low" if c["spread"] > LOW_CONFIDENCE_SPREAD
+                       or c["sample"] < 2 or c["degraded"] else "normal"),
     }
 
 
@@ -350,7 +361,14 @@ def main():
                  "reported as a measurement rather than a gap. An issuer whose fetch "
                  "failed is different again: it carries 'error' and no 'projection' "
                  "key. Neither means zero. "
-                 "'spread_days' is HALF the observed range of filing lags."),
+                 "'spread_days' is HALF the observed range of filing lags. "
+                 "'confidence' is 'low' when that RANGE exceeds 30 days, when "
+                 "the sample is under 2, or when the lag had to be taken from "
+                 "the other filing family for want of observations in this "
+                 "one. Before 2026-08-19 the range test compared 30 against "
+                 "the halved figure instead, an effective threshold of 60 "
+                 "days, so some issuers previously published 'normal' now "
+                 "read 'low' on unchanged filing history."),
         "issuers": {},
     }
     problems = []

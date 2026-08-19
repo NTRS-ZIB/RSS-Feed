@@ -179,6 +179,33 @@ def main():
     check("a tight, deep sample is normal",
           bs.projection(annual(2025, 2024, 2023))["confidence"] == "normal")
 
+    # THE BOUNDARY THAT MOVED. `confidence` compares LOW_CONFIDENCE_SPREAD
+    # against the RANGE; it used to compare it against `spread_days`, which is
+    # half of it, so the effective threshold here was 60 days while the
+    # Discord post used 30 and the two published different verdicts about the
+    # same issuer. Both cases below read `normal` under the old rule: 31 // 2
+    # is 15 and 60 // 2 is 30, and neither exceeds 30.
+    def spread_of(days):
+        """Two quarterlies whose lags differ by exactly `days`."""
+        return bs.projection(rows(
+            ("10-Q", date.fromordinal(date(2026, 6, 30).toordinal() + 40).isoformat(),
+             "2026-06-30"),
+            ("10-Q", date.fromordinal(date(2026, 3, 31).toordinal() + 40 + days).isoformat(),
+             "2026-03-31")))
+
+    just_over = spread_of(31)
+    check("a range of 31 is low confidence",
+          just_over["confidence"] == "low",
+          "spread_days is 15 here, so the old rule read this as normal")
+    check("and it still publishes HALF the range",
+          just_over["spread_days"] == 15,
+          "the published figure did not move; only the verdict on it did")
+    check("a range of exactly 30 is not low",
+          spread_of(30)["confidence"] == "normal",
+          "the threshold is exclusive, matching the calendar's ~ marker")
+    check("a range of 60 is low here, as it always was in the post",
+          spread_of(60)["confidence"] == "low")
+
     print("\nSTDLIB ONLY, WHICH IS NOT A STYLE PREFERENCE")
     # snapshot.yml has NO pip install step, so a third-party import anywhere in
     # build_snapshot's transitive closure kills the 11:00 UTC run before it

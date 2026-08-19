@@ -21,9 +21,19 @@ The gap between them is stable per company, so:
 expected = next period end + that company's median lag
 ```
 
-The lag is the median of its last 8 periodic filings, and the `±` shown is the
-spread across those. That spread is the honesty indicator: `±0d` means
-metronomic, `±35d` means don't plan around it.
+The lag is the median of its last 8 periodic filings, and the `±` shown is
+**half** the spread across those. That spread is the honesty indicator: `±0d`
+means metronomic, `±17d` means don't plan around it.
+
+**The halving is the point, and it was wrong until 2026-08-19.** The column
+printed the full range under a header reading `+/- spread`, and a `±N` beside
+a date claims a `2N`-day window: a company whose lags spanned 33 days was
+published as `±33d`, twice anything ever observed. `filing_cadence.cadence()`
+returns `spread` as the range, both this component and `build_snapshot` print
+half of it, and `LOW_CONFIDENCE_SPREAD` thresholds the **range** in both. The
+threshold reads the range rather than the half deliberately: `range // 2 > 15`
+is `range >= 32` where `range > 30` is `range >= 31`, so halving first would
+have moved the `~` on a range of exactly 31.
 
 ## Critical: annual and quarterly lags must never be pooled
 
@@ -33,7 +43,9 @@ difference.
 
 The first working version pooled them. Real output: MARA ±33d, BGDE ±46d,
 ANY ±52d, DGXX ±215d — spreads so wide the dates were meaningless. After
-separating by form type the same companies read ±14d, ±6d, ±10d.
+separating by form type the same companies read ±14d, ±6d, ±10d. (Those
+figures are ranges, as the column printed them at the time. Halve them to read
+what the same histories would show today.)
 
 `ANNUAL_FORMS` and `QUARTERLY_FORMS` exist for this reason. Do not merge them.
 
@@ -55,7 +67,7 @@ correctly projects an `annual` filing for its June period, not a 10-Q.
 | `+` | The company announced this date in the body of a release rather than in the headline, and the calendar parsed it out. The company stated it either way, so the row shows no spread, exactly as a `!` row does. What differs is that the reading was ours, so a `+` row keeps the normal overdue grace where a `!` row gets none. The rule that produces it stores a date only when the body offers exactly one forward date; several or none stores nothing. |
 | `*`/`~` on an annual-only row | Projected annually, because the company files fewer than two quarterly reports. Neither marker *means* annual-only — `*` is any annual-kind row and `~` is any wide spread, both listed below. It gets no quarterly estimate, but is otherwise an ordinary row — including eligibility for Overdue against its own projection. Which of the two markers shows is decided the same way as any other row — `marker()` checks the wide-spread `~` before the annual `*`, so an annual-only company whose few samples also spread widely (BTDR, DGXX both do) renders `~`, not `*`. There is no dedicated symbol for "annual-only", and nothing in a row's printed date distinguishes it from an ordinary row whose next filing happens to be its annual one — no shape a row renders carries a year, in any section. The run log names the annual-only companies explicitly every run (`Projected annually, with no quarterly estimate: ...`); that is where to look, not the post. |
 | *(none)* | Projection from ≥2 same-form filings. Treat the date as real. |
-| `~` | Historical spread exceeds 30 days. Indicative only; named in a footnote. |
+| `~` | Historical spread exceeds 30 days. That is the RANGE of the company's lags, not the halved figure printed in the last column, so a row can read `~` alongside `16d`. `build_snapshot` publishes `confidence: "low"` on the same test against the same constant; until 2026-08-19 it compared 30 against the halved figure instead, an effective 60 days, and APLD, WYFI and CLSK were `~` here and `normal` there on the same day. Indicative only; named in a footnote. |
 | `?` | Had to fall back to a different form type — e.g. a foreign issuer with no 10-Q history. Weakest case. |
 
 Expected dates falling on a weekend roll forward to Monday.
