@@ -88,10 +88,22 @@ MIN_QUARTERLY_FILINGS = 2
 # IT GATES ON THE RANGE, NOT ON THE HALF EACH CALLER PRINTS, and until
 # 2026-08-19 both compared 30 against a different quantity. The calendar read
 # the range, the snapshot read half of it, so one constant meant `range > 30`
-# in the Discord post and `range > 60` in the wire format. Three of
-# twenty-two issuers sat in the gap and were published, on the same day and
-# off the same lags, as too erratic to project in one output and `normal` in
-# the other: APLD at a range of 32, WYFI at 36, CLSK at 50.
+# in the Discord post and `range > 60` in the wire format. Issuers sat in that
+# gap and were published, on the same day and off the same lags, as too
+# erratic to project in one output and `normal` in the other.
+#
+# THE THREE NAMED IN THE COMMITTED FILE WERE APLD, WYFI AND CLSK, and only two
+# of them moved when the gap closed. APLD was in the band at a range of 32
+# only because a SECOND defect had it projecting off its annual pool; the
+# shared-rule merge the same morning put it back on a quarterly pool whose
+# range is 8, so it had left the band before the threshold reached it. Live
+# dry runs moved CLSK and WYFI and nothing else. A company leaves this band
+# because its own history changed as readily as because a constant did, so a
+# list of names here is a fact about one day and is written as one.
+#
+# Ranges as measured 2026-08-19 with the period-end guard on: CLSK 51,
+# WYFI 36, BTDR 32. The earlier note said CLSK 50, which was `2 * 25` read
+# back off the halved figure and lost the parity bit of an odd range.
 LOW_CONFIDENCE_SPREAD = 30
 
 # And an annual cycle needs two observations for the same reason. One filing
