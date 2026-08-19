@@ -120,8 +120,12 @@ look like a contradiction rather than two different measurements.
   them out (marked `+`). The company stated the date either way, so both show no
   spread; the difference is that a `+` row keeps normal overdue grace, because
   what is uncertain there is our reading rather than the company's statement.
-- **Recent listings have thin history.** WYFI had 4 periodic filings at time of
-  writing, giving ±35d. Accurate reporting of low confidence, not a bug.
+- **Recent listings have thin history.** WYFI has 4 quarterly filings, lags
+  `[43, 44, 44, 79]`, giving a range of 36 and a published `±18d`. Accurate
+  reporting of low confidence, not a bug: the 79 is a real late 10-Q,
+  accession `0001213900-25-088547`. This line read `±35d` until 2026-08-19,
+  which was the full range under the old column and is now stale by exactly
+  the factor that change corrected.
 - **Validate against reality.** When a company actually files, compare to the
   projection. If established filers are consistently off by a fixed amount, an
   old restatement or late filing is likely skewing the 8-sample window — reduce
