@@ -1233,7 +1233,8 @@
   "urn:tag:sec.gov,2008:accession-number=0001950047-26-008330",
   "urn:tag:sec.gov,2008:accession-number=0000912282-26-001130",
   "urn:tag:sec.gov,2008:accession-number=0001104659-26-098473",
-  "https://whitefiber.investorroom.com/2026-08-19-WhiteFiber-Announces-Pricing-of-Upsized-270-0-Million-Convertible-Senior-Notes-Offering"
+  "https://whitefiber.investorroom.com/2026-08-19-WhiteFiber-Announces-Pricing-of-Upsized-270-0-Million-Convertible-Senior-Notes-Offering",
+  "9751"
  ],
  "initialized": true,
  "feeds": {
@@ -1246,7 +1247,7 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "BKKT": {
