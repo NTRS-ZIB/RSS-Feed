@@ -33,8 +33,9 @@ from filing_cadence import (ANNUAL_FORMS, FY_MONTH_SAMPLE, LAG_SAMPLE,
                             LOW_CONFIDENCE_SPREAD, MIN_ANNUAL_FILINGS,
                             MIN_PERIODIC_FILINGS, MIN_QUARTERLY_FILINGS,
                             PERIODIC_FORMS, QUARTERLY_FORMS, cadence,
-                            fiscal_year_end_month, next_annual_period_end,
-                            next_period_end, roll_to_business_day)
+                            covers_a_period, fiscal_year_end_month,
+                            next_annual_period_end, next_period_end,
+                            roll_to_business_day)
 import earnings_dates as ed
 # ------------------------------------------------------------------ CONFIG
 
@@ -134,7 +135,10 @@ def periodic_filings(cik):
             fd = date.fromisoformat(filed[i])
         except (ValueError, IndexError, TypeError):
             continue
-        if rd and fd and fd >= rd:
+        # `covers_a_period` here as well as inside `cadence`, so the count
+        # this component prints and the count it reports against the floor
+        # ("SPCX 1/2") describe the same filings the decision used.
+        if rd and fd and fd >= rd and covers_a_period(rd):
             out.append((rd, fd, form))
     return out
 

@@ -206,6 +206,21 @@ def main():
     check("a range of 60 is low here, as it always was in the post",
           spread_of(60)["confidence"] == "low")
 
+    # A FILING THAT COVERS NO PERIOD IS NOT COUNTED IN THE PUBLISHED COUNTS.
+    # `reason` states counts against the floors, so it has to describe the
+    # filings the decision actually used. BTDR's 20-F accession
+    # 0001104659-23-047181 is stamped 2023-04-13, a transaction date from its
+    # April 2023 SPAC listing, and it used to be counted here as an annual
+    # filing: the refusal said 2/2 annual, a count that clears the floor it
+    # was being refused against.
+    thin = bs.projection(rows(("20-F", "2023-04-19", "2023-04-13"),
+                              ("20-F", "2026-04-30", "2025-12-31")))
+    check("a transaction reportDate is not counted toward the annual floor",
+          thin["available"] is False and "1/2 annual" in thin["reason"],
+          repr(thin.get("reason")))
+    check("and it is not counted in the sample either", thin["sample"] == 1,
+          repr(thin.get("sample")))
+
     print("\nSTDLIB ONLY, WHICH IS NOT A STYLE PREFERENCE")
     # snapshot.yml has NO pip install step, so a third-party import anywhere in
     # build_snapshot's transitive closure kills the 11:00 UTC run before it

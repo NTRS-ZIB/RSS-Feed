@@ -129,7 +129,8 @@ from filing_cadence import (ANNUAL_FORMS as ANNUAL, LAG_SAMPLE,
                             LOW_CONFIDENCE_SPREAD, MIN_ANNUAL_FILINGS,
                             MIN_QUARTERLY_FILINGS, PERIODIC_FORMS,
                             QUARTERLY_FORMS as QUARTERLY, cadence,
-                            fiscal_year_end_month, next_annual_period_end)
+                            covers_a_period, fiscal_year_end_month,
+                            next_annual_period_end)
 
 
 def fetch(url):
@@ -241,7 +242,11 @@ def projection(rows):
             f = datetime.date.fromisoformat(filed)
         except (TypeError, ValueError):
             continue
-        if f >= p:
+        # THE SAME GUARD `cadence` APPLIES, so the counts this file publishes
+        # in `reason` describe the filings the decision actually used. Without
+        # it an issuer refused for want of periods could report a count that
+        # clears the floor it was refused against.
+        if f >= p and covers_a_period(p):
             filings.append((p, f, form))
     # Newest period first: LAG_SAMPLE truncates positionally and this file has
     # always meant "most recent history". `cadence` deliberately does not sort,

@@ -12,7 +12,7 @@ The cases are the real ones. Every defect named below was live in
 """
 
 import sys
-from datetime import date
+from datetime import date, timedelta
 
 import filing_cadence as fc
 
@@ -151,6 +151,83 @@ def main():
     check("the low-confidence threshold lives here, not in either caller",
           fc.LOW_CONFIDENCE_SPREAD == 30,
           "each held its own and compared it against a different quantity")
+
+    print("\nA REPORTING PERIOD ENDS AT A PERIOD END")
+    # BTDR's real history. The last entry is 20-F accession
+    # 0001104659-23-047181, reportDate 2023-04-13, filed six days later: a
+    # transaction filing from its April 2023 SPAC listing, not an annual
+    # report on a year. It is the only one of 619 periodic filings on this
+    # roster whose reportDate is not exactly a calendar month end.
+    btdr = [f("2025-12-31", "2026-04-30", "20-F"),
+            f("2024-12-31", "2025-04-21", "20-F"),
+            f("2023-12-31", "2024-03-28", "20-F"),
+            f("2022-12-31", "2023-04-28", "20-F"),
+            f("2023-04-13", "2023-04-19", "20-F")]
+    c = fc.cadence(btdr)
+    check("a mid-month reportDate never reaches the lag pool",
+          c["lags"] == [120, 111, 88, 118],
+          "with the 6-day lag in, the range is 114 rather than 32")
+    check("so the published spread describes the company, not the listing",
+          c["spread"] == 32)
+    check("a 52/53-week year end is still a period end",
+          fc.covers_a_period(date(2027, 1, 2))
+          and fc.covers_a_period(date(2026, 12, 27)),
+          "it lands on a fixed weekday near the month end, hence the slack")
+    check("a mid-month date is not", not fc.covers_a_period(date(2023, 4, 13)))
+    # Asserted on the DISTANCE, not on the accept/reject. With six days of
+    # slack, `covers_a_period` returns True for a month end however badly
+    # month lengths are computed, so a check written that way cannot fail:
+    # hardcoding the month length to 30 still puts 31 January one day out and
+    # inside the slack. The distance pins the arithmetic itself.
+    check("a month end sits zero days from a month end, in every month length",
+          all(fc.days_from_month_end(date(2024, m, 1) - timedelta(days=1)) == 0
+              for m in range(2, 13))
+          and fc.days_from_month_end(date(2024, 12, 31)) == 0,
+          "2024 is a leap year, so February is covered at 29 days")
+
+    # THE ROLL BASE TOO, not only the lag pool. While the transaction filing
+    # was the NEWEST annual one, `next_annual_period_end(max(period))` rolled
+    # off it and returned 2024-04-13 beside a fiscal year end of 12: a record
+    # that contradicts itself. Live for about eleven months in 2023 and 2024.
+    c2 = fc.cadence([f("2023-04-13", "2023-04-19", "20-F"),
+                     f("2022-12-31", "2023-04-28", "20-F"),
+                     f("2021-12-31", "2022-04-29", "20-F")])
+    check("the next annual period rolls off a real year end, not a stray date",
+          c2 is not None and c2["period"] == date(2023, 12, 31),
+          "it returned 2024-04-13 with fy_month 12 in the same record")
+
+    print("\nTHE FISCAL YEAR END DOES NOT DEPEND ON WHICH CALLER IS ASKING")
+    # `max(set(months), key=months.count)` breaks a tie by set iteration
+    # order, and for 4 and 12 those two collide in CPython's table, so
+    # INSERTION order decides. The two callers order deliberately
+    # differently: earnings_calendar by filed date, build_snapshot by period.
+    apr = f("2023-04-30", "2023-06-19", "20-F")
+    dec = f("2022-12-31", "2023-04-28", "20-F")
+    by_filed = [dec, apr]        # earnings_calendar: newest FILED first
+    by_period = [apr, dec]       # build_snapshot: newest PERIOD first
+    check("a tied fiscal month resolves identically in both caller orders",
+          fc.fiscal_year_end_month(by_filed) == fc.fiscal_year_end_month(by_period),
+          "months 4 and 12 collide mod 8, so the set yields them in insertion order")
+    check("and the tie goes to the NEWER period",
+          fc.fiscal_year_end_month(by_filed) == 4,
+          "a company that changed its fiscal year is read off recent history")
+    # The truncation is order-independent for the same reason, and the
+    # fixture has to be able to FLIP the answer or it proves nothing. Five
+    # December years plus four ancient June ones filed late in 2026: by FILED
+    # date the first six are four Junes and two Decembers, mode 6; by PERIOD
+    # they are five Decembers and one June, mode 12. A first attempt used six
+    # Decembers and one June, where both orderings answer 12 and no mutation
+    # can redden the check.
+    catchup = [f("%d-06-30" % y, "2026-%02d-01" % (m + 7), "10-K")
+               for m, y in enumerate(range(2016, 2020))]
+    modern = [f("%d-12-31" % y, "%d-03-01" % (y + 1), "10-K")
+              for y in range(2021, 2026)]
+    by_filed = list(reversed(catchup)) + list(reversed(modern))
+    by_period = list(reversed(modern)) + list(reversed(catchup))
+    check("the FY_MONTH_SAMPLE window is taken by period, not by position",
+          fc.fiscal_year_end_month(by_filed)
+          == fc.fiscal_year_end_month(by_period) == 12,
+          "by filed date four stale June periods displace three Decembers")
 
     print("\nWHAT IS DELIBERATELY NOT SHARED")
     c = fc.cadence(qtr("2026-06-30", "2026-03-31"))

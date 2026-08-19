@@ -56,6 +56,7 @@ the only tripwire that catches such an import: `tests.yml` installs `requests`,
 so CI is blind to it. Never add a third-party import here.
 """
 
+import calendar
 import statistics
 from datetime import date, timedelta
 
@@ -99,6 +100,47 @@ LOW_CONFIDENCE_SPREAD = 30
 MIN_ANNUAL_FILINGS = 2
 
 
+# How far a reportDate may sit from a calendar month end and still be read as
+# the end of a reporting period.
+#
+# WHY THERE IS ANY SLACK AT ALL: a 52/53-week fiscal year ends on a fixed
+# weekday near the month end, so it can miss by up to four days in either
+# direction. No roster member uses one today, and a guard that fires on the
+# first one added would be worse than the bug it fixes.
+#
+# WHY THE SLACK IS SAFE: measured over EDGAR's recent arrays for the whole
+# roster on 2026-08-19, 618 of 619 periodic reportDates land EXACTLY on a
+# month end and the single exception sits 13 days out. Nothing occupies the
+# range between, so six is not a tuned threshold, it is the middle of a gap.
+PERIOD_END_SLACK = 6
+
+
+def days_from_month_end(d):
+    """Days to the nearest calendar month end, in either direction."""
+    this_end = date(d.year, d.month, calendar.monthrange(d.year, d.month)[1])
+    prev_end = d.replace(day=1) - timedelta(days=1)
+    return min(abs((d - this_end).days), abs((d - prev_end).days))
+
+
+def covers_a_period(period_end):
+    """Is this reportDate plausibly the end of a reporting period?
+
+    A PERIODIC REPORT COVERS A PERIOD, and EDGAR will happily carry a form
+    from the periodic families whose reportDate is a transaction date instead.
+    BTDR's 20-F accession 0001104659-23-047181 is stamped 2023-04-13 and filed
+    six days later, from its April 2023 SPAC listing. It is a real filing and
+    a real 20-F; it is not a report on a year.
+
+    Nothing about it announces itself. It contributed a six-day lag beside
+    four genuine ones of 88 to 120, which tripled the published spread from 32
+    to 114 and was the whole reason BTDR carried `~` and `confidence: "low"`.
+    While it was the NEWEST annual filing it also set the roll base, so
+    `cadence` returned a next period of 2024-04-13 beside a fiscal year end of
+    12: one record contradicting itself, for about eleven months.
+    """
+    return days_from_month_end(period_end) <= PERIOD_END_SLACK
+
+
 def next_period_end(last_period):
     """The quarter end following `last_period`, preserving the fiscal cycle."""
     month = last_period.month + 3
@@ -133,11 +175,36 @@ def roll_to_business_day(d):
 
 
 def fiscal_year_end_month(annual):
-    """Most common month among annual report periods, or None."""
-    months = [rd.month for rd, _, _ in annual[:FY_MONTH_SAMPLE]]
-    if not months:
+    """Most common month among the most recent annual report periods, or None.
+
+    ORDER-INDEPENDENT, and deliberately unlike the lag pool two functions
+    below. `max(set(months), key=months.count)` broke a tie by SET ITERATION
+    order, which is insertion order whenever the tied months collide in
+    CPython's table: exactly the pairs (1, 9), (2, 10), (3, 11) and (4, 12).
+    The two callers order their filings differently on purpose, so the same
+    issuer could publish a fiscal year end of 12 to Discord and 4 to
+    `snapshot.json` off the same two filings. Demonstrated in the suite. That
+    is the drift this whole module exists to end, and it was inside it.
+
+    The window is taken by PERIOD rather than by position for the same reason.
+    Which filings are recent is a fact about the periods; which eight lags to
+    take a median over is a fact the caller owns, because an amended filing
+    submitted late genuinely belongs at a different place in each ordering.
+
+    A remaining tie goes to the newer period, which is what a company that
+    changed its fiscal year end should be read as. That is only safe because
+    `covers_a_period` has already removed transaction dates: a tie-break on
+    recency alone would have handed BTDR April 2023.
+    """
+    if not annual:
         return None
-    return max(set(months), key=months.count)
+    recent = sorted(annual, key=lambda t: t[0], reverse=True)[:FY_MONTH_SAMPLE]
+    months = [rd.month for rd, _, _ in recent]
+    best = max(months.count(m) for m in months)
+    tied = {m for m in months if months.count(m) == best}
+    if len(tied) == 1:
+        return next(iter(tied))
+    return max(rd for rd, _, _ in recent if rd.month in tied).month
 
 
 def cadence(filings):
@@ -155,6 +222,11 @@ def cadence(filings):
     than a failure: too few filings, or a cadence with too few observations to
     take a median over.
     """
+    # BEFORE THE FLOOR, not after. A filing that does not cover a period is
+    # not one of the two this issuer needs before it can be projected from,
+    # and counting it would let a transaction filing carry a company over the
+    # floor on the strength of a lag that means nothing.
+    filings = [f for f in filings if covers_a_period(f[0])]
     if len(filings) < MIN_PERIODIC_FILINGS:
         return None
 

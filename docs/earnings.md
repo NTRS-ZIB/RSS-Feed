@@ -49,6 +49,29 @@ what the same histories would show today.)
 
 `ANNUAL_FORMS` and `QUARTERLY_FORMS` exist for this reason. Do not merge them.
 
+## A periodic form does not always report on a period
+
+`reportDate` can carry a transaction date. BTDR's 20-F
+`0001104659-23-047181` is stamped `2023-04-13` and filed six days later, from
+its April 2023 SPAC listing: a real 20-F reporting on no year.
+
+`filing_cadence.covers_a_period` drops any `reportDate` more than
+`PERIOD_END_SLACK = 6` days from a calendar month end, before the periodic
+floor is counted, and both components apply the same test when they build
+their filing lists so the counts they publish describe the filings the
+decision used.
+
+Measured across the roster on 2026-08-19, **618 of 619 periodic `reportDate`s
+land exactly on a month end and the single exception sits 13 days out.** Six
+is the middle of that gap, not a tuned threshold. The slack exists because a
+52/53-week fiscal year ends on a fixed weekday near the month end and can miss
+by four days; no roster member uses one today.
+
+What it fixed for BTDR: spread 114 to 32, `spread_days` 57 to 16, median lag
+111 to 114. And while that filing was the newest annual one it set the roll
+base too, so the projection named `2024-04-13` as the next period beside a
+fiscal year end of December.
+
 ## Fiscal year ends are detected, not assumed
 
 Several companies here are not calendar-year filers — IREN's year ends in June,

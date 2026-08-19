@@ -125,6 +125,8 @@ BRANCHES = (
     "snapshot_confidence_normal",
     "snapshot_low_via_spread",
     "snapshot_low_via_degraded",
+    "input_has_non_period_end",
+    "input_has_fy_month_tie",
 )
 
 
@@ -243,6 +245,33 @@ def grid():
     cases["non_periodic_only"] = [(D(2026, 6, 30), D(2026, 7, 1), "8-K"),
                                   (D(2026, 3, 31), D(2026, 4, 1), "8-K")]
 
+    # A transaction filing carrying a mid-month reportDate, BTDR's shape. The
+    # generated grid cannot express it: every period it emits is a month end
+    # or within three days of one, so `covers_a_period` accepts all of them
+    # and a change to that guard would report zero cases moved.
+    cases["transaction_report_date"] = [
+        (D(2025, 12, 31), D(2026, 4, 30), "20-F"),
+        (D(2024, 12, 31), D(2025, 4, 21), "20-F"),
+        (D(2023, 12, 31), D(2024, 3, 28), "20-F"),
+        (D(2022, 12, 31), D(2023, 4, 28), "20-F"),
+        (D(2023, 4, 13), D(2023, 4, 19), "20-F"),
+    ]
+    # The same date as the NEWEST annual filing, which is what set the roll
+    # base and produced a next period of 2024-04-13 beside a fiscal year end
+    # of 12.
+    cases["transaction_report_date_newest"] = [
+        (D(2023, 4, 13), D(2023, 4, 19), "20-F"),
+        (D(2022, 12, 31), D(2023, 4, 28), "20-F"),
+        (D(2021, 12, 31), D(2022, 4, 29), "20-F"),
+    ]
+    # A one-to-one tie between two fiscal months, in both caller orderings.
+    # Months 4 and 12 collide in CPython's set table, so the old tie-break
+    # answered differently depending on which caller asked.
+    tie_apr = (D(2023, 4, 30), D(2023, 6, 19), "20-F")
+    tie_dec = (D(2022, 12, 31), D(2023, 4, 28), "20-F")
+    cases["fy_tie_by_filed"] = [tie_dec, tie_apr]
+    cases["fy_tie_by_period"] = [tie_apr, tie_dec]
+
     # Lags spread wide enough that HALF the range clears the snapshot's
     # confidence threshold. Every case above holds its lag constant within a
     # pool, so all of them have a spread of zero.
@@ -292,6 +321,27 @@ def branches_of(filings, out):
     annual = [f for f in filings if f[2] in fc.ANNUAL_FORMS]
     quarterly = [f for f in filings if f[2] in fc.QUARTERLY_FORMS]
 
+    # PROPERTIES OF THE INPUT, not of the output. A guard that REJECTS a
+    # filing shows up as nothing at all in the result, so the only way to
+    # assert the grid can see it is to assert the grid contains it.
+    #
+    # THE CLASSIFIER RUNS AGAINST A MODULE THAT PREDATES THE CHANGE. This
+    # file is copied onto the ref's modules so both sides share one grid,
+    # which means any symbol added by the change under test is ABSENT on the
+    # baseline side. Calling it there raised AttributeError and killed the
+    # whole comparison, reported as "HEAD side failed to measure". Reach for
+    # anything new through `getattr`, and let the branch simply go unreached
+    # on the baseline, which `report_reach` already prints as "baseline never
+    # reached these".
+    covers = getattr(fc, "covers_a_period", None)
+    if covers and any(not covers(rd) for rd, _, _ in filings):
+        hit.add("input_has_non_period_end")
+    recent = sorted(annual, key=lambda t: t[0], reverse=True)[:fc.FY_MONTH_SAMPLE]
+    months = [rd.month for rd, _, _ in recent]
+    if months and sum(1 for m in set(months)
+                      if months.count(m) == max(months.count(x) for x in months)) > 1:
+        hit.add("input_has_fy_month_tie")
+
     if c is None:
         if len(filings) < fc.MIN_PERIODIC_FILINGS:
             hit.add("none_below_periodic_floor")
@@ -331,7 +381,16 @@ def branches_of(filings, out):
         hit.add("snapshot_unavailable")
     elif s["confidence"] == "normal":
         hit.add("snapshot_confidence_normal")
-    elif (s["spread_days"] or 0) > 30:
+    elif c["spread"] > fc.LOW_CONFIDENCE_SPREAD:
+        # THROUGH THE MODULE'S OWN CONSTANT AND ON THE SAME QUANTITY the
+        # component gates on. This read `s["spread_days"] > 30` until
+        # 2026-08-19, which was right while `confidence` compared the halved
+        # figure and stale the moment it moved to the range. It cost nothing
+        # visible: every branch was still reached, so the guard stayed green
+        # while 1,021 cases fell through all four arms and were counted under
+        # none of them. A classifier that reads a different quantity from the
+        # code it classifies goes stale silently, which is the same failure as
+        # a literal threshold.
         hit.add("snapshot_low_via_spread")
     elif c is not None and c["degraded"]:
         hit.add("snapshot_low_via_degraded")
