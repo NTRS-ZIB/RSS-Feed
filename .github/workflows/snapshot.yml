@@ -8,6 +8,11 @@ on:
   schedule:
     - cron: "0 11 * * 1-5"   # 11:00 UTC weekdays, before the US open
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Fetch and report what would change, write nothing"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -25,9 +30,13 @@ jobs:
       - name: Build snapshot.json
         env:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: python build_snapshot.py
 
       - name: Confirm the file was written and is not empty of issuers
+        # Skipped on a dry run, which writes nothing: this would otherwise
+        # validate the PREVIOUS file and report it as this run's result.
+        if: ${{ !inputs.dry_run }}
         run: |
           test -f snapshot.json || { echo "build_snapshot.py wrote no snapshot.json"; exit 1; }
           python - <<'PY'
@@ -41,6 +50,7 @@ jobs:
           PY
 
       - name: Commit if changed
+        if: ${{ !inputs.dry_run }}
         # Re-fetch before pushing. A run that was queued behind another checks
         # out the SHA pinned when it was CREATED, so it can hold a file that is
         # already stale by the time it pushes — see the trap table in CLAUDE.md.

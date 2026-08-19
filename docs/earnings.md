@@ -142,6 +142,16 @@ look like a contradiction rather than two different measurements.
   are as observable as any other row. BTDR's row read "est 20 Jul" and
   climbed for 22 days before this was fixed the first time, by exempting it;
   it now goes overdue like any other row, with the ordinary `OVERDUE_GRACE`.
+- **`build_snapshot.py` derives this rule rather than restating it.** It
+  projects the same issuers off the same index and had the identical pair of
+  bugs until 2026-08-19: it rolled three months for an annual-only filer, so
+  BTDR was published against `period_end 2026-03-31` with an `expected` date
+  already a month in the past, and it accepted a single 10-Q as a cadence, so
+  SPCX carried `kind: "quarterly", sample: 1` where this component reports
+  `SPCX 1/2`. **Two components answered the same question differently every
+  day, and only one of them had a suite.** `next_annual_period_end` and
+  `MIN_QUARTERLY_FILINGS` are now imported from here, so the two cannot
+  disagree about it again; `test_build_snapshot.py` is the other side's first.
 - **Two branches in `main()` still have no witness.** The `status == "ok"`
   line, printed when `earnings_dates.json` loads with at least one record, and
   the split further down that tells a company on the roster with too little

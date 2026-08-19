@@ -26,6 +26,11 @@ UA = os.environ.get("SEC_USER_AGENT", "").strip()
 if not UA:
     raise SystemExit("SEC_USER_AGENT is not set. SEC throttles anonymous traffic.")
 
+# EVERY OTHER COMPONENT TAKES THIS and this one did not, which is exactly why
+# a change to the published projection could not be seen before it shipped. A
+# dry run fetches normally, reports what would change, and writes nothing.
+DRY_RUN = os.environ.get("DRY_RUN", "").strip().lower() in ("1", "true", "yes")
+
 # Derived from watchlist.py, never copied. A hardcoded duplicate drifts the moment
 # a company is added or renamed, and it drifts SILENTLY: the script goes on
 # producing a clean-looking snapshot of a stale roster, with no error and no gap in
@@ -104,9 +109,27 @@ FORMS = ["8-K", "6-K", "10-Q", "10-K", "20-F", "40-F", "S-1", "S-3", "424",
 NT_FAMILY = "NT "
 NT_KNOWN = ["NT 10-K", "NT 10-Q", "NT 20-F", "NT 40-F"]
 
-ANNUAL = {"10-K", "20-F", "40-F"}
-QUARTERLY = {"10-Q"}
-LAG_SAMPLE = 8
+# DERIVED FROM filing_cadence, never restated. ANNUAL, QUARTERLY and
+# LAG_SAMPLE were hand-maintained duplicates two lines above this comment,
+# which said "never restated" while three of the four cadence facts were.
+# docs/earnings.md tells a maintainer to reduce LAG_SAMPLE to 4 if
+# projections run late: under the duplicates that moved the Discord post and
+# left the wire format on 8, silently. Both components project the
+# next report for the same issuers off the same EDGAR index, and they gave
+# DIFFERENT ANSWERS about three companies until 2026-08-19.
+#
+# IMPORTED FROM filing_cadence AND NOT FROM earnings_calendar, which is not a
+# style preference. That module imports `requests` at module scope, this one
+# is deliberately stdlib-only, and .github/workflows/snapshot.yml has NO pip
+# install step — so importing it there killed the 11:00 UTC run with
+# ModuleNotFoundError before it read a filing, freezing snapshot.json on the
+# very values the change was making correct. The absent pip step is the only
+# thing that catches this: tests.yml installs requests and cannot see it.
+from filing_cadence import (ANNUAL_FORMS as ANNUAL, LAG_SAMPLE,
+                            MIN_ANNUAL_FILINGS, MIN_QUARTERLY_FILINGS,
+                            PERIODIC_FORMS, QUARTERLY_FORMS as QUARTERLY,
+                            cadence, fiscal_year_end_month,
+                            next_annual_period_end)
 
 
 def fetch(url):
@@ -182,84 +205,152 @@ def latest_per_form(rows, cik):
 
 
 def projection(rows):
-    """Expected next report, from this issuer's own filing lags.
+    """Expected next report, from `filing_cadence`. The DECISION is not here.
 
-    Annual and quarterly lags are never pooled: annual reports are filed 60 to 90
-    days after year end, quarterlies around 40, and a pooled median fits neither.
+    This was a second implementation of that rule and disagreed with
+    `earnings_calendar` about three companies: it rolled three months for an
+    annual-only filer, accepted a single 10-Q as a cadence, and took its roll
+    base from the newest QUARTERLY period rather than the newest periodic
+    filing — so it named as `next` a 10-K it had already recorded as filed.
+
+    What stays here is the published SHAPE: this file's field names, and
+    `spread_days` as HALF the observed range where the Discord post prints the
+    full one. Sharing those would move one output or the other.
     """
-    def lags(families):
-        out = []
-        for form, filed, period, _, _ in rows:
-            if form in families and period and filed:
-                try:
-                    f = datetime.date.fromisoformat(filed)
-                    p = datetime.date.fromisoformat(period)
-                except ValueError:
-                    continue
-                out.append(((f - p).days, p))
-        out.sort(key=lambda x: x[1], reverse=True)
-        return out[:LAG_SAMPLE]
+    filings = []
+    for form, filed, period, *_ in rows:
+        if form not in PERIODIC_FORMS or not period or not filed:
+            continue
+        try:
+            p = datetime.date.fromisoformat(period)
+            f = datetime.date.fromisoformat(filed)
+        except (TypeError, ValueError):
+            continue
+        if f >= p:
+            filings.append((p, f, form))
+    # Newest period first: LAG_SAMPLE truncates positionally and this file has
+    # always meant "most recent history". `cadence` deliberately does not sort,
+    # because the other caller orders by FILED date instead.
+    filings.sort(key=lambda t: t[0], reverse=True)
 
-    ann, qtr = lags(ANNUAL), lags(QUARTERLY)
-    if not ann and not qtr:
-        return None
+    annual = [f for f in filings if f[2] in ANNUAL]
+    quarterly = [f for f in filings if f[2] in QUARTERLY]
 
-    # Fiscal year end: the most common period month among annual reports.
-    fy_month = None
-    if ann:
-        months = [p.month for _, p in ann]
-        fy_month = max(set(months), key=months.count)
-
-    src = qtr or ann
-    kind = "quarterly" if qtr else "annual"
-    days = [d for d, _ in src]
-    median = int(statistics.median(days))
-    spread = (max(days) - min(days)) // 2 if len(days) > 1 else None
-    last_period = src[0][1]
-
-    # Next period end: three months on, rolled to month end.
-    m = last_period.month + 3
-    y = last_period.year + (m - 1) // 12
-    m = (m - 1) % 12 + 1
-    # The roll is "first of the FOLLOWING month, minus a day", so December has
-    # to cross the year: January of y+1, not January of y. Getting this wrong
-    # returned 30 November for every December period end, and December is the
-    # case that matters most — most of this roster has a December year end, and
-    # it is the annual report that carries the projection.
-    nxt = (datetime.date(y + 1, 1, 1) if m == 12
-           else datetime.date(y, m + 1, 1)) - datetime.timedelta(days=1)
-
-    if fy_month and nxt.month == fy_month and ann:
-        adays = [d for d, _ in ann]
-        median = int(statistics.median(adays))
-        spread = (max(adays) - min(adays)) // 2 if len(adays) > 1 else None
-        kind = "annual"
-
-    expected = nxt + datetime.timedelta(days=median)
-    while expected.weekday() >= 5:
-        expected += datetime.timedelta(days=1)
-
+    c = cadence(filings)
+    if c is None:
+        # NOT null. An absent projection is a MEASUREMENT — this issuer has
+        # not filed enough to project from — and CLAUDE.md is explicit that
+        # absence is reported with a COUNT AGAINST THE FLOOR rather than a
+        # bare gap: "a name in a list is an excuse; a count is a measurement".
+        #
+        # It also keeps every key present, so a consumer reading
+        # projection["expected"] gets None instead of raising on a null
+        # object. The shape is a strict superset of the old one, which is why
+        # this can ship without every reader being warned first.
+        return {
+            "available": False,
+            "reason": ("%d/%d quarterly and %d/%d annual filings"
+                       % (len(quarterly), MIN_QUARTERLY_FILINGS,
+                          len(annual), MIN_ANNUAL_FILINGS)),
+            "period_end": None, "expected": None, "kind": None,
+            "median_lag_days": None, "spread_days": None,
+            "sample": len(filings),
+            "fiscal_year_end_month": fiscal_year_end_month(annual),
+            "confidence": None,
+        }
+    lags = c["lags"]
+    spread = (max(lags) - min(lags)) // 2 if len(lags) > 1 else None
     return {
-        "period_end": nxt.isoformat(),
-        "expected": expected.isoformat(),
-        "kind": kind,
-        "median_lag_days": median,
+        "available": True,
+        "reason": None,
+        "period_end": c["period"].isoformat(),
+        "expected": c["expected"].isoformat(),
+        "kind": c["kind"],
+        "median_lag_days": c["lag"],
         "spread_days": spread,
-        "sample": len(src),
-        "fiscal_year_end_month": fy_month,
-        "confidence": "low" if (spread or 0) > 30 or len(src) < 2 else "normal",
+        "sample": c["sample"],
+        "fiscal_year_end_month": c["fy_month"],
+        # `degraded` joins the low-confidence condition rather than becoming a
+        # field: it means the lag came from the other pool, which is exactly
+        # what a consumer gating on confidence needs to know, and the file has
+        # no way to say it otherwise.
+        "confidence": ("low" if (spread or 0) > 30 or c["sample"] < 2
+                       or c["degraded"] else "normal"),
     }
+
+
+def diff_projections(out):
+    """Every projection this run would change, against the committed file.
+
+    THE ONLY WAY TO SEE THIS CHANGE BEFORE IT SHIPS. The `projection` block is
+    derived from the FULL filing history, which `latest_per_form()` does not
+    keep — it holds one entry per family. So the published file cannot be
+    replayed through `projection()` to predict a change: doing that hands
+    every issuer a single quarterly filing and answers a question about a
+    different population. That was tried on 2026-08-19 and reported all
+    twenty-two issuers changing to values none of them would ever have had.
+    """
+    try:
+        old = json.loads(OUT.read_text())["issuers"]
+    except (OSError, ValueError, KeyError):
+        return "\nNo committed snapshot.json to compare against."
+
+    def fmt(p):
+        if not p:
+            return "absent"
+        if p.get("available") is False:
+            return "no estimate (%s)" % p.get("reason")
+        return ("%s exp %s %s sample %s spread %s %s"
+                % (p["period_end"], p["expected"], p["kind"], p["sample"],
+                   p["spread_days"], p["confidence"]))
+
+    # COMPARED ON THE SHARED KEYS ONLY. Adding a field makes every dict
+    # unequal, so a plain == reported "22 of 22 would change" on a run where
+    # twenty of them held identical values — which is the kind of report that
+    # gets skimmed once and ignored after. New and dropped keys are named
+    # separately, because a shape change is a different fact from a value one.
+    added, dropped = set(), set()
+    lines, changed = [], 0
+    for t in sorted(out["issuers"]):
+        a = (old.get(t) or {}).get("projection") or {}
+        b = (out["issuers"][t] or {}).get("projection") or {}
+        added |= set(b) - set(a)
+        dropped |= set(a) - set(b)
+        shared = set(a) & set(b)
+        if bool(a) == bool(b) and all(a[k] == b[k] for k in shared):
+            continue
+        changed += 1
+        lines.append("  %-6s was  %s" % (t, fmt(a or None)))
+        lines.append("  %-6s now  %s" % ("", fmt(b or None)))
+    head = "\n%d of %d projection(s) change VALUE:" % (changed, len(out["issuers"]))
+    shape = ""
+    if added or dropped:
+        shape = ("\nshape: %d field(s) added %s, %d dropped %s"
+                 % (len(added), sorted(added), len(dropped), sorted(dropped)))
+    return head + ("\n" + "\n".join(lines) if lines else " none") + shape
 
 
 def main():
     out = {
         "generated": datetime.datetime.now(datetime.timezone.utc)
                       .replace(microsecond=0).isoformat(),
+        # A VERSION, because this file is read by another project and had no
+        # way to say its shape had changed. Raise it when a consumer would
+        # have to alter code, not when a value moves.
+        "schema": 1,
         "note": ("Restatement of what the EDGAR submissions index holds. The filing is "
                  "the source; this is an index to it. Fields under 'filings' are FILED "
                  "and cite an accession number that must be opened before use. Fields "
                  "under 'projection' are ESTIMATE, derived from this issuer's own "
-                 "filing lags, and carry their sample and spread."),
+                 "filing lags, over the sample stated in that block. "
+                 "'projection' ALWAYS carries the same keys. When the filing "
+                 "history is too thin to project from, 'available' is false, every "
+                 "estimate field is null, and 'reason' states the counts against the "
+                 "floors, e.g. '1/2 quarterly and 0/2 annual filings' - an absence "
+                 "reported as a measurement rather than a gap. An issuer whose fetch "
+                 "failed is different again: it carries 'error' and no 'projection' "
+                 "key. Neither means zero. "
+                 "'spread_days' is HALF the observed range of filing lags."),
         "issuers": {},
     }
     problems = []
@@ -285,6 +376,14 @@ def main():
         print("  %-5s %-42s %5d filings, latest %s"
               % (ticker, (data.get("name") or "")[:42], len(rows), latest))
         time.sleep(0.2)
+
+    if DRY_RUN:
+        print(diff_projections(out))
+        print("\nDRY RUN — %s not written. %d issuer(s), %d problem(s)."
+              % (OUT.name, len(out["issuers"]), len(problems)))
+        for p in problems:
+            print("  PROBLEM", p)
+        return
 
     OUT.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n")
     print("\nWrote %s: %d issuers, %d problem(s)"
