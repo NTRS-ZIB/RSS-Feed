@@ -130,6 +130,17 @@ reported the first one's failing check. The wrong answer looks exactly like a
 real measurement, which is the whole problem — read the mutated file back and
 clear the cache before running.
 
+**"No mutation reddened this check" and "this check cannot fail" are the same
+output and different findings.** A mutation sweep reports the checks nothing
+turned red. That means either the check is unfailable — the thing worth
+knowing — or the mutation for it is simply absent, which looks identical. Six
+checks were reported that way on 2026-08-18, hand-checking showed all six went
+red under their named change, and the conclusion drawn was that the harness was
+untrustworthy. It was not: a slice-based edit anchored on two labels had
+deleted the seven mutations sitting between them, and the sweep was reporting
+that accurately. **Print the mutation count**, so a list that quietly shrank is
+visible; the absence of a mutation is not evidence about the check.
+
 **Identifiers come from data a component actually reads, never from a filing.** A
 filing is a lead to verify. The failure modes are not symmetric: a missing
 identifier shows up as an unexplained gap, while a wrong one silently attributes
