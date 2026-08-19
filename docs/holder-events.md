@@ -155,6 +155,18 @@ line says so. Without it a component that ran the rule and one where it was
 never wired produce identical logs — which is what the first five dry runs
 looked like, all green and all silent.
 
+## A company this run could not reach is not established
+
+Nothing is wrong here today, and that is ORDERING rather than construction.
+The fetch-failure path records a company whose 13D/G were never read, and the
+next run then posts every one of them — 2026-08-14 exactly, arriving through
+a transient instead of a floor. `dilution` and `crossings` were both found
+genuinely wrong on 2026-08-18; this one was one bad SEC response away.
+
+`measured` is added inside the loop only after the submissions request
+succeeds, which is the whole distinction: an empty result means the company
+has no 13D/G, an exception means this run does not know.
+
 ## In the weekly digest
 
 A `holders` contributor at cadence `event`, so `weekly_digest.mk()` refuses any

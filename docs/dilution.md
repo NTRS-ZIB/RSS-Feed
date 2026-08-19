@@ -256,6 +256,25 @@ which number is read for a company; it creates no backlog of unseen items.
 Switching concept can move a company's figure, which is why the log names the
 concept used per company — see *Known quirks* below.
 
+## A company this run did not measure is not established
+
+Found 2026-08-18: `dilution_state.json` held 22 recorded CIKs against 18 share
+counts. ABTC, CRWV, GLXY and SPCX were recorded as established having never
+produced a count, because `baseline_by_cik` records the whole roster on the
+backfill run and the three `continue` paths above — a fetch fault, an untagged
+filer, a count withheld as stale or implausible — all leave the company with
+nothing.
+
+The untagged case is the one that bites, because it is not a fault and reads
+like a settled fact. A company that tags no share-count concept has nothing to
+suppress today; recorded anyway, its FIRST count on the day it starts tagging
+one compares against nothing and posts as a change, dated to the day the data
+became readable rather than to any filing.
+
+`measured_ciks()` is exactly the set `record()` writes, and
+`first_run.prune_unmeasured` drops the rest before either save. The four
+already wrong are repaired by the delete on the next saving run.
+
 ## Known quirks
 
 - **Silence is not stability.** A company that has not filed since its last

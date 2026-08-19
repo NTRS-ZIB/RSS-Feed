@@ -2539,6 +2539,28 @@ def main():
     # A company appearing for the first time posts nothing at all, press or
     # insider. This runs AFTER the marking above, so its items are recorded as
     # seen exactly like any other suppressed item and cannot return next run.
+    # THIS RECORDS A COMPANY THIS RUN MAY NEVER HAVE READ, and that is a
+    # KNOWN EXPOSURE rather than an oversight. `company_filings()` returns []
+    # on a fetch fault and `collect_all()` prints "no filings returned" and
+    # continues, so a genuinely quiet company and a failed request are the
+    # same value here — there is nothing to test. A roster addition landing on
+    # a run where that company's request fails is recorded as established, and
+    # its filings post on the next run.
+    #
+    # `dilution`, `crossings` and `holder_events` fixed the identical shape on
+    # 2026-08-18 by pruning unmeasured keys before saving. THAT FIX IS UNSAFE
+    # HERE, and the asymmetry is the reason: in those three the record and the
+    # suppression are separate, so withholding the record only defers. Here
+    # they are one lever — `blocked` below is derived from this return — and
+    # items were marked seen at the top of this block, so a prune would convert
+    # a bounded flood into permanent item loss. That trade is the wrong way
+    # round.
+    #
+    # WHAT BOUNDS IT: MAX_AGE_DAYS, to seven days of that company's items. The
+    # real fix is upstream — make `company_filings` distinguish a fault from an
+    # empty result — which is a change to the fetch path of the component that
+    # posts most, and belongs in its own session rather than bolted onto this
+    # one.
     new_companies, _suppressed = baseline_companies(
         state, EXTRA_CIKS, fresh + insider_fresh)
     if new_companies:

@@ -237,6 +237,90 @@ def per_component():
                              set(first_run.baseline({}, ["RIOT"]))) is True)
 
 
+def measured_only():
+    """A company the run never observed must not be recorded as established.
+
+    The rotation of the original bug. `baseline_by_cik` marks every roster
+    company established on the backfill run whether or not the component
+    produced the state its suppression rests on, so the record claims
+    something the run never measured. Verified on 2026-08-18: dilution held 22
+    CIKs against 18 share counts, crossings 22 against 21 armed flags.
+    """
+    print("\nPRUNE — a key the run did not measure is not established")
+    state = {"companies": {"C1": "d", "C2": "d", "C3": "d"}}
+    gone = first_run.prune_unmeasured(state, {"C1"}, {"C1", "C2", "C3"})
+    check("an unmeasured key is removed", gone == ["C2", "C3"])
+    check("a measured key is kept", set(state["companies"]) == {"C1"})
+
+    # A company REMOVED from the watchlist is outside the roster, and its
+    # record must survive — otherwise re-adding it later floods.
+    state = {"companies": {"C1": "d", "OLD": "d"}}
+    first_run.prune_unmeasured(state, {"C1"}, {"C1"})
+    check("a key outside the roster is never touched", "OLD" in state["companies"],
+          "a departed company keeps its record, so a re-add cannot flood")
+
+    # A total outage measured nothing, and so knows nothing about the record.
+    state = {"companies": {"C1": "d", "C2": "d"}}
+    check("an empty measured set prunes NOTHING",
+          first_run.prune_unmeasured(state, set(), {"C1", "C2"}) == []
+          and len(state["companies"]) == 2,
+          "or one bad run un-establishes the whole roster and the next floods")
+
+    state = {"companies": {"C1": "d"}}
+    first_run.prune_unmeasured(state, {"C2"}, {"C1", "C2"})
+    check("the namespace SURVIVES pruning every key",
+          state.get("companies") == {},
+          "absent means backfill; a pruned-empty namespace must not read as one")
+
+    state = {}
+    check("an absent namespace is not created by pruning",
+          first_run.prune_unmeasured(state, {"C1"}, {"C1"}) == []
+          and "companies" not in state)
+
+    print("\nWHAT EACH COMPONENT COUNTS AS MEASURED")
+    roster = {"AAA": ("0001", "A Co"), "BBB": ("0002", "B Co")}
+    rows = [{"ticker": "AAA", "m": {}, "concept": "x"}]
+    check("dilution counts only tickers that produced a share count",
+          dilution.measured_ciks(rows, roster) == {"0001"},
+          "the untagged, withheld and failed paths all leave no count")
+    check("and returns CIKs, because the record is CIK-keyed",
+          all(c.startswith("000") for c in dilution.measured_ciks(rows, roster)))
+
+    # Calls the module. Recomputing the arithmetic here instead would pin
+    # the test against itself, and no change to crossings.py could fail it.
+    measured = crossings.measured_tickers(["AAA", "BBB", "CCC"],
+                                          [("BBB", 46)], ["CCC"])
+    check("crossings excludes a ticker below MIN_BARS", "BBB" not in measured,
+          "SPCX at 46 of 60 was recorded anyway on 2026-08-14")
+    check("crossings excludes a ticker with no usable data",
+          "CCC" not in measured)
+    check("crossings keeps a ticker that reached setdefault",
+          measured == {"AAA"})
+
+    print("\nTHE WIRING, WHICH IS WHERE IT GOES SILENT")
+    for mod, save in ((dilution, "save_state(state)"),
+                      (crossings, "save_state(state)"),
+                      (holder_events, "save_state(state)")):
+        src = inspect.getsource(mod.main)
+        check(f"{mod.__name__} prunes before it saves",
+              "prune_unmeasured(" in src
+              and src.index("prune_unmeasured(") < src.index(save),
+              "pruning after the write records the unmeasured company anyway")
+        # summary() must print AFTER the prune, or it names a company every
+        # run until it is measured — fourteen sessions of it, for SPCX.
+        check(f"{mod.__name__} narrows the summary to measured",
+              "newly_watched &= measured" in src,
+              "or the line built to be read once is printed daily")
+
+    # press_monitor deliberately does NOT prune. Pin the decision so the
+    # absence reads as a choice rather than the omission it looks like.
+    src = inspect.getsource(press_monitor.main)
+    check("press_monitor does NOT prune, deliberately",
+          "prune_unmeasured(" not in src
+          and "KNOWN EXPOSURE" in src,
+          "record and suppression are one lever there; a prune loses items")
+
+
 def capability_axis():
     """The other axis: a form type tracked for the first time.
 
@@ -500,6 +584,7 @@ def main():
 
     per_component()
     capability_axis()
+    measured_only()
     wiring()
 
     bad = sum(1 for r, _ in results if r == FAIL)

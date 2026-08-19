@@ -150,6 +150,63 @@ def newly_tracked(value, new_keys, old_keys, matches):
     return None
 
 
+def prune_unmeasured(state, measured, roster, namespace="companies"):
+    """Drop recorded keys this run did not measure. Returns them, sorted.
+
+    RECORDING A COMPANY THE RUN NEVER OBSERVED IS THE SAME BUG AS NOT
+    RECORDING ONE, ROTATED. `baseline_by_cik` marks every roster company
+    established on the run the namespace is absent, whether or not the
+    component produced the per-company state its suppression rests on. Measured
+    2026-08-18, four days after the rule landed: `dilution_state.json` held 22
+    CIKs against 18 share counts — ABTC, CRWV, GLXY and SPCX recorded and never
+    measured — and `crossings_state.json` held 22 against 21 armed flags.
+
+    What that costs is not theoretical and has a date. SPCX was at **46 of
+    MIN_BARS=60 sessions** and already recorded, so on the run it clears the
+    floor `state.setdefault` creates it ARMED — `initial_flags` disarms only a
+    ticker in `newly_watched`, and SPCX is no longer in it. It would then fire
+    "above its 52-week high" for a crossing the component never watched, which
+    is the exact assertion `initial_flags` exists to refuse.
+
+    PRUNING RATHER THAN RECORDING LATE, for two reasons. Both callers consume
+    `newly_watched` INSIDE their per-company loop while the measured set only
+    exists after it, so recording late means splitting `baseline` into a read
+    half and a write half at every call site — duplicating the absent-versus-
+    empty asymmetry that is the easiest thing here to get wrong. And `baseline`
+    is append-only, so narrowing what it writes from now on would leave the
+    four already-wrong records in place for ever; a delete repairs them on the
+    next saving run, without hand-editing an output file.
+
+    THREE PROPERTIES ARE LOAD-BEARING:
+
+    - It never removes the namespace itself. Absent still means backfill, so a
+      run that pruned everything must not read as the rule having never landed.
+    - It never touches a key outside `roster`. A company REMOVED from the
+      watchlist keeps its record, so re-adding it later does not flood.
+    - An empty `measured` prunes nothing. A run that measured nothing has
+      measured nothing about the record either, and a total outage must not
+      quietly un-establish the whole roster.
+
+    STARVATION IS NOT POSSIBLE, and structurally rather than by mitigation: in
+    both callers the suppression is only REACHABLE for a company that was
+    measured — `is_change` is called only for tickers in `rows`, `initial_flags`
+    only through `setdefault`. A company that legitimately never produces the
+    state is never suppressed, because there is nothing to suppress. It carries
+    no record until the day it is measured, and on that day exactly one first
+    observation is withheld and the record is written in the same run.
+
+    `measured` and `roster` are both key sets in the namespace's own units,
+    which for `companies` means CIKs and not tickers.
+    """
+    known = state.get(namespace)
+    if not measured or known is None:
+        return []
+    gone = sorted(k for k in roster if k in known and k not in measured)
+    for k in gone:
+        del known[k]
+    return gone
+
+
 def backfilled(state, namespace="companies"):
     """Will the NEXT baseline() call be the backfill run? Ask before calling.
 
