@@ -128,3 +128,18 @@ jobs:
         run: python -u test_loop_verdict.py
       - name: loop_approval
         run: python -u test_loop_approval.py
+      # NOT A SUITE, and it is here for the reason the corpus exists at all.
+      # probe_cadence_corpus.py compares the cadence rule before and after a
+      # change, and its result is worth nothing if the grid cannot reach the
+      # branch that moved: the first version of it reported no differences
+      # over 3,382 cases while entering the two branches most likely to move
+      # zero times. `--branches` runs the grid and asserts coverage without
+      # comparing anything, so the guard that makes the corpus meaningful is
+      # itself checked rather than taken on trust. Offline and under a second.
+      #
+      # IT CAN GO RED ON A CORRECT CHANGE, and that is the signal rather than
+      # a false alarm: a change that makes one of the seventeen branches
+      # unreachable is one the corpus can no longer measure. Reach for
+      # BRANCHES and the module docstring, not for deleting this step.
+      - name: cadence corpus reaches every branch it claims
+        run: python -u probe_cadence_corpus.py --branches

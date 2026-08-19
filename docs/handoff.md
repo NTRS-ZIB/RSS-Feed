@@ -83,20 +83,12 @@ upstream** — make `company_filings` distinguish a fault from an empty result
 — and belongs in its own session. Reasoning is at the `baseline_companies`
 call site.
 
-**3. The characterisation corpus lives in scratch and will vanish.** It is
-what proved `earnings_calendar` unchanged across 2,570 cases, and the next
-person to touch `project()` or `cadence()` will want it. It needs
-`earnings_calendar`, so it cannot be a stdlib-only suite; committing it as
-`probe_cadence_corpus.py` alongside the other probes is the obvious home.
-**It asserts branch coverage and fails if a branch is never reached** — keep
-that if it is moved, it is the only reason the result means anything.
-
-**4. `degraded` has no field in the wire format.** It folds into
+**3. `degraded` has no field in the wire format.** It folds into
 `confidence: "low"`. A consumer cannot distinguish "annual date, quarterly
 lag" the way the Discord post's `?` marker does. Cheap to add if anyone wants
 it; nobody has asked.
 
-**5. There is no `docs/snapshot.md`.** Every other component has a doc; the
+**4. There is no `docs/snapshot.md`.** Every other component has a doc; the
 one with an external consumer does not. The `note` inside the file is
 currently the whole contract.
 
@@ -120,6 +112,15 @@ frequency of item 2 above is unknown — only its cost.
 mutation count, which exists because a slice-based edit silently deleted
 seven of them once and the resulting "never red" report was misread as a tool
 fault. If you re-run one and the count has dropped, that is the reason.
+
+**The characterisation corpus no longer does.** It is committed as
+[`probe_cadence_corpus.py`](../probe_cadence_corpus.py), rewritten to cover
+`cadence()` and BOTH presentations rather than `project()` alone, and it
+compares the working tree against any git ref. Its two "this measured
+nothing" guards were each demonstrated by making them fire, and `tests.yml`
+runs `--branches` on every push so the coverage assertion is itself checked.
+Nothing was done about the three unreachable branches it names; they are
+defensive and listed in its docstring.
 
 ---
 

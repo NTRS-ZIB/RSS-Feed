@@ -93,6 +93,7 @@ probe_form_144.py                 maintenance: does Form 144 precede the Form 4
 probe_premarket.py                maintenance: is a missing premarket the feed, request or venue
 probe_spike_norm.py               maintenance: reproduce the spike normalisation gain
 probe_undated_items.py            maintenance: date material each IR source offers
+probe_cadence_corpus.py           maintenance: what a change to the cadence rule moves
 loop_state.py                     loop harness: the state file, one writer
 loop_approval.py                  loop harness: has this irreversible action been authorised
 loop_verdict.py                   loop harness: validate a gate verdict, trusting none of it
