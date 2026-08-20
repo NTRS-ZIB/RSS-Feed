@@ -79,15 +79,23 @@ a future change the same way:
 gh workflow run "Build snapshot" -f dry_run=true
 ```
 
-**The equity research project still has not been told, and the change is now
-LIVE.** The shape is a strict superset, so nothing it reads has disappeared and
-`projection["expected"]` returns `null` rather than raising. But `confidence`
-became stricter this morning for CLSK and WYFI, so a consumer gating on that
-field changed behaviour without being told. There is now a contract to point it
-at: [`snapshot.md`](snapshot.md), written 2026-08-20 and the first contract
-this file has had outside its own payload, plus `schema: 1` and the `note`.
-**This is the only outstanding item that needs a person rather than a
-commit.**
+**Nobody needed to be told, because nothing reads it.** This was carried as an
+open item for two days on the strength of a claim nine files in this repo
+asserted and none had checked. `equity-research` carries `Get-Snapshot`, a
+complete reader guarding stale, future-dated and empty files, which takes a
+mandatory path that **nothing supplies**; that project has tracked the gap as
+open ledger item 4.18 since 2026-08-11 and states it in its own halt-condition
+list. Verified 2026-08-20: no fetch code, no `snapshot*.json` on disk there.
+
+So the `confidence` change and the new null `expected` on SPCX broke nothing.
+The claim is corrected in all nine places and the framing is now "intended
+consumer, written and not yet wired".
+
+**The two projects are coupled, just not here.** `equity-research` imports
+`watchlist.py` and `press_monitor.py` from a sibling working copy on disk, and
+refuses to run if it is absent. That is the live cross-project dependency and
+it is more fragile than a file, because it needs both repos checked out at
+fixed paths. Nothing in this repo mentions it.
 
 ---
 

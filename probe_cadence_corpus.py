@@ -4,8 +4,9 @@
 WHAT IT MEASURES, AND WHY IT IS NOT A SUITE
 `filing_cadence.cadence()` is the decision; `earnings_calendar.project()` and
 `build_snapshot.projection()` are its two presentations. One reaches Discord,
-the other reaches `snapshot.json`, a wire format another project reads every
-weekday. `test_filing_cadence.py` and `test_build_snapshot.py` say what those
+the other reaches `snapshot.json`, a wire format published to a public
+repository every weekday and awaiting a consumer that is written but not yet
+wired. `test_filing_cadence.py` and `test_build_snapshot.py` say what those
 three SHOULD do on the cases somebody thought of. This says what they DO do,
 over 7,700 generated ones, so that a change to any of them is measured before
 it ships rather than after.

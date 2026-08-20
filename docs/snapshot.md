@@ -2,10 +2,26 @@
 
 # snapshot.json
 
-The one component that publishes a **file** rather than a Discord post, and the
-one with a consumer outside this repository. Everything else here can be
-changed by reading its own doc; this cannot, because another project reads it
-every weekday and nothing in that project is visible from here.
+The one component that publishes a **file** rather than a Discord post.
+
+**Its consumer is not wired yet, and that is worth stating plainly**, because
+this repository asserted the opposite in nine places until 2026-08-20. The
+sibling `equity-research` project is the intended reader and carries a complete
+instrument for it, `Get-Snapshot`, which guards stale, future-dated and empty
+files. It takes a mandatory path and **nothing supplies one**; that project has
+tracked the gap as open ledger item 4.18 since 2026-08-11 and says so in its
+own halt-condition list.
+
+**Treat this as a wire format anyway.** It is committed to a public repository,
+rewritten every weekday, fetchable anonymously over `raw.githubusercontent.com`
+right now, and the reader on the other side is already written and tested. The
+contract also travels inside the payload as a `note` field, because a doc here
+is not something a consumer can see.
+
+The two projects ARE coupled today, just not through this file: `equity-research`
+imports `watchlist.py` and `press_monitor.py` from a sibling working copy on
+disk. That is a live dependency and a more fragile one, since it needs both
+repositories checked out at fixed paths.
 
 Written by [`build_snapshot.py`](../build_snapshot.py), committed to the repo
 root by `snapshot.yml`.

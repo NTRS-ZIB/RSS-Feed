@@ -1,8 +1,11 @@
 name: Build snapshot
 
 # Writes snapshot.json: a dated restatement of what each watched issuer's EDGAR
-# submissions index holds. Consumed by the equity research project as an index to
-# the filings, not as a substitute for reading them.
+# submissions index holds. Written for the sibling equity-research project as an
+# index to the filings, never as a substitute for reading them. NOT YET WIRED:
+# that project's reader takes a mandatory path and nothing supplies one, so the
+# file currently has no live consumer. It is public and rewritten daily, so it
+# is still a contract.
 
 on:
   schedule:

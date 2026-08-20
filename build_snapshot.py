@@ -92,9 +92,9 @@ for problem in watchlist.validate():
 # form IREN or DGXX would file — so matching the family is right here too.
 #
 # The output keys are a different question, and the two files have different
-# obligations: press_monitor decides what to post, this one is a wire format
-# another project reads. Collapsing the four into a single "NT " key would break
-# a downstream index silently, which is the failure this file exists to avoid.
+# obligations: press_monitor decides what to post, this one is a published wire
+# format. Collapsing the four into a single "NT " key would break a downstream
+# index silently, which is the failure this file exists to avoid.
 # So the family is matched, and each member is emitted under its own key with its
 # own count, exactly as before.
 FORMS = ["8-K", "6-K", "10-Q", "10-K", "20-F", "40-F", "S-1", "S-3", "424",
@@ -358,9 +358,14 @@ def main():
     out = {
         "generated": datetime.datetime.now(datetime.timezone.utc)
                       .replace(microsecond=0).isoformat(),
-        # A VERSION, because this file is read by another project and had no
-        # way to say its shape had changed. Raise it when a consumer would
-        # have to alter code, not when a value moves.
+        # A VERSION, because this file is published for another project and
+        # had no way to say its shape had changed. Raise it when a consumer
+        # would have to alter code, not when a value moves.
+        #
+        # No consumer reads it yet: equity-research's `Get-Snapshot` is written
+        # and tested and has never been given a file. The version is still
+        # worth carrying, because the point of it is to be there BEFORE the
+        # first consumer rather than after.
         "schema": 1,
         "note": ("Restatement of what the EDGAR submissions index holds. The filing is "
                  "the source; this is an index to it. Fields under 'filings' are FILED "

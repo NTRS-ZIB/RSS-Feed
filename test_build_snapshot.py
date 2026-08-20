@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Tests for build_snapshot's projection arithmetic. No network.
 
-`snapshot.json` is a WIRE FORMAT another project reads, rebuilt and pushed
-every weekday, and until 2026-08-19 this module had no suite at all. Two of
+`snapshot.json` is a WIRE FORMAT rebuilt and pushed to a public repository
+every weekday, and until 2026-08-19 this module had no suite at all. Its
+intended consumer is written and not yet wired, which is a reason to keep the
+suite rather than to relax it: nothing downstream would report a wrong value. Two of
 its published values were wrong and neither errored: BTDR, a 20-F filer with
 a December year end, carried `period_end 2026-03-31` — a period it never
 reports on — with an `expected` date already a month in the past; and SPCX

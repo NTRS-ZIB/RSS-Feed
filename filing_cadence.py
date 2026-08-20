@@ -18,8 +18,13 @@ implementations giving DIFFERENT ANSWERS about the same companies, every day:
            10-K has landed and its Q1 10-Q has not. APLD only showed early
            because its fiscal year ends in May.
 
-None of the three errored. `snapshot.json` is a wire format another project
-reads every weekday, and it had no test suite at all.
+None of the three errored. `snapshot.json` is a wire format published to a
+public repository every weekday, and it had no test suite at all.
+
+Its intended consumer turned out never to have been wired, so those three
+defects cost nothing downstream. That is luck rather than margin: the file is
+public, the reader on the other side is already written, and a wrong published
+value announces itself in no way at all.
 
 WHAT IS SHARED AND WHAT IS NOT
 Only the DECISION is here — which period comes next, when it is expected, and

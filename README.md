@@ -44,11 +44,15 @@ twice a month well after the fact. Each post carries its own timing in the
 footer, because a stale figure read as a live one is the easiest mistake this
 channel invites.
 
-**One consumer is outside this repository.**
-[`snapshot.json`](docs/snapshot.md) is a file rather than a Discord post,
-rebuilt every weekday and read by a separate equity research project. It is the
-one output that cannot be changed by reading its own doc, so the contract also
-travels inside the payload as a `note` field. Read
+**One output is a file, and its consumer is not wired yet.**
+[`snapshot.json`](docs/snapshot.md) is committed every weekday rather than
+posted. The sibling `equity-research` project is its intended reader and
+carries a complete instrument for it, `Get-Snapshot`, which guards stale,
+future-dated and empty files and **has never had a file to read**; that project
+tracks the gap as open ledger item 4.18. So treat this as a wire format
+regardless: it is public, it is rewritten daily, and the reader on the other
+side is already written. The contract also travels inside the payload as a
+`note` field, because a doc here is not something a consumer can see. Read
 [`docs/snapshot.md`](docs/snapshot.md) before changing anything under
 `projection`.
 
