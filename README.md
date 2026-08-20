@@ -44,6 +44,14 @@ twice a month well after the fact. Each post carries its own timing in the
 footer, because a stale figure read as a live one is the easiest mistake this
 channel invites.
 
+**One consumer is outside this repository.**
+[`snapshot.json`](docs/snapshot.md) is a file rather than a Discord post,
+rebuilt every weekday and read by a separate equity research project. It is the
+one output that cannot be changed by reading its own doc, so the contract also
+travels inside the payload as a `note` field. Read
+[`docs/snapshot.md`](docs/snapshot.md) before changing anything under
+`projection`.
+
 **What was tried and rejected is recorded too.**
 [`docs/rejected.md`](docs/rejected.md) carries the ideas that were measured and
 closed, with the numbers that closed them. Check it before probing something —

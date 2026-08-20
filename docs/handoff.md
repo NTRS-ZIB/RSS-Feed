@@ -1,10 +1,14 @@
 [← Watchlist monitor](../README.md)
 
-# Handoff, 2026-08-19
+# Handoff, 2026-08-20
 
-Where the repo stands after the first-run and filing-cadence work, what is
-genuinely finished, what is **merged but not yet observed**, and what to pick
-up next. **A point-in-time document: replace it rather than append to it.**
+Where the repo stands after the first-run and filing-cadence work: what is
+finished and confirmed running, what is outstanding, and what is deliberately
+unproven. **A point-in-time document: replace it rather than append to it.**
+
+It has been amended in place five times rather than replaced, which is the
+thing it warns against, so treat the structure as drifting even where the
+facts are current.
 
 Everything below is on `main`. Working tree clean, Tests green, no branches
 open.
@@ -28,16 +32,17 @@ first alone lost real events permanently and is written up in `first_run.py`.
 
 ---
 
-## Merged, NOT yet observed
+## Merged, and CONFIRMED on 2026-08-20
 
-**`snapshot.json` has not been rebuilt since the merge.** The committed file
-was generated `2026-08-19T11:16:36Z`, before it landed, so it still carries
-the old values and no `schema` key. The first write is the next weekday
-**11:00 UTC** run.
+**`snapshot.json` was rebuilt at 11:18 UTC and every prediction matched.** The
+committed file now carries `schema: 1`, the `available` and `reason` fields,
+and the corrected projections. `confidence: "low"` is BTDR, CLSK and WYFI,
+which is the same three the calendar marks `~`: the two outputs agree on a
+published file for the first time.
 
-What that run will do, measured by dry run against live SEC data:
+What that run did, against the dry-run prediction made the day before:
 
-| | was | will be |
+| | was | now published |
 |---|---|---|
 | APLD | `2026-05-31`, expected `2026-08-03` | `2026-08-31`, expected `2026-10-12` |
 | BTDR | `2026-03-31`, expected `2026-07-20`, `spread 57`, `sample 5` | `2026-12-31`, expected `2027-04-26`, **`spread 16`**, **`sample 4`** |
@@ -46,6 +51,9 @@ What that run will do, measured by dry run against live SEC data:
 | CLSK | `spread 25`, `normal` | `spread 25`, **`low`** |
 | WYFI | `spread 18`, `normal` | `spread 18`, **`low`** |
 | all 22 | — | two fields added: `available`, `reason` |
+
+Every row above is confirmed against the published file. Nothing in the
+prediction missed.
 
 **Three separate changes are stacked in that one write**, which is worth
 untangling before reading the table as one thing.
@@ -63,19 +71,23 @@ untangling before reading the table as one thing.
 
 BTDR is the only issuer touched by more than one of the three.
 
-**Check that run.** It is the only thing that confirms the change reached the
-consumer, and `build_snapshot` now takes `DRY_RUN` if you want to preview
-again first:
+**That run was the only thing that could confirm the change reached the
+consumer, and it has.** `build_snapshot` takes `DRY_RUN` if you want to preview
+a future change the same way:
 
 ```bash
 gh workflow run "Build snapshot" -f dry_run=true
 ```
 
-**The equity research project has not been told.** It does not strictly need
-to be — the published shape is a strict superset, so every key it reads is
-still present and `projection["expected"]` returns `null` rather than raising
-— but `schema: 1` and the rewritten `note` exist so it can be pointed at
-them.
+**The equity research project still has not been told, and the change is now
+LIVE.** The shape is a strict superset, so nothing it reads has disappeared and
+`projection["expected"]` returns `null` rather than raising. But `confidence`
+became stricter this morning for CLSK and WYFI, so a consumer gating on that
+field changed behaviour without being told. There is now a contract to point it
+at: [`snapshot.md`](snapshot.md), written 2026-08-20 and the first contract
+this file has had outside its own payload, plus `schema: 1` and the `note`.
+**This is the only outstanding item that needs a person rather than a
+commit.**
 
 ---
 
@@ -108,10 +120,6 @@ width by a flat `+2`, written up in
 left is not an estimator question: pick a target and the rule follows
 (`floor+1` gives 83.8%, `floor+2` gives 89.5%). That is a decision about what
 `±` promises a reader.
-
-**4. There is no `docs/snapshot.md`.** Every other component has a doc; the
-one with an external consumer does not. The `note` inside the file is
-currently the whole contract.
 
 ---
 
