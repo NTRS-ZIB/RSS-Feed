@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-19T11:16:36+00:00",
+  "generated": "2026-08-20T11:18:14+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -140,12 +140,14 @@
       "latest_filing_date": "2026-08-07",
       "name": "American Bitcoin Corp.",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-11-13",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 44,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 8,
         "spread_days": 5
       }
@@ -293,12 +295,14 @@
       "latest_filing_date": "2026-08-14",
       "name": "Sphere 3D Corp.",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-11-13",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 44,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 8,
         "spread_days": 5
       }
@@ -443,14 +447,16 @@
       "latest_filing_date": "2026-08-06",
       "name": "Applied Digital Corp.",
       "projection": {
+        "available": true,
         "confidence": "normal",
-        "expected": "2026-08-03",
+        "expected": "2026-10-12",
         "fiscal_year_end_month": 5,
-        "kind": "annual",
-        "median_lag_days": 63,
-        "period_end": "2026-05-31",
+        "kind": "quarterly",
+        "median_lag_days": 40,
+        "period_end": "2026-08-31",
+        "reason": null,
         "sample": 8,
-        "spread_days": 16
+        "spread_days": 4
       }
     },
     "BGDE": {
@@ -578,19 +584,21 @@
       "latest_filing_date": "2026-08-18",
       "name": "Big Digital Energy, Inc.",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-11-16",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 45,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 8,
         "spread_days": 3
       }
     },
     "BKKT": {
       "cik": "0001820302",
-      "filing_count": 759,
+      "filing_count": 760,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019870",
@@ -618,12 +626,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1820302/000209950025000001/xslF345X02/primary_doc.xml"
         },
         "4": {
-          "accession": "0001628280-26-048610",
-          "count": 237,
-          "filed": "2026-07-17",
+          "accession": "0001628280-26-057900",
+          "count": 238,
+          "filed": "2026-08-19",
           "form": "4",
-          "period": "2026-07-15",
-          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026048610/xslF345X06/wk-form4_1784309188.xml"
+          "period": "2026-08-18",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026057900/xslF345X06/wk-form4_1787163725.xml"
         },
         "40-F": null,
         "424": {
@@ -722,15 +730,17 @@
         "Bakkt Holdings, Inc.",
         "VPC Impact Acquisition Holdings"
       ],
-      "latest_filing_date": "2026-08-17",
+      "latest_filing_date": "2026-08-19",
       "name": "Bakkt, Inc.",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-11-11",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 42,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 8,
         "spread_days": 2
       }
@@ -827,14 +837,16 @@
       "latest_filing_date": "2026-08-17",
       "name": "Bitdeer Technologies Group",
       "projection": {
+        "available": true,
         "confidence": "low",
-        "expected": "2026-07-20",
+        "expected": "2027-04-26",
         "fiscal_year_end_month": 12,
         "kind": "annual",
-        "median_lag_days": 111,
-        "period_end": "2026-03-31",
-        "sample": 5,
-        "spread_days": 57
+        "median_lag_days": 114,
+        "period_end": "2026-12-31",
+        "reason": null,
+        "sample": 4,
+        "spread_days": 16
       }
     },
     "CIFR": {
@@ -960,12 +972,14 @@
       "latest_filing_date": "2026-08-13",
       "name": "Cipher Digital Inc.",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-11-04",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 35,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 8,
         "spread_days": 6
       }
@@ -1093,19 +1107,21 @@
       "latest_filing_date": "2026-08-14",
       "name": "CLEANSPARK, INC.",
       "projection": {
-        "confidence": "normal",
+        "available": true,
+        "confidence": "low",
         "expected": "2026-12-14",
         "fiscal_year_end_month": 9,
         "kind": "annual",
         "median_lag_days": 75,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 8,
         "spread_days": 25
       }
     },
     "CORZ": {
       "cik": "0001839341",
-      "filing_count": 657,
+      "filing_count": 658,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019505",
@@ -1133,12 +1149,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003445/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0000905148-26-003595",
-          "count": 149,
-          "filed": "2026-08-12",
+          "accession": "0000905148-26-003814",
+          "count": 150,
+          "filed": "2026-08-19",
           "form": "4",
-          "period": "2026-08-10",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003595/xslF345X06/form4.xml"
+          "period": "2026-08-17",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003814/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1229,22 +1245,24 @@
       "former_names": [
         "Power & Digital Infrastructure Acquisition Corp."
       ],
-      "latest_filing_date": "2026-08-14",
+      "latest_filing_date": "2026-08-19",
       "name": "Core Scientific, Inc./tx",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-11-06",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 37,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 8,
         "spread_days": 7
       }
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1066,
+      "filing_count": 1070,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1272,12 +1290,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000155/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0001104659-26-098473",
-          "count": 440,
-          "filed": "2026-08-18",
-          "form": "4/A",
-          "period": "2026-08-14",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000110465926098473/xslF345X06/tm2623554-1_4aseq1.xml"
+          "accession": "0001769628-26-000389",
+          "count": 444,
+          "filed": "2026-08-19",
+          "form": "4",
+          "period": "2026-08-17",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000389/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1347,15 +1365,17 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-08-18",
+      "latest_filing_date": "2026-08-19",
       "name": "CoreWeave, Inc.",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-11-13",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 44,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 5,
         "spread_days": 3
       }
@@ -1482,12 +1502,14 @@
       "latest_filing_date": "2026-08-14",
       "name": "Digi Power X Inc.",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-11-16",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 45,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 2,
         "spread_days": 0
       }
@@ -1593,12 +1615,14 @@
       "latest_filing_date": "2026-08-18",
       "name": "Galaxy Digital Inc.",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-11-10",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 41,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 5,
         "spread_days": 3
       }
@@ -1716,12 +1740,14 @@
       "latest_filing_date": "2026-08-04",
       "name": "Hut 8 Corp.",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-11-09",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 38,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 8,
         "spread_days": 5
       }
@@ -1842,19 +1868,21 @@
       "latest_filing_date": "2026-08-18",
       "name": "IREN Ltd",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-09-07",
         "fiscal_year_end_month": 6,
         "kind": "annual",
         "median_lag_days": 67,
         "period_end": "2026-06-30",
-        "sample": 3,
+        "reason": null,
+        "sample": 4,
         "spread_days": 8
       }
     },
     "MARA": {
       "cik": "0001507605",
-      "filing_count": 1102,
+      "filing_count": 1104,
       "filings": {
         "10-K": {
           "accession": "0001507605-26-000007",
@@ -1882,12 +1910,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1507605/000149315226036934/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001493152-26-036065",
-          "count": 298,
-          "filed": "2026-08-04",
+          "accession": "0001493152-26-039284",
+          "count": 300,
+          "filed": "2026-08-19",
           "form": "4",
-          "period": "2026-07-31",
-          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000149315226036065/xslF345X06/ownership.xml"
+          "period": "2026-08-17",
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000149315226039284/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -1981,15 +2009,17 @@
         "American Strategic Minerals Corp",
         "VERVE VENTURES INC"
       ],
-      "latest_filing_date": "2026-08-17",
+      "latest_filing_date": "2026-08-19",
       "name": "MARA Holdings, Inc.",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-11-06",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 37,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 8,
         "spread_days": 7
       }
@@ -2103,12 +2133,14 @@
       "latest_filing_date": "2026-08-17",
       "name": "New ERA Energy & Digital, Inc.",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-11-16",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 45,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 5,
         "spread_days": 0
       }
@@ -2253,19 +2285,21 @@
       "latest_filing_date": "2026-08-14",
       "name": "Riot Platforms, Inc.",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-11-02",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 31,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 8,
         "spread_days": 5
       }
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1553,
+      "filing_count": 1554,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2382,15 +2416,17 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-08-18",
+      "latest_filing_date": "2026-08-19",
       "name": "Soluna Holdings, Inc",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-11-16",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 45,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 8,
         "spread_days": 0
       }
@@ -2473,12 +2509,14 @@
       "latest_filing_date": "2026-08-14",
       "name": "SPACE EXPLORATION TECHNOLOGIES CORP",
       "projection": {
-        "confidence": "low",
-        "expected": "2026-11-04",
+        "available": false,
+        "confidence": null,
+        "expected": null,
         "fiscal_year_end_month": null,
-        "kind": "quarterly",
-        "median_lag_days": 35,
-        "period_end": "2026-09-30",
+        "kind": null,
+        "median_lag_days": null,
+        "period_end": null,
+        "reason": "1/2 quarterly and 0/2 annual filings",
         "sample": 1,
         "spread_days": null
       }
@@ -2605,12 +2643,14 @@
       "latest_filing_date": "2026-08-17",
       "name": "Vulcan Infrastructure & Power Inc.",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-11-16",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 45,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 8,
         "spread_days": 3
       }
@@ -2738,12 +2778,14 @@
       "latest_filing_date": "2026-08-17",
       "name": "TERAWULF INC.",
       "projection": {
+        "available": true,
         "confidence": "normal",
         "expected": "2026-11-09",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 40,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 8,
         "spread_days": 4
       }
@@ -2835,16 +2877,19 @@
       "latest_filing_date": "2026-08-17",
       "name": "WhiteFiber, Inc.",
       "projection": {
-        "confidence": "normal",
+        "available": true,
+        "confidence": "low",
         "expected": "2026-11-13",
         "fiscal_year_end_month": 12,
         "kind": "quarterly",
         "median_lag_days": 44,
         "period_end": "2026-09-30",
+        "reason": null,
         "sample": 4,
         "spread_days": 18
       }
     }
   },
-  "note": "Restatement of what the EDGAR submissions index holds. The filing is the source; this is an index to it. Fields under 'filings' are FILED and cite an accession number that must be opened before use. Fields under 'projection' are ESTIMATE, derived from this issuer's own filing lags, and carry their sample and spread."
+  "note": "Restatement of what the EDGAR submissions index holds. The filing is the source; this is an index to it. Fields under 'filings' are FILED and cite an accession number that must be opened before use. Fields under 'projection' are ESTIMATE, derived from this issuer's own filing lags, over the sample stated in that block. 'projection' ALWAYS carries the same keys. When the filing history is too thin to project from, 'available' is false, every estimate field is null, and 'reason' states the counts against the floors, e.g. '1/2 quarterly and 0/2 annual filings' - an absence reported as a measurement rather than a gap. An issuer whose fetch failed is different again: it carries 'error' and no 'projection' key. Neither means zero. 'spread_days' is HALF the observed range of filing lags. 'confidence' is 'low' when that RANGE exceeds 30 days, when the sample is under 2, or when the lag had to be taken from the other filing family for want of observations in this one. Before 2026-08-19 the range test compared 30 against the halved figure instead, an effective threshold of 60 days, so some issuers previously published 'normal' now read 'low' on unchanged filing history.",
+  "schema": 1
 }
