@@ -195,3 +195,43 @@ unmapped secret reads as an empty string, which most of these scripts treat as
 Any component that reads sec.gov needs `SEC_USER_AGENT` in its own workflow's
 `env:` block — mapping it once does not cover the others. `ftd.yml` includes
 it.
+
+## Backups
+
+A scheduled task, **Claude Backup - Infra Monitor**, runs
+[`scripts/backup.mjs`](scripts/backup.mjs) daily at 12:30. It refreshes
+`backup/local/` from the project's local-only files, mirrors `backup/` to
+`B:\Claude Backup\Infra Monitor`, and verifies every copy by comparing SHA-256
+hashes on both sides rather than trusting the copy.
+
+**What it protects is narrow on purpose.** Everything tracked here is already on
+GitHub, so the backup covers only what a fresh clone would not bring back: the
+local git plumbing that [`docs/local-workflow.md`](docs/local-workflow.md) says
+must otherwise be rebuilt by hand, namely the `pre-commit` hook, the
+`state-merge.sh` driver, the `merge.stateremote` config, and the
+`.git/info/attributes` that binds them to the state files; the local Claude
+settings; the backup script itself, which is untracked; and any local drafts
+listed in `.git/info/exclude`. Tens of kilobytes in total. The exact list is the
+`LOCAL_ONLY` block in the script.
+
+**Pushing to GitHub is deliberately disabled** (`PUSH = false`). Origin is
+PUBLIC, and a daily unattended push would publish every future commit within a
+day. The script also refuses any origin that is not private, so the CONFIG flag
+is the decision and the guard is the backstop. Committing and pushing stays
+manual.
+
+`backup/` is gitignored, and the rule went in before the folder had any contents.
+`backup/README.txt` is the plain-language version for a non-programmer, including
+how to put each file back.
+
+**Two gaps worth stating.** Drive B is a second drive in the same machine, so it
+covers a failed C: and an accidental delete, but not theft, fire, or a surge
+that takes both drives. GitHub is the only offsite copy and it holds only what
+has been committed and pushed.
+
+And a mirror is not a snapshot: it faithfully copies a bad edit over the good
+version on the next run. For tracked files git history is the protection. For
+the untracked ones there is none, so a corrupted local-only file propagates to
+drive B within a day. `PUSH = false` also means the run cannot tell you GitHub
+is behind, which is why the script reports uncommitted paths on its verdict line
+regardless of the push setting.

@@ -35,3 +35,6 @@ __pycache__/
 # invite creating one, and a committed venv is 15MB of someone else's platform.
 venv/
 .venv/
+
+# Local backups. May contain PII and secrets, never commit.
+/backup/
