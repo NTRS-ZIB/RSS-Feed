@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-21T11:17:12+00:00",
+  "generated": "2026-08-24T11:18:20+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -461,7 +461,7 @@
     },
     "BGDE": {
       "cik": "0001218683",
-      "filing_count": 728,
+      "filing_count": 729,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-037417",
@@ -489,12 +489,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026045631/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001213900-26-092110",
-          "count": 133,
-          "filed": "2026-08-20",
+          "accession": "0000912282-26-001145",
+          "count": 134,
+          "filed": "2026-08-21",
           "form": "4",
-          "period": "2026-08-17",
-          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026092110/xslF345X06/ownership.xml"
+          "period": "2026-08-20",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000091228226001145/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -581,7 +581,7 @@
         "OphthaliX, Inc.",
         "DENALI CONCRETE MANAGEMENT INC"
       ],
-      "latest_filing_date": "2026-08-20",
+      "latest_filing_date": "2026-08-21",
       "name": "Big Digital Energy, Inc.",
       "projection": {
         "available": true,
@@ -1262,7 +1262,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1078,
+      "filing_count": 1086,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1290,12 +1290,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000155/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0001769628-26-000390",
-          "count": 445,
-          "filed": "2026-08-20",
+          "accession": "0001769628-26-000406",
+          "count": 453,
+          "filed": "2026-08-21",
           "form": "4",
-          "period": "2026-08-18",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000390/xslF345X06/form4.xml"
+          "period": "2026-08-20",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000406/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1365,7 +1365,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-08-20",
+      "latest_filing_date": "2026-08-21",
       "name": "CoreWeave, Inc.",
       "projection": {
         "available": true,
@@ -1382,7 +1382,7 @@
     },
     "DGXX": {
       "cik": "0001854368",
-      "filing_count": 247,
+      "filing_count": 249,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-050340",
@@ -1417,12 +1417,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026003391/xslF345X02/ownership.xml"
         },
         "4": {
-          "accession": "0001213900-26-091969",
-          "count": 14,
-          "filed": "2026-08-20",
+          "accession": "0001213900-26-092545",
+          "count": 16,
+          "filed": "2026-08-21",
           "form": "4",
-          "period": "2026-08-19",
-          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026091969/xslF345X06/ownership.xml"
+          "period": "2026-05-15",
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026092545/xslF345X06/ownership.xml"
         },
         "40-F": {
           "accession": "0001213900-22-015327",
@@ -1499,7 +1499,7 @@
       "former_names": [
         "Digihost Technology Inc."
       ],
-      "latest_filing_date": "2026-08-20",
+      "latest_filing_date": "2026-08-21",
       "name": "Digi Power X Inc.",
       "projection": {
         "available": true,
@@ -1516,7 +1516,7 @@
     },
     "GLXY": {
       "cik": "0001859392",
-      "filing_count": 273,
+      "filing_count": 274,
       "filings": {
         "10-K": {
           "accession": "0001859392-26-000016",
@@ -1612,7 +1612,7 @@
       "former_names": [
         "Galaxy Digital Pubco Inc."
       ],
-      "latest_filing_date": "2026-08-18",
+      "latest_filing_date": "2026-08-21",
       "name": "Galaxy Digital Inc.",
       "projection": {
         "available": true,
@@ -1882,7 +1882,7 @@
     },
     "MARA": {
       "cik": "0001507605",
-      "filing_count": 1104,
+      "filing_count": 1106,
       "filings": {
         "10-K": {
           "accession": "0001507605-26-000007",
@@ -1910,12 +1910,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1507605/000149315226036934/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001493152-26-039284",
-          "count": 300,
-          "filed": "2026-08-19",
+          "accession": "0001493152-26-039749",
+          "count": 301,
+          "filed": "2026-08-21",
           "form": "4",
-          "period": "2026-08-17",
-          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000149315226039284/xslF345X06/ownership.xml"
+          "period": "2026-08-21",
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000149315226039749/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -2009,7 +2009,7 @@
         "American Strategic Minerals Corp",
         "VERVE VENTURES INC"
       ],
-      "latest_filing_date": "2026-08-19",
+      "latest_filing_date": "2026-08-21",
       "name": "MARA Holdings, Inc.",
       "projection": {
         "available": true,
@@ -2299,7 +2299,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1554,
+      "filing_count": 1555,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2327,12 +2327,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226034093/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001493152-26-039022",
-          "count": 603,
-          "filed": "2026-08-18",
+          "accession": "0001493152-26-039694",
+          "count": 604,
+          "filed": "2026-08-21",
           "form": "4",
-          "period": "2026-08-17",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226039022/xslF345X06/ownership.xml"
+          "period": "2026-08-19",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226039694/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -2416,7 +2416,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-08-19",
+      "latest_filing_date": "2026-08-21",
       "name": "Soluna Holdings, Inc",
       "projection": {
         "available": true,
@@ -2792,7 +2792,7 @@
     },
     "WYFI": {
       "cik": "0002042022",
-      "filing_count": 79,
+      "filing_count": 80,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-034341",
@@ -2838,12 +2838,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001213900-26-090492",
-          "count": 13,
-          "filed": "2026-08-17",
+          "accession": "0001213900-26-092599",
+          "count": 14,
+          "filed": "2026-08-21",
           "form": "8-K",
-          "period": "2026-08-16",
-          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026090492/ea0302334-8k_whitefiber.htm"
+          "period": "2026-08-18",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026092599/ea0302925-8k_white.htm"
         },
         "DEF 14A": null,
         "NT 10-K": null,
@@ -2874,7 +2874,7 @@
       "former_names": [
         "White Fiber, Inc."
       ],
-      "latest_filing_date": "2026-08-17",
+      "latest_filing_date": "2026-08-21",
       "name": "WhiteFiber, Inc.",
       "projection": {
         "available": true,
