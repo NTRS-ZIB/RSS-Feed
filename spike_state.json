@@ -1,4 +1,6 @@
 {
  "date": "2026-08-24",
- "alerted": {}
+ "alerted": {
+  "MARA": 1.5
+ }
 }
