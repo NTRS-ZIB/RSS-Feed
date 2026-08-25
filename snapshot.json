@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-24T11:18:20+00:00",
+  "generated": "2026-08-25T11:18:08+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -154,7 +154,7 @@
     },
     "ANY": {
       "cik": "0001591956",
-      "filing_count": 809,
+      "filing_count": 810,
       "filings": {
         "10-K": {
           "accession": "0001591956-26-000004",
@@ -221,12 +221,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1591956/000159195622000025/a6-kresultsofshareholdersm.htm"
         },
         "8-K": {
-          "accession": "0001062993-26-004391",
-          "count": 142,
-          "filed": "2026-08-14",
+          "accession": "0001062993-26-004571",
+          "count": 143,
+          "filed": "2026-08-24",
           "form": "8-K",
-          "period": "2026-08-14",
-          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000106299326004391/form8k.htm"
+          "period": "2026-08-24",
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000106299326004571/form8k.htm"
         },
         "DEF 14A": {
           "accession": "0001591956-26-000017",
@@ -292,7 +292,7 @@
       "former_names": [
         "Sphere 3D Corp"
       ],
-      "latest_filing_date": "2026-08-14",
+      "latest_filing_date": "2026-08-24",
       "name": "Sphere 3D Corp.",
       "projection": {
         "available": true,
@@ -1121,7 +1121,7 @@
     },
     "CORZ": {
       "cik": "0001839341",
-      "filing_count": 659,
+      "filing_count": 660,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019505",
@@ -1149,12 +1149,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003445/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0000905148-26-003841",
-          "count": 151,
-          "filed": "2026-08-20",
+          "accession": "0000905148-26-003881",
+          "count": 152,
+          "filed": "2026-08-24",
           "form": "4",
-          "period": "2026-08-18",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003841/xslF345X06/form4.xml"
+          "period": "2026-08-20",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003881/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1245,7 +1245,7 @@
       "former_names": [
         "Power & Digital Infrastructure Acquisition Corp."
       ],
-      "latest_filing_date": "2026-08-20",
+      "latest_filing_date": "2026-08-24",
       "name": "Core Scientific, Inc./tx",
       "projection": {
         "available": true,
@@ -1262,7 +1262,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1086,
+      "filing_count": 1093,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1365,7 +1365,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-08-21",
+      "latest_filing_date": "2026-08-24",
       "name": "CoreWeave, Inc.",
       "projection": {
         "available": true,
@@ -1629,7 +1629,7 @@
     },
     "HUT": {
       "cik": "0001964789",
-      "filing_count": 252,
+      "filing_count": 253,
       "filings": {
         "10-K": {
           "accession": "0001104659-26-019392",
@@ -1737,7 +1737,7 @@
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-08-04",
+      "latest_filing_date": "2026-08-24",
       "name": "Hut 8 Corp.",
       "projection": {
         "available": true,
@@ -2299,7 +2299,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1555,
+      "filing_count": 1559,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2327,12 +2327,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226034093/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001493152-26-039694",
-          "count": 604,
-          "filed": "2026-08-21",
+          "accession": "0001493152-26-039911",
+          "count": 605,
+          "filed": "2026-08-24",
           "form": "4",
-          "period": "2026-08-19",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226039694/xslF345X06/ownership.xml"
+          "period": "2026-08-20",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226039911/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -2345,20 +2345,20 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001493152-26-037734",
-          "count": 352,
-          "filed": "2026-08-13",
+          "accession": "0001493152-26-039781",
+          "count": 353,
+          "filed": "2026-08-24",
           "form": "8-K",
-          "period": "2026-08-13",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226037734/form8-k.htm"
+          "period": "2026-08-24",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226039781/form8-k.htm"
         },
         "DEF 14A": {
-          "accession": "0001493152-25-018023",
-          "count": 32,
-          "filed": "2025-10-14",
+          "accession": "0001628280-26-058611",
+          "count": 33,
+          "filed": "2026-08-24",
           "form": "DEF 14A",
-          "period": "2025-10-14",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315225018023/formdef14a.htm"
+          "period": "2025-12-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000162828026058611/slnh-20260824.htm"
         },
         "NT 10-K": {
           "accession": "0000064463-01-500012",
@@ -2416,7 +2416,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-08-21",
+      "latest_filing_date": "2026-08-24",
       "name": "Soluna Holdings, Inc",
       "projection": {
         "available": true,
