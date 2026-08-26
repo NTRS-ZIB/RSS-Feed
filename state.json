@@ -1303,12 +1303,14 @@
   "urn:tag:sec.gov,2008:accession-number=0000912282-26-001163",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-094022",
   "urn:tag:sec.gov,2008:accession-number=0000905148-26-003935",
-  "urn:tag:sec.gov,2008:accession-number=0001968582-26-000884"
+  "urn:tag:sec.gov,2008:accession-number=0001968582-26-000884",
+  "urn:tag:sec.gov,2008:accession-number=0001769628-26-000410",
+  "urn:tag:sec.gov,2008:accession-number=0001769628-26-000409"
  ],
  "initialized": true,
  "feeds": {
   "ANY": {
-   "fails": 49,
+   "fails": 50,
    "alerted": true
   },
   "APLD": {
