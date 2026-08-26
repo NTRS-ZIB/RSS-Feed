@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-25T11:18:08+00:00",
+  "generated": "2026-08-26T11:20:12+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -1262,7 +1262,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1093,
+      "filing_count": 1096,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1365,7 +1365,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-08-24",
+      "latest_filing_date": "2026-08-25",
       "name": "CoreWeave, Inc.",
       "projection": {
         "available": true,
@@ -1629,7 +1629,7 @@
     },
     "HUT": {
       "cik": "0001964789",
-      "filing_count": 253,
+      "filing_count": 254,
       "filings": {
         "10-K": {
           "accession": "0001104659-26-019392",
@@ -1657,12 +1657,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465925089589/xslF345X02/tm2525948-1_3seq1.xml"
         },
         "4": {
-          "accession": "0001964789-26-000032",
-          "count": 76,
-          "filed": "2026-06-18",
+          "accession": "0001964789-26-000038",
+          "count": 77,
+          "filed": "2026-08-25",
           "form": "4",
-          "period": "2026-06-17",
-          "url": "https://www.sec.gov/Archives/edgar/data/1964789/000196478926000032/xslF345X06/form4.xml"
+          "period": "2026-08-21",
+          "url": "https://www.sec.gov/Archives/edgar/data/1964789/000196478926000038/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1737,7 +1737,7 @@
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-08-24",
+      "latest_filing_date": "2026-08-25",
       "name": "Hut 8 Corp.",
       "projection": {
         "available": true,
@@ -2299,7 +2299,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1559,
+      "filing_count": 1561,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2327,12 +2327,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226034093/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001493152-26-039911",
-          "count": 605,
-          "filed": "2026-08-24",
+          "accession": "0001493152-26-040055",
+          "count": 606,
+          "filed": "2026-08-25",
           "form": "4",
-          "period": "2026-08-20",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226039911/xslF345X06/ownership.xml"
+          "period": "2026-08-21",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226040055/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -2345,12 +2345,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001493152-26-039781",
-          "count": 353,
-          "filed": "2026-08-24",
+          "accession": "0001493152-26-039964",
+          "count": 354,
+          "filed": "2026-08-25",
           "form": "8-K",
-          "period": "2026-08-24",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226039781/form8-k.htm"
+          "period": "2026-08-25",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226039964/form8-k.htm"
         },
         "DEF 14A": {
           "accession": "0001628280-26-058611",
@@ -2416,7 +2416,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-08-24",
+      "latest_filing_date": "2026-08-25",
       "name": "Soluna Holdings, Inc",
       "projection": {
         "available": true,
@@ -2792,7 +2792,7 @@
     },
     "WYFI": {
       "cik": "0002042022",
-      "filing_count": 80,
+      "filing_count": 81,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-034341",
@@ -2862,19 +2862,19 @@
         "SC 13D": null,
         "SC 13G": null,
         "SCHEDULE 13D": {
-          "accession": "0001213900-25-073673",
-          "count": 1,
-          "filed": "2025-08-08",
-          "form": "SCHEDULE 13D",
+          "accession": "0001213900-26-093678",
+          "count": 2,
+          "filed": "2026-08-25",
+          "form": "SCHEDULE 13D/A",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390025073673/xslSCHEDULE_13D_X01/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026093678/xslSCHEDULE_13D_X02/primary_doc.xml"
         },
         "SCHEDULE 13G": null
       },
       "former_names": [
         "White Fiber, Inc."
       ],
-      "latest_filing_date": "2026-08-21",
+      "latest_filing_date": "2026-08-25",
       "name": "WhiteFiber, Inc.",
       "projection": {
         "available": true,
