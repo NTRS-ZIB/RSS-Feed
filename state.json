@@ -1298,12 +1298,13 @@
   "urn:tag:sec.gov,2008:accession-number=0001950047-26-008687",
   "urn:tag:sec.gov,2008:accession-number=0001964789-26-000038",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-093678",
-  "9766"
+  "9766",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-093742"
  ],
  "initialized": true,
  "feeds": {
   "ANY": {
-   "fails": 23,
+   "fails": 24,
    "alerted": true
   },
   "APLD": {
