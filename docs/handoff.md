@@ -15,6 +15,12 @@ Claims were verified against the working tree, `origin/main` and full-text
 greps on 2026-08-26. Ten claims that reader agents made were checked and found
 already recorded, and were dropped rather than softened.
 
+**A second workstream is handed off separately.** Roughly half of what this
+folder has been used for is public writing about the roster, and none of it is
+in this document. It lives in `docs/x-posts.md`, which is untracked and
+local-only for the same reason the article draft is. A future session working
+on the components does not need it; one asked about a post does.
+
 **A point-in-time document: replace it rather than append to it.**
 
 ---
@@ -59,10 +65,6 @@ main review control. Commit in separate pieces, not one blob.
 only at a genuine sign-in, decision or approval, with exact click instructions.
 The prompts read as technical; the register is not.
 
-**Rank options by whether they remove the class of problem, not by immediate
-cost.** Offered three fetch fallbacks cheapest-first with option 1 recommended,
-the user chose option 3, installed a Chrome extension, and it worked.
-
 **Always finish with options and a recommendation**, each with its cost, and
 lead with the one you would pick. Never a bare status summary.
 
@@ -106,46 +108,7 @@ workflow and later delete it. Five precedents: `probe_comment_letters`,
 
 ---
 
-## 2. What this folder is also used for
-
-**Roughly half of the work in this project has been drafting public X posts
-about the roster, and the repo has no record of it.** A future session that
-reads only the code will not know this is part of the job.
-
-Conventions, all established by repeated correction:
-
-- **No links.** Name the source document in line instead.
-- **Colloquial, one continuous thought.** No setup-and-payoff, no explanatory
-  closing line. "Make it sound like it wasn't written by AI", asked eight or
-  more times.
-- **X Premium**, so the ceiling is 25,000 characters, not 280.
-- **At most two cashtags**, and a second ticker needs a real relationship.
-- **One post beats a thread.** Always name a recommendation.
-
-**There is no log of which drafts were actually posted**, so a claim later
-found wrong cannot be traced. One did go wrong: a BGDE framing of "your biggest
-customer is your management" was corrected to concentration and dilution once
-the 10-Q was read.
-
-**`docs/miner-ai-pivot-article.md` is a long-form draft, untracked and
-deliberately unpublished.** It has an eight-item pre-publication checklist with
-**none ticked**. Its headline "seventy to ninety times" spread rests on a
-~$16,000/MW mining figure that the deck sweep reported as unverified and that
-the checklist does not cover. Prices and market caps in it are aggregator
-sourced as of 19 August and not exchange confirmed; the filed share counts
-under them are safe to republish and the prices are not.
-
-**On 2026-08-20 that draft was swept into a public commit by `git add -A`,
-force-pushed out, and the orphaned objects were left reachable by SHA.** A
-GitHub Support request to garbage-collect them was drafted and, as far as this
-session knows, never sent. `.git/info/exclude` now carries the file so it
-cannot be swept again, and that exclusion does not survive a re-clone. A reader
-grepping history will find no trace, because the commit was purged; the note
-and the history point opposite ways for that reason.
-
----
-
-## 3. Open threads, ranked
+## 2. Open threads, ranked
 
 **1. `press_monitor` records companies it never read.** `company_filings()`
 returns `[]` both for a quiet company and for a fetch fault, so a roster
@@ -222,7 +185,7 @@ The roster is 22 now.
 
 ---
 
-## 4. Stale facts inside the repo itself
+## 3. Stale facts inside the repo itself
 
 Found by cross-checking documentation against code. Each is small and each will
 mislead.
@@ -245,7 +208,7 @@ mislead.
 
 ---
 
-## 5. Facts about the data that are not written down
+## 4. Facts about the data that are not written down
 
 - **A Charles Schwab trading restriction sat on BGDE** from roughly December
   2025 to 2026-08-12, inherited from the MIGI ticker. It falls inside the
@@ -255,11 +218,6 @@ mislead.
 - **"Six Thirty AI", BGDE's affiliate controlled by its Executive Chairman, CEO
   and COO, was formerly named "Big Digital Energy, LLC"**, the public company's
   own name. Any name-based filing or news sweep conflates the two.
-- **BGDE's own capacity figure moved between two releases 24 hours apart**: 146
-  MW on 2026-08-11, ~129 MW on 2026-08-12, with no correction.
-- **OG Advisory Group is the IR firm behind both Bakkt and BGDE**, and the
-  account posting sector commentary as @Invst_Informant / @OGAdvisors is
-  IR-side rather than independent.
 - **CIFR and NUAI may be contesting the same 207 MW of Ector County
   generation.** Cipher's Odessa Luminant PPA (~$0.028/kWh, take-or-pay on
   66.7%) expires end of July 2027. The settling test agreed at the time was the
@@ -275,7 +233,7 @@ mislead.
 
 ---
 
-## 6. Verification mechanics that produce confident wrong answers
+## 5. Verification mechanics that produce confident wrong answers
 
 - **`$?` after a pipe is the last command's status**, not the pipeline's.
 - **A single-line grep needle cannot match a line-wrapped markdown sentence.**
@@ -293,14 +251,16 @@ mislead.
 
 ---
 
-## 7. What could not be determined
+## 6. What could not be determined
 
-- Whether the GitHub Support request to purge the orphaned article objects was
-  ever sent. The draft is in the deleted transcript; the facts needed to
-  rewrite it are in section 2.
+- Whether the GitHub Support request to purge orphaned objects from this
+  repository was ever sent. On 2026-08-20 an untracked file was swept into a
+  public commit by `git add -A`, force-pushed out, and the orphaned commit was
+  confirmed still reachable by SHA afterwards. A Support request was drafted.
+  `.git/info/exclude` now carries the file, and that exclusion does not survive
+  a re-clone.
 - Whether the NUAI 4.02 restatement of 2026-07-30, deliberately left stranded
   rather than recovered by editing `state.json`, was ever posted by hand.
-- Which X drafts were actually published.
 - Whether the two `first-run-backfill-check` scheduled tasks are armed or
   dormant. Both fired and died within seconds (21s and 2s) producing nothing
   and no failure signal, and both `SKILL.md` files are still on disk despite
@@ -311,7 +271,7 @@ mislead.
 
 ---
 
-## 8. What is confirmed healthy
+## 7. What is confirmed healthy
 
 Last checked 2026-08-26 04:30 UTC.
 

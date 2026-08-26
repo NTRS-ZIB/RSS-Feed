@@ -57,6 +57,10 @@ const LOG = path.join(LOCAL, 'backup.log')
  *  holds a copy, so if it stops being there the run must stop saying OK. */
 const LOCAL_ONLY = [
 	{ from: 'docs/miner-ai-pivot-article.md', to: 'local/docs/miner-ai-pivot-article.md', required: true },
+	// Split out of docs/handoff.md on 2026-08-26 because the repo is public and
+	// this carries unpublished drafts. Same reason the article is here: nothing
+	// rebuilds it and nothing else holds a copy.
+	{ from: 'docs/x-posts.md', to: 'local/docs/x-posts.md', required: true },
 	// The backup mechanism itself. Untracked in git and PUSH is false, so without
 	// this line the script that produces the backup lives only on the drive the
 	// backup exists to protect against.
