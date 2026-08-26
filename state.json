@@ -1304,7 +1304,7 @@
  "initialized": true,
  "feeds": {
   "ANY": {
-   "fails": 37,
+   "fails": 38,
    "alerted": true
   },
   "APLD": {
