@@ -1302,7 +1302,7 @@
  "initialized": true,
  "feeds": {
   "ANY": {
-   "fails": 10,
+   "fails": 11,
    "alerted": true
   },
   "APLD": {
@@ -1346,7 +1346,7 @@
    "alerted": false
   },
   "SLNH": {
-   "fails": 1,
+   "fails": 0,
    "alerted": false
   },
   "SPCX": {
