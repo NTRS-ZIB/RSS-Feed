@@ -27,11 +27,12 @@ on the components does not need it; one asked about a post does.
 
 ## 0. Before anything else
 
-**This clone was 65 commits behind and 1 ahead when this was written.** Rebased
-to `5bcb257`. Fourteen workflows commit to `main` all day, so a checkout goes
-stale within hours. **A stale local state file reads exactly like a stalled
-component**: `snapshot.json` looked 137 hours old and appeared to be a silent
-outage, and it was a stale checkout. Fetch before diagnosing anything.
+**This clone was 65 commits behind when this was written**, and is now three
+commits AHEAD of `origin/main` with none of them pushed. Fourteen workflows
+commit to `main` all day, so a checkout goes stale within hours. **A stale
+local state file reads exactly like a stalled component**: `snapshot.json`
+looked 137 hours old and appeared to be a silent outage, and it was a stale
+checkout. Fetch before diagnosing anything.
 
 **`5bcb257` (was `40e4f72`) is committed and NOT pushed.** It adds
 `scripts/backup.mjs` (524 lines), a `.gitignore` entry and 40 lines of README.
@@ -40,15 +41,19 @@ public and "yes, commit them" was not read as authorisation to publish. Do not
 push it without asking. The script itself is safe regardless, because it backs
 itself up to `B:\Claude Backup\Infra Monitor\local\scripts\backup.mjs`.
 
+**Two handoff commits are stacked on top of it**, so pushing either pushes all
+three. Reordering so the handoff goes alone is a one-minute rebase.
+
 **`memory/` lives inside the folder holding the session transcripts**, at
 `C:\Users\zamzi\.claude\projects\C--Users-zamzi-OneDrive-Documents-Claude-Infra-Monitor\memory\`.
 Deleting the project folder to clear sessions destroys all eleven memory files.
 They were copied by hand on 2026-08-26 to `backup/local/claude-memory/` and to
-drive B, `cmp`-verified. **That copy will go stale**: `scripts/backup.mjs` has
-an eight-entry `LOCAL_ONLY` list and memory is not in it, so `mirror()` will
-keep pushing frozen copies to B and reporting OK. Wiring it needs two changes,
-`path.join(PROJECT, item.from)` to `path.resolve` so an absolute source works,
-and directory support so new memory files are picked up.
+drive B, `cmp`-verified. **That copy will go stale**: memory is not in
+`scripts/backup.mjs`'s nine-entry `LOCAL_ONLY` list, so `collect()` never
+refreshes it while `mirror()` keeps copying it to B and reporting OK. Wiring
+it needs two changes: `path.join(PROJECT, item.from)` becoming `path.resolve`
+so an absolute source works, and directory support so new memory files are
+picked up.
 
 ---
 
@@ -202,9 +207,10 @@ mislead.
   the `gh workflow run --ref <branch> -f dry_run=true` verification that
   `CLAUDE.md` prescribes contends with the live scheduled run of the same
   component on `main`.
-- **`scripts/backup.mjs:59` names the private article by path and is tracked**,
-  which defeats the deliberate rewording of the README's Backups section to
-  avoid naming it.
+- **`scripts/backup.mjs` names both private files by path and is tracked**
+  (`:59` the article, `:63` `docs/x-posts.md`), which defeats the deliberate
+  rewording of the README's Backups section to avoid naming the first. The
+  paths are visible in a public repository even though the files are not.
 
 ---
 
