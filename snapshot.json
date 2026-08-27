@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-26T11:20:12+00:00",
+  "generated": "2026-08-27T20:51:22+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -154,7 +154,7 @@
     },
     "ANY": {
       "cik": "0001591956",
-      "filing_count": 810,
+      "filing_count": 811,
       "filings": {
         "10-K": {
           "accession": "0001591956-26-000004",
@@ -273,12 +273,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1591956/000106299324002916/formsc13ga.htm"
         },
         "SCHEDULE 13D": {
-          "accession": "0000912282-26-001018",
-          "count": 1,
-          "filed": "2026-07-31",
-          "form": "SCHEDULE 13D",
+          "accession": "0000912282-26-001163",
+          "count": 2,
+          "filed": "2026-08-26",
+          "form": "SCHEDULE 13D/A",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000091228226001018/xslSCHEDULE_13D_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000091228226001163/xslSCHEDULE_13D_X02/primary_doc.xml"
         },
         "SCHEDULE 13G": {
           "accession": "0001062993-26-003723",
@@ -292,7 +292,7 @@
       "former_names": [
         "Sphere 3D Corp"
       ],
-      "latest_filing_date": "2026-08-24",
+      "latest_filing_date": "2026-08-26",
       "name": "Sphere 3D Corp.",
       "projection": {
         "available": true,
@@ -598,7 +598,7 @@
     },
     "BKKT": {
       "cik": "0001820302",
-      "filing_count": 760,
+      "filing_count": 761,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019870",
@@ -618,12 +618,12 @@
         },
         "20-F": null,
         "3": {
-          "accession": "0002099500-25-000001",
-          "count": 41,
-          "filed": "2025-12-05",
+          "accession": "0001628280-26-059219",
+          "count": 42,
+          "filed": "2026-08-27",
           "form": "3",
-          "period": "2025-11-08",
-          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000209950025000001/xslF345X02/primary_doc.xml"
+          "period": "2026-08-17",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026059219/xslF345X06/wk-form3_1787849870.xml"
         },
         "4": {
           "accession": "0001628280-26-057900",
@@ -730,7 +730,7 @@
         "Bakkt Holdings, Inc.",
         "VPC Impact Acquisition Holdings"
       ],
-      "latest_filing_date": "2026-08-19",
+      "latest_filing_date": "2026-08-27",
       "name": "Bakkt, Inc.",
       "projection": {
         "available": true,
@@ -747,7 +747,7 @@
     },
     "BTDR": {
       "cik": "0001899123",
-      "filing_count": 276,
+      "filing_count": 277,
       "filings": {
         "10-K": null,
         "10-Q": null,
@@ -785,12 +785,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026087060/ea030073702-424b5_bitdeer.htm"
         },
         "6-K": {
-          "accession": "0001213900-26-087067",
-          "count": 102,
-          "filed": "2026-08-10",
+          "accession": "0001213900-26-093742",
+          "count": 103,
+          "filed": "2026-08-26",
           "form": "6-K",
-          "period": "2026-08-10",
-          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026087067/ea0301286-6k_bitdeer.htm"
+          "period": "2026-08-26",
+          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026093742/ea0303441-6k_bitdeer.htm"
         },
         "8-K": null,
         "DEF 14A": null,
@@ -834,7 +834,7 @@
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-08-17",
+      "latest_filing_date": "2026-08-26",
       "name": "Bitdeer Technologies Group",
       "projection": {
         "available": true,
@@ -1121,7 +1121,7 @@
     },
     "CORZ": {
       "cik": "0001839341",
-      "filing_count": 660,
+      "filing_count": 662,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019505",
@@ -1149,12 +1149,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003445/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0000905148-26-003881",
-          "count": 152,
-          "filed": "2026-08-24",
+          "accession": "0000905148-26-003935",
+          "count": 153,
+          "filed": "2026-08-26",
           "form": "4",
-          "period": "2026-08-20",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003881/xslF345X06/form4.xml"
+          "period": "2026-08-24",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003935/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1167,12 +1167,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001839341-26-000018",
-          "count": 166,
-          "filed": "2026-08-14",
+          "accession": "0001839341-26-000021",
+          "count": 167,
+          "filed": "2026-08-27",
           "form": "8-K",
-          "period": "2026-08-13",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000183934126000018/core-20260813.htm"
+          "period": "2026-08-25",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000183934126000021/core-20260825.htm"
         },
         "DEF 14A": {
           "accession": "0001193125-26-134857",
@@ -1245,7 +1245,7 @@
       "former_names": [
         "Power & Digital Infrastructure Acquisition Corp."
       ],
-      "latest_filing_date": "2026-08-24",
+      "latest_filing_date": "2026-08-27",
       "name": "Core Scientific, Inc./tx",
       "projection": {
         "available": true,
@@ -1262,7 +1262,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1096,
+      "filing_count": 1099,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1290,12 +1290,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000155/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0001769628-26-000406",
-          "count": 453,
-          "filed": "2026-08-21",
+          "accession": "0001769628-26-000410",
+          "count": 455,
+          "filed": "2026-08-26",
           "form": "4",
-          "period": "2026-08-20",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000406/xslF345X06/form4.xml"
+          "period": "2026-08-24",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000410/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1365,7 +1365,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-08-25",
+      "latest_filing_date": "2026-08-26",
       "name": "CoreWeave, Inc.",
       "projection": {
         "available": true,
@@ -1754,15 +1754,15 @@
     },
     "IREN": {
       "cik": "0001878848",
-      "filing_count": 315,
+      "filing_count": 317,
       "filings": {
         "10-K": {
-          "accession": "0001878848-25-000063",
-          "count": 1,
-          "filed": "2025-08-28",
+          "accession": "0001878848-26-000052",
+          "count": 2,
+          "filed": "2026-08-27",
           "form": "10-K",
-          "period": "2025-06-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000187884825000063/iren-20250630.htm"
+          "period": "2026-06-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000052/iren-20260630.htm"
         },
         "10-Q": {
           "accession": "0001878848-26-000026",
@@ -1814,12 +1814,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1878848/000187884825000047/irenlimited-6kbusinessupda.htm"
         },
         "8-K": {
-          "accession": "0001140361-26-032638",
-          "count": 30,
-          "filed": "2026-08-13",
+          "accession": "0001878848-26-000051",
+          "count": 31,
+          "filed": "2026-08-27",
           "form": "8-K",
-          "period": "2026-08-13",
-          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000114036126032638/ef20080141_8k.htm"
+          "period": "2026-08-27",
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000051/iren-20260827.htm"
         },
         "DEF 14A": {
           "accession": "0001140361-25-037383",
@@ -1865,19 +1865,19 @@
         "Iris Energy Ltd",
         "Iris Energy Pty Ltd"
       ],
-      "latest_filing_date": "2026-08-18",
+      "latest_filing_date": "2026-08-27",
       "name": "IREN Ltd",
       "projection": {
         "available": true,
         "confidence": "normal",
-        "expected": "2026-09-07",
+        "expected": "2026-11-06",
         "fiscal_year_end_month": 6,
-        "kind": "annual",
-        "median_lag_days": 67,
-        "period_end": "2026-06-30",
+        "kind": "quarterly",
+        "median_lag_days": 37,
+        "period_end": "2026-09-30",
         "reason": null,
-        "sample": 4,
-        "spread_days": 8
+        "sample": 3,
+        "spread_days": 1
       }
     },
     "MARA": {
@@ -2792,7 +2792,7 @@
     },
     "WYFI": {
       "cik": "0002042022",
-      "filing_count": 81,
+      "filing_count": 82,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-034341",
@@ -2838,12 +2838,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001213900-26-092599",
-          "count": 14,
-          "filed": "2026-08-21",
-          "form": "8-K",
-          "period": "2026-08-18",
-          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026092599/ea0302925-8k_white.htm"
+          "accession": "0001213900-26-094022",
+          "count": 15,
+          "filed": "2026-08-26",
+          "form": "8-K/A",
+          "period": "2026-08-16",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026094022/ea0303443-8ka1_whitefiber.htm"
         },
         "DEF 14A": null,
         "NT 10-K": null,
@@ -2874,7 +2874,7 @@
       "former_names": [
         "White Fiber, Inc."
       ],
-      "latest_filing_date": "2026-08-25",
+      "latest_filing_date": "2026-08-26",
       "name": "WhiteFiber, Inc.",
       "projection": {
         "available": true,
