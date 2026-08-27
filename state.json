@@ -1305,12 +1305,15 @@
   "urn:tag:sec.gov,2008:accession-number=0000905148-26-003935",
   "urn:tag:sec.gov,2008:accession-number=0001968582-26-000884",
   "urn:tag:sec.gov,2008:accession-number=0001769628-26-000410",
-  "urn:tag:sec.gov,2008:accession-number=0001769628-26-000409"
+  "urn:tag:sec.gov,2008:accession-number=0001769628-26-000409",
+  "urn:tag:sec.gov,2008:accession-number=0001839341-26-000021",
+  "https://investors.corescientific.com/news-events/press-releases/detail/143/core-scientific-secures-600-million-of-senior-secured-credit-facilities",
+  "urn:tag:sec.gov,2008:accession-number=0001628280-26-059219"
  ],
  "initialized": true,
  "feeds": {
   "ANY": {
-   "fails": 51,
+   "fails": 52,
    "alerted": true
   },
   "APLD": {
