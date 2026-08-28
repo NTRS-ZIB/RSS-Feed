@@ -1321,7 +1321,7 @@
  "initialized": true,
  "feeds": {
   "ANY": {
-   "fails": 57,
+   "fails": 58,
    "alerted": true
   },
   "APLD": {
@@ -1329,7 +1329,7 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 1,
+   "fails": 0,
    "alerted": false
   },
   "BKKT": {
