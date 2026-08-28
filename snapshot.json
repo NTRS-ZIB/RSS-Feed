@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-27T20:51:22+00:00",
+  "generated": "2026-08-28T21:17:09+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -1262,7 +1262,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1099,
+      "filing_count": 1101,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1290,12 +1290,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000155/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0001769628-26-000410",
-          "count": 455,
-          "filed": "2026-08-26",
+          "accession": "0001769628-26-000412",
+          "count": 457,
+          "filed": "2026-08-27",
           "form": "4",
-          "period": "2026-08-24",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000410/xslF345X06/form4.xml"
+          "period": "2026-08-25",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000412/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1365,7 +1365,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-08-26",
+      "latest_filing_date": "2026-08-27",
       "name": "CoreWeave, Inc.",
       "projection": {
         "available": true,
@@ -2299,7 +2299,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1561,
+      "filing_count": 1563,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2327,12 +2327,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226034093/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001493152-26-040055",
-          "count": 606,
-          "filed": "2026-08-25",
+          "accession": "0001493152-26-040464",
+          "count": 608,
+          "filed": "2026-08-27",
           "form": "4",
-          "period": "2026-08-21",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226040055/xslF345X06/ownership.xml"
+          "period": "2026-08-26",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226040464/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -2416,7 +2416,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-08-25",
+      "latest_filing_date": "2026-08-27",
       "name": "Soluna Holdings, Inc",
       "projection": {
         "available": true,
