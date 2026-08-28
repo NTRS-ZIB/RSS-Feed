@@ -1308,12 +1308,20 @@
   "urn:tag:sec.gov,2008:accession-number=0001769628-26-000409",
   "urn:tag:sec.gov,2008:accession-number=0001839341-26-000021",
   "https://investors.corescientific.com/news-events/press-releases/detail/143/core-scientific-secures-600-million-of-senior-secured-credit-facilities",
-  "urn:tag:sec.gov,2008:accession-number=0001628280-26-059219"
+  "urn:tag:sec.gov,2008:accession-number=0001628280-26-059219",
+  "urn:tag:sec.gov,2008:accession-number=0001878848-26-000052",
+  "urn:tag:sec.gov,2008:accession-number=0001878848-26-000051",
+  "12556",
+  "21f6fdae-48c4-439f-ad24-9eb2e9516716",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-040464",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-040462",
+  "urn:tag:sec.gov,2008:accession-number=0001769628-26-000412",
+  "urn:tag:sec.gov,2008:accession-number=0001769628-26-000411"
  ],
  "initialized": true,
  "feeds": {
   "ANY": {
-   "fails": 56,
+   "fails": 57,
    "alerted": true
   },
   "APLD": {
@@ -1321,7 +1329,7 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "BKKT": {
