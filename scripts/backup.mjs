@@ -39,7 +39,9 @@ const PUSH = false      // origin NTRS-ZIB/RSS-Feed is PUBLIC and staying public
 const ALLOW_PUBLIC_PUSH = false   // <-- see the comment on pushCommits before touching
 const LOG = path.join(LOCAL, 'backup.log')
 
-/** Files that exist ONLY on this machine, and where each is kept under backup/.
+/** Files and directories that exist ONLY on this machine, and where each is
+ *  kept under backup/. A directory entry is walked on every run, so anything
+ *  added inside it later is picked up without editing this list.
  *
  *  Everything tracked by git is already on GitHub, so these are the project's
  *  only genuinely unprotected files. They are copied fresh on every run rather
@@ -61,10 +63,30 @@ const LOCAL_ONLY = [
 	// this carries unpublished drafts. Same reason the article is here: nothing
 	// rebuilds it and nothing else holds a copy.
 	{ from: 'docs/x-posts.md', to: 'local/docs/x-posts.md', required: true },
-	// The backup mechanism itself. Untracked in git and PUSH is false, so without
-	// this line the script that produces the backup lives only on the drive the
-	// backup exists to protect against.
+	// The backup mechanism itself. PUSH is false, so without this line the script
+	// that produces the backup lives only on the drive the backup exists to
+	// protect against.
 	{ from: 'scripts/backup.mjs', to: 'local/scripts/backup.mjs', required: true },
+	// The Claude Code session transcripts and memory for this project, added
+	// 2026-08-26. A DIRECTORY, and the only entry whose source sits outside the
+	// project folder, which is why `from` is absolute; see path.resolve below.
+	//
+	// These are the primary source every handoff is written FROM, and until this
+	// line existed nothing held a second copy: 208 MB, 1,014 files, one machine.
+	// `docs/handoff.md` asserted they had already been deleted while all sixteen
+	// were on disk, which is the shape of loss this list exists to prevent.
+	// Deleting the project folder to clear old sessions also destroys memory/,
+	// which sits inside it.
+	//
+	// A directory rather than sixteen file entries so that new sessions are
+	// picked up without anyone remembering to edit this list. If the project
+	// folder is ever moved or renamed, this path stops resolving and `required`
+	// turns that into a loud failure rather than a silent stop.
+	{
+		from: 'C:\\Users\\zamzi\\.claude\\projects\\C--Users-zamzi-OneDrive-Documents-Claude-Infra-Monitor',
+		to: 'local/claude-project',
+		required: true,
+	},
 	{ from: '.claude/settings.local.json', to: 'local/claude/settings.local.json' },
 	{ from: '.git/config', to: 'local/git/config' },
 	{ from: '.git/info/exclude', to: 'local/git/info-exclude' },
@@ -133,6 +155,51 @@ async function exists(target) {
 	} catch {
 		return false
 	}
+}
+
+/** Every file under a source tree, as paths relative to its root.
+ *
+ *  Deliberately NOT `listFiles()`, which skips the log and any `.partial`. Those
+ *  skips are right for the mirror, whose root is backup/ itself, and wrong here:
+ *  a source tree is copied whole. A backup that quietly omits a file because its
+ *  name matched a rule written for somewhere else is the exact failure this
+ *  module exists to prevent, and it would report OK while doing it. */
+async function treeFiles(root, prefix = '') {
+	const found = []
+	for (const entry of await fs.readdir(path.join(root, prefix), { withFileTypes: true })) {
+		const relative = path.join(prefix, entry.name)
+		if (entry.isDirectory()) found.push(...(await treeFiles(root, relative)))
+		else found.push(relative)
+	}
+	return found
+}
+
+/** Copy one file into place and read the destination back.
+ *
+ *  Returns 'current', 'copied', 'live', or a failure string.
+ *
+ *  'live' is the case that needs explaining, and it arrived with the session
+ *  transcripts. A transcript is APPENDED TO while this runs, so the destination
+ *  can legitimately fail to match a hash taken a moment earlier, and the old
+ *  code called that "copy did not verify", a FAILURE, which fails the whole
+ *  run. Any backup taken while a Claude session was open would have reported
+ *  PROBLEM, every day, for a reason that is not a problem. A reader who sees
+ *  that twice stops reading the last line, and the last line is the only thing
+ *  this script is read for.
+ *
+ *  Re-reading the SOURCE separates the two cases. Source changed: the copy is a
+ *  valid point-in-time snapshot of a file still being written, which is the best
+ *  that exists for a live file. Source unchanged but destination differs: the
+ *  write is genuinely bad, and that is still a failure. */
+async function copyVerified(from, to) {
+	const before = await sha256(from)
+	if ((await exists(to)) && (await sha256(to)) === before) return 'current'
+
+	await fs.mkdir(path.dirname(to), { recursive: true })
+	await fs.copyFile(from, to)
+	if ((await sha256(to)) === before) return 'copied'
+
+	return (await sha256(from)) === before ? 'copy did not verify' : 'live'
 }
 
 /** PRIVATE, PUBLIC, INTERNAL, or UNKNOWN if it cannot be established. Asks
@@ -220,12 +287,20 @@ async function snapshotDatabase() {
 async function collectLocalFiles() {
 	let copied = 0
 	let current = 0
+	let files = 0
 	const absent = []
 	const missing = []
 	const failures = []
+	const live = []
 
 	for (const item of LOCAL_ONLY) {
-		const from = path.join(PROJECT, item.from)
+		// resolve, NOT join. A source may sit outside the project entirely, as the
+		// session transcripts do. `path.resolve` still resolves a relative entry
+		// against PROJECT and lets an absolute one win; `path.join` would paste the
+		// absolute path onto the end of the project path and produce something that
+		// exists nowhere, reported as "not present in the project", which reads as
+		// a fact about the file rather than a bug in this line.
+		const from = path.resolve(PROJECT, item.from)
 		const to = path.join(LOCAL, item.to)
 
 		if (!(await exists(from))) {
@@ -239,24 +314,38 @@ async function collectLocalFiles() {
 		// Per file, so one unreadable file is recorded rather than aborting the
 		// loop and silently skipping every file after it.
 		try {
-			const before = await sha256(from)
-			const unchanged = (await exists(to)) && (await sha256(to)) === before
-			if (unchanged) {
-				current += 1
-				continue
-			}
-			await fs.mkdir(path.dirname(to), { recursive: true })
-			await fs.copyFile(from, to)
+			// A directory entry is walked on every run rather than listed once, so a
+			// new session transcript is picked up without anyone editing LOCAL_ONLY.
+			// Nothing is deleted from the destination, matching the rest of this
+			// script: a copy already taken outlives its source going away.
+			const walk = (await fs.stat(from)).isDirectory()
+			const members = walk ? await treeFiles(from) : [null]
+			files += members.length
 
-			// Read it back rather than trusting the copy.
-			if ((await sha256(to)) === before) copied += 1
-			else failures.push(`${item.from} (copy did not verify)`)
+			for (const member of members) {
+				const src = member === null ? from : path.join(from, member)
+				const dst = member === null ? to : path.join(to, member)
+				const name = member === null ? item.from : `${item.to}/${member.replace(/\\/g, '/')}`
+
+				const result = await copyVerified(src, dst)
+				if (result === 'current') current += 1
+				else if (result === 'copied') copied += 1
+				else if (result === 'live') {
+					copied += 1
+					live.push(name)
+				} else failures.push(`${name} (${result})`)
+			}
 		} catch (error) {
 			failures.push(`${item.from} (${error.code || error.message})`)
 		}
 	}
 
-	say(`collect: ${LOCAL_ONLY.length} local-only files, ${copied} refreshed, ${current} already current`)
+	say(`collect: ${LOCAL_ONLY.length} local-only entries, ${files} files, ${copied} refreshed, ${current} already current`)
+	for (const busy of live.slice(0, 5)) {
+		say(`collect: copied while being written: ${busy}`)
+	}
+	if (live.length > 5) say(`collect: ...and ${live.length - 5} more copied while being written`)
+	if (live.length) say('  point-in-time snapshots of live files, which is not a failure.')
 	for (const gone of absent) {
 		say(`collect: not present in the project: ${gone}`)
 		say('  normal right after a fresh clone. Any copy already in backup/local/ is kept.')
