@@ -2,14 +2,16 @@
 
 # Handoff, 2026-08-26
 
-**Built from all sixteen session transcripts before they were deleted.** Those
-transcripts held 608 user turns and 1.6 MB of assistant prose covering
-2026-08-03 to 2026-08-26, and they are gone. Everything below is what a future
-session needs that **cannot be recovered from the repository**, because the
-repository is unusually good at recording itself: `CLAUDE.md` carries the traps
-with the case that proves each, [`rejected.md`](rejected.md) carries the closed
-ideas with their numbers, `docs/` has one file per component, and the commit
-bodies are long. Anything already in those is deliberately absent here.
+**Built from all sixteen session transcripts.** They hold roughly 600 user
+turns and 1.6 MB of assistant prose covering 2026-08-03 to 2026-08-26, and
+**they are still on disk**: deletion was intended and never carried out, so
+the primary source for everything below sits one directory away, backed up as
+of `f4af391`. Everything below is what a future session needs that **cannot be
+recovered from the repository**, because the repository is unusually good at
+recording itself: `CLAUDE.md` carries the traps with the case that proves
+each, [`rejected.md`](rejected.md) carries the closed ideas with their
+numbers, `docs/` has one file per component, and the commit bodies are long.
+Anything already in those is deliberately absent here.
 
 Claims were verified against the working tree, `origin/main` and full-text
 greps on 2026-08-26. Ten claims that reader agents made were checked and found
@@ -27,12 +29,15 @@ on the components does not need it; one asked about a post does.
 
 ## 0. Before anything else
 
-**This clone was 65 commits behind when this was written**, and is now three
-commits AHEAD of `origin/main` with none of them pushed. Fourteen workflows
-commit to `main` all day, so a checkout goes stale within hours. **A stale
-local state file reads exactly like a stalled component**: `snapshot.json`
-looked 137 hours old and appeared to be a silent outage, and it was a stale
-checkout. Fetch before diagnosing anything.
+**Do not read an ahead/behind count out of this document. Run `git status
+--porcelain --branch`.** Twelve workflows commit to `main` through the day, so
+every count written here has been wrong within hours of being written: a clone
+level with `origin/main` at 04:55 was 32 commits behind by 14:05 the same day,
+and 85 behind two days later. "Three commits ahead" was four before the commit
+that wrote the sentence had finished. **A stale local state file reads exactly
+like a stalled component**: `snapshot.json` looked 137 hours old and appeared
+to be a silent outage, and it was a stale checkout. Fetch before diagnosing
+anything.
 
 **`5bcb257` (was `40e4f72`) is committed and NOT pushed.** It adds
 `scripts/backup.mjs` (524 lines), a `.gitignore` entry and 40 lines of README.
@@ -40,20 +45,50 @@ Evidence from the transcripts says this was **deliberate**: the repository is
 public and "yes, commit them" was not read as authorisation to publish. Do not
 push it without asking. The script itself is safe regardless, because it backs
 itself up to `B:\Claude Backup\Infra Monitor\local\scripts\backup.mjs`.
+**`f4af391` is a second unpushed commit to the same file** and inherits the
+same hold.
 
-**Two handoff commits are stacked on top of it**, so pushing either pushes all
-three. Reordering so the handoff goes alone is a one-minute rebase.
+**Three handoff commits sit on top of those, and "send the handoff alone" is
+not a reorder.** `f21c359` touches BOTH `docs/handoff.md` and
+`scripts/backup.mjs`, and `5bcb257` is the commit that creates that file, so
+`git rebase --onto <upstream> 5bcb257 main` stops at `DU scripts/backup.mjs`,
+a modify/delete conflict. Resolved the way git's own hint suggests, `git add`
+then `--continue`, it carries the entire backup script onto the branch and
+publishes the file the paragraph above says not to push. Reproduced in a
+throwaway clone on 2026-08-29.
 
-**`memory/` lives inside the folder holding the session transcripts**, at
-`C:\Users\zamzi\.claude\projects\C--Users-zamzi-OneDrive-Documents-Claude-Infra-Monitor\memory\`.
-Deleting the project folder to clear sessions destroys all eleven memory files.
-They were copied by hand on 2026-08-26 to `backup/local/claude-memory/` and to
-drive B, `cmp`-verified. **That copy will go stale**: memory is not in
-`scripts/backup.mjs`'s nine-entry `LOCAL_ONLY` list, so `collect()` never
-refreshes it while `mirror()` keeps copying it to B and reporting OK. Wiring
-it needs two changes: `path.join(PROJECT, item.from)` becoming `path.resolve`
-so an absolute source works, and directory support so new memory files are
-picked up.
+What works, verified the same way on the same day: build the branch from the
+upstream tip and take only the file.
+
+```bash
+git fetch origin
+git checkout -b handoff-only origin/main
+git checkout <handoff-tip> -- docs/handoff.md
+git commit
+```
+
+That gives one commit holding `docs/handoff.md` and nothing else, with no
+`scripts/` on the branch at all.
+
+**It still publishes one private filename.** `docs/x-posts.md` is named twice
+in this document, in the preamble and in the section 3 bullet about
+`scripts/backup.mjs`, so pushing the handoff puts that path into a public
+repository even though the file stays out. (Line numbers are deliberately not
+given: citing this file's own line numbers from inside it invalidates them on
+the next edit, which happened to this very sentence.)
+`docs/miner-ai-pivot-article.md` is not named here, only in
+`scripts/backup.mjs`. Neither path is on `origin/main` as of 2026-08-29.
+Decide about the name before pushing, not after.
+
+**`memory/` and the session transcripts are backed up, as of `f4af391` on
+2026-08-29.** Both live under
+`C:\Users\zamzi\.claude\projects\C--Users-zamzi-OneDrive-Documents-Claude-Infra-Monitor\`,
+so deleting that folder to clear old sessions destroys the memory files with
+them. `scripts/backup.mjs` now carries the whole directory as a `LOCAL_ONLY`
+entry, walked on every run so a new session needs no edit to the list: 1,023
+files to `backup/local/claude-project/` and to drive B, hash-verified on both
+sides. The older hand copy at `backup/local/claude-memory/` is a subset of it
+now, kept only so that a reader who knows that path still finds something.
 
 ---
 
@@ -208,9 +243,12 @@ mislead.
   `CLAUDE.md` prescribes contends with the live scheduled run of the same
   component on `main`.
 - **`scripts/backup.mjs` names both private files by path and is tracked**
-  (`:59` the article, `:63` `docs/x-posts.md`), which defeats the deliberate
+  (`:61` the article, `:65` `docs/x-posts.md`), which defeats the deliberate
   rewording of the README's Backups section to avoid naming the first. The
-  paths are visible in a public repository even though the files are not.
+  paths are **not** public: `scripts/` does not exist on `origin/main` at all,
+  and no commit in public history touches either name, checked 2026-08-29. The
+  exposure arrives on the first push, which makes this a decision rather than
+  an incident.
 
 ---
 
