@@ -1316,12 +1316,14 @@
   "urn:tag:sec.gov,2008:accession-number=0001493152-26-040464",
   "urn:tag:sec.gov,2008:accession-number=0001493152-26-040462",
   "urn:tag:sec.gov,2008:accession-number=0001769628-26-000412",
-  "urn:tag:sec.gov,2008:accession-number=0001769628-26-000411"
+  "urn:tag:sec.gov,2008:accession-number=0001769628-26-000411",
+  "urn:tag:sec.gov,2008:accession-number=0001083301-26-000172",
+  "urn:tag:sec.gov,2008:accession-number=0001769628-26-000414"
  ],
  "initialized": true,
  "feeds": {
   "ANY": {
-   "fails": 65,
+   "fails": 66,
    "alerted": true
   },
   "APLD": {
