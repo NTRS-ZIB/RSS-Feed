@@ -4,12 +4,17 @@
  *
  * Run with `node scripts/backup.mjs`. A Windows scheduled task runs it daily.
  *
- * Two different jobs, deliberately kept separate:
+ * Three different jobs, deliberately kept separate:
  *
  *   Collect   Refresh copies of the project's local-only files into backup/local/.
  *             This project has no live database to snapshot, so this is what
  *             takes that slot: GitHub already holds everything tracked, and
  *             these files are the ones a fresh clone would not bring back.
+ *
+ *   Bundle    Save every commit that exists only on this machine. Collect rests
+ *             on "everything tracked is already on GitHub", which is true here
+ *             EXCEPT for commits deliberately held back from a public remote,
+ *             and those are the ones most worth keeping.
  *
  *   Mirror    Copy everything in backup/ to B:\Claude Backup\Infra Monitor\,
  *             then read both copies back and compare hashes. A mirror protects
@@ -359,6 +364,72 @@ async function collectLocalFiles() {
 	return failures.length === 0 && missing.length === 0
 }
 
+/** Bundle every commit that exists only on this machine into backup/local/git/.
+ *
+ *  LOCAL_ONLY rests on "everything tracked by git is already on GitHub". That
+ *  holds for this repository except for the one case most worth keeping: work
+ *  deliberately held back from a PUBLIC remote. Six such commits were sitting
+ *  in `.git` and nowhere else when this was written, including the two that
+ *  changed this script and the handoff, and the working tree copies of those
+ *  files are not in backup/ either, because they are tracked.
+ *
+ *  `--branches --not --remotes` is every local branch tip minus everything
+ *  reachable from a remote-tracking ref, so it captures exactly what a fresh
+ *  clone would not bring back. Being a range rather than a full history, the
+ *  bundle records its base commit as a PREREQUISITE instead of carrying it: 32
+ *  KB rather than the size of the repository. Restoring is `git clone` from
+ *  GitHub and then `git pull unpushed.bundle`, which is why the prerequisite
+ *  has to be a commit GitHub still has. It is, because these commits are
+ *  stacked on `origin/main`.
+ *
+ *  Remote-tracking refs are read as they are. Nothing here fetches, because a
+ *  backup that needs the network is a backup that fails when the network does.
+ *  A stale ref can only make the bundle LARGER, never smaller.
+ *
+ *  NOTHING UNPUSHED IS THE NORMAL STATE, and git reports it by failing:
+ *  "fatal: Refusing to create empty bundle", non-zero exit, no file written.
+ *  `execAsync` turns that into an exception, so without the count check below
+ *  a clean repository would report a bundle FAILURE and take the whole run's
+ *  verdict down with it. Every other git failure here is real and is reported.
+ *
+ *  Written through `.partial` and renamed, because `listFiles()` skips
+ *  `.partial` and a half-written bundle must never reach drive B looking like
+ *  a whole one. Output is byte-identical run to run for an unchanged commit
+ *  range, measured twice at 31,922 bytes, so this does not churn the mirror. */
+async function bundleUnpushed() {
+	const to = path.join(LOCAL, 'local', 'git', 'unpushed.bundle')
+	const temp = `${to}.partial`
+
+	try {
+		const { stdout } = await execAsync('git rev-list --count --branches --not --remotes', { cwd: PROJECT })
+		const count = Number(stdout.trim())
+
+		if (!count) {
+			// Any bundle already taken is KEPT, matching the rest of this script:
+			// a copy outlives the thing it was taken from.
+			say('bundle: nothing unpushed, every local commit is on GitHub')
+			return true
+		}
+
+		await fs.mkdir(path.dirname(to), { recursive: true })
+		await execAsync(`git bundle create "${temp}" --branches --not --remotes`, { cwd: PROJECT })
+
+		// Read it back rather than trusting it, the same rule the file copies
+		// follow. A bundle that does not verify is worse than none, because it
+		// sits there looking like protection.
+		await execAsync(`git bundle verify "${temp}"`, { cwd: PROJECT })
+		await fs.rename(temp, to)
+
+		say(`bundle: ${count} unpushed commit(s) saved to local/git/unpushed.bundle`)
+		return true
+	} catch (error) {
+		await fs.rm(temp, { force: true })
+		say(`bundle FAILED: ${reason(error)}`)
+		say('  commits that exist only on this machine are NOT in the backup.')
+		return false
+	}
+}
+
 /** Report work that exists only in the working tree.
  *
  *  This lives outside pushCommits() on purpose. The equivalent warning in there
@@ -389,7 +460,7 @@ async function reportUnprotectedWork() {
 		for (const f of files.slice(0, 10)) say(`  ${f}`)
 		if (files.length > 10) say(`  ...and ${files.length - 10} more`)
 		say('  these are protected by drive B only if they sit inside backup/.')
-		say('  Commit and push them yourself if you want them off this machine.')
+		say('  Commit them and the next run bundles them; push to reach GitHub.')
 		return files.length
 	} catch (error) {
 		say(`working tree: could not be checked (${reason(error)})`)
@@ -561,6 +632,7 @@ async function pushCommits() {
 
 let dump = null
 let collected = false
+let bundled = false
 let mirrored = false
 let pushed = false
 let unprotected = 0
@@ -570,6 +642,7 @@ await markStart()
 try {
 	dump = await snapshotDatabase()
 	collected = await collectLocalFiles()
+	bundled = await bundleUnpushed()
 	unprotected = await reportUnprotectedWork()
 
 	// A freshness stamp, written before the mirror so it travels with it.
@@ -595,7 +668,7 @@ try {
 		? ` (${unprotected} uncommitted path(s) are on this machine only, see above)`
 		: ''
 
-	if (dump && collected && mirrored && pushed) say(`OK: drive B mirrored and everything else up to date${caveat}`)
+	if (dump && collected && bundled && mirrored && pushed) say(`OK: drive B mirrored and everything else up to date${caveat}`)
 	else if (mirrored) say(`PARTIAL: drive B is up to date, but see the failures above${caveat}`)
 	else say('PROBLEM: the mirror did not complete, drive B is not up to date')
 } catch (error) {
@@ -614,4 +687,4 @@ try {
 	}
 }
 
-process.exit(dump && collected && mirrored && pushed ? 0 : 1)
+process.exit(dump && collected && bundled && mirrored && pushed ? 0 : 1)
