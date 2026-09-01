@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-31T17:46:07+00:00",
+  "generated": "2026-09-01T15:18:30+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -2026,7 +2026,7 @@
     },
     "NUAI": {
       "cik": "0002028336",
-      "filing_count": 186,
+      "filing_count": 187,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-027143",
@@ -2118,19 +2118,19 @@
           "url": "https://www.sec.gov/Archives/edgar/data/2028336/000110465924129080/xslSCHEDULE_13D_X01/primary_doc.xml"
         },
         "SCHEDULE 13G": {
-          "accession": "0000905148-26-003767",
-          "count": 20,
-          "filed": "2026-08-14",
-          "form": "SCHEDULE 13G/A",
+          "accession": "0002026745-26-000007",
+          "count": 21,
+          "filed": "2026-09-01",
+          "form": "SCHEDULE 13G",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000090514826003767/xslSCHEDULE_13G_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000202674526000007/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
         "NEW ERA HELIUM INC.",
         "Roth CH V Holdings, Inc."
       ],
-      "latest_filing_date": "2026-08-17",
+      "latest_filing_date": "2026-09-01",
       "name": "New ERA Energy & Digital, Inc.",
       "projection": {
         "available": true,
@@ -2299,7 +2299,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1563,
+      "filing_count": 1565,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2327,12 +2327,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226034093/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001493152-26-040464",
-          "count": 608,
-          "filed": "2026-08-27",
+          "accession": "0001493152-26-040836",
+          "count": 609,
+          "filed": "2026-08-31",
           "form": "4",
-          "period": "2026-08-26",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226040464/xslF345X06/ownership.xml"
+          "period": "2026-08-28",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226040836/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -2416,7 +2416,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-08-27",
+      "latest_filing_date": "2026-09-01",
       "name": "Soluna Holdings, Inc",
       "projection": {
         "available": true,
