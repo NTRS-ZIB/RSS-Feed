@@ -1324,12 +1324,19 @@
   "9776",
   "urn:tag:sec.gov,2008:accession-number=0001493152-26-040836",
   "urn:tag:sec.gov,2008:accession-number=0002026745-26-000007",
-  "urn:tag:sec.gov,2008:accession-number=0001959173-26-006557"
+  "urn:tag:sec.gov,2008:accession-number=0001959173-26-006557",
+  "9786",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-041022",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-041021",
+  "urn:tag:sec.gov,2008:accession-number=0000950142-26-002478",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-008947",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-008946",
+  "urn:tag:sec.gov,2008:accession-number=0001968582-26-000917"
  ],
  "initialized": true,
  "feeds": {
   "ANY": {
-   "fails": 89,
+   "fails": 90,
    "alerted": true
   },
   "APLD": {
