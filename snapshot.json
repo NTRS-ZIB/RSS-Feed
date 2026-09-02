@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-01T15:18:30+00:00",
+  "generated": "2026-09-02T14:48:24+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -747,7 +747,7 @@
     },
     "BTDR": {
       "cik": "0001899123",
-      "filing_count": 277,
+      "filing_count": 278,
       "filings": {
         "10-K": null,
         "10-Q": null,
@@ -785,12 +785,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026087060/ea030073702-424b5_bitdeer.htm"
         },
         "6-K": {
-          "accession": "0001213900-26-093742",
-          "count": 103,
-          "filed": "2026-08-26",
+          "accession": "0001213900-26-096425",
+          "count": 104,
+          "filed": "2026-09-02",
           "form": "6-K",
-          "period": "2026-08-26",
-          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026093742/ea0303441-6k_bitdeer.htm"
+          "period": "2026-09-02",
+          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026096425/ea0304021-6k_bitdeer.htm"
         },
         "8-K": null,
         "DEF 14A": null,
@@ -834,7 +834,7 @@
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-08-26",
+      "latest_filing_date": "2026-09-02",
       "name": "Bitdeer Technologies Group",
       "projection": {
         "available": true,
@@ -1262,7 +1262,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1102,
+      "filing_count": 1105,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1365,7 +1365,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-08-28",
+      "latest_filing_date": "2026-09-01",
       "name": "CoreWeave, Inc.",
       "projection": {
         "available": true,
@@ -2299,7 +2299,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1565,
+      "filing_count": 1567,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2327,12 +2327,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226034093/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001493152-26-040836",
-          "count": 609,
-          "filed": "2026-08-31",
+          "accession": "0001493152-26-041022",
+          "count": 611,
+          "filed": "2026-09-01",
           "form": "4",
           "period": "2026-08-28",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226040836/xslF345X06/ownership.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226041022/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -2657,7 +2657,7 @@
     },
     "WULF": {
       "cik": "0001083301",
-      "filing_count": 1232,
+      "filing_count": 1234,
       "filings": {
         "10-K": {
           "accession": "0001083301-26-000031",
@@ -2685,12 +2685,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1083301/000207478625000007/xslF345X02/wk-form3a_1755567904.xml"
         },
         "4": {
-          "accession": "0001083301-26-000172",
-          "count": 555,
-          "filed": "2026-08-28",
+          "accession": "0001628280-26-059897",
+          "count": 556,
+          "filed": "2026-09-01",
           "form": "4",
-          "period": "2026-08-27",
-          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000108330126000172/xslF345X06/wk-form4_1787964061.xml"
+          "period": "2026-08-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000162828026059897/xslF345X06/wk-form4_1788296372.xml"
         },
         "40-F": null,
         "424": {
@@ -2775,7 +2775,7 @@
         "IKONICS CORP",
         "CHROMALINE CORP"
       ],
-      "latest_filing_date": "2026-08-28",
+      "latest_filing_date": "2026-09-01",
       "name": "TERAWULF INC.",
       "projection": {
         "available": true,
@@ -2792,7 +2792,7 @@
     },
     "WYFI": {
       "cik": "0002042022",
-      "filing_count": 82,
+      "filing_count": 83,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-034341",
@@ -2820,12 +2820,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026085353/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001213900-26-085356",
-          "count": 21,
-          "filed": "2026-08-04",
+          "accession": "0001213900-26-096352",
+          "count": 22,
+          "filed": "2026-09-01",
           "form": "4",
-          "period": "2026-08-01",
-          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026085356/xslF345X06/ownership.xml"
+          "period": "2026-05-29",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026096352/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -2874,7 +2874,7 @@
       "former_names": [
         "White Fiber, Inc."
       ],
-      "latest_filing_date": "2026-08-26",
+      "latest_filing_date": "2026-09-01",
       "name": "WhiteFiber, Inc.",
       "projection": {
         "available": true,
