@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-02T14:48:24+00:00",
+  "generated": "2026-09-03T14:48:53+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -461,7 +461,7 @@
     },
     "BGDE": {
       "cik": "0001218683",
-      "filing_count": 732,
+      "filing_count": 733,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-037417",
@@ -489,12 +489,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026045631/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0000912282-26-001189",
-          "count": 135,
-          "filed": "2026-08-31",
+          "accession": "0000912282-26-001201",
+          "count": 136,
+          "filed": "2026-09-02",
           "form": "4",
-          "period": "2026-08-27",
-          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000091228226001189/xslF345X06/form4.xml"
+          "period": "2026-08-28",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000091228226001201/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -581,7 +581,7 @@
         "OphthaliX, Inc.",
         "DENALI CONCRETE MANAGEMENT INC"
       ],
-      "latest_filing_date": "2026-08-31",
+      "latest_filing_date": "2026-09-02",
       "name": "Big Digital Energy, Inc.",
       "projection": {
         "available": true,
@@ -747,7 +747,7 @@
     },
     "BTDR": {
       "cik": "0001899123",
-      "filing_count": 278,
+      "filing_count": 279,
       "filings": {
         "10-K": null,
         "10-Q": null,
@@ -768,12 +768,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026065491/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001213900-26-090516",
-          "count": 7,
-          "filed": "2026-08-17",
+          "accession": "0001213900-26-096691",
+          "count": 8,
+          "filed": "2026-09-02",
           "form": "4",
-          "period": "2026-08-14",
-          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026090516/xslF345X06/ownership.xml"
+          "period": "2026-09-01",
+          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026096691/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -1121,7 +1121,7 @@
     },
     "CORZ": {
       "cik": "0001839341",
-      "filing_count": 662,
+      "filing_count": 663,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019505",
@@ -1149,12 +1149,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003445/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0000905148-26-003935",
-          "count": 153,
-          "filed": "2026-08-26",
+          "accession": "0000905148-26-004062",
+          "count": 154,
+          "filed": "2026-09-02",
           "form": "4",
-          "period": "2026-08-24",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003935/xslF345X06/form4.xml"
+          "period": "2026-08-31",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826004062/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1245,7 +1245,7 @@
       "former_names": [
         "Power & Digital Infrastructure Acquisition Corp."
       ],
-      "latest_filing_date": "2026-08-27",
+      "latest_filing_date": "2026-09-02",
       "name": "Core Scientific, Inc./tx",
       "projection": {
         "available": true,
@@ -1516,7 +1516,7 @@
     },
     "GLXY": {
       "cik": "0001859392",
-      "filing_count": 275,
+      "filing_count": 277,
       "filings": {
         "10-K": {
           "accession": "0001859392-26-000016",
@@ -1544,12 +1544,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1859392/000140703626000002/xslF345X06/wk-form3_1783974970.xml"
         },
         "4": {
-          "accession": "0001912609-26-000008",
-          "count": 60,
-          "filed": "2026-08-18",
+          "accession": "0001380615-26-000008",
+          "count": 62,
+          "filed": "2026-09-02",
           "form": "4",
-          "period": "2026-08-18",
-          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000191260926000008/xslF345X06/wk-form4_1787083837.xml"
+          "period": "2026-09-01",
+          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000138061526000008/xslF345X06/wk-form4_1788380601.xml"
         },
         "40-F": null,
         "424": {
@@ -1612,7 +1612,7 @@
       "former_names": [
         "Galaxy Digital Pubco Inc."
       ],
-      "latest_filing_date": "2026-08-31",
+      "latest_filing_date": "2026-09-02",
       "name": "Galaxy Digital Inc.",
       "projection": {
         "available": true,
