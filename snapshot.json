@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-03T14:48:53+00:00",
+  "generated": "2026-09-04T14:37:11+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -1262,7 +1262,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1105,
+      "filing_count": 1107,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1290,12 +1290,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000155/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0001769628-26-000414",
-          "count": 458,
-          "filed": "2026-08-28",
+          "accession": "0001769628-26-000416",
+          "count": 460,
+          "filed": "2026-09-03",
           "form": "4",
-          "period": "2026-08-26",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000414/xslF345X06/form4.xml"
+          "period": "2026-09-01",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000416/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1365,7 +1365,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-09-01",
+      "latest_filing_date": "2026-09-03",
       "name": "CoreWeave, Inc.",
       "projection": {
         "available": true,
@@ -2299,7 +2299,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1567,
+      "filing_count": 1568,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2416,7 +2416,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-09-01",
+      "latest_filing_date": "2026-09-03",
       "name": "Soluna Holdings, Inc",
       "projection": {
         "available": true,
