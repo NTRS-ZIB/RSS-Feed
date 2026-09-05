@@ -269,14 +269,19 @@ def main():
                     f"permissions: {describe(perms)}. Pushpin cannot work."
                 )
         elif view:
-            leaks.append(name)
+            leaks.append((name, ch.get("type")))
         elif manage:
             latent.append(name)
 
     if leaks:
         print(f"  LEAK    {len(leaks)} other channels are visible to the bot:")
-        for n in leaks[:40]:
-            print(f"            #{n}")
+        for n, t in leaks[:40]:
+            # The type is printed because it explains a disagreement between
+            # this scan and the live probe below, which only reads text-like
+            # channels. A leak the live probe stays silent about is not a
+            # contradiction: it is a channel type it never asked about.
+            note = "" if t in TEXTLIKE else "  (not live-probed: non-text type)"
+            print(f"            #{n}  type {t}{note}")
         if len(leaks) > 40:
             print(f"            ... and {len(leaks) - 40} more")
         failures.append(

@@ -130,9 +130,9 @@ SNAPSHOT    page history, limit=100 EXPLICIT (the default is 50)
             classify each message. Mutate nothing in this phase.
 
 GATE        log every id with age, verdict, reason, and the signals read
-            HALT if zero webhook messages were kept
-            HALT if zero messages carry the marker
+            HALT if webhook_id was SEEN in the sample and none was kept
             HALT if condemned count > PUSHPIN_MAX_DELETES
+            WARN if zero messages carry the marker
             exit here if DRY_RUN
 
 CONDEMN     record newly-eligible ids with a timestamp in pushpin_state.json
@@ -300,7 +300,14 @@ def is_marker(emoji: dict) -> bool:
 `emoji.get("id") is not None` is not decoration. Without it, any custom emoji
 named `pushpin` matches.
 
-**A run where zero messages carry the marker is an alarm, not a clean channel.**
+**A run where zero messages carry the marker is a warning, not a halt.** The
+first draft halted, on the reasoning that nobody being able to apply the marker
+is indistinguishable from nobody wanting to. That reasoning was inherited from a
+CUSTOM-emoji design, where the marker can be deleted from the server or become
+`available: false` after a boost lapse. **A Unicode emoji cannot be deleted, so
+that failure mode does not exist here**, and the measured marker density is 1 in
+100 messages, which means an ordinary window legitimately contains none. Halting
+on it would stop every run and delete nothing.
 
 Snowflakes serialise as JSON strings. `"123" == 123` is silently False in
 Python and would condemn the entire channel, so ids are type-asserted at
@@ -329,8 +336,15 @@ pin. A marker predicate comparing `int` against `str` snowflakes matches nothing
 and condemns the channel. All three look like a clean, healthy run.
 
 **Guard:** permissions asserted at startup; an empty first page on a channel
-known to have content is an alert; type assertions on every snowflake; halt on
-zero webhook keeps and zero marker keeps.
+known to have content is an alert; type assertions on every snowflake; halt when
+`webhook_id` appeared in the sample and nothing was kept for it.
+
+That last one tests the CLASSIFIER rather than the channel's traffic mix, and
+the difference is the whole guard. "Zero webhook messages were kept" was the
+first draft and it is wrong here: the channel measured **1 webhook message in
+100**, so an ordinary window contains none and the component would halt forever
+without deleting anything. "Webhook messages were present and none survived" can
+only be true if the detection broke.
 
 The pin fetch has its own version of this. The deprecated `GET /channels/{id}/pins`
 is still live and is what older libraries call. It returns "the first 50 pinned
@@ -389,19 +403,34 @@ against live data, and all of it should be spent.
 Flip the default only after reading a log from a day on which it proposed real
 deletions.
 
-## Open items: four things reading cannot settle
+## Measured, 2026-09-05
 
-Reasoning that a field or route is right does not count as confirming it. Each
-of these is load-bearing and each is settled by the dry-run window:
+The four items this spec could not settle by reading were settled against the
+live channel by [`probe_pushpin_scope.py`](../../../probe_pushpin_scope.py),
+sampling 100 messages. Run it again after any change to the bot's permissions.
 
-1. Whether `reactions` is **omitted or `[]`** on an unreacted message. The docs
-   never say. A `KeyError` swallowed by a broad `except` becomes "unmarked",
-   which deletes.
-2. Whether the reactions route returns **200 with `[]`** or error **`10014`**
-   for a correctly-encoded marker nobody has used. The two-store design rests on
-   telling those apart.
-3. Whether `type=0` genuinely excludes burst reactors. Currently an inference,
-   with a free guard.
-4. **Whether interaction follow-ups and application messages carry
-   `webhook_id`.** If they do, the webhook exemption is silently wider than
-   intended.
+| Question | Measured | What it changed |
+|---|---|---|
+| Is `reactions` omitted or `[]` when unreacted? | **Omitted.** 79 absent, 0 empty | `msg["reactions"]` raises. The `.get()` in the predicate is load-bearing, not defensive style |
+| Unused marker on the reactions route: `200 []` or `10014`? | **200 with `[]`** | The two-store design works as written. An error genuinely means an error |
+| Does `type=0` exclude burst reactors? | Same message: type 0 gave **1** reactor, type 1 gave **0** | Confirms the two queries return different sets. Does NOT prove a burst-only mark reads 0 on type 0, because no super-reaction existed to test. **The guard stays and this line stays open** |
+| Does anything but a webhook carry `webhook_id`? | webhook 1, bot-not-webhook 0, human 99 | No evidence of a wider exemption. Only one webhook message in the sample, so this is weak: re-check when more have accumulated |
+
+Two further measurements the probe returned that the spec had assumed:
+
+- **Content gating is real.** 100 of 100 messages came back with empty
+  `content`. The privacy claim in the Configuration section is now measured
+  against this channel rather than argued from the docs.
+- **Message types were `{0: 90, 19: 10}`.** Ten percent of the channel is
+  replies. The `type == 0` trap was not hypothetical: that rule would have
+  silently skipped one message in ten while reporting a complete sweep.
+
+### Still open
+
+- **Burst reactors.** Needs a super-reaction on one message, then a re-run.
+- **The webhook sample is one message.** A rule protecting the monitor's record
+  has been validated against a single instance of that record.
+- **`#General` is visible to the bot** (read-only, no `MANAGE_MESSAGES`). It is
+  the one channel the scope scan flags and the live probe does not, which means
+  it is not a text channel: almost certainly voice, whose text chat the bot can
+  read. Deny `VIEW_CHANNEL` on it directly rather than on a category.
