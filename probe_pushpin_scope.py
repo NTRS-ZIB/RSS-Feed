@@ -454,16 +454,40 @@ def main():
               f"settle Q3.")
 
     # ------------------------------------------------------------- VERDICT
+    #
+    # EXIT 0 EVEN WITH FINDINGS, and that is the house convention rather than
+    # laziness: none of the five other probe_*.py scripts exits non-zero on a
+    # finding, because a diagnostic that reports a problem has SUCCEEDED. The
+    # first version of this file exited 1, which made GitHub treat "the probe
+    # worked and found something" as "the workflow broke" and emailed the
+    # operator on every dispatch. Two emails in five minutes is how that was
+    # noticed; the durable cost is that a probe which cries wolf gets ignored,
+    # and this one exists to be read.
+    #
+    # A non-zero exit is reserved for the probe being UNABLE TO RUN: no token,
+    # no channel, the API unreachable. Those exits are above, at the point of
+    # failure, and they mean the report below does not exist rather than that
+    # it says something bad.
+    #
+    # The findings are surfaced as ::warning:: annotations instead, which put
+    # them on the run's summary page in the Actions UI without a red X.
 
     print()
     print("=" * 60)
     if failures:
-        print(f"FAILED: {len(failures)} problem(s)")
+        print(f"FINDINGS: {len(failures)}")
         print("=" * 60)
         for i, f in enumerate(failures, 1):
             print(f"  {i}. {f}")
-        sys.exit(1)
-    print("PASSED: the bot reaches exactly one channel, with all three permissions.")
+        print()
+        for f in failures:
+            # One line, no newlines: GitHub truncates an annotation at the
+            # first newline and the rest would vanish silently.
+            print(f"::warning title=Pushpin scope::{' '.join(f.split())}")
+        print()
+        print("The probe ran correctly. The findings above are what it found.")
+    else:
+        print("CLEAN: the bot reaches exactly one channel, with all three permissions.")
     print("=" * 60)
 
 

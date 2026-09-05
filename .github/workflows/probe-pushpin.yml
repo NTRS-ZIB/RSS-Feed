@@ -11,7 +11,13 @@ name: Pushpin scope probe
 # looks identical in Discord's UI to one correctly scoped, so this is the only
 # check that distinguishes them.
 #
-# It exits non-zero on a finding, so a red run means the scoping is wrong.
+# IT EXITS ZERO EVEN WITH FINDINGS, matching the other probe_*.py scripts. A
+# diagnostic that reports a problem has succeeded, and GitHub emails the
+# operator on every failed workflow_dispatch, so a probe that exits non-zero on
+# a finding trains its reader to ignore it. Findings appear as ::warning::
+# annotations on the run summary. A red run here means the probe could not run
+# at all: no token, no channel, or Discord unreachable.
+#
 # See probe_pushpin_scope.py and docs/superpowers/specs/2026-09-04-pushpin-design.md.
 
 on:
