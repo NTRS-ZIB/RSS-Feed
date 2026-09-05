@@ -765,15 +765,33 @@ def main():
         # delete: marker_state is where the two-store rule and both marker
         # encodings live, and it is the only code a dry run could reach that
         # decides whether something dies. The calls are read-only.
-        sample = sorted(condemned, key=int)[:DRY_SAMPLE]
+        # FALLS BACK TO THE OLDEST MESSAGES WHEN NOTHING IS CONDEMNED, and the
+        # fallback is the point rather than a nicety. Sampling only the
+        # condemned set means this block does nothing at all until the channel
+        # has messages past the cutoff, so for the whole three-week rollout
+        # window a dry run would exercise the classifier and NOTHING that
+        # decides a delete. That is not hypothetical: the bug where an invalid
+        # alternate reaction key made every message read `unknown`, leaving the
+        # component unable to ever delete anything, was invisible to a dry run
+        # and was found by the probe instead.
+        rehearsal = not condemned
+        pool = sorted(condemned, key=int) if condemned else \
+            sorted((m["id"] for m in messages), key=int)
+        sample = pool[:DRY_SAMPLE]
         if sample:
             tally = {}
             for mid in sample:
                 s = marker_state(mid)
                 tally[s] = tally.get(s, 0) + 1
-            print(f"  reaction store, {len(sample)} sampled: "
+            what = "oldest messages (REHEARSAL: nothing is condemned yet)" \
+                if rehearsal else "condemned"
+            print(f"  reaction store, {len(sample)} {what}: "
                   + ", ".join(f"{v} {k}" for k, v in sorted(tally.items())))
-            if tally.get("unknown"):
+            if tally.get("unknown") == len(sample):
+                print("    EVERY sample returned 'unknown'. Nothing would ever "
+                      "be deleted. Check the marker keys against the reactions "
+                      "route before going live.")
+            elif tally.get("unknown"):
                 print("    'unknown' means the API would not answer. Those keep.")
         print("\nNothing was deleted and no state was saved.")
         return
