@@ -30,6 +30,7 @@ import sys
 import time
 import json
 import urllib.parse
+from datetime import datetime, timezone
 
 import requests
 
@@ -73,6 +74,21 @@ PACE = 0.35
 # generates counts toward that ceiling, so an unbounded sweep of a large guild
 # is the one way this read-only probe could cause harm.
 MAX_PROBE_CHANNELS = 200
+
+
+# Discord's epoch and the snowflake shift, matching pushpin.py. Deliberately
+# duplicated rather than imported: this probe must be able to contradict the
+# component, and a shared constant is one fewer thing it can independently
+# check. Verified against Discord's own worked example in test_pushpin.py.
+DISCORD_EPOCH_MS = 1420070400000
+SNOWFLAKE_SHIFT = 22
+
+
+def snowflake_time(mid):
+    """UTC datetime a snowflake was created."""
+    return datetime.fromtimestamp(
+        ((int(mid) >> SNOWFLAKE_SHIFT) + DISCORD_EPOCH_MS) / 1000, timezone.utc
+    )
 
 
 def call(path):
@@ -338,11 +354,31 @@ def main():
     print("OPEN QUESTIONS FROM THE SPEC")
     print("=" * 60)
 
-    st, msgs = call(f"/channels/{CHANNEL_ID}/messages?limit=100")
-    if st != 200 or not isinstance(msgs, list):
-        print(f"  cannot read target channel history: {st}")
-        msgs = []
-    print(f"  sampled {len(msgs)} messages from the target channel\n")
+    # THE WHOLE CHANNEL, not the newest 100. The first version fetched one
+    # page, which was the entire channel when this was written and is now
+    # about 6% of it. A marker on an older message was therefore invisible to
+    # the probe while `pushpin.py` classified it correctly, so the two
+    # disagreed and the probe was the one that was wrong.
+    #
+    # Same pagination as pushpin.snapshot(): newest-to-oldest regardless of
+    # anchor, so `before` takes the LAST id of each page.
+    msgs, cursor, pages = [], None, 0
+    while True:
+        path = f"/channels/{CHANNEL_ID}/messages?limit=100"
+        if cursor:
+            path += f"&before={cursor}"
+        st, page = call(path)
+        if st != 200 or not isinstance(page, list):
+            print(f"  history fetch returned {st} on page {pages + 1}")
+            break
+        pages += 1
+        if not page:
+            break
+        msgs.extend(m for m in page if m.get("channel_id") == CHANNEL_ID)
+        if len(page) < 100:
+            break
+        cursor = page[-1]["id"]
+    print(f"  read {len(msgs)} messages over {pages} page(s), whole channel\n")
 
     # Q0 (not in the spec, but the privacy claim rests on it): is content
     # actually empty? If it is not, the MESSAGE_CONTENT intent is enabled and
@@ -430,25 +466,63 @@ def main():
             for r in (m.get("reactions") or [])
         )
     ]
-    print(f"\n  Q3 marker in use {len(marked)} message(s) carry {MARKER}")
+    def marker_reaction(m):
+        for r in m.get("reactions") or []:
+            e = r.get("emoji") or {}
+            if (e.get("id") is None and isinstance(e.get("name"), str)
+                    and e["name"].replace(VS16, "") == MARKER):
+                return r
+        return None
+
+    print(f"\n  Q3 marker in use {len(marked)} of {len(msgs)} messages "
+          f"carry {MARKER}")
+
+    # BOTH ENCODINGS SEPARATELY, because pushpin.py queries both on the delete
+    # path and this is the only place that can observe which one Discord
+    # actually stored. If every mark in a real channel is bare, the VS16 query
+    # is insurance rather than a live requirement, and that is worth knowing
+    # rather than assuming in either direction.
+    bare = sum(1 for m in marked
+               if (marker_reaction(m).get("emoji") or {}).get("name") == MARKER)
+    print(f"                   stored bare={bare}, with VS16={len(marked) - bare}")
+
+    burst = [m for m in marked
+             if (marker_reaction(m).get("count_details") or {}).get("burst")]
+    print(f"                   with a BURST (super) reaction: {len(burst)}")
+
     if marked:
-        m = marked[0]
-        r = next(r for r in m["reactions"]
-                 if isinstance((r.get("emoji") or {}).get("name"), str)
-                 and r["emoji"]["name"].replace(VS16, "") == MARKER)
+        # The oldest marked message, because that is the one a newest-100
+        # window could never see and the one a sweep reaches first.
+        oldest = min(marked, key=lambda m: int(m["id"]))
+        r = marker_reaction(oldest)
         det = r.get("count_details") or {}
-        print(f"                   count={r.get('count')} "
-              f"normal={det.get('normal')} burst={det.get('burst')}")
-        emoji = urllib.parse.quote(MARKER)
-        for t in (0, 1):
-            st, body = call(
-                f"/channels/{CHANNEL_ID}/messages/{m['id']}"
-                f"/reactions/{emoji}?type={t}",
-            )
-            n = len(body) if isinstance(body, list) else "err"
-            print(f"                   type={t}: HTTP {st}, {n} reactor(s)")
-        print("                   -> if type=0 and type=1 differ, querying only "
-              "the default would delete super-reacted messages.")
+        age = (datetime.now(timezone.utc) - snowflake_time(oldest["id"])).days
+        print(f"                   oldest marked message: {age}d old, "
+              f"count={r.get('count')} normal={det.get('normal')} "
+              f"burst={det.get('burst')}")
+
+        # Query both types against a burst-marked message if one exists, and
+        # otherwise against the oldest. Only the first settles Q3.
+        target = burst[0] if burst else oldest
+        for key, label in ((urllib.parse.quote(MARKER), "bare"),
+                           (urllib.parse.quote(MARKER + VS16), "VS16")):
+            for t in (0, 1):
+                st, body = call(
+                    f"/channels/{CHANNEL_ID}/messages/{target['id']}"
+                    f"/reactions/{key}?type={t}")
+                n = len(body) if isinstance(body, list) else "err"
+                print(f"                   {label} type={t}: HTTP {st}, "
+                      f"{n} reactor(s)")
+        if burst:
+            print("                   -> Q3 SETTLED: compare type=0 against "
+                  "type=1 above on a burst-marked message.")
+        else:
+            print("                   -> Q3 STILL OPEN: no burst reaction "
+                  "exists, so this compares a NORMAL mark and cannot show "
+                  "whether type=0 excludes burst reactors.")
+        print("                   -> if bare and VS16 disagree, Discord does "
+              "NOT normalise the variation selector on lookup, and querying "
+              "one encoding would miss marks stored as the other.")
     else:
         print(f"                   react {MARKER} to a message and re-run to "
               f"settle Q3.")
