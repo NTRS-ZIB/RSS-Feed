@@ -527,9 +527,12 @@ def main():
             print("                   -> Q3 SETTLED: compare type=0 against "
                   "type=1 above on a burst-marked message.")
         else:
-            print("                   -> Q3 STILL OPEN: no burst reaction "
-                  "exists, so this compares a NORMAL mark and cannot show "
-                  "whether type=0 excludes burst reactors.")
+            print("                   -> Q3 IS NOT EXPECTED TO SETTLE HERE: "
+                  "this server does not use super reactions, so the "
+                  "type=1 branch has nothing to find. The query stays "
+                  "because a single Nitro super-react would otherwise be "
+                  "a mark that gets deleted. Zero burst is the expected "
+                  "reading, not a gap.")
         print("                   -> if bare and VS16 disagree, Discord does "
               "NOT normalise the variation selector on lookup, and querying "
               "one encoding would miss marks stored as the other.")

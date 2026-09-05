@@ -538,7 +538,22 @@ name, which is a different surface from the route's key, and it costs nothing.
 
 ### Still open
 
-- **Burst reactors.** Needs a super-reaction on one message, then a re-run.
+- **Burst reactors: closed as won't-settle, 2026-09-05.** The operator
+  confirms this server does not use super reactions, and the probe found
+  0 burst across all 1,686 messages. So `type=1` has never returned a
+  reactor and probably never will.
+
+  **The query stays anyway**, and the reasoning is the asymmetry this
+  whole component is built on. Keeping it costs one request per delete
+  candidate on a job that runs once a day. Dropping it means the first
+  person with Nitro who presses super-react, which sits in the ordinary
+  reaction picker for them, marks a message that is then permanently
+  deleted. Current practice is not a property of the server.
+
+  What this does mean is that the branch is **unexercisable here**, so it
+  is carried by `test_pushpin.py` rather than by observation: the
+  `only the default reaction type queried` mutation reddens a check.
+  That is the only thing standing behind it.
 - **The webhook sample is one message.** A rule protecting the monitor's record
   has been validated against a single instance of that record.
 ### Closed

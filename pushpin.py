@@ -284,6 +284,15 @@ def marker_state(message_id):
     which is the right way for this to fail.
     """
     for index, key in enumerate(MARKER_KEYS):
+        # type=1 IS DELIBERATELY UNEXERCISABLE ON THIS SERVER AND STAYS.
+        # Nobody here uses super reactions, confirmed by the operator and by
+        # 0 burst reactions across 1,686 messages, so this branch has never
+        # returned a reactor and probably never will. It costs one request per
+        # candidate on a job that runs once a day. The alternative is that the
+        # first person with Nitro who presses the super-react button, which
+        # sits in the ordinary reaction picker for them, marks a message that
+        # is then permanently deleted. Current practice is not a property of
+        # the server, and this is not a guard to trade for a request.
         for rtype in (0, 1):
             st, body = call(
                 "GET",
