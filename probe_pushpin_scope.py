@@ -510,9 +510,19 @@ def main():
                 st, body = call(
                     f"/channels/{CHANNEL_ID}/messages/{target['id']}"
                     f"/reactions/{key}?type={t}")
-                n = len(body) if isinstance(body, list) else "err"
-                print(f"                   {label} type={t}: HTTP {st}, "
-                      f"{n} reactor(s)")
+                if isinstance(body, list):
+                    print(f"                   {label} type={t}: HTTP {st}, "
+                          f"{len(body)} reactor(s)")
+                else:
+                    # The JSON code is the whole finding on a non-200: it
+                    # separates "this encoding is not a valid reaction key"
+                    # from "something about this message went wrong", and
+                    # pushpin.py must treat those differently or it keeps
+                    # everything forever.
+                    code = body.get("code") if isinstance(body, dict) else None
+                    msg_ = body.get("message") if isinstance(body, dict) else None
+                    print(f"                   {label} type={t}: HTTP {st}, "
+                          f"code={code} {msg_!r}")
         if burst:
             print("                   -> Q3 SETTLED: compare type=0 against "
                   "type=1 above on a burst-marked message.")
