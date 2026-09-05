@@ -467,7 +467,7 @@ sampling 100 messages. Run it again after any change to the bot's permissions.
 | Is `reactions` omitted or `[]` when unreacted? | **Omitted.** 79 absent, 0 empty | `msg["reactions"]` raises. The `.get()` in the predicate is load-bearing, not defensive style |
 | Unused marker on the reactions route: `200 []` or `10014`? | **200 with `[]`** | The two-store design works as written. An error genuinely means an error |
 | Does `type=0` exclude burst reactors? | Same message: type 0 gave **1** reactor, type 1 gave **0** | Confirms the two queries return different sets. Does NOT prove a burst-only mark reads 0 on type 0, because no super-reaction existed to test. **The guard stays and this line stays open** |
-| Does anything but a webhook carry `webhook_id`? | webhook 1, bot-not-webhook 0, human 99 | No evidence of a wider exemption. Only one webhook message in the sample, so this is weak: re-check when more have accumulated |
+| Does anything but a webhook carry `webhook_id`? | webhook 1, bot-not-webhook 0, human 99 in the 100-message probe sample; **15 webhook, 0 condemned across all 1,680 on 2026-09-05** | No evidence of a wider exemption, now across 15 instances rather than one |
 
 Two further measurements the probe returned that the spec had assumed:
 
@@ -477,6 +477,32 @@ Two further measurements the probe returned that the spec had assumed:
 - **Message types were `{0: 90, 19: 10}`.** Ten percent of the channel is
   replies. The `type == 0` trap was not hypothetical: that rule would have
   silently skipped one message in ten while reporting a complete sweep.
+
+### First dry run against the live channel, 2026-09-05
+
+Run 33939491382. The probe had sampled 100 messages; this classified the whole
+channel, and two of its numbers change what the earlier measurements meant.
+
+```
+  1680 messages in channel
+  verdicts:  1645 too-new,  20 marked,  15 webhook
+  webhook messages: 15 seen, 0 condemned
+  condemned 0 new, 0 pending
+```
+
+- **15 webhook messages, not 1.** The review's sharpest open item was that the
+  rule protecting the monitor's record had been validated against a single
+  instance. It is now 15, all of them kept, none condemned. **Closed.**
+- **20 marked messages, not 1.** The 1-in-100 marker density the earlier
+  guards were reasoned from was a sampling artefact: the real figure is about
+  1 in 84 across the channel. The conclusions drawn from it hold, since both
+  turned on an ordinary window legitimately containing none, and 20 in 1,680
+  still does.
+- **0 condemned**, which is correct: nothing in a channel this young is over
+  31 days, and it will stay 0 until roughly 2026-09-27.
+- Note that a dry run **does not persist those 20 latches**. Nothing is latched
+  until a live run, which is consistent (nothing can be deleted either), but it
+  means the latch starts accumulating only at stage 2 of the rollout.
 
 ### Still open
 
