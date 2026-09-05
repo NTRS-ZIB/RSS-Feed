@@ -1,0 +1,42 @@
+name: Pushpin scope probe
+
+# Maintenance tool, not a component. Read-only: computes the Pushpin bot's
+# effective permissions in every channel of the guild, probes each one to
+# confirm the computation, and samples the target channel to settle the four
+# open questions in the design spec. Deletes nothing, posts nothing, commits
+# nothing, and has no schedule.
+#
+# Run it after any change to the bot's channel permission overwrites, and
+# before writing pushpin.py. A bot still holding VIEW_CHANNEL server-wide
+# looks identical in Discord's UI to one correctly scoped, so this is the only
+# check that distinguishes them.
+#
+# It exits non-zero on a finding, so a red run means the scoping is wrong.
+# See probe_pushpin_scope.py and docs/superpowers/specs/2026-09-04-pushpin-design.md.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read # reads the checkout, writes nothing
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install requests
+      - name: Probe
+        # Paces at 0.35s per request and probes at most 200 channels, so the
+        # ceiling is a few minutes even on a large guild. A longer run means
+        # it is being rate limited, which is itself worth seeing.
+        timeout-minutes: 15
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          PUSHPIN_CHANNEL_ID: ${{ secrets.PUSHPIN_CHANNEL_ID }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u probe_pushpin_scope.py
