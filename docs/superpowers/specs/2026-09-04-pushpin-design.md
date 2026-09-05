@@ -430,9 +430,16 @@ Two further measurements the probe returned that the spec had assumed:
 - **Burst reactors.** Needs a super-reaction on one message, then a re-run.
 - **The webhook sample is one message.** A rule protecting the monitor's record
   has been validated against a single instance of that record.
-- **`#General` is visible to the bot** (read-only, no `MANAGE_MESSAGES`).
-  Measured as **type 2, a voice channel**, whose in-channel text chat the bot
-  can therefore read. It is the one channel the scope scan flags and the live
-  probe does not, because the live probe only reads text-like types. Deny
-  `VIEW_CHANNEL` on it directly. A voice channel is easy to miss when denying
-  by category, which is exactly why it is the one that survived.
+### Closed
+
+- **Scope is clean as of 2026-09-05.** The probe reports "no other channel is
+  visible to the bot" across all 13 channels, with the target holding all three
+  permissions and eight other text channels answering 403.
+
+  The one channel that had survived the first pass was `#General`, measured as
+  **type 2, a voice channel**, whose in-channel text chat the bot could read.
+  Worth recording because of *why* it survived: denying by category is the
+  efficient way to do this, and a voice channel is exactly what that sweep is
+  easiest to miss. The scope scan flagged it and the live probe did not, since
+  the live probe only reads text-like types. **A disagreement between those two
+  checks is a signal about channel type, not a bug in either.**
