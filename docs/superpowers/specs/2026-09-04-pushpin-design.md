@@ -2,7 +2,10 @@
 
 # Pushpin: design
 
-**Status:** design, approved 2026-09-04. Not yet implemented.
+**Status:** implemented and merged 2026-09-05. Running dry: `DRY_RUN` in
+`pushpin.yml` is the hardcoded literal `"true"`, so nothing can be deleted
+on the cron or on a dispatch. Going live is stages 2 and 3 of the rollout
+below, and nothing in the channel is eligible before roughly 2026-09-27.
 
 Deletes messages older than 30 days from one named Discord channel, keeping
 everything posted by a webhook. It is the first component here that destroys
