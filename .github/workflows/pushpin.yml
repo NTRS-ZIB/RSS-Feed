@@ -1,0 +1,160 @@
+name: Pushpin
+
+on:
+  schedule:
+    # 03:40 UTC daily. The 00:00-05:00 window is otherwise empty, which keeps
+    # this clear of the two poll-loop workflows that hold a runner for ~45
+    # minutes each between 07:00 and 23:59.
+    #
+    # PUNCTUALITY DOES NOT MATTER HERE and that is unusual for this repo.
+    # Scheduled runs on this repo land 51-173 minutes late, measured. Against a
+    # 30-day threshold that is 0.2% of the window, and a dropped run means a
+    # message dies tomorrow instead of today.
+    #
+    # It does interact with PUSHPIN_CONDEMN_HOURS=20, and the margin was
+    # checked rather than assumed: worst case is a very late run followed by an
+    # early one, 24h - 173m + 51m = 21h58m between fires, which still clears
+    # 20h. A shorter cron interval would not.
+    - cron: "40 3 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Classify and log without deleting anything or saving state"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write # commits pushpin_state.json
+
+concurrency:
+  group: pushpin
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Refresh state from origin
+        # A run queued behind another checks out the SHA fixed when the run was
+        # CREATED, not when its job started, so pushpin_state.json on disk can
+        # already be a push behind before the component reads it. Here that
+        # would mean a stale `protected` list, and a stale protected list
+        # DELETES A MARKED MESSAGE. See the trap table in CLAUDE.md.
+        run: |
+          git fetch -q origin "$GITHUB_REF_NAME"
+          # The file does not exist until the first live run creates it, and
+          # absent is not an error. Via a temp file, because a redirect
+          # truncates first and a failed show would leave an empty state file,
+          # which reads as "nothing is protected".
+          if git show "origin/$GITHUB_REF_NAME:pushpin_state.json" \
+               > "$RUNNER_TEMP/origin_state.json" 2>/dev/null; then
+            mv "$RUNNER_TEMP/origin_state.json" pushpin_state.json
+            if git diff --quiet HEAD -- pushpin_state.json; then
+              echo "State was already current."
+            else
+              echo "Refreshed pushpin_state.json from origin; the checkout was behind."
+            fi
+          else
+            echo "No pushpin_state.json on origin yet; first run will create it."
+          fi
+
+      - name: Sweep
+        # Bounded by MAX_DELETES=200 and a 0.35s pace, plus two reaction checks
+        # per delete candidate, so a full run is single-digit minutes. Longer
+        # than that means rate limiting, which is worth seeing rather than
+        # hiding behind a generous timeout.
+        timeout-minutes: 20
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          PUSHPIN_CHANNEL_ID: ${{ secrets.PUSHPIN_CHANNEL_ID }}
+          # Infrastructure noise belongs in ops, not in a market channel.
+          WEBHOOK_URL_OPS: ${{ secrets.WEBHOOK_URL_OPS }}
+          # ============================================================
+          # ROLLOUT, STAGE 1 OF 3. HARDCODED TRUE: nothing is ever
+          # deleted while this line reads "true", on the cron or on a
+          # dispatch with the box unticked.
+          #
+          # GO LIVE IN TWO STEPS, NOT ONE. The house pattern is the bare
+          # `${{ inputs.dry_run }}`, because `inputs` is empty on a
+          # schedule event and scheduled runs are therefore live. That is
+          # right for a component whose worst case is a duplicate post.
+          # It is wrong here: applied to this line it takes the component
+          # from "can never delete" to "an unattended 03:40 cron deletes
+          # for real" in a single commit, with no state in between where
+          # a person can watch a live run happen.
+          #
+          #   STAGE 2, once a dry run has proposed real deletions and a
+          #   person has read the log. Cron stays dry, a dispatch can go
+          #   live and be watched:
+          #     DRY_RUN: ${{ github.event_name == 'schedule' && 'true' || inputs.dry_run }}
+          #
+          #   STAGE 3, once a supervised live dispatch has been read:
+          #     DRY_RUN: ${{ inputs.dry_run }}
+          #
+          # Do NOT write `${{ inputs.dry_run || 'true' }}`: a deliberately
+          # unticked box is boolean false, which is falsy there, so a live
+          # dispatch would silently stay dry and stage 2 would be
+          # unreachable.
+          #
+          # Nothing in the channel is eligible before roughly 2026-09-27,
+          # so every run until then correctly proposes nothing and a green
+          # run proves less than it looks like it does.
+          # ============================================================
+          DRY_RUN: "true"
+          PYTHONUNBUFFERED: "1"
+        run: python -u pushpin.py
+
+      - name: Persist state
+        # ALWAYS, including after a halted Sweep. Without this the step
+        # defaults to success() and is skipped on a halt, which throws away
+        # every latch that run established: pushpin.py writes `protected` to
+        # disk before anything destructive, precisely so a later halt cannot
+        # lose it, and a skipped push would undo that inside the runner.
+        # A halt before the first write leaves the file untouched, so the
+        # no-change guard below exits 0 and nothing is pushed.
+        if: always()
+        # Re-fetch before pushing. A run queued behind another holds a state
+        # file that can already be stale by the time it pushes.
+        #
+        # LAST WRITER WINS IS NOT SAFE HERE, unlike the other components. Their
+        # state is everything-seen-before plus what they just saw, so the later
+        # file is a superset. `protected` is also a superset, but `condemned`
+        # is not: a run that deleted a message removes it, and a stale file
+        # would resurrect the entry. Resurrection is harmless (the delete
+        # returns 404 and the entry is dropped), so this is safe by accident
+        # rather than by design, and the retry loop below keeps the window
+        # small enough that it stays that way.
+        run: |
+          if [[ -z "$(git status --porcelain pushpin_state.json)" ]]; then
+            echo "No state change."
+            exit 0
+          fi
+          git config user.name "pushpin"
+          git config user.email "actions@github.com"
+          cp pushpin_state.json "$RUNNER_TEMP/pushpin_state.json"
+          for attempt in 1 2 3 4 5; do
+            git fetch -q origin "$GITHUB_REF_NAME"
+            git reset -q --hard "origin/$GITHUB_REF_NAME"
+            cp "$RUNNER_TEMP/pushpin_state.json" pushpin_state.json
+            if [[ -z "$(git status --porcelain pushpin_state.json)" ]]; then
+              echo "State already current on origin; nothing to push."
+              exit 0
+            fi
+            git add pushpin_state.json
+            git commit -q -m "Update pushpin state [skip ci]"
+            if git push -q origin "HEAD:$GITHUB_REF_NAME"; then
+              echo "State pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt); another run pushed first. Retrying."
+            sleep $((attempt * 3))
+          done
+          echo "Could not persist pushpin_state.json after 5 attempts." >&2
+          exit 1

@@ -68,8 +68,10 @@ rest.
 | `PUSHPIN_CHANNEL_ID` | The one channel. Named explicitly, never discovered. |
 | `PUSHPIN_AGE_DAYS` | Default 30. |
 | `PUSHPIN_GRACE_DAYS` | Default 1. See "two independent margins" below. |
-| `PUSHPIN_MAX_DELETES` | Per-run cap. Bounds a logic bug. |
-| `WEBHOOK_URL_OPS` | Reports only on a run that deleted something. |
+| `PUSHPIN_MAX_DELETES` | Default 200. Halts the run if more than this many are condemned at once. On the first eligible day a channel with a large backlog will trip it and stay tripped until the cap is raised: that is fail-safe and it will read as a bug, so expect it. |
+| `WEBHOOK_URL_OPS` | Reports only on a run that deleted or rescued something. Prints a line rather than skipping silently when unset. |
+| `PUSHPIN_CONDEMN_HOURS` | Default 20, floored at 1. How long a condemned message waits before it can be deleted. Decides the operator's notice window, so it belongs here rather than buried in the source. |
+| `PUSHPIN_DRY_SAMPLE` | Default 25. How many condemned messages a dry run puts through the read-only reaction check, so a dry run exercises the code that authorises a delete. |
 | `DRY_RUN` | House convention. Evaluates and logs, posts nothing, saves no state, deletes nothing. |
 
 **The bot runs without the MESSAGE_CONTENT privileged intent**, and `content`,
@@ -129,7 +131,9 @@ SNAPSHOT    page history, limit=100 EXPLICIT (the default is 50)
             drop content/embeds/attachments/components at ingest
             classify each message. Mutate nothing in this phase.
 
-GATE        log every id with age, verdict, reason, and the signals read
+GATE        log AGGREGATES: verdict counts by reason, a bucketed age
+              histogram of the delete set. Never per-message ids or ages:
+              this repo is public and either reconstructs a timeline.
             HALT if webhook_id was SEEN in the sample and none was kept
             HALT if condemned count > PUSHPIN_MAX_DELETES
             WARN if zero messages carry the marker
@@ -155,7 +159,7 @@ not, and neither substitutes for the other.
 | Margin | Protects against |
 |---|---|
 | **Grace days.** A message is not eligible until age plus grace. | The boundary race. Somebody adds the marker to a message on the day it turns 30, and Discord's own docs warn that client actions "may be executed in any order (if executed at all)". Grace means nothing is destroyed within one sweep interval of becoming eligible. |
-| **Condemn, then delete next run.** An eligible message is recorded on run N and deleted no earlier than run N+1. | A bad classification being acted on immediately. A logic error, a permissions change, a Discord API shift: all get one full interval during which a human can read the ops post or the run log and stop it. |
+| **Condemn, then delete next run.** An eligible message is recorded on run N and deleted no earlier than run N+1. | A bad classification being acted on immediately. A logic error, a permissions change, a Discord API shift: all get one full interval before anything is destroyed. Note what that interval does NOT include: `ops()` fires only on a run that deleted or rescued something, so the run that merely CONDEMNS is silent by design and goes green. The interval buys time only for an operator who goes looking, and CLAUDE.md calls the run history the source nobody opens. |
 
 The first buys the human time to mark. The second buys the operator time to
 notice. Both are one line and neither is load-bearing on the other.
@@ -166,13 +170,45 @@ notice. Both are one line and neither is load-bearing on the other.
 `protected` id list. **Message ids and flags only. No content, no authors, no
 text.**
 
-It matches the `*_state.json` pattern, so it inherits everything that pattern
-means in this repo: it is an **output**, written by the workflow, never edited
-locally, and protected by the merge driver and pre-commit hook described in
-[local-workflow.md](../../local-workflow.md). The workflow needs the same
-refresh-from-origin step before the run and the fetch-and-retry loop around the
-push that `crossings.yml` carries, for the same reason: a queued run checks out
-the SHA fixed when it was created, not when its job started.
+It is an **output**, written by the workflow and never edited locally. The
+workflow needs the same refresh-from-origin step before the run and the
+fetch-and-retry loop around the push that `crossings.yml` carries, for the same
+reason: a queued run checks out the SHA fixed when it was created, not when its
+job started.
+
+### Critical: the protection is a list of filenames, not a pattern
+
+An earlier draft of this section said the file "matches the `*_state.json`
+pattern, so it inherits everything that pattern means in this repo". **That was
+wrong, and the stated reason was itself the misconception.** Both the merge
+driver and the pre-commit hook match **explicit basenames**. Measured
+2026-09-05, before the fix:
+
+```
+pushpin_state.json:   merge: unspecified
+holder_state.json:    merge: unspecified
+state.json:           merge: stateremote
+```
+
+So a new component's state file is unprotected by default, silently, and the
+sentence asserting otherwise is exactly the kind of claim that propagates by
+being cited rather than checked. `holder_state.json` had been uncovered since
+it was added, which is how long the gap can persist without anything reporting
+it.
+
+Both lists now carry all thirteen names and agree with each other:
+[`docs/hooks/pre-commit`](../../hooks/pre-commit) and the `STATES` line in
+[local-workflow.md](../../local-workflow.md). **They are still two hand-kept
+lists that must match**, which is the same shape as the `threshold_list` and
+`watchlist` duplication this repo already fixed once by deriving one from the
+other. Deriving both from a single committed list would close it properly.
+
+Verify after any change, and after any fresh clone, because the live copies
+live in `.git/` and cannot be committed:
+
+```bash
+git check-attr merge -- pushpin_state.json
+```
 
 The `protected` list is append-only and grows only when somebody marks a
 message, so unbounded growth is not a practical concern. Un-protecting a
@@ -213,9 +249,18 @@ stays on raw dicts throughout.
 
 The asymmetry is the whole design. Failing to delete something is invisible and
 costs nothing. Deleting a webhook post or a marked message is permanent, and
-there is no forensic record: Discord's `MESSAGE_DELETE` audit entry carries only
-a channel id and a count, no ids and no content, retained 45 days. **Our own
-pre-deletion log is the only artefact that will ever exist.**
+there is no forensic record anywhere. Discord's `MESSAGE_DELETE` audit entry
+carries only a channel id and a count, no ids and no content, retained 45 days.
+
+**And this component's own log does not fill that gap, deliberately.** An
+earlier draft said "our own pre-deletion log is the only artefact that will ever
+exist", which read as a promise that a sweep could be audited afterwards. It
+cannot. The Actions log on this repo is world-readable, so `pushpin.py` logs
+aggregates and never per-message ids or ages: either one reconstructs a timeline
+of activity in a private channel, and hashing the id would be theatre while the
+age is printed beside it. **The correct statement is that NO artefact will ever
+exist.** The aggregates are enough to validate the rule and are not enough to
+review the outcome, and nothing will ever be enough for the second.
 
 ## Critical: the six traps this component is built around
 
@@ -227,8 +272,14 @@ removes a thread and everything in it, and Discord Support cannot restore it.
 Both return success and log a plausible line naming the correct id.
 
 **Guard:** no code path in this component constructs a channel-scoped delete
-route at all. Message ids and channel ids are typed separately rather than
-passed as bare snowflakes. The bot is never granted `MANAGE_THREADS`.
+route at all. There is exactly one DELETE in the file and it always interpolates
+`CHANNEL_ID` as the channel segment and the message id as the message segment.
+The bot is never granted `MANAGE_THREADS`.
+
+An earlier draft claimed the two id classes were "typed separately rather than
+passed as bare snowflakes". **They are not: both are plain strings**, and the
+safety comes entirely from there being one delete route with both segments
+fixed. Distinct types would be a real improvement over a claim that one exists.
 
 ### 2. `type == 0` is the intuitive rule and it is wrong
 
@@ -356,9 +407,11 @@ error while building a never-delete set as halt-the-run.
 ## What it cannot do, stated now
 
 - **You will never be able to review what was deleted.** With the intent off,
-  content is empty, and the audit log holds only a count. The dry-run log proves
-  the rule is right (ids, ages, verdicts, reasons); it can never show the text
-  that went. This is the deliberate trade, not a defect.
+  content is empty, the audit log holds only a count, and this component logs no
+  ids and no ages. What a dry run gives you is the rule: verdict counts by
+  reason, a bucketed age histogram of the delete set, and the aggregate outcome
+  of the reaction check. That is enough to see the rule is right and is not a
+  record of what went. Nothing will ever be that record.
 - **Ephemeral messages never appear in channel history** and cannot be deleted,
   so "this channel is clean" is never literally true.
 - **A visually identical pushpin from another guild** carries a different id and

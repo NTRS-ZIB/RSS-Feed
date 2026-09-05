@@ -122,8 +122,8 @@ chmod +x .git/state-merge.sh .git/hooks/pre-commit
 
 # 2. tell git which files the driver applies to
 STATES="state.json crossings_state.json dilution_state.json ftd_state.json \
-letters_state.json regsho_state.json shortinterest_state.json \
-spike_state.json threshold_state.json snapshot.json \
+holder_state.json letters_state.json pushpin_state.json regsho_state.json \
+shortinterest_state.json spike_state.json threshold_state.json snapshot.json \
 earnings_dates.json"
 
 for f in $STATES; do echo "/$f merge=stateremote"; done > .git/info/attributes

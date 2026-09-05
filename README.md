@@ -23,6 +23,7 @@ maintain.
 | [`grid_context.py`](docs/grid-context.md) | `grid.yml` | `WEBHOOK_URL_MARKET` | 21:20 UTC, weekdays |
 | [`weekly_digest.py`](docs/weekly-digest.md) | `digest.yml` | `WEBHOOK_URL_DIGEST` | 17:00 UTC daily, posts once per ISO week |
 | [`holder_events.py`](docs/holder-events.md) | `holders-events.yml` | `WEBHOOK_URL_INSIDER` | 13:45 UTC weekdays, posts only on an event |
+| [`pushpin.py`](docs/pushpin.md) | `pushpin.yml` | `WEBHOOK_URL_OPS` | 03:40 UTC daily, deletes rather than posts |
 
 They are deliberately separate workflows: a failure in one data provider must
 not take down the others. The context posts 15 minutes before the recap so it
@@ -185,6 +186,8 @@ Settings → Secrets and variables → Actions:
 | `WEBHOOK_URL_ALERTS` | *Optional.* Webhook for the volume alerts channel. Falls back to `WEBHOOK_URL_MARKET` if unset. |
 | `WEBHOOK_URL_DIGEST` | Webhook for the weekly digest channel. |
 | `EIA_API_KEY` | Free key from <https://www.eia.gov/opendata/register.php>. Used only by the grid context. |
+| `DISCORD_BOT_TOKEN` | Bot token for [Pushpin](docs/pushpin.md), the channel sweeper. Scope it to one channel; never grant `MANAGE_THREADS`. |
+| `PUSHPIN_CHANNEL_ID` | The single channel Pushpin is allowed to delete in. |
 
 **Secrets must also be mapped in the workflow that needs them.** Adding one
 under repository settings is not enough — it has to be listed in the `env:`

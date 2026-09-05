@@ -128,6 +128,24 @@ jobs:
         run: python -u test_loop_verdict.py
       - name: loop_approval
         run: python -u test_loop_approval.py
+      - name: pushpin
+        run: python -u test_pushpin.py
+      # NOT A SUITE, and the reason is the same one the cadence branch check
+      # below carries: on the only component that destroys, a green suite is
+      # not evidence. This applies each of the fourteen named one-line changes
+      # to pushpin.py in its own temp directory and asserts every one reddens
+      # a check. It caught two real problems on its first run: a harness bug
+      # that made all fourteen report SILENT (PYTHONPATH loses to the script's
+      # own directory at sys.path[0], so no mutant was ever imported), and one
+      # check that asserted "halts" rather than "halts for this reason" and
+      # therefore could not fail.
+      #
+      # IT GOES RED WHEN A MUTATION STOPS APPLYING, which is the signal rather
+      # than a false alarm: an anchor that no longer matches means the
+      # mutation is not testing what it claims. Fix the anchor, do not delete
+      # the step. Offline, about 30 seconds.
+      - name: every pushpin guard fails when removed
+        run: python -u test_pushpin.py --sweep
       # NOT A SUITE, and it is here for the reason the corpus exists at all.
       # probe_cadence_corpus.py compares the cadence rule before and after a
       # change, and its result is worth nothing if the grid cannot reach the

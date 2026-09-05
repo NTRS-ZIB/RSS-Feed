@@ -4,7 +4,7 @@
 # changed a file. This hook covers the other case: a local-only change that would
 # otherwise push cleanly and clobber whatever the bot writes next.
 
-PATTERN='^(state|crossings_state|dilution_state|ftd_state|letters_state|regsho_state|shortinterest_state|spike_state|threshold_state|snapshot|earnings_dates)\.json$'
+PATTERN='^(state|crossings_state|dilution_state|ftd_state|holder_state|letters_state|pushpin_state|regsho_state|shortinterest_state|spike_state|threshold_state|snapshot|earnings_dates)\.json$'
 
 blocked=$(git diff --cached --name-only --diff-filter=ACMR | grep -E "$PATTERN")
 

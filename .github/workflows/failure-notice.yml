@@ -64,6 +64,12 @@ on:
       - "Probe sites"
       - "Probe spike normalisation"
       - "Probe undated items"
+      # The only component that destroys anything. It exits non-zero when it
+      # REFUSES to act (a broken webhook exemption, a truncated pin list, a
+      # permissions change), which is precisely when somebody needs to know:
+      # a sweeper that silently declines to delete looks exactly like one with
+      # nothing to do.
+      - "Pushpin"
       # Read-only diagnostic. It exits ZERO when it runs and finds something,
       # so a failure here means it could not run at all: no token, no channel
       # id, or Discord unreachable. That is worth a line in ops precisely
