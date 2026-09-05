@@ -231,10 +231,29 @@ def marker_in_array(msg):
 # an empty `reactions` array from the denormalised cache, a bare-form query
 # that legitimately returns 200 with [], and both stores agree a visibly
 # marked message is unmarked.
+# The FIRST key is canonical and required; the rest are alternates that may
+# turn out not to be valid reaction keys at all.
+#
+# MEASURED 2026-09-05, and it changed this design. Against the live channel the
+# bare key returns 200, and the VS16 key returns HTTP 400 code 10014 "Unknown
+# Emoji" on the same message. All 21 marks in 1,686 messages are stored bare
+# and none with the selector, so Discord will not accept the selector form as a
+# reaction key.
+#
+# That matters because the first version of this fix treated ANY non-200 as
+# "unknown", which means keep. The VS16 key 400s on every message, so every
+# message came back unknown and NOTHING WOULD EVER HAVE BEEN DELETED. Safe, and
+# completely inert, and a green run either way.
+#
+# So a 10014 on an ALTERNATE key means that key is not valid and is skipped. A
+# 10014 on the CANONICAL key is a real anomaly and still means unknown, because
+# the marker is a fixed constant that must always be a valid key.
 MARKER_KEYS = (
     urllib.parse.quote(MARKER),
     urllib.parse.quote(MARKER + VS16),
 )
+
+UNKNOWN_EMOJI = 10014
 
 
 def marker_state(message_id):
@@ -264,7 +283,7 @@ def marker_state(message_id):
     outage then pushes len(condemned) toward MAX_DELETES and halts visibly,
     which is the right way for this to fail.
     """
-    for key in MARKER_KEYS:
+    for index, key in enumerate(MARKER_KEYS):
         for rtype in (0, 1):
             st, body = call(
                 "GET",
@@ -272,10 +291,16 @@ def marker_state(message_id):
                 f"/reactions/{key}?type={rtype}&limit=1",
             )
             if st != 200:
-                # Includes 10014 Unknown Emoji, which must never be read as
-                # "no reactors". Measured 2026-09-05: an unused marker returns
-                # 200 with [], so a non-200 here is a genuine anomaly.
-                print(f"    reaction check HTTP {st}; unknown, keeping")
+                code = body.get("code") if isinstance(body, dict) else None
+                if index and code == UNKNOWN_EMOJI:
+                    # An ALTERNATE encoding Discord does not accept as a key.
+                    # A fact about the key, identical on every message, so
+                    # letting it mean "unknown" makes the component inert.
+                    break
+                # The canonical key, or any other refusal. The run did not
+                # measure a mark, it failed to ask.
+                print(f"    reaction check HTTP {st} code {code}; "
+                      f"unknown, keeping")
                 return "unknown"
             if not isinstance(body, list):
                 return "unknown"

@@ -335,8 +335,35 @@ def reaction_store():
               pushpin.marker_state("1") == "unknown",
               "'absent' would authorise a delete the run never measured")
 
-        pushpin.call = FakeCall({"/reactions/": (404, {"code": 10014})})
-        check("10014 Unknown Emoji is 'unknown', not 'no reactors'",
+        # 10014 ON THE CANONICAL KEY versus on an ALTERNATE. Measured against
+        # the live channel: the bare key returns 200 and the VS16 key returns
+        # 400 code 10014 on the same message, because Discord does not accept
+        # the selector form as a reaction key at all. Treating both the same
+        # way makes the component inert, because the alternate 400s on every
+        # message and every message then reads as unknown.
+        class ByKey:
+            """200 with [] for the canonical key, 10014 for anything else."""
+
+            def __init__(self, alt_status, alt_code):
+                self.alt = (alt_status, {"code": alt_code})
+
+            def __call__(self, method, path, **kw):
+                if pushpin.MARKER_KEYS[0] in path and "%EF%B8%8F" not in path:
+                    return (200, [])
+                return self.alt
+
+        pushpin.call = ByKey(400, pushpin.UNKNOWN_EMOJI)
+        check("10014 ON AN ALTERNATE ENCODING IS SKIPPED, NOT 'unknown'",
+              pushpin.marker_state("1") == "absent",
+              "it 400s on every message, so 'unknown' would delete nothing ever")
+
+        pushpin.call = FakeCall({"/reactions/": (400, {"code": 10014})})
+        check("10014 on the CANONICAL key is still 'unknown'",
+              pushpin.marker_state("1") == "unknown",
+              "the marker is a fixed constant that must always be a valid key")
+
+        pushpin.call = ByKey(403, 50013)
+        check("a non-10014 refusal on an alternate is still 'unknown'",
               pushpin.marker_state("1") == "unknown")
 
         pushpin.call = FakeCall({"/reactions/": (None, {})})
@@ -390,8 +417,8 @@ MUTATIONS = [
      "        for rtype in (0, 1):",
      "        for rtype in (0,):"),
     ("a refused reaction call reads as absent",
-     '                print(f"    reaction check HTTP {st}; unknown, keeping")\n                return "unknown"',
-     '                print(f"    reaction check HTTP {st}; unknown, keeping")\n                return "absent"'),
+     '                      f"unknown, keeping")\n                return "unknown"',
+     '                      f"unknown, keeping")\n                return "absent"'),
     ("missing protected key degrades to empty",
      '    if not isinstance(data, dict) or not isinstance(data.get("protected"), list):',
      "    if False:"),
@@ -413,6 +440,9 @@ MUTATIONS = [
     ("condemn floor removed",
      'CONDEMN_HOURS = max(1, int(os.environ.get("PUSHPIN_CONDEMN_HOURS", "20")))',
      'CONDEMN_HOURS = int(os.environ.get("PUSHPIN_CONDEMN_HOURS", "0"))'),
+    ("an invalid alternate encoding makes every message unknown",
+     "                if index and code == UNKNOWN_EMOJI:",
+     "                if False:"),
 ]
 
 
@@ -424,13 +454,13 @@ def sweep():
     print("missing demonstration. Those are the same output, so the count above")
     print("is the thing that makes a quietly-shrunk list visible.\n")
 
-    silent, crashed, ok = [], [], 0
+    silent, crashed, stale, ok = [], [], [], 0
     for label, old, new in MUTATIONS:
         if old not in src:
             print(f"  [STALE ] {label}")
             print(f"           anchor no longer in pushpin.py; the mutation is "
                   f"not testing what it claims")
-            silent.append(label)
+            stale.append(label)
             continue
         # Its own directory, so cached bytecode from a previous mutation of the
         # same length cannot be reused.
@@ -473,6 +503,13 @@ def sweep():
             shutil.rmtree(d, ignore_errors=True)
 
     print(f"\n{ok}/{len(MUTATIONS)} mutations reddened at least one check")
+    if stale:
+        # A STALE anchor is NOT a silent check, and conflating them is the
+        # confusion CLAUDE.md records: the module moved underneath the
+        # mutation, so the fix is the anchor rather than the module.
+        print(f"{len(stale)} no longer apply to pushpin.py and tested nothing:")
+        for n in stale:
+            print(f"  - {n}")
     if crashed:
         print(f"{len(crashed)} crashed the suite and demonstrated nothing:")
         for n in crashed:
@@ -481,7 +518,7 @@ def sweep():
         print(f"{len(silent)} reddened nothing, which needs hand-checking:")
         for n in silent:
             print(f"  - {n}")
-    return 1 if (silent or crashed) else 0
+    return 1 if (silent or crashed or stale) else 0
 
 
 def main():

@@ -507,6 +507,35 @@ channel, and two of its numbers change what the earlier measurements meant.
   until a live run, which is consistent (nothing can be deleted either), but it
   means the latch starts accumulating only at stage 2 of the rollout.
 
+### Critical: 10014 means different things on different keys
+
+Measured 2026-09-05 against the live channel, and it turned the M2 fix into a
+component that could never delete anything:
+
+```
+  bare type=0: HTTP 200, 1 reactor(s)
+  bare type=1: HTTP 200, 0 reactor(s)
+  VS16 type=0: HTTP 400, code=10014 'Unknown Emoji'
+  VS16 type=1: HTTP 400, code=10014 'Unknown Emoji'
+  stored bare=21, with VS16=0   (of 1,686 messages)
+```
+
+**Discord will not accept the variation-selector form as a reaction key**, and
+every one of the 21 real marks is stored bare. The review's M2 fix correctly
+made the delete path query both encodings, and this spec correctly said a
+10014 "must never be read as 'no reactors'". Together they were fatal: the
+alternate key 400s on *every* message, so `marker_state` returned `unknown`
+every time, and **nothing would ever have been deleted.** Safe, inert, and
+green either way.
+
+The distinction the code now makes: a 10014 on an **alternate** key is a fact
+about the key, identical on every message, so that key is skipped. A 10014 on
+the **canonical** key is a real anomaly and still means `unknown`, because the
+marker is a fixed constant that must always be a valid key.
+
+The `is_marker` VS16 strip stays. It reads the message object's stored emoji
+name, which is a different surface from the route's key, and it costs nothing.
+
 ### Still open
 
 - **Burst reactors.** Needs a super-reaction on one message, then a re-run.
