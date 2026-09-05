@@ -64,6 +64,11 @@ on:
       - "Probe sites"
       - "Probe spike normalisation"
       - "Probe undated items"
+      # Read-only diagnostic. It exits ZERO when it runs and finds something,
+      # so a failure here means it could not run at all: no token, no channel
+      # id, or Discord unreachable. That is worth a line in ops precisely
+      # because it is the only way this one goes red.
+      - "Pushpin scope probe"
       - "Reg SHO threshold list"
       - "SEC comment letters"
       - "Shares outstanding"
