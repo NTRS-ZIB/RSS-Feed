@@ -430,7 +430,9 @@ Two further measurements the probe returned that the spec had assumed:
 - **Burst reactors.** Needs a super-reaction on one message, then a re-run.
 - **The webhook sample is one message.** A rule protecting the monitor's record
   has been validated against a single instance of that record.
-- **`#General` is visible to the bot** (read-only, no `MANAGE_MESSAGES`). It is
-  the one channel the scope scan flags and the live probe does not, which means
-  it is not a text channel: almost certainly voice, whose text chat the bot can
-  read. Deny `VIEW_CHANNEL` on it directly rather than on a category.
+- **`#General` is visible to the bot** (read-only, no `MANAGE_MESSAGES`).
+  Measured as **type 2, a voice channel**, whose in-channel text chat the bot
+  can therefore read. It is the one channel the scope scan flags and the live
+  probe does not, because the live probe only reads text-like types. Deny
+  `VIEW_CHANNEL` on it directly. A voice channel is easy to miss when denying
+  by category, which is exactly why it is the one that survived.
