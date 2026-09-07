@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-04T14:37:11+00:00",
+  "generated": "2026-09-07T16:12:10+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -154,7 +154,7 @@
     },
     "ANY": {
       "cik": "0001591956",
-      "filing_count": 811,
+      "filing_count": 812,
       "filings": {
         "10-K": {
           "accession": "0001591956-26-000004",
@@ -189,12 +189,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1591956/000118518526002272/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001062993-26-003139",
-          "count": 120,
-          "filed": "2026-06-10",
+          "accession": "0001062993-26-004839",
+          "count": 121,
+          "filed": "2026-09-04",
           "form": "4",
-          "period": "2026-06-08",
-          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000106299326003139/xslF345X06/form4.xml"
+          "period": "2026-09-02",
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000106299326004839/xslF345X06/form4.xml"
         },
         "40-F": {
           "accession": "0001591956-17-000003",
@@ -292,7 +292,7 @@
       "former_names": [
         "Sphere 3D Corp"
       ],
-      "latest_filing_date": "2026-08-26",
+      "latest_filing_date": "2026-09-04",
       "name": "Sphere 3D Corp.",
       "projection": {
         "available": true,
@@ -986,7 +986,7 @@
     },
     "CLSK": {
       "cik": "0000827876",
-      "filing_count": 760,
+      "filing_count": 765,
       "filings": {
         "10-K": {
           "accession": "0001193125-25-297510",
@@ -1104,7 +1104,7 @@
         "STRATEAN INC.",
         "SMARTDATA CORP"
       ],
-      "latest_filing_date": "2026-08-14",
+      "latest_filing_date": "2026-09-04",
       "name": "CLEANSPARK, INC.",
       "projection": {
         "available": true,
@@ -2299,7 +2299,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1568,
+      "filing_count": 1569,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2327,12 +2327,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226034093/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001493152-26-041022",
-          "count": 611,
-          "filed": "2026-09-01",
+          "accession": "0001493152-26-041566",
+          "count": 612,
+          "filed": "2026-09-04",
           "form": "4",
-          "period": "2026-08-28",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226041022/xslF345X06/ownership.xml"
+          "period": "2026-09-03",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226041566/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -2416,7 +2416,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-09-03",
+      "latest_filing_date": "2026-09-04",
       "name": "Soluna Holdings, Inc",
       "projection": {
         "available": true,
