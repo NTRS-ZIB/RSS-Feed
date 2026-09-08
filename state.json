@@ -1351,12 +1351,15 @@
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-384033",
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-384032",
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-384030",
-  "urn:tag:sec.gov,2008:accession-number=0001193125-26-384029"
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-384029",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-041699",
+  "12581",
+  "https://www.solunacomputing.com/?post_type=news&p=16218"
  ],
  "initialized": true,
  "feeds": {
   "ANY": {
-   "fails": 183,
+   "fails": 184,
    "alerted": true
   },
   "APLD": {
