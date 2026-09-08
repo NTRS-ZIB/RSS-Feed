@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-07T16:12:10+00:00",
+  "generated": "2026-09-08T14:49:21+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -2299,7 +2299,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1569,
+      "filing_count": 1570,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2345,12 +2345,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001493152-26-039964",
-          "count": 354,
-          "filed": "2026-08-25",
+          "accession": "0001493152-26-041699",
+          "count": 355,
+          "filed": "2026-09-08",
           "form": "8-K",
-          "period": "2026-08-25",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226039964/form8-k.htm"
+          "period": "2026-09-08",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226041699/form8-k.htm"
         },
         "DEF 14A": {
           "accession": "0001628280-26-058611",
@@ -2416,7 +2416,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-09-04",
+      "latest_filing_date": "2026-09-08",
       "name": "Soluna Holdings, Inc",
       "projection": {
         "available": true,
