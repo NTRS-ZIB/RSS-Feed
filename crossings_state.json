@@ -2,107 +2,112 @@
  "ABTC": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "ANY": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "APLD": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "BGDE": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "BKKT": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "BTDR": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "CIFR": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "CLSK": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "CORZ": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "CRWV": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "DGXX": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "GLXY": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "HUT": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "IREN": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "MARA": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "NUAI": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "RIOT": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "SLNH": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
+ },
+ "SPCX": {
+  "armed_hi": true,
+  "armed_lo": true,
+  "last_seen": "2026-09-08"
  },
  "VIP": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "WULF": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "WYFI": {
   "armed_hi": true,
   "armed_lo": true,
-  "last_seen": "2026-09-04"
+  "last_seen": "2026-09-08"
  },
  "companies": {
   "0000064463": "2026-08-14",
@@ -110,6 +115,7 @@
   "0001083301": "2026-08-14",
   "0001144879": "2026-08-14",
   "0001167419": "2026-08-14",
+  "0001181412": "2026-09-08",
   "0001218683": "2026-08-14",
   "0001507605": "2026-08-14",
   "0001591956": "2026-08-14",
