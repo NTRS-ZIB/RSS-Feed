@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-09T14:54:57+00:00",
+  "generated": "2026-09-10T14:41:55+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -986,7 +986,7 @@
     },
     "CLSK": {
       "cik": "0000827876",
-      "filing_count": 765,
+      "filing_count": 770,
       "filings": {
         "10-K": {
           "accession": "0001193125-25-297510",
@@ -1014,12 +1014,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/827876/000095017024113822/xslF345X02/ownership.xml"
         },
         "4": {
-          "accession": "0001193125-26-352934",
-          "count": 235,
-          "filed": "2026-08-14",
+          "accession": "0001193125-26-386880",
+          "count": 240,
+          "filed": "2026-09-09",
           "form": "4",
-          "period": "2026-08-13",
-          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526352934/xslF345X06/ownership.xml"
+          "period": "2026-09-04",
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526386880/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -1104,7 +1104,7 @@
         "STRATEAN INC.",
         "SMARTDATA CORP"
       ],
-      "latest_filing_date": "2026-09-04",
+      "latest_filing_date": "2026-09-09",
       "name": "CLEANSPARK, INC.",
       "projection": {
         "available": true,
@@ -1121,7 +1121,7 @@
     },
     "CORZ": {
       "cik": "0001839341",
-      "filing_count": 663,
+      "filing_count": 664,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019505",
@@ -1167,12 +1167,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001839341-26-000021",
-          "count": 167,
-          "filed": "2026-08-27",
+          "accession": "0001839341-26-000023",
+          "count": 168,
+          "filed": "2026-09-10",
           "form": "8-K",
-          "period": "2026-08-25",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000183934126000021/core-20260825.htm"
+          "period": "2026-09-10",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000183934126000023/core-20260910.htm"
         },
         "DEF 14A": {
           "accession": "0001193125-26-134857",
@@ -1245,7 +1245,7 @@
       "former_names": [
         "Power & Digital Infrastructure Acquisition Corp."
       ],
-      "latest_filing_date": "2026-09-02",
+      "latest_filing_date": "2026-09-10",
       "name": "Core Scientific, Inc./tx",
       "projection": {
         "available": true,
@@ -1516,7 +1516,7 @@
     },
     "GLXY": {
       "cik": "0001859392",
-      "filing_count": 277,
+      "filing_count": 279,
       "filings": {
         "10-K": {
           "accession": "0001859392-26-000016",
@@ -1544,12 +1544,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1859392/000140703626000002/xslF345X06/wk-form3_1783974970.xml"
         },
         "4": {
-          "accession": "0001380615-26-000008",
-          "count": 62,
-          "filed": "2026-09-02",
+          "accession": "0001706614-26-000004",
+          "count": 63,
+          "filed": "2026-09-10",
           "form": "4",
-          "period": "2026-09-01",
-          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000138061526000008/xslF345X06/wk-form4_1788380601.xml"
+          "period": "2026-09-08",
+          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000170661426000004/xslF345X06/wk-form4_1789039013.xml"
         },
         "40-F": null,
         "424": {
@@ -1612,7 +1612,7 @@
       "former_names": [
         "Galaxy Digital Pubco Inc."
       ],
-      "latest_filing_date": "2026-09-02",
+      "latest_filing_date": "2026-09-10",
       "name": "Galaxy Digital Inc.",
       "projection": {
         "available": true,
@@ -2523,7 +2523,7 @@
     },
     "VIP": {
       "cik": "0001844971",
-      "filing_count": 425,
+      "filing_count": 426,
       "filings": {
         "10-K": {
           "accession": "0001844971-26-000011",
@@ -2640,7 +2640,7 @@
       "former_names": [
         "Greenidge Generation Holdings Inc."
       ],
-      "latest_filing_date": "2026-08-17",
+      "latest_filing_date": "2026-09-09",
       "name": "Vulcan Infrastructure & Power Inc.",
       "projection": {
         "available": true,
@@ -2657,7 +2657,7 @@
     },
     "WULF": {
       "cik": "0001083301",
-      "filing_count": 1235,
+      "filing_count": 1236,
       "filings": {
         "10-K": {
           "accession": "0001083301-26-000031",
@@ -2685,12 +2685,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1083301/000207478625000007/xslF345X02/wk-form3a_1755567904.xml"
         },
         "4": {
-          "accession": "0001628280-26-059897",
-          "count": 556,
-          "filed": "2026-09-01",
+          "accession": "0001628280-26-061206",
+          "count": 557,
+          "filed": "2026-09-09",
           "form": "4",
-          "period": "2026-08-31",
-          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000162828026059897/xslF345X06/wk-form4_1788296372.xml"
+          "period": "2026-09-08",
+          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000162828026061206/xslF345X06/wk-form4_1789004127.xml"
         },
         "40-F": null,
         "424": {
@@ -2775,7 +2775,7 @@
         "IKONICS CORP",
         "CHROMALINE CORP"
       ],
-      "latest_filing_date": "2026-09-08",
+      "latest_filing_date": "2026-09-09",
       "name": "TERAWULF INC.",
       "projection": {
         "available": true,
