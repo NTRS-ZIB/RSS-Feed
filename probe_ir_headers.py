@@ -53,6 +53,16 @@ BROWSER_UA = (
 # the feeds and then changing the shared default would be a number taken over
 # an adjacent population, which this repo has been caught by before. The two
 # JSON endpoints override Accept in press_monitor, so only the UA varies.
+#
+# THE QUERY PARAMETERS press_monitor SENDS ARE DELIBERATELY NOT SENT HERE. The
+# Sanity and Strapi endpoints need a query to return data, and ABTC's answers
+# HTTP 400 without one. Copying those query strings into this file would put
+# the same fact in two places, which is how they drift, and this probe is not
+# asking whether the query is right. It asks only whether the two header sets
+# are treated differently, and a status identical under both answers that
+# whatever the number is. The first run of this tool on 2026-09-09 printed a
+# bare `HTTP 400` for ABTC and read like a fault; the "same under both" line
+# below exists so the next reader is not sent chasing it.
 NON_FEED = [
     ("HUT page", pm.HUT_PAGE, None),
     ("GLXY page", pm.GLXY_PAGE, None),
@@ -97,11 +107,11 @@ def main():
     targets = [(t, u, None) for t, u in sorted(watchlist.ir_feeds().items())]
     targets += NON_FEED
 
-    print(f"{'target':<12}{'host':<32}{'shipped':<22}{'':>6}  "
+    print(f"{'target':<12}{'host':<31} {'shipped':<22}{'':>6}  "
           f"{'browser UA':<22}{'':>6}")
     print("-" * 104)
 
-    shipped_ok = browser_only = stalls = 0
+    shipped_ok = browser_only = stalls = identical = 0
     for label, url, accept in targets:
         # Honour a per-host override if one is ever added back, so the probe
         # reports what the component would actually send.
@@ -116,19 +126,32 @@ def main():
         flag = ""
         if a.startswith("200"):
             shipped_ok += 1
-        if "Timeout" in a:
+        if a == b:
+            # The two header sets were treated the same, which is the only
+            # question this tool asks. A non-200 here is about the request or
+            # the endpoint, not about the User-Agent, and saying so is the
+            # difference between a result and a false alarm.
+            identical += 1
+            if not a.startswith("200"):
+                flag = "  <- same under both: not a header result"
+        elif "Timeout" in a:
             stalls += 1
             flag = "  <- THE SHIPPED DEFAULT STALLS HERE"
-        if not a.startswith("200") and b.startswith("200"):
+        elif not a.startswith("200") and b.startswith("200"):
             browser_only += 1
             flag = "  <- WANTS A BROWSER UA: needs a HOST_HEADERS entry"
 
-        print(f"{label:<12}{urlparse(url).netloc:<32}{a:<22}{at:>5.1f}s  "
+        host = urlparse(url).netloc
+        if len(host) > 31:
+            host = host[:28] + "..."
+        print(f"{label:<12}{host:<31} {a:<22}{at:>5.1f}s  "
               f"{b:<22}{bt:>5.1f}s{flag}")
 
     print()
-    print(f"targets                            : {len(targets)}")
+    print(f"targets                             : {len(targets)}")
     print(f"answering 200 on the shipped default: {shipped_ok}")
+    print(f"identical under both header sets    : {identical}"
+          f"  (whatever the status, not header-sensitive)")
     print(f"stalling the shipped default        : {stalls}")
     print(f"answering ONLY the browser UA       : {browser_only}")
     print()
