@@ -1031,6 +1031,423 @@ def phase_eventdate():
     print(f"\n  documents fetched: {fetched}")
 
 
+# -------------------------------------------------------------- SUBJECTS ----
+
+
+def indexed(cik):
+    """(rows, older_pages, ragged): every filing, its page and file number.
+
+    A local variant of all_filings() rather than a change to it, for two
+    reasons. It keeps `fileNumber`, which nothing in this repo reads today and
+    which this phase exists to evaluate as a zero-fetch discriminator. And it
+    records WHICH page each row arrived on, so "how much sits outside the
+    recent window" is answered in the same pass rather than by a second sweep.
+
+    It also counts RAGGED PARALLEL ARRAYS. EDGAR's submissions payload is
+    column-oriented, and holder_events.filings_for() guards the index with
+    `seq[i] if i < len(seq) else ""`, a guard that turns a short column into
+    an empty string rather than an error. An empty filingDate poisons the era
+    floor through min(), an empty primaryDocument builds an archive URL ending
+    in a slash, and an empty accession is recorded as seen. Nothing has ever
+    measured whether the columns are ever short, so this counts it.
+    """
+    data = fetch(SUBMISSIONS.format(cik=cik))
+    rows, ragged = [], Counter()
+
+    def add(block, page):
+        forms = block.get("form") or []
+        n = len(forms)
+        for key in ("filingDate", "accessionNumber", "primaryDocument",
+                    "fileNumber"):
+            seq = block.get(key) or []
+            if len(seq) != n:
+                ragged[f"{key}: {len(seq)} against {n} forms on {page}"] += 1
+        for i, form in enumerate(forms):
+            def at(k):
+                seq = block.get(k) or []
+                return seq[i] if i < len(seq) else ""
+            rows.append({"form": form, "filed": at("filingDate"),
+                         "accession": at("accessionNumber"),
+                         "doc": at("primaryDocument"),
+                         "file_no": at("fileNumber"), "page": page})
+
+    add((data.get("filings") or {}).get("recent") or {}, "recent")
+    older = (data.get("filings") or {}).get("files") or []
+    for extra in older:
+        time.sleep(GAP)
+        add(fetch(OLDER.format(name=extra["name"])), extra["name"])
+    return rows, older, ragged
+
+
+def tagged_paths(root, wanted_lower):
+    """[(path, exact_tag, value)] for every element whose tag lowercases to it.
+
+    RETURNS THE ANCESTOR PATH ON PURPOSE. This probe's own header records what
+    a bare whole-tree tag scan cost last time: `personName` under
+    authorizedPersons precedes the reporting persons in document order, so
+    every filing was credited to the filing agent's clerk and reported two
+    plausible numbers with no error. A tag name is not evidence about where the
+    value came from. The path is.
+
+    It also returns the EXACT spelling rather than the one asked for, because
+    tag_of() is case sensitive and the two form families are not known to agree
+    on the case of this field.
+    """
+    parent = {child: p for p in root.iter() for child in p}
+    out = []
+    for el in root.iter():
+        tag = tag_of(el)
+        if tag.lower() != wanted_lower:
+            continue
+        chain, cur = [], el
+        while cur is not None:
+            chain.append(tag_of(cur))
+            cur = parent.get(cur)
+        out.append(("/".join(reversed(chain)), tag, (el.text or "").strip()))
+    return out
+
+
+def as_cik(text):
+    """CIKs are compared as integers, never as strings.
+
+    watchlist pins them zero-padded to ten and EDGAR writes them both ways in
+    the same payload. A string comparison would report every filing as a
+    mismatch, which is a wrong answer that looks like a dramatic finding.
+    """
+    raw = str(text or "").strip()
+    if not raw:
+        # NOT ZERO. An empty element is "this filing does not say", and
+        # int("") via a lstrip fallback yields 0, which compares unequal to
+        # every roster CIK and would report the whole corpus as mismatched.
+        # A wrong answer that looks like a dramatic finding is the one this
+        # probe's own header warns about.
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def subject_cik(hits):
+    """The first issuer CIK that actually carries a value, as an int.
+
+    An element can be present and empty, which is a different fact from being
+    absent, and neither is a CIK. Both return None here and the caller counts
+    them together as "cannot determine", which is the branch whose policy the
+    fix turns on.
+    """
+    for _path, _tag, val in hits or []:
+        got = as_cik(val)
+        if got is not None:
+            return got
+    return None
+
+
+def phase_subjects():
+    """WHICH COMPANY IS A 13D/G ACTUALLY ABOUT?
+
+    holder_events labels every filing with the ticker of the roster loop it was
+    read under and never reads the subject. EDGAR lists a Schedule 13D/G under
+    every reporting person's CIK as well as the subject's, so a roster company
+    that files about somebody else is recorded as holding a stake in ITSELF.
+    That is not hypothetical: run 31810564097 published nine such embeds on
+    2026-08-14, opening "RIOT, activist stake disclosed, Riot Platforms, Inc.,
+    16.30% of class".
+
+    This phase settles what a fix may key on. It posts nothing and writes
+    nothing. Six questions, and the order matters because each bounds the next:
+
+      structure   WHERE does the subject CIK live in the document, by ancestor
+                  path and exact spelling, per form family. A fix that freezes
+                  the wrong tuple of spellings is the 117-filing rename again.
+      mismatch    which stored filings are about somebody else
+      converse    does each mismatched accession ALSO appear under the subject
+                  it names? Without this the mismatch table is n=1 reasoning
+                  about EDGAR's indexing, dressed up as a census.
+      era         what each company's era floor becomes once those are dropped
+      window      how much sits outside filings.recent, per company
+      filenumber  is there an index-level discriminator that would make the
+                  whole thing answerable at zero document fetches
+    """
+    ros = roster()
+    per_ticker, docs_read, no_doc = {}, 0, []
+    ragged_all, index_keys = Counter(), None
+
+    print("Reading every 13D/G under each roster CIK, paginated.\n")
+
+    for ticker, cik in sorted(ros.items()):
+        try:
+            rows, older, ragged = indexed(cik)
+        except Exception as e:                                  # noqa: BLE001
+            print(f"  {ticker}: FAILED {type(e).__name__}: {e}")
+            continue
+        for k, n in ragged.items():
+            ragged_all[f"{ticker} {k}"] += n
+        structured = [r for r in rows
+                      if r["form"].startswith(("SCHEDULE 13D", "SCHEDULE 13G"))]
+        per_ticker[ticker] = {"cik": cik, "rows": rows, "older": older,
+                              "structured": structured, "read": []}
+        recent = sum(1 for r in structured if r["page"] == "recent")
+        print(f"  {ticker}: {len(rows)} filings over "
+              f"{1 + len(older)} page(s), {len(structured)} structured "
+              f"({recent} on the recent page, "
+              f"{len(structured) - recent} only on older pages)")
+
+    print()
+    for ticker, rec in sorted(per_ticker.items()):
+        for row in rec["structured"]:
+            if docs_read >= MAX_DOCS:
+                break
+            if not row["doc"] or not row["accession"]:
+                no_doc.append((ticker, row["accession"], row["form"],
+                               row["doc"]))
+                continue
+            url = ARCHIVE.format(cik=int(rec["cik"]),
+                                 nodash=row["accession"].replace("-", ""),
+                                 doc=raw_xml_path(row["doc"]))
+            time.sleep(GAP)
+            docs_read += 1
+            try:
+                root = ET.fromstring(fetch(url, as_json=False))
+            except Exception as e:                              # noqa: BLE001
+                rec["read"].append({**row, "error": type(e).__name__})
+                continue
+            hits = tagged_paths(root, "issuercik")
+            names = tagged_paths(root, "issuername")
+            cusips = tagged_paths(root, "issuercusipnumber")
+            people = [n for n, _p, _a, _v in person_blocks(root) if n]
+            rec["read"].append({**row, "error": None, "issuer_hits": hits,
+                                "issuer_name": names[0][2] if names else None,
+                                "issuer_cusip": cusips[0][2] if cusips else None,
+                                "people": people})
+
+    if docs_read >= MAX_DOCS:
+        print(f"HIT THE {MAX_DOCS}-DOCUMENT CEILING. Every count below is a "
+              f"floor, not a census. Re-run with a higher HOLDERS_MAX_DOCS.\n")
+
+    # ------------------------------------------------------------ structure
+    print("=" * 70)
+    print("1. WHERE THE SUBJECT CIK LIVES, by ancestor path and exact spelling")
+    print("=" * 70)
+    paths, spellings, by_family = Counter(), Counter(), defaultdict(Counter)
+    absent = []
+    for ticker, rec in sorted(per_ticker.items()):
+        for r in rec["read"]:
+            if r.get("error"):
+                continue
+            fam = "13D" if r["form"].startswith("SCHEDULE 13D") else "13G"
+            if not r["issuer_hits"]:
+                absent.append((ticker, r["accession"], r["form"]))
+                by_family[fam]["(none)"] += 1
+                continue
+            for path, tag, _val in r["issuer_hits"]:
+                paths[path] += 1
+                spellings[tag] += 1
+                by_family[fam][tag] += 1
+    for path, n in paths.most_common():
+        print(f"  {n:5}  {path}")
+    print("\n  exact spellings seen:")
+    for tag, n in spellings.most_common():
+        print(f"  {n:5}  {tag}")
+    print("\n  by form family:")
+    for fam in sorted(by_family):
+        inner = ", ".join(f"{t} {n}" for t, n in by_family[fam].most_common())
+        print(f"    {fam}: {inner}")
+    print(f"\n  filings carrying NO issuer CIK at all: {len(absent)}")
+    for t, a, f in absent[:20]:
+        print(f"    {t} {a} {f}")
+    if len(absent) > 20:
+        print(f"    ...and {len(absent) - 20} more")
+    print("  That count sizes the cannot-determine branch, which decides "
+          "whether\n  an unknown subject may be attributed or must be refused.")
+
+    # ------------------------------------------------------------- mismatch
+    print("\n" + "=" * 70)
+    print("2. FILINGS READ UNDER A COMPANY THEY ARE NOT ABOUT")
+    print("=" * 70)
+    mismatches = []
+    for ticker, rec in sorted(per_ticker.items()):
+        mine = as_cik(rec["cik"])
+        for r in rec["read"]:
+            if r.get("error") or not r["issuer_hits"]:
+                continue
+            subj = subject_cik(r["issuer_hits"])
+            if subj is not None and subj != mine:
+                mismatches.append((ticker, mine, subj, r))
+    by_owner = {as_cik(v["cik"]): k for k, v in per_ticker.items()}
+    if not mismatches:
+        print("  none. If this prints with a full census above, the whole "
+              "premise\n  of the fix is refuted and nothing should be changed.")
+    for ticker, mine, subj, r in mismatches:
+        who = by_owner.get(subj)
+        print(f"  {ticker} (CIK {mine}) {r['form']} {r['filed']} "
+              f"{r['accession']}")
+        print(f"      subject: CIK {subj} "
+              f"{'= roster ' + who if who else '(not on the roster)'} "
+              f"{r['issuer_name'] or ''}")
+        print(f"      signed:  {', '.join(r['people'][:4]) or '(none read)'}")
+    print(f"\n  {len(mismatches)} of {sum(len(v['read']) for v in per_ticker.values())} "
+          f"filings read are about another company.")
+
+    # ------------------------------------------------------------- converse
+    print("\n" + "=" * 70)
+    print("3. THE CONVERSE, which is what makes section 2 a census rather "
+          "than a story")
+    print("=" * 70)
+    print("  For each mismatch whose subject is ALSO on the roster, does the")
+    print("  accession appear under the subject's own CIK? If it does, EDGAR")
+    print("  indexes under both and the fix may skip the filer copy safely.")
+    print("  If it does NOT, skipping the filer copy DELETES the only copy,")
+    print("  which is the dangerous direction.\n")
+    if not mismatches:
+        print("  nothing to check.")
+    for ticker, _mine, subj, r in mismatches:
+        who = by_owner.get(subj)
+        if not who:
+            print(f"  {r['accession']}: subject CIK {subj} is off-roster, "
+                  f"not checkable here")
+            continue
+        theirs = {x["accession"] for x in per_ticker[who]["structured"]}
+        mark = "PRESENT" if r["accession"] in theirs else "ABSENT, DANGER"
+        print(f"  {r['accession']}: under {who} as well? {mark}")
+
+    # ------------------------------------------------------------------ era
+    print("\n" + "=" * 70)
+    print("4. ERA FLOOR BEFORE AND AFTER DROPPING THE MISMATCHES")
+    print("=" * 70)
+    print("  era is min(filed) over structured filings and is stored as")
+    print("  min(prior, oldest), so it can only ever move EARLIER. A floor set")
+    print("  by a filing about another company cannot repair itself.\n")
+    dropped = defaultdict(set)
+    for ticker, _m, _s, r in mismatches:
+        dropped[ticker].add(r["accession"])
+    for ticker, rec in sorted(per_ticker.items()):
+        kept = [r["filed"] for r in rec["structured"]
+                if r["filed"] and r["accession"] not in dropped[ticker]]
+        allf = [r["filed"] for r in rec["structured"] if r["filed"]]
+        before = min(allf) if allf else None
+        after = min(kept) if kept else None
+        flag = "  <-- MOVES" if before != after else ""
+        print(f"  {ticker:5} before {before}   after {after}{flag}")
+
+    # --------------------------------------------------------------- window
+    print("\n" + "=" * 70)
+    print("5. WHAT SITS OUTSIDE filings.recent, per company")
+    print("=" * 70)
+    print("  holder_events reads only the recent page. Anything counted here")
+    print("  is invisible to it today, and becomes visible the moment the")
+    print("  pagination fix lands, which is why that fix needs a suppression")
+    print("  axis of its own.\n")
+    for ticker, rec in sorted(per_ticker.items()):
+        outside = [r for r in rec["structured"] if r["page"] != "recent"]
+        if not outside:
+            continue
+        print(f"  {ticker}: {len(outside)} structured 13D/G on older pages, "
+              f"oldest {min(r['filed'] for r in outside)}")
+        for r in outside[:6]:
+            print(f"      {r['filed']} {r['form']} {r['accession']}")
+        if len(outside) > 6:
+            print(f"      ...and {len(outside) - 6} more")
+    print("\n  page inventory:")
+    for ticker, rec in sorted(per_ticker.items()):
+        print(f"    {ticker:5} recent + {len(rec['older'])} older page(s), "
+              f"{len(rec['rows'])} filings total")
+
+    # ----------------------------------------------------------- file number
+    print("\n" + "=" * 70)
+    print("6. IS fileNumber AN INDEX-LEVEL DISCRIMINATOR?")
+    print("=" * 70)
+    print("  A 13D/G carries a 005- file number. If it belongs to the SUBJECT,")
+    print("  the subject is answerable from the index at ZERO document fetches,")
+    print("  era can be computed correctly in place, and build_snapshot,")
+    print("  press_monitor and weekly_digest get the rule for free. Nothing in")
+    print("  this repo reads fileNumber today, so this is a lead to measure.\n")
+    agree = disagree = unknown = 0
+    for ticker, rec in sorted(per_ticker.items()):
+        for r in rec["read"]:
+            if r.get("error") or not r["issuer_hits"]:
+                continue
+            fn = (r.get("file_no") or "").strip()
+            if not fn:
+                unknown += 1
+                continue
+            subj = subject_cik(r["issuer_hits"])
+            who = by_owner.get(subj)
+            same_company = (subj == as_cik(rec["cik"]))
+            print(f"  {ticker:5} {r['accession']} file {fn:16} "
+                  f"subject {'self' if same_company else (who or subj)}")
+            if same_company:
+                agree += 1
+            else:
+                disagree += 1
+    print(f"\n  filings where subject is self: {agree}, "
+          f"where it is another company: {disagree}, no file number: {unknown}")
+    print("  Read the file numbers above: if every mismatch carries a DIFFERENT")
+    print("  005- number from the roster company's own filings, it separates")
+    print("  them. If they collide, it does not, and the document fetch stays.")
+
+    if index_keys:
+        print(f"\n  submissions recent keys: {index_keys}")
+
+    # ------------------------------------------------------------- integrity
+    print("\n" + "=" * 70)
+    print("7. RAGGED COLUMNS AND MISSING DOCUMENTS")
+    print("=" * 70)
+    if ragged_all:
+        for k, n in ragged_all.most_common():
+            print(f"  {n:4}  {k}")
+        print("  A short column reaches holder_events as an empty string, not")
+        print("  an error. Empty filingDate poisons the era floor through min.")
+    else:
+        print("  No ragged parallel arrays on any page of any roster CIK.")
+        print("  That is a measurement of today's payload, not a guarantee.")
+    print(f"\n  rows with an empty accession or primaryDocument: {len(no_doc)}")
+    for t, a, f, d in no_doc[:10]:
+        print(f"    {t} accession={a!r} form={f} doc={d!r}")
+
+    fetch_errors = [(t, r) for t, rec in per_ticker.items()
+                    for r in rec["read"] if r.get("error")]
+    print(f"\n  documents that would not fetch or parse: {len(fetch_errors)}")
+    for t, r in fetch_errors[:10]:
+        print(f"    {t} {r['accession']} {r['error']}")
+
+    # ------------------------------------------------------------------ gate
+    print("\n" + "=" * 70)
+    print("8. THE PAGINATION GATE, against what holder_events has already seen")
+    print("=" * 70)
+    try:
+        with open("holder_state.json", encoding="utf-8") as fh:
+            seen = set(json.load(fh).get("seen", []))
+    except Exception as e:                                      # noqa: BLE001
+        print(f"  could not read holder_state.json: {type(e).__name__}")
+        seen = None
+    if seen is not None:
+        print(f"  holder_state.json carries {len(seen)} accessions, "
+              f"{len(set(seen))} distinct.\n")
+        total_new = 0
+        for ticker, rec in sorted(per_ticker.items()):
+            unseen = [r for r in rec["structured"]
+                      if r["accession"] not in seen
+                      and r["accession"] not in dropped[ticker]]
+            total_new += len(unseen)
+            if unseen:
+                print(f"  {ticker}: {len(unseen)} structured filing(s) the "
+                      f"component has never seen")
+                for r in unseen[:8]:
+                    print(f"      {r['filed']} {r['form']} {r['accession']} "
+                          f"({r['page']})")
+                if len(unseen) > 8:
+                    print(f"      ...and {len(unseen) - 8} more")
+        print(f"\n  TOTAL unseen after dropping mismatches: {total_new}")
+        print("  THIS IS THE NUMBER THAT DECIDES THE PAGINATION FIX. Every one")
+        print("  of these posts on the first live run unless suppressed, and")
+        print("  neither the company axis nor the form axis covers them,")
+        print("  because neither the company nor the form is new. 86 messages")
+        print("  went out on 2026-08-14 through exactly this shape.")
+
+    print(f"\ndocuments fetched: {docs_read}")
+
+
 def main():
     print(f"phase: {PHASE}   roster: "
           f"{', '.join(sorted(roster())) if ONLY else 'all 19'}\n")
@@ -1041,7 +1458,8 @@ def main():
      "census": phase_census,
      "questions": phase_questions,
      "groups": phase_groups,
-     "eventdate": phase_eventdate}[PHASE]()
+     "eventdate": phase_eventdate,
+     "subjects": phase_subjects}[PHASE]()
     return 0
 
 

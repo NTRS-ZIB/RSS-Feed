@@ -3,15 +3,29 @@ name: Probe holders
 # Temporary probe. Can holder concentration be backfilled from EDGAR 13D/G?
 # Posts nothing, writes nothing, decides nothing — the output is read.
 #
-# Four phases, each bounding the next: inventory, structured, legacy, timeline.
-# The last is the one that decides whether there is anything to build, since a
-# roster of three institutions that never change reports a constant.
+# The phases each bound the next: inventory, structured, legacy, timeline.
+# The timeline one decided whether there was anything to build, since a roster
+# of three institutions that never change reports a constant.
+#
+# SUBJECTS is not part of that sequence and answers a later question. EDGAR
+# lists a Schedule 13D/G under every reporting person's CIK as well as the
+# subject's, and holder_events labels each filing with the roster ticker it was
+# read under, so a company that files about somebody else is recorded as
+# holding a stake in itself. Run 31810564097 published nine such embeds on
+# 2026-08-14. This phase measures where the subject CIK lives, which filings
+# are misattributed, and what a pagination fix would newly reveal.
 
 on:
   workflow_dispatch:
     inputs:
       phase:
-        description: "inventory | structured | legacy | timeline"
+        # Was "inventory | structured | legacy | timeline" until 2026-09-10,
+        # which had been wrong since the fifth phase was added: a dispatcher
+        # offering four of eight options is how a phase nobody lists stops
+        # being run.
+        description: >-
+          inventory | structured | legacy | timeline | census | questions |
+          groups | eventdate | subjects
         type: string
         default: "inventory"
       tickers:
