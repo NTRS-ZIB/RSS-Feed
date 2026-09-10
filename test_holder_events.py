@@ -47,6 +47,7 @@ os.environ["HOLDER_STATE"] = os.path.join(
 
 sys.modules.setdefault("requests", types.ModuleType("requests"))
 
+import inspect                        # noqa: E402
 import holder_events as he            # noqa: E402
 import filing_subject as fs           # noqa: E402
 import xml.etree.ElementTree as ET    # noqa: E402
@@ -695,6 +696,41 @@ def main():
           err or f"got {back}")
     check("NO TEMPORARY FILE IS LEFT BEHIND", not leftovers,
           "os.replace is the rename that makes the write atomic")
+
+    print("\nTHE EVENT RECORD AND ITS READERS STAY IN STEP")
+    # A LIVE CRASH, and neither the suite nor four green dry runs caught it.
+    # `key` was appended to the event tuple so a failed post could undo the
+    # baseline write; one of the two loops that unpack it was updated and the
+    # other was not, so a run with at least one event raised ValueError. Every
+    # dry run printed "0 event(s) to post", and a `for` over an empty list
+    # never unpacks anything. Both loops live inside main(), so nothing here
+    # can exercise them. What CAN be asserted is that the record and its
+    # readers agree, which is the actual bug class.
+    fields = he.Event._fields
+    check("the event record carries the key the rollback needs",
+          "key" in fields, ", ".join(fields))
+    params = list(inspect.signature(he.build_embed).parameters)
+    check("BUILD_EMBED'S PARAMETERS ARE THE EVENT'S LEADING FIELDS, IN ORDER",
+          list(fields[:len(params)]) == params,
+          f"event {fields[:len(params)]} against embed {tuple(params)}")
+    check("and key is not one of them",
+          "key" not in params,
+          "it is state bookkeeping, not something the reader sees")
+
+    # The two first-run filters read the record. They are pure and take a list,
+    # so unlike the loops they CAN be exercised.
+    e1 = he.Event("CORZ", "Core Scientific", {"form": "SCHEDULE 13D"},
+                  he.CHANGE, ["A LP"], 6.0, 5.0, None, None, "CORZ|A LP")
+    e2 = he.Event("CRWV", "CoreWeave", {"form": "SCHEDULE 13G"},
+                  he.ARRIVAL, ["B LP"], 7.0, None, None, None, "CRWV|B LP")
+    kept, per = he.drop_newly_watched([e1, e2], {"CRWV"})
+    check("a newly watched company's events are dropped by name",
+          [e.ticker for e in kept] == ["CORZ"] and per["CRWV"] == 1)
+    kept, per = he.drop_newly_tracked([e1, e2], {"SCHEDULE 13G"},
+                                      {"SCHEDULE 13D"})
+    check("a newly tracked form's events are dropped by name",
+          [e.ticker for e in kept] == ["CORZ"] and per["SCHEDULE 13G"] == 1,
+          "this reads e.row['form'], which was e[2]['form'] positionally")
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")

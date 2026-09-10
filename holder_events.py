@@ -81,7 +81,7 @@ import sys
 import time
 import urllib.request
 import xml.etree.ElementTree as ET
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, namedtuple
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -164,6 +164,20 @@ ARCHIVE = "https://www.sec.gov/Archives/edgar/data/{cik}/{nodash}/{doc}"
 INDEX = "https://www.sec.gov/Archives/edgar/data/{cik}/{nodash}/{acc}-index.htm"
 
 ARRIVAL, CHANGE, EXIT, BELOW = "arrival", "change", "exit", "below"
+
+# NAMED, NOT POSITIONAL, and the reason is a live crash rather than taste.
+# `key` was appended to this tuple on 2026-09-10 so a failed post could undo
+# the baseline write. One of the two loops that unpack it was updated and the
+# other was not, so `for ticker, name, row, kind, people, pct, prev, ev, note
+# in events` raised ValueError on any run with at least one event. FOUR DRY
+# RUNS WENT GREEN OVER IT: every one printed "0 event(s) to post", and a `for`
+# over an empty list never unpacks anything. The suite could not catch it
+# either, because both loops live inside main().
+#
+# A field added to a namedtuple cannot silently break a reader: an unpack of
+# the wrong width still raises, but attribute access does not depend on width
+# at all, and both consumers below now use names.
+Event = namedtuple("Event", "ticker name row kind people pct prev ev note key")
 
 # The threshold the whole form family is about. A first sighting BELOW it is
 # not an arrival — see classify().
@@ -774,7 +788,8 @@ def drop_newly_tracked(events, new_forms, old_forms):
     """
     per, kept = Counter(), []
     for e in events:
-        hit = newly_tracked(e[2]["form"], new_forms, old_forms, str.startswith)
+        hit = newly_tracked(e.row["form"], new_forms, old_forms,
+                            str.startswith)
         if hit:
             per[hit] += 1
         else:
@@ -789,8 +804,8 @@ def drop_newly_watched(events, newly_watched):
     which is what the log line needs — a name without a count reads as a
     warning, a name with one reads as a measurement.
     """
-    per = Counter(t for t, *_ in events if t in newly_watched)
-    return [e for e in events if e[0] not in newly_watched], per
+    per = Counter(e.ticker for e in events if e.ticker in newly_watched)
+    return [e for e in events if e.ticker not in newly_watched], per
 
 
 # -------------------------------------------------------------------- MAIN
@@ -935,8 +950,8 @@ def main():
             classified += 1
             note = era_note(state, ticker, row["filed"]) if kind == ARRIVAL \
                 else None
-            events.append((ticker, name, row, kind, people, pct, prev, ev,
-                           note, key))
+            events.append(Event(ticker, name, row, kind, people, pct,
+                                prev, ev, note, key))
 
     # A NEWLY WATCHED COMPANY POSTS NOTHING, and unlike the cold-start rule
     # below this one filters in a DRY RUN too. The cold-start exception exists
@@ -1010,9 +1025,9 @@ def main():
             events = []
 
     print(f"\n{len(events)} event(s) to post")
-    for ticker, name, row, kind, people, pct, prev, ev, note in events:
-        embed = build_embed(ticker, name, row, kind, people, pct, prev, ev,
-                            note)
+    for e in events:
+        embed = build_embed(e.ticker, e.name, e.row, e.kind, e.people, e.pct,
+                            e.prev, e.ev, e.note)
         print(f"\n--- {embed['title']}")
         print(embed["description"])
         print(f"    {embed['footer']['text']}")
@@ -1095,9 +1110,9 @@ def main():
         return 0
 
     posted = 0
-    for ticker, name, row, kind, people, pct, prev, ev, note, key in events:
-        if post(build_embed(ticker, name, row, kind, people, pct, prev, ev,
-                            note)):
+    for e in events:
+        if post(build_embed(e.ticker, e.name, e.row, e.kind, e.people, e.pct,
+                            e.prev, e.ev, e.note)):
             posted += 1
         else:
             # A FAILED POST MUST LEAVE NO TRACE, and un-marking `seen` was only
@@ -1111,7 +1126,7 @@ def main():
             # makes it reach disk, which is why the two had to change together:
             # the gate alone converts today's bounded duplicate into permanent
             # silent loss.
-            undo_event(state, row, prev, key)
+            undo_event(state, e.row, e.prev, e.key)
     save_state(state)
     print(f"\nPosted {posted} of {len(events)}.")
     return 0 if posted == len(events) else 1
