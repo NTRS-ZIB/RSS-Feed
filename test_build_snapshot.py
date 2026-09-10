@@ -35,8 +35,16 @@ def check(name, ok, detail=""):
 
 
 def rows(*spec):
-    """`projection` reads (form, filed, period) out of a five-tuple."""
-    return [(f, filed, period, None, None) for f, filed, period in spec]
+    """Build the component's OWN row type, not a hand-rolled tuple.
+
+    This used to return a five-tuple, matching the shape `all_filings` happened
+    to produce. On 2026-09-10 that row gained a sixth field and `entry()` was
+    unpacking it five ways; the same change made with a plain tuple in
+    holder_events on the same day crashed every live run. Constructing
+    bs.Row means a field added or renamed there fails HERE.
+    """
+    return [bs.Row(f, filed, period, None, None, "005-00000")
+            for f, filed, period in spec]
 
 
 def annual(*years, form="20-F", lag_days=120):
@@ -261,6 +269,55 @@ def main():
     check("an ordinary family matches by prefix", bs.matches("10-K/A", "10-K"))
     check("and does not match an unrelated form",
           not bs.matches("8-K", "10-K"))
+
+    print("\nA 13D/G COUNT IS ONLY THE ONES ON THIS ISSUER\'S DOCKET")
+    # EDGAR lists a Schedule 13D/G under every reporting person's CIK as well
+    # as the subject's, so a company filing about somebody else appears under
+    # its own ticker. Until 2026-09-10 this published RIOT / SCHEDULE 13D /
+    # count 9, where the true count is zero: all nine are Riot's own filings
+    # about Bitfarms, with a url pointing at a Bitfarms document.
+    #
+    # The discriminator is the 005- file number, which EDGAR assigns to the
+    # SUBJECT's docket, so a row indexed under a reporting person has none.
+    # Measured over every 13D/G under all 22 roster CIKs: the set with no file
+    # number and the set read under the wrong company are identical, 15 and 15,
+    # compared element by element rather than deduced from totals.
+    mixed = [bs.Row("SCHEDULE 13D", "2025-04-09", "", "A-1", "a.xml", ""),
+             bs.Row("SCHEDULE 13D", "2025-05-12", "", "B-1", "b.xml",
+                    "005-12345"),
+             bs.Row("8-K", "2026-01-01", "", "C-1", "c.htm", "")]
+    out, off = bs.latest_per_form(mixed, "0001167419")
+    check("A 13D/G WITH NO FILE NUMBER IS NOT COUNTED",
+          out["SCHEDULE 13D"]["count"] == 1,
+          f"got {out['SCHEDULE 13D']['count']}; the filer's own copy is not "
+          f"a holder of this issuer")
+    check("the one on the docket survives",
+          out["SCHEDULE 13D"]["accession"] == "B-1")
+    check("AND THE EXCLUDED ONE IS REPORTED, NOT DROPPED", off == 1,
+          "a courier that quietly shrinks a number is the failure this "
+          "file exists to avoid")
+    check("A NON-13D/G FORM IS NEVER FILTERED",
+          out["8-K"]["count"] == 1,
+          "every other form is filed BY the issuer about itself, so the "
+          "docket test would be meaningless")
+    clean, off = bs.latest_per_form(
+        [bs.Row("SCHEDULE 13G", "2025-01-01", "", "D-1", "d.xml", "005-9")],
+        "0001167419")
+    check("an issuer with nothing off-docket reports zero", off == 0)
+
+    print("\nA SHORT COLUMN PADS, IT DOES NOT TRUNCATE THE INDEX")
+    # zip() stops at the shortest column, so a short one silently dropped rows
+    # from the END of the index. An empty field is a fact about one filing; a
+    # lost row is a fact about none.
+    padded = bs.rows_from({"form": ["8-K", "10-K"],
+                           "filingDate": ["2026-01-01"],
+                           "accessionNumber": ["A-1", "B-1"]})
+    check("BOTH ROWS SURVIVE A SHORT COLUMN", len(padded) == 2,
+          f"got {len(padded)}; zip() would have returned 1")
+    check("the missing field is empty, not absent",
+          padded[1].filed == "" and padded[1].accession == "B-1")
+    check("the file number defaults to empty when the column is absent",
+          padded[0].file_no == "")
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")

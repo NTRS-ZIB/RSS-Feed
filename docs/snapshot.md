@@ -79,7 +79,8 @@ An issuer block is one of two shapes:
 
 ```
 { "cik", "name", "former_names", "filing_count",
-  "latest_filing_date", "filings", "projection" }     the normal case
+  "latest_filing_date", "filings", "off_docket_13dg",
+  "projection" }                                      the normal case
 
 { "cik", "error" }                                    the fetch failed
 ```
@@ -130,6 +131,62 @@ and IREN 79% in between.
 So anything built on `filing_count` as a measure of company activity is
 substantially measuring its shareholders instead, and for CRWV almost entirely.
 The per-form `count` fields are the way to ask a narrower question.
+
+## `off_docket_13dg`: 13D/G under this issuer that are not about it
+
+Added 2026-09-10, and it corrects a wrong published number rather than adding
+a new one.
+
+EDGAR lists a Schedule 13D/G under **every reporting person's CIK as well as
+the subject's**. A company that files a 13D/G about somebody else therefore
+appears in its own index, and this file counted it. Until 2026-09-10 it
+published:
+
+```
+issuers/RIOT/filings/SCHEDULE 13D  count 9
+```
+
+RIOT's genuine count is **zero**. All nine are Riot Platforms' own filings
+about Bitfarms Ltd., and the `url` beside that count pointed at a document
+about Bitfarms under a RIOT heading.
+
+**The discriminator is the `005-` file number, and it costs no extra request**,
+which is what makes it usable in a component that sweeps 22 issuers daily.
+EDGAR assigns that number to the **subject's** 13D/G docket, so a row indexed
+under a reporting person has nothing to put there. The four 13D/G families now
+count only rows carrying one. No other form family is filtered: everything else
+in `FORMS` is filed by the issuer about itself, so the test would be
+meaningless.
+
+Measured on the runner over every 13D/G under all 22 roster CIKs, across every
+index page:
+
+| Family | Filings | No file number |
+|---|---|---|
+| `SCHEDULE 13D` | 103 | 12 |
+| `SCHEDULE 13G` | 247 | 3 |
+| `SC 13D` | 244 | 33 |
+| `SC 13G` | 371 | 3 |
+
+The 15 structured blanks and the 15 filings confirmed to be about another
+company were compared **element by element and are the same set**. That is
+stated carefully because the three totals were consistent with it first, and
+believing it on that basis would have been a number true about something
+adjacent to the question.
+
+**The legacy spellings are not an inference about their subjects.** `SC 13D/G`
+predate the structured schema and carry no parseable issuer block, so nothing
+here knows what they are about. The rule applied is the narrower, directly
+checkable one: a filing with no file number is not on this issuer's 13D/G
+docket. The legacy blanks are dominated by RIOT `SC 13D` through mid-2024,
+which is the same Bitfarms campaign in its older spelling, so the two readings
+agree wherever they can be compared.
+
+**The excluded count is published, not dropped.** This file is a courier, and a
+number that quietly got smaller is exactly the failure it exists to avoid: a
+consumer diffing this week against last needs to see where nine RIOT filings
+went. `filing_count` still counts them, because that field is a count of the
+index and says so above.
 
 ## `projection`: the next report, and what the estimate is worth
 

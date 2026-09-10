@@ -14,6 +14,7 @@ import time
 import datetime
 import pathlib
 import statistics
+from collections import namedtuple
 import urllib.request
 import urllib.error
 
@@ -102,6 +103,12 @@ FORMS = ["8-K", "6-K", "10-Q", "10-K", "20-F", "40-F", "S-1", "S-3", "424",
          "NT ",
          "3", "4", "DEF 14A"]
 
+# The four 13D/G spellings, and the ONLY families where a filing can appear
+# under a company that is not its subject. Every other form in FORMS is filed
+# BY the issuer about itself, so the docket test would be meaningless there and
+# is deliberately not applied to them.
+HOLDER_FORMS = ("SC 13D", "SCHEDULE 13D", "SC 13G", "SCHEDULE 13G")
+
 # Always emitted, null when the issuer has none, so the shape does not change
 # run to run. A sibling outside this list is emitted under its own key rather
 # than dropped — surfacing a form nobody enumerated is the point of matching the
@@ -144,19 +151,39 @@ def fetch(url):
     return json.loads(raw)
 
 
+# NAMED, NOT POSITIONAL. `file_no` was added to this row on 2026-09-10 and
+# entry() unpacked it five ways. holder_events made exactly that change on the
+# same day with a plain tuple and left one of its two readers unpacking the old
+# width: every run with an event raised ValueError, and four green dry runs
+# missed it because they had no events to unpack. A field added to a namedtuple
+# cannot silently break a reader.
+#
+# zip() also truncates to the shortest column, so a short one used to drop rows
+# from the END of the index rather than raising. rows_from pads instead, which
+# is the same choice holder_events.filings_for makes and for the same reason:
+# an empty field is a fact about one filing, a lost row is a fact about none.
+Row = namedtuple("Row", "form filed period accession doc file_no")
+
+
+def rows_from(block):
+    forms = block.get("form") or []
+
+    def col(key):
+        seq = list(block.get(key) or [])
+        return seq + [""] * (len(forms) - len(seq))
+
+    return [Row(*r) for r in zip(forms, col("filingDate"), col("reportDate"),
+                                 col("accessionNumber"), col("primaryDocument"),
+                                 col("fileNumber"))]
+
+
 def all_filings(cik):
     """Every filing in the index, recent page plus any older files it references."""
     data = fetch("https://data.sec.gov/submissions/CIK%s.json" % cik)
-    recent = data.get("filings", {}).get("recent", {})
-    rows = list(zip(recent.get("form", []), recent.get("filingDate", []),
-                    recent.get("reportDate", []), recent.get("accessionNumber", []),
-                    recent.get("primaryDocument", [])))
+    rows = rows_from(data.get("filings", {}).get("recent", {}))
     for extra in data.get("filings", {}).get("files", []):
         time.sleep(0.15)
-        older = fetch("https://data.sec.gov/submissions/" + extra["name"])
-        rows += list(zip(older.get("form", []), older.get("filingDate", []),
-                         older.get("reportDate", []), older.get("accessionNumber", []),
-                         older.get("primaryDocument", [])))
+        rows += rows_from(fetch("https://data.sec.gov/submissions/" + extra["name"]))
     return data, rows
 
 
@@ -169,23 +196,66 @@ def matches(form, family):
 
 def entry(hits, cik):
     """Newest of a group of filings, plus how many there are."""
-    hits.sort(key=lambda r: r[1], reverse=True)
-    form, filed, period, acc, doc = hits[0]
+    hits.sort(key=lambda r: r.filed, reverse=True)
+    top = hits[0]
     return {
-        "form": form,
-        "filed": filed,
-        "period": period or None,
-        "accession": acc,
+        "form": top.form,
+        "filed": top.filed,
+        "period": top.period or None,
+        "accession": top.accession,
         "url": ("https://www.sec.gov/Archives/edgar/data/%d/%s/%s"
-                % (int(cik), acc.replace("-", ""), doc)) if doc else None,
+                % (int(cik), top.accession.replace("-", ""), top.doc))
+               if top.doc else None,
         "count": len(hits),
     }
 
 
 def latest_per_form(rows, cik):
-    out = {}
+    """(per-form entries, count excluded as off-docket).
+
+    A 13D/G COUNT IS ONLY THE ONES ON THIS ISSUER'S DOCKET. EDGAR lists a
+    Schedule 13D/G under every reporting person's CIK as well as the subject's,
+    so a company that files about somebody else appears under its own ticker.
+    Until 2026-09-10 this published `RIOT / SCHEDULE 13D / count 9`, and RIOT's
+    genuine count is ZERO: all nine are Riot's own filings about Bitfarms, with
+    a `url` pointing at a document about Bitfarms under a RIOT heading.
+
+    THE DISCRIMINATOR IS THE FILE NUMBER, and it needs no document fetch, which
+    is what makes it usable in a component that runs daily over 22 issuers.
+    EDGAR assigns the `005-` number to the SUBJECT's 13D/G docket, so a row
+    indexed under a reporting person has nothing to put there.
+
+    Measured on the runner, 2026-09-10, over every 13D/G under all 22 roster
+    CIKs across every index page (probe_holders.py, phase `subjects`). The set
+    of structured filings with no file number and the set read under the wrong
+    company were compared ELEMENT BY ELEMENT and are identical, 15 and 15. Not
+    deduced from totals: the totals were consistent with it first, and that is
+    the trap this repo names.
+
+      SCHEDULE 13D  103 filings,  12 with no file number
+      SCHEDULE 13G  247 filings,   3 with no file number
+      SC 13D        244 filings,  33 with no file number
+      SC 13G        371 filings,   3 with no file number
+
+    THE LEGACY SPELLINGS ARE NOT AN INFERENCE ABOUT THEIR SUBJECTS. Those
+    predate the structured schema and carry no parseable issuer block, so
+    nothing here knows what they are about. The rule applied is the narrower
+    and directly checkable one: a filing with no file number is not on this
+    issuer's 13D/G docket. The legacy blanks are dominated by RIOT SC 13D
+    through mid-2024, which is the same Bitfarms campaign in its older
+    spelling, so the two readings agree where they can be compared.
+
+    The excluded count is RETURNED rather than dropped, because this file is a
+    courier and a number that quietly got smaller is the shape it exists to
+    avoid.
+    """
+    out, off_docket = {}, 0
     for family in FORMS:
-        hits = [r for r in rows if matches(r[0], family)]
+        hits = [r for r in rows if matches(r.form, family)]
+        if family in HOLDER_FORMS:
+            keep = [r for r in hits if (r.file_no or "").strip()]
+            off_docket += len(hits) - len(keep)
+            hits = keep
 
         if family == NT_FAMILY:
             # Matched as a family, emitted per form. Amendments fold into their
@@ -193,7 +263,7 @@ def latest_per_form(rows, cik):
             # old per-form prefix match did, so the wire format is unchanged.
             groups = {}
             for r in hits:
-                groups.setdefault(r[0].split("/")[0], []).append(r)
+                groups.setdefault(r.form.split("/")[0], []).append(r)
             for key in NT_KNOWN:
                 g = groups.pop(key, None)
                 out[key] = entry(g, cik) if g else None
@@ -202,7 +272,7 @@ def latest_per_form(rows, cik):
             continue
 
         out[family] = entry(hits, cik) if hits else None
-    return out
+    return out, off_docket
 
 
 def projection(rows):
@@ -399,18 +469,28 @@ def main():
             out["issuers"][ticker] = {"cik": cik, "error": str(e)}
             continue
 
-        latest = max((r[1] for r in rows if r[1]), default=None)
+        latest = max((r.filed for r in rows if r.filed), default=None)
+        filings, off_docket = latest_per_form(rows, cik)
         out["issuers"][ticker] = {
             "cik": cik,
             "name": data.get("name"),
             "former_names": [n.get("name") for n in data.get("formerNames", [])],
             "filing_count": len(rows),
             "latest_filing_date": latest,
-            "filings": latest_per_form(rows, cik),
+            "filings": filings,
+            # 13D/G present in this issuer's index but NOT on its own 13D/G
+            # docket, so counted nowhere above. Published rather than dropped:
+            # a courier that quietly shrinks a number is the failure this file
+            # exists to avoid, and a consumer comparing today against last week
+            # needs to see where nine RIOT filings went. `filing_count` above
+            # still counts them, because it is a count of the INDEX.
+            "off_docket_13dg": off_docket,
             "projection": projection(rows),
         }
-        print("  %-5s %-42s %5d filings, latest %s"
-              % (ticker, (data.get("name") or "")[:42], len(rows), latest))
+        print("  %-5s %-42s %5d filings, latest %s%s"
+              % (ticker, (data.get("name") or "")[:42], len(rows), latest,
+                 (", %d 13D/G off this issuer's docket" % off_docket)
+                 if off_docket else ""))
         time.sleep(0.2)
 
     if DRY_RUN:
