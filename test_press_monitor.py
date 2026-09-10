@@ -234,6 +234,31 @@ def main():
           not pm.always_post_items({"form": "10-Q", "items": "4.02"}))
     check("a missing items field is safe",
           not pm.always_post_items({"form": "8-K"}))
+    check("unregistered equity sales post",
+          pm.always_post_items({"form": "8-K", "items": "3.02,9.01"}),
+          "3.02 added 2026-09-09; dilution arriving without an announcement")
+    check("a material agreement posts",
+          pm.always_post_items({"form": "8-K", "items": "1.01,9.01"}),
+          "1.01 added 2026-09-09; the Sphere 3D filing that prompted it")
+
+    print("\nUNANNOUNCED IS A NARROWER CLAIM THAN ALWAYS-POST")
+    # The regression this exists to stop. Adding an ORDINARY business item to
+    # ALWAYS_POST_ITEMS is safe for posting and unsafe for the amber colour:
+    # 138 of 275 real 3.02 filings on this roster also carry 2.02, 7.01 or
+    # 8.01, and amber asserts the company kept quiet about something it
+    # announced. Setting item["unannounced"] = True unconditionally, which is
+    # what the code did until 2026-09-09, turns this check red.
+    check("AN ANNOUNCED ALWAYS-POST FILING IS NOT CALLED UNANNOUNCED",
+          pm.always_post_items({"form": "8-K", "items": "3.02,7.01,9.01"})
+          and not pm.posts_unannounced({"form": "8-K", "items": "3.02,7.01,9.01"}),
+          "posts, but blue: 7.01 means there was a release")
+    check("a silent always-post filing is still called unannounced",
+          pm.posts_unannounced({"form": "8-K", "items": "3.02,9.01"}))
+    check("a restatement with no release is unannounced",
+          pm.posts_unannounced({"form": "8-K", "items": "4.02"}),
+          "the original case the amber colour was built for")
+    check("a filing with no always-post item is not unannounced",
+          not pm.posts_unannounced({"form": "8-K", "items": "7.01,9.01"}))
 
     print("\nPRESS RELEASE DETECTION")
     check("a press-release item code passes",

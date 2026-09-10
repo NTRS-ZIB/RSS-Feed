@@ -443,14 +443,51 @@ PRESS_RELEASE_ITEMS = {"2.02", "7.01", "8.01"}
 # post with a release) and 2.01 (one dropped filing in nineteen months) were
 # also considered and left out.
 #
-# NEVER ADD 9.01. It is an attachment marker appearing on 1,530 of 1,986
-# filings (2026-08-03) and means nothing on its own; including it would post
+# 3.02 UNREGISTERED EQUITY SALES ADDED 2026-09-09, on a re-run of
+# audit_8k_items.py over 3,051 filings across all 22 companies. It is dilution
+# arriving without an announcement, which is the same shape as 4.02: the filing
+# a company is least likely to put a release behind. 275 appearances, 137
+# dropped, and +21 posts since 2025 at ~1.1/month, about what all seven items
+# above produce together (22 since 2025, ~1.2/month), so it roughly doubles a
+# small number rather than changing what the channel is.
+#
+# 1.01 MATERIAL AGREEMENT ADDED 2026-09-09, and it is the one entry here that
+# runs AGAINST the volume argument used two paragraphs up. 756 appearances,
+# 415 dropped, the largest droppable category on the roster, and +84 posts
+# since 2025 at ~4.4/month: 3.7x everything else in this set combined, and
+# more than the ~3.4/month that got 5.02 excluded. The concentration is the
+# same shape too, MARA 69, RIOT 45, CLSK 39, SLNH 39, BGDE 35.
+#
+# It is here anyway, because the 5.02 exclusion stood on THREE legs and only
+# one of them applies. 5.02 was also excluded because the item code cannot
+# separate a CFO resigning abruptly from a fourth independent director being
+# appointed, and because the insider channel already covers the people-acting
+# side. NOTHING ELSE IN THIS REPO REPORTS MATERIAL AGREEMENTS, and for a
+# roster of power-hungry infrastructure companies a material definitive
+# agreement is a power contract, a hosting deal or a financing, which is the
+# substance the channel exists for. docs/handoff.md names an Item 1.01 8-K as
+# the settling test for whether CIFR and NUAI are contesting the same Ector
+# County generation, and until now the component could not have shown it.
+#
+# THE RATE IS THE THING TO WATCH, and the honest position is that ~4.4/month
+# is a bet rather than a measurement of usefulness. If it turns out to be
+# amended leases and equipment orders, this is the line to take back out. The
+# drop log added in the same commit makes that judgeable from ordinary run
+# output rather than from another audit.
+#
+# The prompting case: a Sphere 3D 1.01 dropped on 2026-09-08, found only
+# because a human asked where it had gone.
+#
+# NEVER ADD 9.01. It is an attachment marker appearing on 2,410 of 3,051
+# filings (2026-09-09) and means nothing on its own; including it would post
 # essentially every 8-K and silently undo the exhibit filter entirely.
 ALWAYS_POST_ITEMS = {
+    "1.01",   # Material agreement entered
     "1.03",   # Bankruptcy or receivership
     "2.04",   # Obligation accelerated
     "2.06",   # Material impairment
     "3.01",   # Delisting notice / listing rule
+    "3.02",   # Unregistered equity sales
     "4.01",   # Auditor change
     "4.02",   # Non-reliance on prior financials
     "5.01",   # Change in control
@@ -686,6 +723,29 @@ def always_post_items(item):
     raw = item.get("items") or ""
     codes = {i.strip() for i in raw.split(",") if i.strip()}
     return bool(codes & ALWAYS_POST_ITEMS)
+
+
+def posts_unannounced(item):
+    """Whether this filing is an always-post item the company did NOT announce.
+
+    Two different questions were one flag until 2026-09-09. "Post this
+    regardless" is always_post_items above. "Render it amber, meaning the
+    company kept quiet about it" is this, and it is the narrower claim: a
+    filing that carries BOTH an always-post item and a press-release item was
+    announced, and colouring it amber asserts something false about the
+    company rather than merely being untidy.
+
+    It never mattered while the set was 1.03, 2.04, 2.06, 3.01, 4.01, 4.02 and
+    5.01, because a restatement or a delisting notice almost never arrives with
+    a release. It matters the moment an ordinary business item joins the set,
+    and 2026-09-09 added two: of 756 Item 1.01 filings on this roster 341
+    already post because they carry 2.02, 7.01 or 8.01, and of 275 Item 3.02
+    filings 138 do. Without this, all 479 would have rendered amber, telling
+    the reader the company said nothing about news it had put out a release on.
+    """
+    return (always_post_items(item)
+            and not carries_press_release(str(item.get("form") or ""),
+                                          item.get("items") or ""))
 
 
 def carries_press_release(form, items):
@@ -2613,22 +2673,34 @@ def main():
     candidates = candidates[: MAX_POSTS_PER_RUN * 2]
 
     to_post = []
-    for item in candidates:
+    dropped = []
+    for n, item in enumerate(candidates):
         if len(to_post) >= MAX_POSTS_PER_RUN:
+            # Untried rather than rejected, and lost in exactly the same way:
+            # these are already in `seen`. Recorded for the same reason as
+            # every other drop below.
+            dropped.extend(
+                (rest, f"not tried, {MAX_POSTS_PER_RUN}-post cap reached")
+                for rest in candidates[n:])
             break
         # BEFORE the exhibit filter, not inside it. These filings usually
         # arrive without a press release, so running them through
         # carries_press_release() first would defeat the whole change.
         if always_post_items(item):
-            item["unannounced"] = True
+            # Posted either way. The amber flag is the narrower claim that the
+            # company did not announce it, so it is computed rather than
+            # assumed. See posts_unannounced.
+            item["unannounced"] = posts_unannounced(item)
         elif str(item.get("form", "")).startswith(PROXY_FORMS):
             # A proxy posts only if it proposes raising the share ceiling.
             # keep_proxy fetches the body, so it sits last among these arms
             # and after every filter above it.
             if not keep_proxy(item):
+                dropped.append((item, "proxy proposes no share-ceiling increase"))
                 continue
         elif PRESS_RELEASE_EXHIBIT_ONLY and item.get("form") in EXHIBIT_CHECK_FORMS:
             if not carries_press_release(item["form"], item.get("items", "")):
+                dropped.append((item, "no press-release item code"))
                 continue
         to_post.append(item)
 
@@ -2636,6 +2708,24 @@ def main():
     print(f"{len(candidates)} candidate(s) checked, {len(to_post)} to post"
           + (f" ({n_unannounced} unannounced material filing(s))"
              if n_unannounced else "") + ".")
+
+    # A DROPPED CANDIDATE IS GONE FOR GOOD, because items are marked seen
+    # before any of the filters above run. Until 2026-09-09 this printed
+    # nothing: a Sphere 3D Item 1.01 was dropped on 2026-09-08 and the entire
+    # record of it was "1 candidate(s) checked, 0 to post". Establishing which
+    # company it had been took an hour of diffing per-company filing counts
+    # between two runs, and the answer was not recoverable from any single log.
+    # One line per drop is the difference between a question and an
+    # archaeology exercise.
+    if dropped:
+        print(f"  {len(dropped)} candidate(s) dropped and already marked seen, "
+              f"so they will not be offered again:")
+        for item, why in dropped[:10]:
+            print(f"    {item.get('source') or '?'} "
+                  f"{item.get('form') or '?'} "
+                  f"[{item.get('items') or 'no item codes'}] {why}")
+        if len(dropped) > 10:
+            print(f"    ...and {len(dropped) - 10} more")
 
     # Ahead of BOTH output paths, so a dry run shows the title a live run
     # would post. The enrichment fetches, so it is deliberately last: every
