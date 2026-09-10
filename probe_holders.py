@@ -1463,10 +1463,30 @@ def phase_subjects():
               f"{fam_blank[fam]:3} with no file number")
     legacy_blank = [b for b in blank_rows if b[1].startswith("SC 13")]
     print(f"\n  LEGACY rows with no file number: {len(legacy_blank)}")
-    for t, fam, filed, acc in legacy_blank[:15]:
+    for t, fam, filed, acc in sorted(legacy_blank):
         print(f"    {t} {fam} {filed} {acc}")
-    if len(legacy_blank) > 15:
-        print(f"    ...and {len(legacy_blank) - 15} more")
+
+    # IS IT AGE OR IS IT SUBJECT? A blank file number could mean "not on this
+    # issuer's docket", which is the rule being adopted, or simply that EDGAR
+    # populated the field less consistently on older filings, in which case the
+    # rule mis-fires on age. The two are distinguished by comparing the dates
+    # of the blanks against the dates of the ones that DO carry a number, per
+    # family. If the blanks are old and the numbered ones are recent, age is
+    # the explanation and the rule is wrong for legacy filings.
+    print("\n  blank against numbered, by family and date range:")
+    for fam in sorted(fam_total):
+        dated = [(r["filed"], bool((r.get("file_no") or "").strip()))
+                 for _t, rec in per_ticker.items() for r in rec["rows"]
+                 if family(r["form"]) == fam and r["filed"]]
+        blank = sorted(d for d, has in dated if not has)
+        numbered = sorted(d for d, has in dated if has)
+        print(f"    {fam:14} blank {len(blank):3}"
+              + (f" [{blank[0]} .. {blank[-1]}]" if blank else " [none]")
+              + f"   numbered {len(numbered):3}"
+              + (f" [{numbered[0]} .. {numbered[-1]}]" if numbered else ""))
+    print("  Overlapping ranges mean age does NOT explain the blanks. Blanks")
+    print("  confined to the older end would mean it does, and the rule would")
+    print("  be wrong for the legacy spellings.")
     print("  A non-zero count here does NOT mean these are misattributed: the")
     print("  subject is only knowable from the document, and legacy filings "
           "carry\n  no structured one. It sizes what a file-number rule would "
