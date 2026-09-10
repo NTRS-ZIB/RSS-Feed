@@ -14,6 +14,8 @@ drift_candidates exists to catch the next rename, and the checks below are
 what stop it quietly ceasing to.
 """
 
+import contextlib
+import io
 import sys
 import types
 
@@ -28,6 +30,24 @@ results = []
 def check(name, ok, detail=""):
     results.append((PASS if ok else FAIL, name))
     print(f"  [{PASS if ok else FAIL}] {name}" + (f" — {detail}" if detail else ""))
+
+
+def health_run(state, feed_ok):
+    """report_feed_health with stdout captured and no webhook configured.
+
+    OPS_WEBHOOK_URL is blanked rather than trusted to be unset, so these
+    checks cannot post to a real channel from a machine that has it in the
+    environment.
+    """
+    buf = io.StringIO()
+    saved = pm.OPS_WEBHOOK_URL
+    pm.OPS_WEBHOOK_URL = ""
+    try:
+        with contextlib.redirect_stdout(buf):
+            pm.report_feed_health(state, feed_ok)
+    finally:
+        pm.OPS_WEBHOOK_URL = saved
+    return buf.getvalue()
 
 
 def main():
@@ -757,6 +777,54 @@ def main():
     check("SOLICITING MATERIAL IS NOT SWEPT IN WITH THE PROXY",
           not pm.form_matches("DEFA14A", pm.FORM_TYPES),
           "DEFA14A does not start with 'DEF 14A'")
+
+    print("\nFEED HEALTH RECORDS FOR A RETIRED FEED")
+    # ANY was suspended on 2026-09-10 holding 212 fails with `alerted` set.
+    # The summary line reads every STORED record rather than only the ones
+    # checked, so without a prune it printed `failing: {'ANY': 212}` on every
+    # run for good, about a feed nobody was asking for any more.
+    state = {"feeds": {"ANY": {"fails": 212, "alerted": True},
+                       "MARA": {"fails": 0, "alerted": False}}}
+    log = health_run(state, {"MARA": True})
+    check("A SUSPENDED FEED'S RECORD IS DROPPED",
+          "ANY" not in state["feeds"],
+          "otherwise `failing: {'ANY': 212}` prints on every run for ever")
+    check("the drop is announced rather than silent",
+          "dropped the stored record for ANY" in log)
+    check("the summary stops naming it",
+          "failing" not in log)
+    check("a still-configured feed keeps its record",
+          "MARA" in state["feeds"],
+          "a prune that took everything would lose real alert state")
+
+    # THE SAFETY PROPERTY, and the reason this is not the first_run prune trap.
+    # collect_ir puts every configured feed in feed_ok either way, False when
+    # the read failed, so BROKEN is present rather than absent and cannot be
+    # read as RETIRED. Pruning on "not measured this run" is what lost real
+    # events there.
+    state = {"feeds": {"BGDE": {"fails": 3, "alerted": True}}}
+    health_run(state, {"BGDE": False})
+    check("A FEED THAT FAILED THIS RUN IS NOT PRUNED",
+          "BGDE" in state["feeds"] and state["feeds"]["BGDE"]["fails"] == 4,
+          "it is in feed_ok as False, and its counter must keep climbing")
+
+    # An IR_FEEDS that failed to build is a config error, not twenty-two
+    # retirements, and must not wipe every counter and alert flag at once.
+    state = {"feeds": {"MARA": {"fails": 1, "alerted": False}}}
+    health_run(state, {})
+    check("an empty feed set prunes nothing",
+          "MARA" in state["feeds"])
+
+    # The stuck flag is the other half. `alerted` stays True on a record
+    # nothing touches, so without the prune the day the feed comes back it
+    # posts a recovery notice counting runs that never fetched anything.
+    state = {"feeds": {"ANY": {"fails": 212, "alerted": True}}}
+    health_run(state, {"MARA": True})                    # suspended
+    log = health_run(state, {"MARA": True, "ANY": True})  # restored later
+    check("A RESTORED FEED CLAIMS NO RECOVERY IT DID NOT HAVE",
+          "answering again" not in log
+          and state["feeds"]["ANY"] == {"fails": 0, "alerted": False},
+          "212 of those runs never asked the host for anything")
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")

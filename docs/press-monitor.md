@@ -661,6 +661,22 @@ connection reset.
 **Only press releases stop.** EDGAR coverage is untouched, so Sphere 3D's 8-Ks,
 Form 4s and 13D/G keep posting on the usual path.
 
+Suspending a feed strands its health record, which the dry run caught rather
+than reasoning finding. `report_feed_health` only touches labels it was asked
+to check, but its summary reads every *stored* record, so ANY sat at
+`failing: {'ANY': 212}` and would have printed that on every run for good,
+about a feed nobody was asking for. Its `alerted` flag was stuck `True` as
+well, so the day the feed came back it would have posted "answering again
+after 212 consecutive failed reads" about runs that never fetched anything.
+
+The function now drops records for labels that are no longer configured, and
+says so once. **The condition is configuration, not outcome**, which is what
+keeps it clear of the `first_run` prune trap: `collect_ir` puts every
+configured feed in `feed_ok` either way, `False` when the read failed, so a
+broken feed is present rather than absent and cannot be pruned. An empty
+`feed_ok` prunes nothing, because `IR_FEEDS` failing to build is a config
+error rather than twenty-two retirements.
+
 Applied Digital's platform returns **byte-identical responses for `/rss`,
 `/rss/news-releases.xml` and `/rss/pressrelease.aspx`** — 7,741 bytes each. It
 serves the feed for anything under `/rss`, so on that platform a constructed

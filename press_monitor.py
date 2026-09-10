@@ -1881,6 +1881,34 @@ def report_feed_health(state, feed_ok):
                         f"{rec['fails']} consecutive runs. Its releases now "
                         f"reach Discord only if an 8-K follows.")
 
+    # A RETIRED LABEL KEEPS ITS RECORD FOREVER OTHERWISE, and the summary
+    # below reads every STORED record rather than only the ones checked, so a
+    # feed that is deliberately switched off prints as failing on every run for
+    # good. ANY was suspended on 2026-09-10 sitting at 212 fails with `alerted`
+    # already set, which would have printed `failing: {'ANY': 212}` for as long
+    # as the repo lives and then, on restore, posted "answering again after 212
+    # consecutive failed reads" about runs that never asked. Both are exactly
+    # the noise this function exists to prevent, so it cleans up after itself.
+    #
+    # SAFE BECAUSE THE CONDITION IS CONFIGURATION, NOT OUTCOME. collect_ir sets
+    # feed_ok[label] for every configured feed either way, False when the read
+    # failed, so a feed that is merely broken is present rather than absent and
+    # cannot be pruned. That distinction is the whole reason this is not the
+    # first_run prune trap, where dropping on "not measured this run" lost real
+    # events on a transient failure.
+    #
+    # The empty guard covers the one case that is not configuration: an
+    # IR_FEEDS that failed to build at all would otherwise wipe every record at
+    # once, turning a config error into a silent loss of the alert state.
+    if feed_ok:
+        retired = sorted(set(health) - set(feed_ok))
+        for label in retired:
+            health.pop(label)
+        if retired:
+            print(f"  feed health: dropped the stored record for "
+                  f"{', '.join(retired)}, no longer a configured feed. "
+                  f"A feed that is restored later starts from clean counters.")
+
     # ALWAYS, even when everything is healthy. A check that prints only when
     # it fires is indistinguishable from a check that never ran, which is the
     # ambiguity this whole change exists to remove — and it would be absurd to
