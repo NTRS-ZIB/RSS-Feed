@@ -2787,6 +2787,7 @@ def main():
     if insider_recent:
         insider_recent.sort(key=lambda i: i.get("published") or 0, reverse=True)
         batch = insider_recent[:MAX_INSIDER_POSTS_PER_RUN]
+        over_cap = insider_recent[MAX_INSIDER_POSTS_PER_RUN:]
         sent_i = 0
         for item in batch:
             if post(item, INSIDER_WEBHOOK_URL, color=0xD29922):
@@ -2794,6 +2795,36 @@ def main():
             else:
                 failed.append(item["uid"])
         print(f"Posted {sent_i} insider item(s).")
+
+        # THE DISCARD IS DELIBERATE, THE SILENCE WAS NOT. Everything beyond the
+        # cap was marked seen up front and is never posted, which
+        # docs/press-monitor.md states as design: a backlog must not queue up
+        # and drip into the channel for hours. That is not in question here.
+        #
+        # What was wrong is that until 2026-09-10 the only line this block
+        # printed was "Posted 25 insider item(s)." and the true count appeared
+        # NOWHERE in the run. It could not even be reconstructed: the earlier
+        # "N new insider" figure is taken before the age floor, and the
+        # age-floor line merges press and insider into a single number. So an
+        # operator could not tell a 25-item day from a 60-item day, and the 35
+        # that went are unrecoverable.
+        #
+        # The press channel eighty lines above has logged its own cap overflow
+        # since the 2026-09-09 commit; this is the half of that change which
+        # was not carried across. The trigger is measured rather than imagined:
+        # roughly 18 insider filings on this roster share a single filing date,
+        # CRWV alone contributed 83 of 160 in one 30-day window, and a grant
+        # date or a lock-up expiry files one Form 4 per insider on one day.
+        if over_cap:
+            print(f"  {len(over_cap)} insider item(s) beyond the "
+                  f"{MAX_INSIDER_POSTS_PER_RUN}-post cap, marked seen and not "
+                  f"posted. Deliberate, and they do not return:")
+            for item in over_cap[:10]:
+                print(f"    {item.get('source') or '?'} "
+                      f"{item.get('form') or '?'} "
+                      f"{(item.get('title') or '')[:44]}")
+            if len(over_cap) > 10:
+                print(f"    ...and {len(over_cap) - 10} more")
 
     # Un-mark anything that failed to post so the next run tries again.
     # Without this, a rate-limited item is lost permanently.

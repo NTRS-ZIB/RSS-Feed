@@ -565,7 +565,12 @@ item within a short window.
 Two different outcomes, easily confused:
 
 - **Beyond the cap** — marked seen, never posted. Deliberate. A backlog must not
-  queue up and drip into the channel for hours.
+  queue up and drip into the channel for hours. **Both channels now name what
+  went**, one line per item up to ten. Until 2026-09-09 (press) and 2026-09-10
+  (insider) they said nothing at all, and on the insider side the count could
+  not even be reconstructed: the earlier "new insider" figure is taken before
+  the age floor, and the age-floor line merges press and insider into one
+  number. A 25-item day and a 60-item day printed the same single line.
 - **Failed to post** — un-marked and retried on the next run. Also deliberate;
   see the rate limiting note below.
 
