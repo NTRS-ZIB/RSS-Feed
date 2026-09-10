@@ -103,11 +103,12 @@ FORMS = ["8-K", "6-K", "10-Q", "10-K", "20-F", "40-F", "S-1", "S-3", "424",
          "NT ",
          "3", "4", "DEF 14A"]
 
-# The four 13D/G spellings, and the ONLY families where a filing can appear
-# under a company that is not its subject. Every other form in FORMS is filed
-# BY the issuer about itself, so the docket test would be meaningless there and
-# is deliberately not applied to them.
-HOLDER_FORMS = ("SC 13D", "SCHEDULE 13D", "SC 13G", "SCHEDULE 13G")
+# IMPORTED, NOT RESTATED. This module and weekly_digest each carried their own
+# copy of the 13D/G family list, in different orders, until 2026-09-10.
+# filing_subject is stdlib-only and imports nothing, which matters here:
+# snapshot.yml has NO pip install step, and importing a module that needs
+# `requests` once killed the 11:00 UTC run before it read a filing.
+from filing_subject import HOLDER_FORMS, on_own_docket
 
 # Always emitted, null when the issuer has none, so the shape does not change
 # run to run. A sibling outside this list is emitted under its own key rather
@@ -253,7 +254,7 @@ def latest_per_form(rows, cik):
     for family in FORMS:
         hits = [r for r in rows if matches(r.form, family)]
         if family in HOLDER_FORMS:
-            keep = [r for r in hits if (r.file_no or "").strip()]
+            keep = [r for r in hits if on_own_docket(r.file_no)]
             off_docket += len(hits) - len(keep)
             hits = keep
 

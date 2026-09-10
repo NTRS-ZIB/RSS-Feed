@@ -79,6 +79,10 @@ from datetime import date, datetime, timedelta, timezone
 import requests
 
 import watchlist
+# The 13D/G family list and the docket rule, imported rather than copied.
+# This file and build_snapshot each carried their own HOLDER_FORMS, in
+# different orders, until 2026-09-10.
+from filing_subject import HOLDER_FORMS, on_own_docket
 
 # The 8-K item taxonomy is press_monitor.py's, imported rather than copied.
 #
@@ -531,6 +535,11 @@ def fetch_filings():
                 "accepted": at("acceptanceDateTime"),
                 "items": at("items"),
                 "description": at("primaryDocDescription"),
+                # The 13D/G docket number. Present on a filing about THIS
+                # company, absent on one this company filed about somebody
+                # else, which is how derive_holders tells them apart without a
+                # second request. See filing_subject.on_own_docket.
+                "file_no": at("fileNumber"),
                 "accession": acc,
                 "url": ARCHIVE.format(cik=int(cik),
                                       nodash=acc.replace("-", ""), acc=acc),
@@ -1384,7 +1393,6 @@ def derive_short_interest(c, ctx, week, sessions):
 
 # Both spellings, and only these — a 13D/G is the >5% ownership disclosure.
 # "SCHEDULE 13D" does not start with "SC 13D"; see press_monitor.FORM_TYPES.
-HOLDER_FORMS = ("SC 13D", "SC 13G", "SCHEDULE 13D", "SCHEDULE 13G")
 
 
 def derive_holders(c, ctx, week, sessions):
@@ -1402,6 +1410,25 @@ def derive_holders(c, ctx, week, sessions):
     It also never counts holders. 184 distinct reporting-person names on this
     roster collapse to 70 filer groups once co-filing is accounted for, so a
     count would overstate by 83% without a grouping rule. An event needs none.
+
+    ONLY DISCLOSURES ABOUT THIS COMPANY, since 2026-09-10. EDGAR lists a
+    Schedule 13D/G under every reporting person's CIK as well as the subject's,
+    so a company that files about somebody else appears in its own index. This
+    counted those and called them ">5% disclosures" for the ticker they were
+    read under. In the week of 2025-04-09 it would have reported a >5%
+    disclosure for RIOT when the filing was Riot Platforms' own, about
+    Bitfarms; holder_events posted nine such embeds before the same defect was
+    found there.
+
+    THE DISTINCTION IS THE DOCKET NUMBER and it needs no extra request, which
+    is what makes it usable in a contributor that must not add fetches. See
+    filing_subject.on_own_docket for the measurement and for what it does not
+    claim.
+
+    An excluded filing is NEVER SILENT. A week whose only 13D/G were this
+    company's own reports ROUTINE with the count and the accessions, because
+    otherwise it would read exactly like a week with no filings at all, which
+    is the failure the exclusion was written to prevent.
     """
     filings = ctx["filings"].data or {}
     lo, hi = sessions[0].isoformat(), sessions[-1].isoformat()
@@ -1411,8 +1438,21 @@ def derive_holders(c, ctx, week, sessions):
         if rows is None:
             out[t] = mk(c, SOURCE_FAILED, basis="EDGAR submissions fetch failed")
             continue
-        hits = [r for r in rows
+        week = [r for r in rows
                 if r["form"].startswith(HOLDER_FORMS) and lo <= r["filed"] <= hi]
+        # A 13D/G IN THIS COMPANY'S INDEX IS NOT NECESSARILY ABOUT IT. EDGAR
+        # lists one under every reporting person's CIK as well as the
+        # subject's, and this line published ">5% disclosure" under the ticker
+        # it was read from. In the week of 2025-04-09 that would have said RIOT
+        # had a >5% disclosure when the filing was Riot's own, about Bitfarms.
+        hits = [r for r in week if on_own_docket(r["file_no"])]
+        off = [r for r in week if not on_own_docket(r["file_no"])]
+        # NEVER SILENT, in either branch. A week where three filings were all
+        # this company's own must not read the same as a quiet week, or the
+        # exclusion becomes the thing it was written to prevent.
+        aside = (f"; {len(off)} further 13D/G in this company's index were "
+                 f"filed BY it about another issuer, so not counted"
+                 if off else "")
         if hits:
             initial = [r for r in hits if not r["form"].endswith("/A")]
             out[t] = mk(c, NOTABLE,
@@ -1422,13 +1462,21 @@ def derive_holders(c, ctx, week, sessions):
                                   ", all amendments"),
                         basis="a 13D is filed within days of crossing 5%; a "
                               "13G reports a position periodically and files "
-                              "no event date at all",
+                              "no event date at all" + aside,
                         sources=[r["url"] for r in hits],
                         detail={"count": len(hits),
                                 "forms": sorted({r["form"] for r in hits}),
-                                "accessions": [r["accession"] for r in hits]})
+                                "accessions": [r["accession"] for r in hits],
+                                "off_docket": len(off)})
+        elif off:
+            out[t] = mk(c, ROUTINE,
+                        basis=f"no >5% disclosure about this company"
+                              f"{aside}",
+                        detail={"count": 0, "off_docket": len(off),
+                                "off_docket_accessions":
+                                    [r["accession"] for r in off]})
         else:
-            out[t] = mk(c, ROUTINE, detail={"count": 0})
+            out[t] = mk(c, ROUTINE, detail={"count": 0, "off_docket": 0})
     return out
 
 

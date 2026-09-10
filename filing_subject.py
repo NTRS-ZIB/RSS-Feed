@@ -59,6 +59,59 @@ component converts presence in an index into a statement about ownership.
 """
 
 
+# The four spellings, and the ONLY form families where a filing can appear
+# under a company that is not its subject. Everything else a component tracks
+# is filed BY the issuer about itself, so the docket test below is meaningless
+# there and must not be applied to it.
+#
+# "SCHEDULE 13D" does not start with "SC 13D", the fourth character being H
+# rather than a space, which is how 117 filings went unmatched for eight
+# months. Both spellings, always.
+#
+# ONE DEFINITION. build_snapshot and weekly_digest each carried their own copy,
+# in different orders, until 2026-09-10.
+HOLDER_FORMS = ("SC 13D", "SC 13G", "SCHEDULE 13D", "SCHEDULE 13G")
+
+
+def on_own_docket(file_number):
+    """Whether a 13D/G row sits on the docket of the company it is listed under.
+
+    THE CHEAP HALF OF THE SUBJECT QUESTION, and the only half most components
+    can afford. subject_cik() above needs the document; this needs one field
+    the submissions index already carries, so a component sweeping 22 issuers
+    daily can use it without a single extra request.
+
+    EDGAR assigns the `005-` file number to the SUBJECT's 13D/G docket, so a
+    row indexed under a reporting person has nothing to put there.
+
+    MEASURED on the runner, 2026-09-10, over every 13D/G under all 22 roster
+    CIKs across every index page:
+
+        SCHEDULE 13D  103 filings,  12 with no file number
+        SCHEDULE 13G  247 filings,   3 with no file number
+        SC 13D        244 filings,  33 with no file number
+        SC 13G        371 filings,   3 with no file number
+
+    The 15 structured blanks and the 15 filings confirmed by subject_cik() to
+    be about another company are THE SAME SET, compared element by element.
+    Not deduced from the totals, which were consistent with it first: a number
+    true about something adjacent to the question is not an answer to it.
+
+    AGE WAS TESTED AS THE ALTERNATIVE AND REFUTED. A blank could have meant
+    EDGAR populated the field less consistently on older filings, in which case
+    this mis-fires on age. Every family's blank date range overlaps its
+    numbered range, and SC 13G is the clearest: three blanks from 2001 to 2003
+    inside a numbered range beginning in 2000. Filings from the same weeks both
+    do and do not carry the number.
+
+    WHAT THIS DOES NOT CLAIM. For the legacy spellings it says nothing about
+    the subject: those predate the structured schema and carry no parseable
+    issuer block, so nothing here knows what they are about. The claim is the
+    narrower and directly checkable one in the function's name.
+    """
+    return bool((file_number or "").strip())
+
+
 def tag_of(el):
     """The local name, with any XML namespace stripped."""
     return el.tag.split("}")[-1]

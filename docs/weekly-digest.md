@@ -323,6 +323,40 @@ identical and **no company's verdict changed** in the sample. The correction is
 to the denominator the convergence threshold is measured against, which is what
 the denominator section above is about, not to any week's names.
 
+## `holders`: only disclosures about this company
+
+EDGAR lists a Schedule 13D/G under **every reporting person's CIK as well as
+the subject's**, so a company that files about somebody else appears in its own
+index. Until 2026-09-10 `derive_holders` counted those and called them
+">5% disclosures" for the ticker they were read under.
+
+In the week of 2025-04-09 it would have reported a >5% disclosure for RIOT when
+the filing was Riot Platforms' own, about Bitfarms Ltd. `holder_events` posted
+nine such embeds to Discord before the same defect was found there, and
+`snapshot.json` published `RIOT / SCHEDULE 13D / count 9` where the truth is
+zero.
+
+**The distinction is the `005-` docket number, and it costs no request**, which
+is what makes it usable in a contributor whose whole design is to add no
+fetches: `fetch_filings` now carries `fileNumber` in the row it already builds.
+EDGAR assigns that number to the subject's 13D/G docket, so a row indexed under
+a reporting person has none. `filing_subject.on_own_docket` holds the rule, the
+measurement behind it, and what it does not claim.
+
+**An excluded filing is never silent.** A week whose only 13D/G were this
+company's own reports `ROUTINE` carrying `off_docket` and the accessions,
+because otherwise it would read exactly like a week with no filings at all,
+which is the failure the exclusion was written to prevent. A week with both
+says so in its `basis`.
+
+**`HOLDER_FORMS` is imported, not restated.** This module and `build_snapshot`
+each carried their own copy, in different orders, until the same day.
+
+One fixture note that is load-bearing: `derive_holders` reads `r["file_no"]`
+with a subscript rather than `.get()`. A payload missing that key fails loudly
+rather than silently reclassifying every disclosure in the digest as somebody
+else's filing, which is the direction that would go unnoticed.
+
 ## The same shape elsewhere, swept and left alone
 
 The weekend bug above is one instance of a general shape: **a date compared

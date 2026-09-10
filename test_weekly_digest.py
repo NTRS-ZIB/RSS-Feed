@@ -32,6 +32,7 @@ import types
 
 sys.modules.setdefault("feedparser", types.ModuleType("feedparser"))
 
+import filing_subject as fs
 import weekly_digest as wd
 import digest_render as dr
 from datetime import date, timedelta
@@ -908,9 +909,18 @@ def main():
     print("\nDERIVE_FILINGS")
     # Material filings (FILING_CLASSES in MATERIAL_CLASSES, or 8-K item codes
     # in ALWAYS_POST_ITEMS) filed inside the week.
-    def mkfiling(form, filed):
+    def mkfiling(form, filed, file_no="005-00000"):
+        """A row shaped like fetch_filings builds one.
+
+        `file_no` defaults to PRESENT, so every existing fixture keeps meaning
+        what it meant: a filing about this company. derive_holders reads it
+        with [] rather than .get() on purpose, so a payload missing the key
+        fails loudly here instead of silently reclassifying every disclosure in
+        the digest as somebody else's filing.
+        """
         return {"form": form, "filed": filed, "accepted": "", "items": "",
                 "description": "", "accession": "acc-1",
+                "file_no": file_no,
                 "url": "https://example.sec.gov/x"}
 
     fl_in_week = cr_sessions[2].isoformat()
@@ -1189,6 +1199,65 @@ def main():
     check("an empty prefix list is False -- no prefixes to test against, "
           "not the same state as a real list that failed to match",
           wd.form_in("10-K", []) is False)
+
+    print("\nA 13D/G IN THIS INDEX IS NOT NECESSARILY ABOUT THIS COMPANY")
+    # EDGAR lists a Schedule 13D/G under every reporting person's CIK as well
+    # as the subject's, so a company that files about somebody else appears in
+    # its own index. derive_holders counted those and called them ">5%
+    # disclosures" for the ticker they were read under. In the week of
+    # 2025-04-09 it would have reported one for RIOT when the filing was Riot
+    # Platforms' own, about Bitfarms. holder_events posted nine such embeds
+    # before the same defect was found there.
+    holders_c = next(c for c in wd.CONTRIBUTORS if c["key"] == "holders")
+    hw_sessions = [date(2025, 4, 7), date(2025, 4, 8), date(2025, 4, 9),
+                   date(2025, 4, 10), date(2025, 4, 11)]
+
+    def hrow(acc, file_no, form="SCHEDULE 13D", filed="2025-04-09"):
+        return {"form": form, "filed": filed, "accession": acc,
+                "file_no": file_no, "url": "https://example.invalid/" + acc,
+                "accepted": "", "items": "", "description": ""}
+
+    def holders_for(rows):
+        src = wd.Source("filings")
+        src.data = {t: (rows if t == "RIOT" else []) for t in wd.TICKERS}
+        return wd.derive_holders(holders_c, {"filings": src},
+                                 date(2025, 4, 7), hw_sessions)["RIOT"]
+
+    # The real shape: Riot's own filing about Bitfarms, which carries no docket
+    # number under RIOT, beside a genuine holder disclosure that does.
+    v = holders_for([hrow("A-1", ""), hrow("B-1", "005-12345")])
+    check("ONLY THE ONE ON THIS COMPANY'S DOCKET IS A DISCLOSURE",
+          v["detail"]["count"] == 1,
+          f"got {v['detail']['count']}; the other is Riot's own filing")
+    check("and the excluded one is counted, not dropped",
+          v["detail"]["off_docket"] == 1)
+    check("the sources link only the real disclosure",
+          v["sources"] == ["https://example.invalid/B-1"])
+    check("the basis says what was set aside and why",
+          "filed BY it about another issuer" in v["basis"])
+
+    # THE BRANCH THAT MATTERS MOST. A week whose only 13D/G were this company's
+    # own must not read like a week with none, or the exclusion becomes the
+    # silent discard it was written to prevent.
+    v = holders_for([hrow("A-1", ""), hrow("A-2", ""), hrow("A-3", "")])
+    check("A WEEK OF ONLY OWN-FILINGS IS NOT A QUIET WEEK",
+          v["detail"]["off_docket"] == 3
+          and v["detail"]["off_docket_accessions"] == ["A-1", "A-2", "A-3"],
+          "three filings excluded and the week must say so")
+    check("it still claims no disclosure about this company",
+          v["detail"]["count"] == 0
+          and "no >5% disclosure about this company" in v["basis"])
+
+    # A genuinely quiet week stays quiet, or the line above is just noise.
+    v = holders_for([])
+    check("a week with no 13D/G at all reports zero of both",
+          v["detail"] == {"count": 0, "off_docket": 0})
+
+    check("THE FAMILY LIST AND THE DOCKET RULE ARE IMPORTED, NOT COPIED",
+          wd.HOLDER_FORMS is fs.HOLDER_FORMS
+          and wd.on_own_docket is fs.on_own_docket,
+          "this module and build_snapshot each had their own copy, in "
+          "different orders, until 2026-09-10")
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
