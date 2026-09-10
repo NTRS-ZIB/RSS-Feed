@@ -1,18 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001871559-23-000005",
-  "urn:tag:sec.gov,2008:accession-number=0001870910-23-000007",
-  "urn:tag:sec.gov,2008:accession-number=0001871512-23-000006",
-  "urn:tag:sec.gov,2008:accession-number=0001871512-23-000005",
-  "urn:tag:sec.gov,2008:accession-number=0000899243-23-011371",
-  "urn:tag:sec.gov,2008:accession-number=0000899243-23-010259",
-  "urn:tag:sec.gov,2008:accession-number=0000899243-23-010228",
-  "urn:tag:sec.gov,2008:accession-number=0000899243-23-008452",
-  "urn:tag:sec.gov,2008:accession-number=0001871559-23-000004",
-  "urn:tag:sec.gov,2008:accession-number=0001871559-23-000003",
-  "urn:tag:sec.gov,2008:accession-number=0001871512-23-000004",
-  "urn:tag:sec.gov,2008:accession-number=0001944926-23-000002",
-  "urn:tag:sec.gov,2008:accession-number=0001942855-23-000002",
   "urn:tag:sec.gov,2008:accession-number=0001870910-23-000006",
   "urn:tag:sec.gov,2008:accession-number=0001873540-23-000004",
   "urn:tag:sec.gov,2008:accession-number=0001943008-23-000005",
@@ -1365,12 +1352,15 @@
   "11736",
   "urn:tag:sec.gov,2008:accession-number=0001493152-26-041870",
   "12031",
-  "https://www.solunacomputing.com/?post_type=news&p=16222"
+  "https://www.solunacomputing.com/?post_type=news&p=16222",
+  "9806",
+  "b459a144-5dd7-402d-9854-5c5c85cacf2d",
+  "urn:tag:sec.gov,2008:accession-number=0001959173-26-006816"
  ],
  "initialized": true,
  "feeds": {
   "ANY": {
-   "fails": 208,
+   "fails": 209,
    "alerted": true
   },
   "APLD": {
