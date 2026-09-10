@@ -114,7 +114,30 @@ WATCHLIST = [
         # 84841L407 changeover, 2023-06-29. Same placeholder as DGXX's
         # DGHIZZZZ. Listed because it occurs in the data.
         "alt_symbols": ["DRK", "ANYZZZZ"],   # DRK pending, ANYZZZZ historical
-        "ir_feed": "https://sphere3d.gcs-web.com/rss/news-releases.xml",
+        # FEED SUSPENDED 2026-09-10 at the owner's instruction, until they say
+        # the new site is up. Sphere 3D is rebuilding it, and the rename to DRK
+        # is still pending, so the URL is expected to move rather than return.
+        #
+        # THE WHOLE HOST REFUSES, not just this path: the site root 401s too.
+        # Measured across six header sets before concluding that, because a
+        # refusal is a per-host User-Agent bet before it is a fact about the
+        # host, and this repo has been wrong that way once already. The
+        # identifying UA, Firefox, curl and no UA at all get 401, Chrome gets
+        # 403, and a feed-reader UA has its connection reset. Nothing reaches
+        # content, so it is the host.
+        #
+        # ONLY PRESS RELEASES STOP. EDGAR is untouched, so 8-Ks, Form 4s and
+        # 13D/G keep posting for this company on the usual path.
+        #
+        # RESTORING IT IS THIS ONE LINE AND NEEDS NO FIRST-RUN GUARD. That was
+        # measured: commit 20a42ac added three feeds and the next run posted
+        # four items out of sixty new, MAX_AGE_DAYS having dropped the rest.
+        # See that constant in press_monitor.py, and docs/rejected.md, where
+        # the guard was proposed three times in one day before anyone read the
+        # log. Put the new URL here; do not resurrect the one below.
+        #
+        #   was: https://sphere3d.gcs-web.com/rss/news-releases.xml
+        "ir_feed": None,                  # suspended, see above
     },
     {
         "ticker": "SLNH",

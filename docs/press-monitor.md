@@ -612,7 +612,7 @@ answer.
 | New Era Energy & Digital | 0002028336 | Q4 Inc |
 | IREN Limited | 0001878848 | gcs-web |
 | Vulcan Infrastructure and Power | 0001844971 | gcs-web |
-| Sphere 3D | 0001591956 | gcs-web |
+| Sphere 3D | 0001591956 | gcs-web, **suspended 2026-09-10**, see below |
 | Soluna Holdings | 0000064463 | WordPress (`/news/feed/`) |
 | Big Digital Energy | 0001218683 | **GlobeNewswire** (the wire, not the newsroom) |
 | WhiteFiber | 0002042022 | **investorroom** (separate IR host) |
@@ -643,6 +643,23 @@ Bitdeer is the counter-case to the conventions above. Its newsroom is
 `/news-events/news-releases`, one word away from the Equisolve shape, and
 `/news-events/news-releases/rss` **returns nothing** — the feed is the gcs-web
 one at the host root. **The newsroom path does not identify the platform.**
+
+Sphere 3D's feed is **suspended**, not broken, since 2026-09-10. The company
+is rebuilding its site and its rename to DRK is still pending, so the owner
+asked for the lookup to stop until the new site is up rather than have it fail
+every run. `ir_feed` is `None` and `watchlist.py` carries the restore
+instruction on the entry.
+
+The host refuses everything, not just the feed path: `sphere3d.gcs-web.com`
+returns 401 for its own site root. That was measured across six header sets
+before it was called a host problem, because on this repo a refusal is a
+per-host User-Agent bet before it is a fact about the host, and reading it the
+other way cost 22 hours of silent outage on BGDE. The identifying UA, Firefox,
+curl and no UA at all get 401; Chrome gets 403; a feed-reader UA has its
+connection reset.
+
+**Only press releases stop.** EDGAR coverage is untouched, so Sphere 3D's 8-Ks,
+Form 4s and 13D/G keep posting on the usual path.
 
 Applied Digital's platform returns **byte-identical responses for `/rss`,
 `/rss/news-releases.xml` and `/rss/pressrelease.aspx`** — 7,741 bytes each. It
