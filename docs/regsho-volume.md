@@ -120,7 +120,24 @@ that machinery exists.
 
 ## Known quirks
 
-- **Short exempt is included.** `shortExemptParQuantity` is added to
-  `shortParQuantity`. It is normally a rounding error, but it belongs in the
-  numerator.
+- **Short exempt is NOT added, because it is already inside short.** This
+  entry said the reverse until 2026-09-10, and the component did the reverse:
+  `bucket[0] += short + exempt`, double-counting every exempt share. The claim
+  that it is "normally a rounding error" was also false. Measured over the
+  live 45-day window, 2,066 rows: **896 (43%) carry a non-zero exempt**, and
+  the largest is 82% of that row's total volume.
+
+  The proof is arithmetic rather than documentary. If short and exempt were
+  disjoint parts of total, `short + exempt <= total` would hold on every row.
+  Two rows break it, which is only possible if exempt sits inside short. No
+  row has `exempt > short`, and no row has `short > total`, both consistent
+  with containment.
+
+  What it published while wrong: VIP at **167.6%** on 2026-08-03 against a
+  true 85.2%, BGDE at **108%** on 2026-08-31, and GLXY at 83.6% on 2026-09-09
+  against a true 60.7%, printed top of the table and flagged as the day's
+  largest mover when it was not one. An impossible ratio sat in the channel
+  for weeks and nothing objected, so `parse()` now checks the containment on
+  every row and says so loudly when it breaks. Re-derive the numbers above
+  against the live API, which needs no credentials.
 - **Authentication is not required**, same as short interest.

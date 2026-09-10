@@ -231,6 +231,7 @@ def parse(rows):
     understate volume badly.
     """
     out = {}
+    impossible = []
     for row in rows or []:
         sym = canonical(str(pick(row, [globals().get("ACTIVE_SYMBOL_FIELD")]
                                  + SYMBOL_FIELDS) or ""))
@@ -243,9 +244,55 @@ def parse(rows):
         total = num(row, TOTAL_FIELDS) or 0.0
         if total <= 0:
             continue
+
+        # SHORT EXEMPT IS A SUBSET OF SHORT, NOT AN ADDITION TO IT. Until
+        # 2026-09-10 this line read `bucket[0] += short + exempt`, and the doc
+        # called exempt "normally a rounding error" that "belongs in the
+        # numerator". Both were wrong, and the arithmetic proves it rather than
+        # the documentation: if short and exempt were disjoint parts of total,
+        # then short + exempt <= total on every row, always. Measured over the
+        # live 45-day window on 2026-09-10, 2,066 rows:
+        #
+        #   rows with a non-zero exempt   896  (43%, not a rounding error)
+        #   exempt > short                  0  (consistent with containment)
+        #   short  > total                  0
+        #   short + exempt > total          2  (impossible unless they overlap)
+        #
+        # Those two rows are the proof. The worst is VIP on 2026-08-03: short
+        # 15,426, exempt 14,926, total 18,106, which this component published
+        # as 167.6% where the truth is 85.2%. BGDE went out at 108% on
+        # 2026-08-31 and GLXY at 83.6% on 2026-09-09 against a correct 60.7%,
+        # top of the table and flagged as the day's largest mover when it was
+        # not one. 43% of rows were overstated by some amount.
+        #
+        # `exempt` is still read, and is no longer added to anything: it now
+        # GUARDS the containment this fix rests on. Both of these are
+        # impossible while exempt is inside short and short is inside total,
+        # so either one firing means a FINRA field has changed meaning, which
+        # is the failure this component just spent weeks proving it cannot see
+        # by itself. Checked rather than assumed, because the previous
+        # arithmetic was assumed rather than checked.
+        if short > total:
+            impossible.append(("short above total", sym, day, short, total))
+        if exempt > short:
+            impossible.append(("exempt above short", sym, day, exempt, short))
         bucket = out.setdefault(sym, {}).setdefault(day, [0.0, 0.0])
-        bucket[0] += short + exempt
+        bucket[0] += short
         bucket[1] += total
+
+    if impossible:
+        # Not a crash: the run still publishes, because one bad row must not
+        # take down the table. But it is the loudest line this component
+        # prints, and the failure-notice workflow does not watch stdout, so a
+        # reader has to see it in the log. That is a weaker alarm than it
+        # should be and is recorded as such.
+        print(f"IMPOSSIBLE: {len(impossible)} row(s) break the containment "
+              f"short exempt <= short <= total. A FINRA field has probably "
+              f"changed meaning; every ratio below is suspect.")
+        for kind, sym, day, a, b in impossible[:5]:
+            print(f"  {sym} {day}: {kind} ({a:,.0f} vs {b:,.0f})")
+        if len(impossible) > 5:
+            print(f"  ...and {len(impossible) - 5} more")
     return out
 
 
