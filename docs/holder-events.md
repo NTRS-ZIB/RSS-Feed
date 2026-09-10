@@ -180,6 +180,57 @@ case where pruning is catastrophic rather than harmless.
 succeeds, which is the whole distinction: an empty result means the company
 has no 13D/G, an exception means this run does not know.
 
+## A rename must not orphan a company's holders
+
+`holders`, `era` and `read` are keyed by **ticker**, while the first-run record
+is keyed by **CIK**. So on the run after a rename the CIK still reads as
+established, which is correct, while every stored holder for that company
+orphans, which is not. Each holder's next filing then classifies as an ARRIVAL,
+and the arrival caveat attaches "first appearance in DRK's structured record,
+which begins ..." to it: the line written to catch a false arrival supplies
+evidence for one instead.
+
+Six of nineteen roster members have renamed in eighteen months, so this is
+routine rather than exotic. `first_run.held_by_cik` already resolved aliases,
+for the prune and only for the prune; fixing the lookup there and nowhere else
+is what left this open.
+
+`migrate_symbols()` runs inside `load_state()`, **before anything reads**,
+because a resolution added at three call sites is a resolution missing from the
+fourth. It moves each namespace by what that namespace means:
+
+| Namespace | Key | On collision |
+|---|---|---|
+| `holders` | `TICKER\|signature` | the current ticker's value wins, and the merge is printed |
+| `era` | ticker | the **earlier** date, because it is a floor |
+| `read` | ticker | the **later** date, because it is a high-water mark |
+| `companies` | CIK | untouched |
+
+**It moves onto tickers, not onto CIKs**, and that is the load-bearing choice
+rather than a stylistic one. Re-keying to CIK is tidier and would silently
+break `first_run.held_by_cik`, which expects ticker keys and drops anything
+else with no error and no log line. `has_state` would quietly shrink and
+`prune_unmeasured` would start pruning established companies on a transient
+fetch failure, which is the permanent-loss bug recorded above as caught in
+review before merge. A check asserts `held_by_cik` returns the same CIKs
+before and after.
+
+**An unmappable prefix is left in place and counted, never deleted.** A prefix
+resolving to nothing is a company this roster no longer knows, and deleting its
+history to tidy up is the silent loss this component cannot afford. The count
+is the only warning that a rename landed without its former symbol reaching
+`alt_symbols`, which is the one case the migration cannot repair.
+
+Resolution comes from `watchlist.symbol_to_ticker()`, the same map
+`ftd_monitor` and `audit_identifiers` use, rather than a private copy. Writing
+that map out backwards by hand once attributed GREE to Soluna, merging two
+companies under a plausible number with nothing raised anywhere.
+
+Landed 2026-09-10, **before** the rename it is written for: Sphere 3D's
+shareholders approved the change to DarkHorse on 2026-08-24 and the ticker has
+not flipped yet. ANY holds six keys today, four holders plus one `era` and one
+`read`.
+
 ## In the weekly digest
 
 A `holders` contributor at cadence `event`, so `weekly_digest.mk()` refuses any

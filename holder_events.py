@@ -97,6 +97,11 @@ from first_run import (backfill_note, backfilled, baseline, baseline_by_cik,
 
 CIKS = watchlist.ciks()
 
+# Any symbol a roster company has traded under -> its current ticker,
+# identity mapping included. Imported rather than rebuilt: see
+# migrate_symbols() for what writing this map backwards by hand once cost.
+CANON = watchlist.symbol_to_ticker()
+
 # Both spellings, for the reason press_monitor records: "SCHEDULE 13D" does not
 # start with "SC 13D" — the fourth character is H, not a space — and the legacy
 # prefix alone silently missed 117 filings.
@@ -167,6 +172,113 @@ VARIANTS = {
 # ------------------------------------------------------------------- STATE
 
 
+def migrate_symbols(state):
+    """Move per-company state off a former ticker and onto the current one.
+
+    THE RENAME IS THE TRAP, and it is not hypothetical. `holders`, `era` and
+    `read` are keyed by TICKER while the first-run record is keyed by CIK, so
+    on the run after a rename the CIK still reads as established while every
+    holder for that company orphans. Each one's next filing then classifies as
+    an ARRIVAL and era_note attaches "first appearance in <TICKER>'s structured
+    record, which begins <date>" to it, so the caveat written to catch a false
+    arrival supplies evidence for one instead. Six of nineteen roster members
+    have renamed in eighteen months.
+
+    Sphere 3D's shareholders approved the change to DarkHorse on 2026-08-24 and
+    the ticker has not flipped yet, so this lands BEFORE the rename rather than
+    after it. It holds six keys today: four holders, one era, one read.
+
+    first_run.held_by_cik already resolves aliases, for the prune and only for
+    the prune. Fixing the lookup there and nowhere else is what left this open.
+
+    THE RESOLUTION IS IMPORTED, NOT COPIED. watchlist.symbol_to_ticker() is the
+    same map ftd_monitor and audit_identifiers use, and it is derived from the
+    same field as alt_by_ticker() so the two cannot disagree. Writing that map
+    out by hand backwards once attributed GREE to Soluna, merging two companies
+    under a plausible number with nothing raised anywhere.
+
+    Idempotent: the next run finds nothing to move. An unmappable prefix is
+    LEFT IN PLACE AND COUNTED rather than deleted, because a prefix that
+    resolves to nothing is a company this roster no longer knows about, and
+    deleting its history to tidy up is exactly the silent loss this component
+    cannot afford. The count is the part that matters: it is the only warning
+    that a rename happened without the former symbol being recorded in
+    `alt_symbols`, which is the one case this cannot repair.
+    """
+    moved = Counter()
+    unmapped = Counter()
+    conflicts = []
+
+    def target(symbol):
+        got = CANON.get((symbol or "").upper().strip())
+        return got if got and got != symbol else None
+
+    # era is a FLOOR and read is a HIGH-WATER MARK, so a collision resolves by
+    # the namespace's own meaning rather than by a blanket "newest wins". era
+    # takes the earlier date because it is stored as min() everywhere else, and
+    # taking the later one would move a floor forward, which the component
+    # treats as impossible.
+    for space, keep in (("era", min), ("read", max)):
+        book = state.get(space) or {}
+        for old in sorted(book):
+            new = target(old)
+            if new is None:
+                if not CANON.get((old or "").upper().strip()):
+                    unmapped[old] += 1
+                continue
+            if new in book:
+                book[new] = keep(book[new], book[old])
+                conflicts.append(f"{space} {old} into existing {new}")
+            else:
+                book[new] = book[old]
+            del book[old]
+            moved[space] += 1
+
+    holders = state.get("holders") or {}
+    for key in sorted(holders):
+        old, sep, sig = key.partition("|")
+        if not sep:
+            continue
+        new = target(old)
+        if new is None:
+            if not CANON.get((old or "").upper().strip()):
+                unmapped[old] += 1
+            continue
+        moved_key = f"{new}|{sig}"
+        if moved_key in holders:
+            # The current-ticker key already exists, which means a filing has
+            # already posted under the new symbol. Its value is the more recent
+            # reading, so it wins and the stale one goes. Recorded rather than
+            # done quietly: this is the shape a false arrival leaves behind.
+            conflicts.append(f"holders {old} into existing {new}")
+        else:
+            holders[moved_key] = holders[key]
+        del holders[key]
+        moved["holders"] += 1
+
+    total = sum(moved.values())
+    if total:
+        detail = ", ".join(f"{k} {n}" for k, n in sorted(moved.items()))
+        print(f"  symbol migration: moved {total} key(s) onto current tickers "
+              f"({detail})")
+        for line in conflicts:
+            print(f"    merged {line}")
+    else:
+        # ALWAYS a line, even when there is nothing to move. A migration that
+        # prints only when it fires is indistinguishable from one that never
+        # ran, and this one runs before every read.
+        print(f"  symbol migration: nothing to move "
+              f"({len(state.get('era') or {})} tickers, "
+              f"{len(state.get('holders') or {})} holder keys)")
+    if unmapped:
+        print(f"  symbol migration: {len(unmapped)} prefix(es) resolve to no "
+              f"roster company and were LEFT IN PLACE: "
+              f"{', '.join(sorted(unmapped))}")
+        print("    A rename recorded without its former symbol in "
+              "alt_symbols reads exactly like this.")
+    return state
+
+
 def load_state():
     try:
         s = json.loads(STATE_FILE.read_text())
@@ -175,7 +287,11 @@ def load_state():
     s.setdefault("seen", [])          # accessions already posted
     s.setdefault("holders", {})       # "TICKER|signature" -> last percent
     s.setdefault("era", {})           # ticker -> first structured filing seen
-    return s
+    # BEFORE ANY READ. match_holder, era_note and the era floor all key by
+    # ticker, so a stale prefix has to be gone before the first lookup rather
+    # than resolved at each one: a resolution added at three call sites is a
+    # resolution missing from the fourth.
+    return migrate_symbols(s)
 
 
 def save_state(state):

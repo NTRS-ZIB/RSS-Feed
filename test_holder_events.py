@@ -31,6 +31,9 @@ holder_events.py, with __pycache__ cleared between mutations and the mutated
 file read back. A check nobody has watched fail is decoration.
 """
 
+import contextlib
+import io
+import json
 import os
 import sys
 import tempfile
@@ -53,6 +56,14 @@ results = []
 def check(name, ok, detail=""):
     results.append((PASS if ok else FAIL, name))
     print(f"  [{PASS if ok else FAIL}] {name}" + (f"  ({detail})" if detail else ""))
+
+
+def migrated(st):
+    """migrate_symbols with stdout captured, returning (state, log)."""
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        out = he.migrate_symbols(st)
+    return out, buf.getvalue()
 
 
 def state(holders=None, era=None):
@@ -196,6 +207,106 @@ def main():
           "; ".join(sorted(titles.values()))[:80])
     check("the below-5% title claims nothing about crossing 5%",
           ">5%" not in titles[he.BELOW], titles[he.BELOW])
+
+    print("\nA RENAME MUST NOT ORPHAN A COMPANY\'S HOLDERS")
+    # GREE to VIP is a REAL rename this roster already carries, not a synthetic
+    # one. holders, era and read are keyed by ticker while the first-run record
+    # is keyed by CIK, so without this the company still reads as established
+    # while every holder orphans, and each one's next filing posts as a new
+    # >5% holder with era_note supplying a record length that makes the false
+    # arrival look supported.
+    st = {"seen": [], "companies": {"0001844971": {"any": "value"}},
+          "holders": {"GREE|Some Holder LP": 7.2, "VIP|Other Holder": 5.5},
+          "era": {"GREE": "2024-03-01", "VIP": "2025-01-28"},
+          "read": {"GREE": "2025-06-01", "VIP": "2026-09-09"}}
+    out, log = migrated(st)
+    check("A FORMER TICKER'S HOLDER MOVES TO THE CURRENT ONE",
+          "VIP|Some Holder LP" in out["holders"]
+          and "GREE|Some Holder LP" not in out["holders"],
+          "otherwise its next filing posts as a first appearance")
+    # .get, not [], throughout these checks. A mutation that DELETES a key
+    # would otherwise raise KeyError and take the harness down before the
+    # check could report, and a mutation that crashes the runner has shown
+    # nothing.
+    check("the moved holder keeps its percentage",
+          out["holders"].get("VIP|Some Holder LP") == 7.2)
+    check("a holder already under the current ticker is untouched",
+          out["holders"].get("VIP|Other Holder") == 5.5)
+    # The two namespaces collide differently ON PURPOSE, by what each MEANS.
+    check("ERA TAKES THE EARLIER DATE, because it is a floor",
+          out["era"] == {"VIP": "2024-03-01"},
+          "taking the later one would move a floor forward, which the "
+          "component treats as impossible")
+    check("read takes the later date, because it is a high-water mark",
+          out["read"] == {"VIP": "2026-09-09"})
+    check("the CIK-keyed first-run namespace is not touched",
+          out["companies"] == {"0001844971": {"any": "value"}}
+          and "LEFT IN PLACE" not in log,
+          "CIK keys are not tickers and must not be reported as unmappable")
+
+    # The bug this closes, stated as behaviour rather than as key shapes.
+    kind, _p, _k = he.classify(out, "VIP", ["Some Holder LP"], 7.4)
+    check("AFTER THE MOVE A SMALL CHANGE IS NOT A NEW ARRIVAL",
+          kind is None,
+          f"got {kind}; before the migration this published 'new >5% holder'")
+
+    # A prefix that resolves to nothing is a company the roster no longer
+    # knows. Deleting its history to tidy up is the silent loss this component
+    # cannot afford, so it stays and is counted.
+    st = {"seen": [], "holders": {"ZZZZ|Ghost Capital": 9.9},
+          "era": {"ZZZZ": "2024-01-01"}, "read": {}}
+    out, log = migrated(st)
+    check("AN UNMAPPABLE PREFIX IS LEFT IN PLACE, NOT DELETED",
+          out["holders"] == {"ZZZZ|Ghost Capital": 9.9}
+          and out["era"] == {"ZZZZ": "2024-01-01"})
+    check("and it is counted out loud",
+          "LEFT IN PLACE" in log and "ZZZZ" in log,
+          "the only warning that a rename lost its former symbol")
+
+    # Idempotent, because it runs before every single read.
+    st = {"seen": [], "holders": {"GREE|Some Holder LP": 7.2},
+          "era": {"GREE": "2024-03-01"}, "read": {"GREE": "2025-06-01"}}
+    once, _l = migrated(st)
+    snapshot = json.dumps(once, sort_keys=True)
+    twice, log = migrated(once)
+    check("running it twice changes nothing",
+          json.dumps(twice, sort_keys=True) == snapshot
+          and "nothing to move" in log)
+    check("it says so even when there is nothing to move",
+          "nothing to move" in log,
+          "a migration that prints only when it fires looks like one that "
+          "never ran")
+
+    # THE HAZARD THIS SHAPE EXISTS TO AVOID. Re-keying onto CIKs would have
+    # been the tidier fix and would silently break first_run.held_by_cik,
+    # which expects TICKER keys and drops anything else with no error, so
+    # prune_unmeasured would start pruning established companies on a
+    # transient fetch failure.
+    from first_run import held_by_cik
+    import watchlist as _w
+    st = {"seen": [], "holders": {}, "era": {"GREE": "2024-03-01"},
+          "read": {"GREE": "2025-06-01"}}
+    before = held_by_cik(set(st["era"]) | set(st["read"]), he.CIKS,
+                         _w.alt_by_ticker())
+    out, _l = migrated(st)
+    after = held_by_cik(set(out["era"]) | set(out["read"]), he.CIKS,
+                        _w.alt_by_ticker())
+    check("HELD_BY_CIK RESOLVES THE SAME CIKS AFTER THE MOVE",
+          before == after and len(after) == 1,
+          "prune_unmeasured reads this; shrinking it prunes live companies")
+
+    # It has to run before the first lookup, not at each lookup site.
+    path = os.environ["HOLDER_STATE"]
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump({"seen": [], "holders": {"GREE|Some Holder LP": 7.2},
+                   "era": {"GREE": "2024-03-01"}, "read": {}}, fh)
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        loaded = he.load_state()
+    os.remove(path)
+    check("LOAD_STATE MIGRATES BEFORE ANYTHING READS",
+          "VIP|Some Holder LP" in loaded["holders"],
+          "a resolution added at three call sites is one missing at the fourth")
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
