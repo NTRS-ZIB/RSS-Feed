@@ -157,6 +157,9 @@ SEC_USER_AGENT = os.environ.get("SEC_USER_AGENT", "").strip()
 DRY_RUN = os.environ.get("DRY_RUN", "").strip().lower() in ("1", "true", "yes")
 
 SUBMISSIONS = "https://data.sec.gov/submissions/CIK{cik}.json"
+# The older index pages. filer_regime, build_snapshot and audit_8k_items all
+# already follow these; this component was the one that did not.
+OLDER = "https://data.sec.gov/submissions/{name}"
 ARCHIVE = "https://www.sec.gov/Archives/edgar/data/{cik}/{nodash}/{doc}"
 INDEX = "https://www.sec.gov/Archives/edgar/data/{cik}/{nodash}/{acc}-index.htm"
 
@@ -350,21 +353,58 @@ def sec_get(url, as_json=True):
 
 
 def filings_for(cik):
-    """Recent 13D/G filings, newest first."""
-    data = sec_get(SUBMISSIONS.format(cik=cik))
-    recent = (data.get("filings") or {}).get("recent") or {}
-    forms = recent.get("form") or []
-    out = []
-    for i, form in enumerate(forms):
-        if not form.startswith(STRUCTURED + LEGACY):
-            continue
+    """Every 13D/G on the index, recent page AND the older ones.
 
-        def at(key):
-            seq = recent.get(key) or []
-            return seq[i] if i < len(seq) else ""
-        out.append({"form": form, "filed": at("filingDate"),
-                    "accession": at("accessionNumber"),
-                    "doc": at("primaryDocument")})
+    `filings.recent` IS A ROLLING WINDOW, NOT THE INDEX. It holds roughly a
+    thousand filings, and for a heavy filer it sweeps past the company's own
+    13D/G era with no error and no log line. This read only that page until
+    2026-09-10, and the eviction was live rather than theoretical: CoreWeave's
+    printed structured count fell 32, 35, 25, 23, 23, 23 across scheduled runs
+    from 2026-08-14 to 2026-09-09 while three NEW filings arrived. A count
+    going down reads as a data correction, not as a truncated page.
+
+    Measured on the runner over all 22 roster CIKs (probe_holders, phase
+    `subjects`): five companies have a second page, CRWV, MARA, RIOT, SLNH and
+    WULF, and only CRWV has structured 13D/G on it, twelve of them. The other
+    four carry only legacy SC-spelling filings there, so the legacy footnote
+    has been reporting a floor rather than a count.
+
+    THIS ADDS NOTHING TO POST, WHICH IS THE WHOLE REASON IT IS SAFE. Every one
+    of CRWV's twelve is already in `seen`, because they were read on 2026-08-14
+    while still on the recent page and eviction from the window does not
+    un-record them. The probe put the number at zero unseen across the roster
+    after dropping the misattributed filings, so this needs no suppression axis
+    of its own. Landing it without that number would have been the 2026-08-14
+    shape reached by editing a fetch function.
+
+    It cannot move an era floor either: `era` is stored as min(prior, oldest)
+    and the stored floor already equals the oldest over the paginated set for
+    all 22 companies.
+
+    Five extra requests per run, one per company with a second page, each
+    behind REQUEST_GAP. The company loop itself still has no gap between
+    companies, which is unchanged and not addressed here.
+    """
+    data = sec_get(SUBMISSIONS.format(cik=cik))
+    out = []
+
+    def add(block):
+        forms = block.get("form") or []
+        for i, form in enumerate(forms):
+            if not form.startswith(STRUCTURED + LEGACY):
+                continue
+
+            def at(key):
+                seq = block.get(key) or []
+                return seq[i] if i < len(seq) else ""
+            out.append({"form": form, "filed": at("filingDate"),
+                        "accession": at("accessionNumber"),
+                        "doc": at("primaryDocument")})
+
+    add((data.get("filings") or {}).get("recent") or {})
+    for extra in (data.get("filings") or {}).get("files") or []:
+        time.sleep(REQUEST_GAP)
+        add(sec_get(OLDER.format(name=extra["name"])))
     return out
 
 

@@ -180,6 +180,47 @@ case where pruning is catastrophic rather than harmless.
 succeeds, which is the whole distinction: an empty result means the company
 has no 13D/G, an exception means this run does not know.
 
+## `filings.recent` is a window, not the index
+
+EDGAR's `filings.recent` page holds roughly a thousand filings and rolls. For a
+heavy filer it sweeps past the company's own 13D/G era with no error and no log
+line. Until 2026-09-10 `filings_for()` read only that page.
+
+**The eviction was live, not theoretical.** CoreWeave's printed structured
+count fell across scheduled runs while three *new* filings arrived:
+
+```
+CRWV  32 (08-14)  35 (08-17)  25 (08-21)  23 (08-27)  23 (09-02)  23 (09-09)
+CORZ  39          42          42          42          42          42
+```
+
+CORZ sits at 664 filings, comfortably under the cap, and is flat. A count going
+down reads as a data correction, not as a truncated page.
+
+Measured over all 22 roster CIKs: five companies have a second index page,
+CRWV, MARA, RIOT, SLNH and WULF. **Only CRWV has structured 13D/G on it**,
+twelve of them. The other four carry only legacy SC-spelling filings there, so
+the legacy footnote has been reporting a floor rather than a count and its
+numbers rise when this lands.
+
+**This adds nothing to post, which is the whole reason it is safe.** All twelve
+CRWV filings are already in `seen`: they were read on 2026-08-14 while still on
+the recent page, and eviction from the window does not un-record them. The
+probe put unseen filings across the whole roster at **zero** after dropping the
+misattributed ones, so this needs no suppression axis. Landing it without that
+number would have been the 2026-08-14 flood shape reached by editing a fetch
+function, and neither the company axis nor the form axis would have covered it,
+because neither the company nor the form is new.
+
+**It cannot move an era floor either.** `era` is stored as `min(prior, oldest)`
+so it only ever moves earlier, and the stored floor already equals the oldest
+over the paginated set for all 22 companies. Checked before the change, not
+after.
+
+Cost is five extra requests per run, one per company with a second page, each
+behind `REQUEST_GAP`. The company loop itself still has no gap between
+companies; that is unchanged and not addressed here.
+
 ## Critical: which company is this filing about
 
 EDGAR lists a Schedule 13D/G under **every reporting person's CIK as well as

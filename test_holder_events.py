@@ -462,6 +462,64 @@ def main():
     check("a non-numeric CIK is None", fs.as_cik("n/a") is None)
     check("an absent CIK is None", fs.as_cik(None) is None)
 
+    print("\nfilings.recent IS A WINDOW, NOT THE INDEX")
+    # CoreWeave's printed structured count fell 32, 35, 25, 23, 23, 23 across
+    # scheduled runs from 2026-08-14 to 2026-09-09 while three NEW filings
+    # arrived. A count going down reads as a data correction rather than as a
+    # truncated page. Five roster companies have a second index page.
+    calls = []
+
+    def fake_get(url, as_json=True):
+        calls.append(url)
+        if url.endswith("CIK0000000001.json"):
+            return {"filings": {
+                "recent": {"form": ["SCHEDULE 13D", "8-K"],
+                           "filingDate": ["2026-09-01", "2026-08-01"],
+                           "accessionNumber": ["A-1", "X-1"],
+                           "primaryDocument": ["a.xml", "x.htm"]},
+                "files": [{"name": "CIK0000000001-submissions-001.json"}]}}
+        return {"form": ["SCHEDULE 13G", "10-K"],
+                "filingDate": ["2025-01-01", "2024-01-01"],
+                "accessionNumber": ["B-1", "Y-1"],
+                "primaryDocument": ["b.xml", "y.htm"]}
+
+    saved_get, saved_gap = he.sec_get, he.REQUEST_GAP
+    he.sec_get, he.REQUEST_GAP = fake_get, 0
+    try:
+        rows = he.filings_for("0000000001")
+    finally:
+        he.sec_get, he.REQUEST_GAP = saved_get, saved_gap
+    accs = {r["accession"] for r in rows}
+    check("THE OLDER INDEX PAGE IS REQUESTED",
+          any("submissions-001" in u for u in calls),
+          f"requested {len(calls)} url(s)")
+    check("AND ITS ROWS COME BACK",
+          "B-1" in accs,
+          "requesting the page and dropping its rows would pass a "
+          "call-count check on its own")
+    check("the recent page's rows are still there", "A-1" in accs)
+    check("non-13D/G forms are filtered on BOTH pages",
+          "X-1" not in accs and "Y-1" not in accs,
+          f"got {sorted(accs)}")
+
+    # A short parallel column reaches this as an empty string rather than an
+    # error. Measured 0 ragged columns across all 22 CIKs on 2026-09-10, so
+    # this guard has never fired; that is a reason to check it, not to drop it.
+    def ragged_get(url, as_json=True):
+        return {"filings": {"recent": {
+            "form": ["SCHEDULE 13D"], "filingDate": [],
+            "accessionNumber": ["A-1"], "primaryDocument": []}}}
+    saved_get = he.sec_get
+    he.sec_get = ragged_get
+    try:
+        rows = he.filings_for("0000000002")
+        ok, why = rows and rows[0]["filed"] == "", f"got {rows}"
+    except Exception as e:                                      # noqa: BLE001
+        ok, why = False, f"raised {type(e).__name__}"
+    finally:
+        he.sec_get = saved_get
+    check("A SHORT COLUMN YIELDS AN EMPTY FIELD, NOT AN IndexError", ok, why)
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0
