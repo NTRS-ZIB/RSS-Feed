@@ -732,6 +732,122 @@ def main():
           [e.ticker for e in kept] == ["CORZ"] and per["SCHEDULE 13G"] == 1,
           "this reads e.row['form'], which was e[2]['form'] positionally")
 
+    print("\nTHE ONE-SHOT REPAIR, WHICH DELETES STORED RECORDS")
+    # Every arm of this is exercised with the network stubbed, because it is
+    # the only code in the component that destroys, and a dry run against live
+    # data rehearses only the path the live data happens to take.
+    RIOT_CIK, BITFARMS = "0001167419", 1812477
+
+    def run_repair(state, listed, docs, rows=None, dry=False):
+        """repair_misattribution with filings_for and read_filing stubbed."""
+        saved = (he.MISATTRIBUTED, he.DRY_RUN, he.filings_for, he.read_filing,
+                 he.REQUEST_GAP)
+        he.MISATTRIBUTED = tuple(listed)
+        he.DRY_RUN = dry
+        he.REQUEST_GAP = 0
+        he.filings_for = lambda cik: rows if rows is not None else [
+            {"form": "SCHEDULE 13D", "filed": "2025-04-09",
+             "accession": a, "doc": "primary_doc.xml"} for _c, a in listed]
+        he.read_filing = lambda cik, row: docs[row["accession"]]
+        buf = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(buf):
+                he.repair_misattribution(state)
+        finally:
+            (he.MISATTRIBUTED, he.DRY_RUN, he.filings_for, he.read_filing,
+             he.REQUEST_GAP) = saved
+        return buf.getvalue()
+
+    def doc(subject, people, pct):
+        return ({"people": people, "pct": pct, "event": None,
+                 "subject": subject, "unnamed_blocks": 0}, None)
+
+    # NINE FILINGS, ONE SIGNATURE. Deleting inside the confirm pass popped the
+    # key on the first and reported the other eight as "wrote no holder
+    # record", which is false and reads as eight harmless no-ops.
+    accs = [f"0001104659-25-0{n}" for n in range(10001, 10010)]
+    st = {"seen": [], "holders": {"RIOT|Riot Platforms, Inc.": 4.6},
+          "era": {"RIOT": "2025-04-09"}, "read": {}, "repairs": [],
+          "not_subject": []}
+    log = run_repair(st, [(RIOT_CIK, a) for a in accs],
+                     {a: doc(BITFARMS, ["Riot Platforms, Inc."], 4.6)
+                      for a in accs})
+    check("NINE FILINGS ON ONE KEY ARE ONE DELETION, NOT ONE PLUS EIGHT",
+          "1 holder record(s) deleted, covering 9 filing(s)" in log,
+          "the earlier shape reported eight phantom absences")
+    check("the wrong record is gone",
+          "RIOT|Riot Platforms, Inc." not in st["holders"])
+    check("every confirmed accession is recorded as not-ours",
+          set(st["not_subject"]) == set(accs),
+          "this is what stops main() pulling the era floor back")
+    check("a clean repair records its sentinel",
+          he.REPAIR_ID in st["repairs"])
+
+    # THE FLOOR MUST MOVE FORWARD. era is min() everywhere else, so only an
+    # explicit overwrite can correct one.
+    rows = [{"form": "SCHEDULE 13D", "filed": "2025-04-09",
+             "accession": accs[0], "doc": "d"},
+            {"form": "SCHEDULE 13G", "filed": "2025-05-12",
+             "accession": "GOOD-1", "doc": "d"}]
+    st = {"seen": [], "holders": {}, "era": {"RIOT": "2025-04-09"},
+          "read": {}, "repairs": [], "not_subject": []}
+    log = run_repair(st, [(RIOT_CIK, accs[0])],
+                     {accs[0]: doc(BITFARMS, ["Riot Platforms, Inc."], 4.6)},
+                     rows=rows)
+    check("THE ERA FLOOR IS OVERWRITTEN FORWARD",
+          st["era"]["RIOT"] == "2025-05-12",
+          f"got {st['era']['RIOT']}; min() can only ever move it earlier")
+    check("and the move is printed with a count",
+          "2025-04-09 -> 2025-05-12" in log and "1 kept of 2 structured" in log)
+    # The other half: main() must not pull it back.
+    check("MAIN'S FLOOR HONOURS THE EXCLUSION",
+          he.era_floor(rows, set(st["not_subject"])) == ["2025-05-12"],
+          "without this the next run recomputes 2025-04-09 and min() keeps it")
+
+    # A REFUSAL POISONS THE WHOLE COMPANY. Moving a floor forward on a disputed
+    # measurement is the one thing era can never undo.
+    st = {"seen": [], "holders": {}, "era": {"RIOT": "2025-04-09"},
+          "read": {}, "repairs": [], "not_subject": []}
+    # The index must carry BOTH, or the refusal that fires is "not on this
+    # company's index" and the check passes for the wrong reason. It did on the
+    # first run of this check.
+    both = rows + [{"form": "SCHEDULE 13D", "filed": "2025-06-01",
+                    "accession": accs[1], "doc": "d"}]
+    log = run_repair(st, [(RIOT_CIK, accs[0]), (RIOT_CIK, accs[1])],
+                     {accs[0]: doc(BITFARMS, ["Riot Platforms, Inc."], 4.6),
+                      accs[1]: doc(int(RIOT_CIK), ["Riot Platforms, Inc."], 4.6)},
+                     rows=both)
+    check("A FILING THAT IS ABOUT THIS COMPANY IS REFUSED",
+          "IS about RIOT after all" in log)
+    check("and its company's era is left alone",
+          st["era"]["RIOT"] == "2025-04-09" and "SKIPPED" in log)
+    check("A REFUSAL WITHHOLDS THE SENTINEL",
+          he.REPAIR_ID not in st["repairs"] and "SENTINEL WITHHELD" in log,
+          "otherwise fifteen refusals would record the repair as done")
+
+    # THE VALUE GUARD. If the stored percentage is not one this group ever
+    # filed here, something else wrote it and deleting takes a live position.
+    st = {"seen": [], "holders": {"RIOT|Riot Platforms, Inc.": 12.0},
+          "era": {}, "read": {}, "repairs": [], "not_subject": []}
+    log = run_repair(st, [(RIOT_CIK, accs[0])],
+                     {accs[0]: doc(BITFARMS, ["Riot Platforms, Inc."], 4.6)})
+    check("A STORED VALUE THE GROUP NEVER FILED IS REFUSED",
+          st["holders"].get("RIOT|Riot Platforms, Inc.") == 12.0
+          and "stored 12.0" in log,
+          "deleting it would take a position something else wrote")
+
+    # A dry run rehearses and commits to nothing.
+    st = {"seen": [], "holders": {"RIOT|Riot Platforms, Inc.": 4.6},
+          "era": {}, "read": {}, "repairs": [], "not_subject": []}
+    log = run_repair(st, [(RIOT_CIK, accs[0])],
+                     {accs[0]: doc(BITFARMS, ["Riot Platforms, Inc."], 4.6)},
+                     dry=True)
+    check("A DRY RUN WRITES NO SENTINEL",
+          he.REPAIR_ID not in st["repairs"] and "DRY RUN" in log,
+          "so the next dry run rehearses it again")
+    check("the sentinel makes it run exactly once",
+          run_repair({"repairs": [he.REPAIR_ID]}, [], {}) == "")
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0

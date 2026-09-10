@@ -315,6 +315,7 @@ def load_state():
     s.setdefault("seen", [])          # accessions already posted
     s.setdefault("holders", {})       # "TICKER|signature" -> last percent
     s.setdefault("era", {})           # ticker -> first structured filing seen
+    s.setdefault("not_subject", [])   # accessions about ANOTHER company
     # BEFORE ANY READ. match_holder, era_note and the era floor all key by
     # ticker, so a stale prefix has to be gone before the first lookup rather
     # than resolved at each one: a resolution added at three call sites is a
@@ -808,6 +809,233 @@ def drop_newly_watched(events, newly_watched):
     return [e for e in events if e.ticker not in newly_watched], per
 
 
+# ------------------------------------------------------------------ REPAIR
+
+
+# The fifteen filings measured as misattributed on 2026-09-10, over all 350
+# structured 13D/G under the 22 roster CIKs across every index page
+# (probe_holders.py, phase `subjects`). Keyed by CIK, not by ticker: a rename
+# would make a ticker key raise inside this function, which runs before the
+# company loop and would kill every run until someone edited the constant.
+#
+# ACCESSIONS ONLY, NEVER STATE KEYS. Predicting the key from the signature
+# looked easy and was wrong on its first case: `CRWV|CoreWeave, Inc.` was
+# predicted and does not exist, while `APLD|CoreWeave, Inc.` does and is
+# CORRECT, being CoreWeave's stake in Applied Digital recorded under its actual
+# subject. A hard-coded key list would have deleted a right record.
+MISATTRIBUTED = (
+    ("0001144879", "0001493152-26-030373"),      # APLD, about ChronoScale
+    ("0001144879", "0001493152-26-022569"),
+    ("0001819989", "0000905148-26-001041"),      # CIFR, about Canaan
+    ("0001769628", "0001415889-25-017073"),      # CRWV, about Applied Digital
+    ("0001769628", "0001415889-25-015627"),
+    ("0001964789", "0000950170-25-114068"),      # HUT, about American Bitcoin
+    ("0001167419", "0001104659-25-079925"),      # RIOT, about Bitfarms
+    ("0001167419", "0001104659-25-075759"),
+    ("0001167419", "0001104659-25-070093"),
+    ("0001167419", "0001104659-25-068419"),
+    ("0001167419", "0001104659-25-066516"),
+    ("0001167419", "0001104659-25-064917"),
+    ("0001167419", "0001104659-25-061245"),
+    ("0001167419", "0001104659-25-057445"),
+    ("0001167419", "0001104659-25-033421"),
+)
+
+REPAIR_ID = "2026-09-10-subject-misattribution"
+
+
+def era_floor(rows, not_subject):
+    """The oldest structured filing that is actually about this company.
+
+    A LIST, NOT A MIN, because the caller needs the count as well: an era line
+    that says only "unchanged" cannot be told apart from one that never ran.
+    """
+    return sorted(r["filed"] for r in rows
+                  if r["form"].startswith(STRUCTURED) and r["filed"]
+                  and r["accession"] not in not_subject)
+
+
+def repair_misattribution(state):
+    """Delete the records the subject defect wrote, once.
+
+    WHAT IT REPAIRS. Until 2026-09-10 this component labelled every filing with
+    the ticker of the roster iteration it was read under, so a company filing a
+    13D/G about somebody else was recorded as holding a stake in ITSELF. The
+    code no longer does that, and the records it already wrote cannot heal on
+    their own: nothing re-reads a filing already in `seen`, and `era` is stored
+    as min(prior, oldest) so a floor can only ever move EARLIER.
+
+    IT RE-READS EVERY FILING BEFORE DELETING ANYTHING, in two passes per
+    company. Pass one confirms the subject and derives the key the way main()
+    did; pass two deletes. Two passes rather than one because nine of the
+    fifteen are RIOT filings sharing a single signature: deleting inside pass
+    one popped the key on the first and reported the other eight as "wrote no
+    holder record", which is false and reads as eight harmless no-ops.
+
+    A filing whose subject turns out to BE this company is a refusal, not a
+    deletion. So is one that cannot be re-read, or that names no subject now.
+    The premise would be wrong and the right response is to stop rather than to
+    proceed on a stale measurement.
+
+    THE FLOOR NEEDS BOTH HALVES AND NEITHER IS OPTIONAL. Overwriting it here is
+    the only thing that can move a stored floor forward. Excluding these
+    accessions where main() recomputes it is the only thing that stops the next
+    run pulling it straight back, because min(contaminated_prior, corrected)
+    keeps the contaminated value. Doing only the first looks like it works and
+    reverts within the same run. The exclusion lives in `state["not_subject"]`,
+    which outlives the sentinel and which the cross-filing arms of the main
+    loop also append to, so a future cross-filing cannot contaminate a floor
+    either.
+
+    ONE SHOT, by a sentinel in `state["repairs"]`, and written ONLY when every
+    one of the fifteen settled. A wrong SEC_USER_AGENT 403s every sec.gov
+    endpoint, so the realistic worst case is fifteen refusals, and recording
+    that as done would burn the one shot on a run that repaired nothing.
+
+    A dry run rehearses the whole thing in memory and saves nothing, so no
+    sentinel is written and the next dry run rehearses it again.
+    """
+    if REPAIR_ID in state.setdefault("repairs", []):
+        return
+    not_subject = state.setdefault("not_subject", [])
+    print(f"\nREPAIR {REPAIR_ID}")
+    print("  Records written before the subject of a 13D/G was read.")
+
+    wanted = {}
+    for cik, acc in MISATTRIBUTED:
+        wanted.setdefault(cik, []).append(acc)
+
+    confirmed, refused = [], []
+    for cik in sorted(wanted):
+        ticker = BY_CIK.get(int(cik))
+        if ticker is None:
+            refused += [(cik, a, "CIK is not on the roster") for a in wanted[cik]]
+            continue
+        try:
+            rows = filings_for(cik)
+        except Exception as e:                                  # noqa: BLE001
+            refused += [(ticker, a, f"index unreadable, {type(e).__name__}")
+                        for a in wanted[cik]]
+            continue
+        by_acc = {r["accession"]: r for r in rows}
+
+        mine = []
+        for acc in wanted[cik]:
+            row = by_acc.get(acc)
+            if row is None:
+                refused.append((ticker, acc, "not on this company's index"))
+                continue
+            time.sleep(REQUEST_GAP)
+            parsed, why = read_filing(cik, row)
+            if parsed is None:
+                refused.append((ticker, acc, f"could not re-read it, {why}"))
+                continue
+            if parsed["subject"] is None:
+                refused.append((ticker, acc, "names no subject now"))
+                continue
+            if parsed["subject"] == int(cik):
+                refused.append((ticker, acc, f"IS about {ticker} after all"))
+                continue
+            mine.append((acc, f"{ticker}|{signature(parsed['people'])}",
+                         parsed["pct"]))
+
+        confirmed += [(ticker, a, k, p) for a, k, p in mine]
+
+        # THE FLOOR, and only when this company produced no refusal at all.
+        # A refusal means the measurement and the filing disagree, and moving a
+        # floor FORWARD on the strength of the disputed half is the one thing
+        # `era` can never undo.
+        bad_here = {a for a, _k, _p in mine}
+        if any(t == ticker for t, _a, _w in refused):
+            print(f"  era {ticker}: SKIPPED, this company had a refusal")
+            continue
+        kept = era_floor(rows, bad_here)
+        total = sum(1 for r in rows if r["form"].startswith(STRUCTURED))
+        if not kept:
+            print(f"  era {ticker}: SKIPPED, no structured filing left of "
+                  f"{total} once {len(bad_here)} were excluded")
+            continue
+        was, now = state["era"].get(ticker), kept[0]
+        if was != now:
+            state["era"][ticker] = now
+            print(f"  era {ticker}: {was} -> {now}  (overwritten, not min-ed; "
+                  f"{len(kept)} kept of {total} structured)")
+        else:
+            print(f"  era {ticker}: {was} unchanged "
+                  f"({len(kept)} kept of {total} structured)")
+
+    # Pass two. Group by key first, so a key covering nine filings reports as
+    # one deletion rather than one deletion and eight phantom absences.
+    by_key = {}
+    for ticker, acc, key, pct in confirmed:
+        by_key.setdefault(key, []).append((acc, pct))
+
+    deleted, never, mismatched = [], [], []
+    for key, entries in sorted(by_key.items()):
+        if key not in state["holders"]:
+            never.append((key, entries))
+            continue
+        stored = state["holders"][key]
+        seen_pcts = {p for _a, p in entries if p is not None}
+        if seen_pcts and stored not in seen_pcts:
+            # The stored value is not one this group ever reported here, so
+            # something else wrote it. Deleting would take a live position.
+            mismatched.append((key, stored, sorted(seen_pcts)))
+            continue
+        deleted.append((key, state["holders"].pop(key), entries))
+
+    for _t, acc, _k, _p in confirmed:
+        if acc not in not_subject:
+            not_subject.append(acc)
+
+    if deleted:
+        print(f"  {len(deleted)} holder record(s) deleted, covering "
+              f"{sum(len(e) for _k, _v, e in deleted)} filing(s):")
+        for key, val, entries in deleted:
+            print(f"    {val}%  {key[:64]}")
+            print(f"        from {len(entries)} filing(s): "
+                  + ", ".join(a for a, _p in entries[:3])
+                  + (" ..." if len(entries) > 3 else ""))
+    if never:
+        print(f"  {len(never)} signature(s) confirmed misattributed that never "
+              f"wrote a holder record:")
+        for key, entries in never:
+            print(f"    {key[:64]}  ({len(entries)} filing(s))")
+    if mismatched:
+        print(f"  {len(mismatched)} REFUSED, the stored value is not one this "
+              f"group reported:")
+        for key, stored, saw in mismatched:
+            print(f"    {key[:56]}  stored {stored}, this group filed {saw}")
+        print("    Something else wrote that value. Deleting would take a live "
+              "position.")
+    if refused:
+        print(f"  {len(refused)} filing(s) REFUSED, nothing deleted for these:")
+        for t, acc, why in refused:
+            print(f"    {t} {acc}  {why}")
+        print("    A refusal means the measurement and the filing disagree. "
+              "Leave it and re-measure rather than deleting on the older of "
+              "the two.")
+
+    # The identity, the same shape main() uses. Every one of the fifteen has
+    # exactly one outcome.
+    settled = len(confirmed) + len(refused)
+    print(f"  {len(MISATTRIBUTED)} filing(s) listed: {len(confirmed)} "
+          f"confirmed misattributed, {len(refused)} refused")
+    if settled != len(MISATTRIBUTED):
+        print(f"    RECONCILIATION FAILED: {settled} outcomes against "
+              f"{len(MISATTRIBUTED)} listed. This summary cannot be trusted.")
+
+    clean = (settled == len(MISATTRIBUTED) and not refused and not mismatched)
+    if DRY_RUN:
+        print("  DRY RUN: rehearsed in memory, nothing saved, no sentinel.")
+    elif clean:
+        state["repairs"].append(REPAIR_ID)
+        print("  sentinel recorded, this will not run again.")
+    else:
+        print("  SENTINEL WITHHELD, the repair stays armed. Nothing settled "
+              "cleanly enough to call it done.")
+
+
 # -------------------------------------------------------------------- MAIN
 
 
@@ -844,6 +1072,8 @@ def main():
     if backfill_forms:
         print("\n" + backfill_note("holder_events", len(FORMS_TRACKED),
                                    "form types"))
+    repair_misattribution(state)
+
     events, legacy_seen, measured = [], [], set()
     cross_roster, cross_offroster, no_subject = [], [], []
     unreadable, unnamed_blocks = [], Counter()
@@ -866,10 +1096,17 @@ def main():
         legacy = [r for r in rows if r["form"].startswith(LEGACY)]
         if legacy:
             legacy_seen.append((ticker, len(legacy)))
-        if structured:
-            oldest = min(r["filed"] for r in structured)
+        # THE FLOOR EXCLUDES FILINGS THAT ARE NOT ABOUT THIS COMPANY, and
+        # without that the repair reverts inside the run that performs it:
+        # min(contaminated_prior, corrected_oldest) keeps the contaminated
+        # value. The subject check below only fires on FRESH filings, and every
+        # known cross-filing is already in `seen`, so the loop can never learn
+        # their subject on its own. `not_subject` is the record that outlives
+        # both, appended by the repair and by the two cross-filing arms.
+        kept = era_floor(rows, set(state.get("not_subject") or []))
+        if kept:
             prior = state["era"].get(ticker)
-            state["era"][ticker] = min(prior, oldest) if prior else oldest
+            state["era"][ticker] = min(prior, kept[0]) if prior else kept[0]
 
         fresh = [r for r in structured if r["accession"] not in seen]
         print(f"  {ticker}: {len(structured)} structured, {len(fresh)} new")
@@ -931,10 +1168,14 @@ def main():
                     # race the subject's iteration through the `fresh` snapshot
                     # and could mark it seen before the right company reads it.
                     cross_roster.append((ticker, owner, row))
+                    if row["accession"] not in state["not_subject"]:
+                        state["not_subject"].append(row["accession"])
                 else:
                     # Nobody else on the roster will read this one, so it is
                     # marked seen here or it is refetched every run for ever.
                     cross_offroster.append((ticker, subject, row))
+                    if row["accession"] not in state["not_subject"]:
+                        state["not_subject"].append(row["accession"])
                     state["seen"].append(row["accession"])
                 continue
 

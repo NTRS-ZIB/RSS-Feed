@@ -180,6 +180,61 @@ case where pruning is catastrophic rather than harmless.
 succeeds, which is the whole distinction: an empty result means the company
 has no 13D/G, an exception means this run does not know.
 
+## The one-shot repair
+
+The subject fix stops new wrong records. It cannot undo the ones already
+written, because nothing re-reads a filing already in `seen` and `era` is
+stored as `min(prior, oldest)`, so a floor can only ever move earlier.
+`repair_misattribution()` runs once, from `main()`, before the company loop.
+
+**It re-reads every filing before deleting anything**, in two passes per
+company. Pass one confirms the subject against live EDGAR and derives the key
+the way `main()` did. Pass two deletes. Two passes because nine of the fifteen
+are RIOT filings sharing one signature: deleting inside pass one popped the key
+on the first and reported the other eight as "wrote no holder record", which is
+false and reads as eight harmless no-ops.
+
+**Accessions are the input, never state keys.** Predicting the key from a
+signature was tried and was wrong on its first case: `CRWV|CoreWeave, Inc.` was
+predicted and does not exist, while `APLD|CoreWeave, Inc.` does and is
+**correct**, being CoreWeave's stake in Applied Digital recorded under its
+actual subject. A hard-coded key list would have deleted a right record. The
+list is keyed by **CIK** rather than ticker, so a rename cannot make it raise.
+
+### The floor needs both halves and neither is optional
+
+Overwriting the floor in the repair is the only thing that can move a stored
+floor *forward*. Excluding these accessions where `main()` recomputes it is the
+only thing that stops the next run pulling it straight back, because
+`min(contaminated_prior, corrected_oldest)` keeps the contaminated value.
+
+Doing only the first **looks like it works and reverts inside the same run**,
+and the sentinel then makes that permanent. The exclusion lives in
+`state["not_subject"]`, which outlives the sentinel, and the two cross-filing
+arms of the main loop append to it as well, so a future cross-filing cannot
+contaminate a floor either.
+
+### Every refusal stops something
+
+| Situation | Result |
+|---|---|
+| the filing says it **is** about this company | refused, and that company's era write is skipped entirely |
+| it cannot be re-read, or names no subject | refused |
+| it is not on that company's index | refused |
+| the stored percentage is not one this group filed | refused, because something else wrote it and deleting would take a live position |
+| any refusal at all, anywhere | **the sentinel is withheld** and the repair stays armed |
+
+That last row is the one that matters most. A wrong `SEC_USER_AGENT` 403s every
+sec.gov endpoint, so the realistic worst case is fifteen refusals, and
+recording that as done would burn the one shot on a run that repaired nothing.
+
+A reconciliation closes it, the same shape `main()` uses: every one of the
+fifteen is either confirmed or refused, and the run says so when they do not
+sum.
+
+A dry run rehearses the whole thing in memory, saves nothing, and writes no
+sentinel, so the next dry run rehearses it again.
+
 ## The persist gate answered the wrong question, twice
 
 ```yaml
