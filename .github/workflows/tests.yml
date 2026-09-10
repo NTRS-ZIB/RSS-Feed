@@ -36,10 +36,11 @@ jobs:
           python-version: "3.12"
       # requests is all the suites need, through test_earnings_dates.py's
       # earnings_calendar import. feedparser and matplotlib are for the import
-      # step below, which loads every module rather than only the tested eleven.
+      # step below, which loads every module rather than only the tested
+      # fourteen.
       - name: Install dependencies
         run: pip install requests feedparser matplotlib
-      # The eleven steps below are a hand-maintained list with no gate: add a
+      # The fourteen steps below are a hand-maintained list with no gate: add a
       # test_*.py and forget to list it here, and it never runs, silently.
       # That is the same silent-gap shape workflow-list-gate.yml exists to
       # prevent, one level down, so this checks the list against the repo's
@@ -57,14 +58,19 @@ jobs:
               sys.exit("Not run by this workflow: " + ", ".join(missing))
           print("All %d suites are run." % len(run))
           PY
-      # Only thirteen files have suites. These two steps cover all 60, cheaply,
+      # Only fourteen files have suites. These two steps cover all 61, cheaply,
       # and run first because they are the broader check: daily_recap.py is
       # loaded by no suite, directly or transitively, so before this a typo in
       # it merged green. TWENTY-THREE modules are in that position, and the
       # count moves whenever a suite is added — test_weekly_digest.py pulled
       # ftd_monitor, dilution, regsho_volume and short_interest into the
       # covered set without testing any of them directly, which is why the
-      # example here was changed at the same time.
+      # example here was changed at the same time. Adding
+      # test_holder_events.py on 2026-09-10 did NOT move it: weekly_digest
+      # already pulled holder_events in transitively, so the component had
+      # import coverage while having no suite at all. Import coverage is
+      # not test coverage, and the two counts moving independently is the
+      # whole reason both are printed.
       #
       # Counting the suites understates the gap and counting the tested
       # modules overstates it: watchlist.py has no suite of its own but is
@@ -132,6 +138,8 @@ jobs:
         run: python -u test_loop_approval.py
       - name: pushpin
         run: python -u test_pushpin.py
+      - name: holder_events
+        run: python -u test_holder_events.py
       # NOT A SUITE, and the reason is the same one the cadence branch check
       # below carries: on the only component that destroys, a green suite is
       # not evidence. This applies each of the fourteen named one-line changes
