@@ -1440,6 +1440,39 @@ def phase_subjects():
         print("  filings on one day, not a guarantee about how EDGAR fills "
               "the field.")
 
+    # THE LEGACY SPELLINGS WERE NEVER FETCHED, so nothing above says anything
+    # about them. build_snapshot publishes SC 13D and SC 13G counts beside the
+    # SCHEDULE ones, and applying a rule measured on one population to the
+    # other is the trap this repo names. Their file numbers are INDEX data, so
+    # sizing the exclusion costs no request even though the subject cannot be
+    # confirmed without one.
+    print("\n  file numbers by form family, ALL 13D/G including legacy:")
+    fam_total, fam_blank = Counter(), Counter()
+    blank_rows = []
+    for ticker, rec in sorted(per_ticker.items()):
+        for r in rec["rows"]:
+            fam = family(r["form"])
+            if fam is None:
+                continue
+            fam_total[fam] += 1
+            if not (r.get("file_no") or "").strip():
+                fam_blank[fam] += 1
+                blank_rows.append((ticker, fam, r["filed"], r["accession"]))
+    for fam in sorted(fam_total):
+        print(f"    {fam:14} {fam_total[fam]:4} filing(s), "
+              f"{fam_blank[fam]:3} with no file number")
+    legacy_blank = [b for b in blank_rows if b[1].startswith("SC 13")]
+    print(f"\n  LEGACY rows with no file number: {len(legacy_blank)}")
+    for t, fam, filed, acc in legacy_blank[:15]:
+        print(f"    {t} {fam} {filed} {acc}")
+    if len(legacy_blank) > 15:
+        print(f"    ...and {len(legacy_blank) - 15} more")
+    print("  A non-zero count here does NOT mean these are misattributed: the")
+    print("  subject is only knowable from the document, and legacy filings "
+          "carry\n  no structured one. It sizes what a file-number rule would "
+          "exclude,\n  which is the number that matters before applying it "
+          "to a published count.")
+
     if index_keys:
         print(f"\n  submissions recent keys: {index_keys}")
 
