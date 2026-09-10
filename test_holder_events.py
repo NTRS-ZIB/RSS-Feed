@@ -308,6 +308,70 @@ def main():
           "VIP|Some Holder LP" in loaded["holders"],
           "a resolution added at three call sites is one missing at the fourth")
 
+    print("\nTHE BASELINE ONLY ADVANCES FOR A FILING THAT POSTED")
+    # The write used to be gated on `pct is not None` alone and ran before the
+    # sub-floor check, so a move too small to report still moved the baseline.
+    # A holder could then travel any distance in steps under the floor with
+    # nothing posted, and the eventual "down from X%" would cite a figure the
+    # channel was never shown.
+    check("A SUB-FLOOR FILING DOES NOT ADVANCE THE BASELINE",
+          he.advances_baseline(None, 6.3) is False,
+          "kind None means nothing was published, so nothing may be recorded")
+    check("a reportable change does advance it",
+          he.advances_baseline(he.CHANGE, 6.3) is True)
+    check("A DECLARED EXIT AT ZERO STILL ADVANCES IT",
+          he.advances_baseline(he.EXIT, 0.0) is True,
+          "0.0 is falsy, so this tests kind rather than the truthiness of pct")
+    check("a filing whose percentage would not parse advances nothing",
+          he.advances_baseline(he.ARRIVAL, None) is False)
+
+    # The behaviour, walked two steps, which is the thing the gate exists for.
+    # Old rule: baseline becomes 5.4, so 5.8 is a 0.4 move and never posts.
+    # New rule: baseline stays 5.0, so 5.8 is a 0.8 move and does.
+    st = state({"CORZ|Two Seas Capital LP": 5.0})
+    kind, _p, key = he.classify(st, "CORZ", ["Two Seas Capital LP"], 5.4)
+    if he.advances_baseline(kind, 5.4):
+        st["holders"][key] = 5.4
+    check("the first sub-floor step still posts nothing", kind is None)
+    check("and the stored baseline is untouched",
+          st["holders"]["CORZ|Two Seas Capital LP"] == 5.0)
+    kind2, prev2, _k = he.classify(st, "CORZ", ["Two Seas Capital LP"], 5.8)
+    check("CUMULATIVE DRIFT REACHES THE FLOOR AND POSTS",
+          kind2 == he.CHANGE and prev2 == 5.0,
+          f"got {kind2} from {prev2}; rebasing made this a 0.4 move that "
+          f"never posted")
+
+    print("\nEVICTION KEEPS THE NEWEST RECORDED, NOT THE LARGEST STRING")
+    # An accession is TENDIGITS-YY-NNNNNN and the leading ten digits identify
+    # the FILING AGENT, so sorting orders by submitter. On the live list of 348
+    # a cap of 100 would drop 117 filings from 2026 and keep 3 from 2024.
+    # The fixture is built so the two rules disagree: the 2024 accession has
+    # the LARGEST agent prefix, so sorted() keeps it and drops a 2026 one.
+    saved_cap = he.SEEN_CAP
+    he.SEEN_CAP = 3
+    try:
+        st = {"seen": ["0002999999-24-000001", "0000000001-26-000009",
+                       "0000000001-26-000010", "0000000001-26-000010",
+                       "0000000001-26-000011"],
+              "holders": {}, "era": {}, "read": {}}
+        he.save_state(st)
+        with open(os.environ["HOLDER_STATE"], encoding="utf-8") as fh:
+            written = json.load(fh)["seen"]
+    finally:
+        he.SEEN_CAP = saved_cap
+        if os.path.exists(os.environ["HOLDER_STATE"]):
+            os.remove(os.environ["HOLDER_STATE"])
+    check("THE 2024 FILING WITH THE LARGEST AGENT PREFIX IS EVICTED",
+          "0002999999-24-000001" not in written,
+          f"sorted() would keep it; got {written}")
+    check("the newest recorded filing survives",
+          "0000000001-26-000011" in written)
+    check("THE LIST IS DE-DUPLICATED",
+          len(written) == len(set(written)),
+          "seen.remove() on a failed post deletes one copy of two, and "
+          "0000950170-25-114068 really is in the live file twice")
+    check("the cap is honoured", len(written) <= 3, str(written))
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0

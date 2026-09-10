@@ -131,6 +131,12 @@ FORMS_TRACKED = STRUCTURED
 # rather than with their position.
 NOTABLE_MOVE_PCT = 0.5
 
+# Bound on the accession list. A CONSTANT rather than an inline literal, and
+# that is the precondition for testing the eviction at all: with 348 entries
+# against 2000 the slice is the identity function, so a check written against
+# the live size passes under any implementation, right or wrong.
+SEEN_CAP = 2000
+
 STATE_FILE = Path(os.environ.get("HOLDER_STATE", "holder_state.json"))
 REQUEST_GAP = 0.15
 
@@ -295,7 +301,30 @@ def load_state():
 
 
 def save_state(state):
-    state["seen"] = sorted(state["seen"])[-2000:]
+    # RECORDING ORDER, NOT SORTED ORDER, and de-duplicated.
+    #
+    # This was `sorted(state["seen"])[-2000:]`, which READS as "keep the newest
+    # 2000" and is not. An accession is TENDIGITS-YY-NNNNNN and the leading ten
+    # digits identify the FILING AGENT, so lexicographic order is agent-major
+    # and date-minor. Measured on the live list of 348: sorted() puts three
+    # 2026 accessions first and a 2025 one fifth, and at a cap of 100 it would
+    # drop 117 filings from 2026 while keeping 3 from 2024. The eviction is by
+    # submitter, and nothing about the expression says so.
+    #
+    # main() appends as it reads, so the list's own order IS the order things
+    # were recorded and the tail is the most recent. dict.fromkeys keeps the
+    # first occurrence and drops repeats.
+    #
+    # THE DUPLICATE IS REAL rather than defensive. 0000950170-25-114068 is in
+    # the file twice: it is the Hut 8 filing about American Bitcoin, and it was
+    # read once under each company in the same run. state["seen"].remove() on
+    # the failed-post path deletes ONE copy, so an item could be un-marked and
+    # still be seen.
+    #
+    # Inert today at 348 of 2000. That arithmetic is why this is safe to change
+    # now rather than urgent, and it is written down because nothing else
+    # records it.
+    state["seen"] = list(dict.fromkeys(state["seen"]))[-SEEN_CAP:]
     STATE_FILE.write_text(json.dumps(state, indent=1, sort_keys=True))
 
 
@@ -480,6 +509,34 @@ def classify(state, ticker, people, pct):
     if abs(pct - prev) < NOTABLE_MOVE_PCT:
         return None, prev, key
     return CHANGE, prev, key
+
+
+def advances_baseline(kind, pct):
+    """Whether this filing's percentage may become the stored baseline.
+
+    ONLY A FILING THAT PRODUCED AN EVENT MAY. The write used to be gated on
+    `pct is not None` alone and ran before the sub-floor check, so a move too
+    small to report still moved the baseline. A holder could then travel any
+    distance in steps under NOTABLE_MOVE_PCT with nothing ever posted, and the
+    "down from X%" on the eventual post would cite a figure the channel was
+    never shown.
+
+    Measured over the 22 committed revisions of holder_state.json: 153 keys,
+    14 ever moved, 12 crossed the floor and posted, 2 were sub-floor rebases
+    (CORZ Christopher R. Hansen 5.1 to 5.3, NUAI Caracola Ventures 8.6 to 8.9).
+    NO key has two sub-floor steps in a row, which is the only shape that makes
+    the two rules differ, so replaying both over that record gives 12 posts
+    either way. THE FIX CHANGES NOTHING THAT HAS HAPPENED. It is a correctness
+    change for what has not.
+
+    That replay sees only committed state, so two moves of one key inside a
+    single run collapse into one transition and a sub-floor pair could hide
+    there. The claim is about the record, not about the world.
+
+    A declared exit at 0.0 must still be recorded, which is why the test is
+    `kind is None` and not the truthiness of pct.
+    """
+    return kind is not None and pct is not None
 
 
 def era_note(state, ticker, filed):
@@ -679,7 +736,7 @@ def main():
                 continue
             people, pct, ev = parsed
             kind, prev, key = classify(state, ticker, people, pct)
-            if pct is not None:
+            if advances_baseline(kind, pct):
                 state["holders"][key] = pct
             if kind is None:
                 print(f"    {row['filed']} {people[0][:30]} "

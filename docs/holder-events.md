@@ -8,7 +8,7 @@ concentration measure.
 | event | trigger |
 |---|---|
 | **arrival** | a filer group's first filing on this company, at or above 5% |
-| **change** | an amendment moving the percentage by ≥0.5 points |
+| **change** | an amendment moving the percentage by ≥0.5 points **from the last figure published**, not from the last one seen |
 | **declared exit** | a final amendment reporting 0% |
 | **below 5%** | a first sighting already under the threshold |
 | *silence* | a holder who stops filing — **never** reported as a departure |
@@ -179,6 +179,55 @@ case where pruning is catastrophic rather than harmless.
 `measured` is added inside the loop only after the submissions request
 succeeds, which is the whole distinction: an empty result means the company
 has no 13D/G, an exception means this run does not know.
+
+## The floor measures movement since the last PUBLISHED figure
+
+`≥0.5 points` is measured against the last percentage this component actually
+posted, not against the last one it read. Until 2026-09-10 it was the latter,
+because the stored baseline was written for every parsed filing before the
+sub-floor check ran. A holder could then travel any distance in steps under the
+floor with nothing posted, and the eventual "down from X%" would cite a figure
+the channel was never shown.
+
+`advances_baseline(kind, pct)` gates the write on an event having been produced.
+It tests `kind is None` rather than the truthiness of `pct`, because a declared
+exit reports `0.0` and must still be recorded.
+
+**Measured over the 22 committed revisions of `holder_state.json`, and it
+changes nothing that has already happened.** 153 keys, 14 ever moved, 12
+crossed the floor and posted, and 2 were sub-floor rebases: CORZ Christopher R.
+Hansen / Valiant Capital 5.1 to 5.3, and NUAI Caracola Ventures 8.6 to 8.9. No
+key has two sub-floor steps in a row, which is the only shape that makes the
+two rules differ, so replaying both over that record gives 12 posts either way.
+It is a correctness change for what has not happened yet.
+
+That replay sees only committed state, so two moves of one key inside a single
+run collapse into one transition and a sub-floor pair could hide there. The
+claim is about the record, not about the world.
+
+## Eviction from `seen` keeps the newest, not the largest string
+
+`save_state` used to write `sorted(state["seen"])[-2000:]`, which reads as
+"keep the newest 2000" and does not. An accession is `TENDIGITS-YY-NNNNNN` and
+the leading ten digits identify the **filing agent**, so lexicographic order is
+agent-major and date-minor.
+
+Measured on the live list of 348: `sorted()` puts three 2026 accessions first
+and a 2025 one fifth, and at a cap of 100 it would **drop 117 filings from 2026
+while keeping 3 from 2024**. Nothing about the expression says so.
+
+It now keeps recording order, which is the order `main()` appended them, and
+de-duplicates with `dict.fromkeys`. **The duplicate is real rather than
+defensive**: `0000950170-25-114068` sits in the file twice, because it is the
+Hut 8 filing about American Bitcoin and was read once under each company in the
+same run. `state["seen"].remove()` on the failed-post path deletes one copy of
+two, so an item could be un-marked and still be seen.
+
+Inert today at 348 of `SEEN_CAP` 2000. That arithmetic is why this was safe to
+change now rather than urgent, and the cap is a named constant rather than an
+inline literal so the eviction can be tested at all: at the live size the slice
+is the identity function and a check written against it would pass under any
+implementation.
 
 ## A rename must not orphan a company's holders
 
