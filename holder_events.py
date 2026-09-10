@@ -92,6 +92,7 @@ import watchlist
 # `first_run` for the whole-file guard, and the two names would collide.
 from first_run import (backfill_note, backfilled, baseline, baseline_by_cik,
                        held_by_cik, newly_tracked, prune_unmeasured, summary)
+from filing_subject import subject_cik
 
 # ------------------------------------------------------------------ CONFIG
 
@@ -101,6 +102,10 @@ CIKS = watchlist.ciks()
 # identity mapping included. Imported rather than rebuilt: see
 # migrate_symbols() for what writing this map backwards by hand once cost.
 CANON = watchlist.symbol_to_ticker()
+
+# {1591956: 'ANY', ...}. Integers, because watchlist pins CIKs zero-padded to
+# ten and EDGAR writes them both ways in the same payload.
+BY_CIK = {int(c): t for t, (c, _n) in CIKS.items()}
 
 # Both spellings, for the reason press_monitor records: "SCHEDULE 13D" does not
 # start with "SC 13D" — the fourth character is H, not a space — and the legacy
@@ -409,7 +414,7 @@ def as_pct(text):
 
 
 def read_filing(cik, row):
-    """(signatories, percent, event_date) or None.
+    """(signatories, percent, event_date, subject_cik) or None.
 
     `percent` is the LARGEST reported by any signatory. A group files one
     position; the members report overlapping slices of it, and the maximum is
@@ -441,7 +446,9 @@ def read_filing(cik, row):
         if tag_of(el) == "dateOfEvent":
             ev = parse_event_date(el.text)
             break
-    return people, (max(pcts) if pcts else None), ev
+    # The subject comes from the SAME document, so reading it costs no extra
+    # request. See filing_subject for why it is scoped and case-insensitive.
+    return people, (max(pcts) if pcts else None), ev, subject_cik(root)
 
 
 def signature(people):
@@ -704,6 +711,7 @@ def main():
         print("\n" + backfill_note("holder_events", len(FORMS_TRACKED),
                                    "form types"))
     events, legacy_seen, measured = [], [], set()
+    cross_roster, cross_offroster, no_subject = [], [], []
 
     for ticker, (cik, name) in sorted(CIKS.items()):
         try:
@@ -731,10 +739,49 @@ def main():
         for row in sorted(fresh, key=lambda r: r["filed"]):
             time.sleep(REQUEST_GAP)
             parsed = read_filing(cik, row)
-            state["seen"].append(row["accession"])
             if parsed is None:
+                state["seen"].append(row["accession"])
                 continue
-            people, pct, ev = parsed
+            people, pct, ev, subject = parsed
+
+            # WHICH COMPANY IS THIS FILING ABOUT? EDGAR lists a 13D/G under
+            # every reporting person's CIK as well as the subject's, and until
+            # 2026-09-10 this loop labelled each filing with its own ticker and
+            # never asked. Nine embeds went out on 2026-08-14 reporting Riot
+            # Platforms as holding a stake in Riot Platforms.
+            #
+            # Suppression is on a POSITIVE MISMATCH only. Refusing whenever the
+            # subject is merely missing would convert a visible wrong post into
+            # an invisible missing one, which is the worse direction in a
+            # component whose normal state is a quiet channel.
+            if subject is None:
+                # Unreachable today: 350 of 350 filings carry a subject CIK.
+                # Not appended to `seen`, so it is retried rather than lost,
+                # and that retry is unbounded by design: a filing we cannot
+                # attribute must not be attributed by default to the index it
+                # happened to be read from.
+                no_subject.append((ticker, row))
+                continue
+            if subject != int(cik):
+                owner = BY_CIK.get(subject)
+                if owner:
+                    # The subject is on the roster, so its OWN iteration reads
+                    # the same accession from its own index and records it
+                    # correctly. Measured: all three roster-subject filings are
+                    # present under the subject's CIK as well as the filer's,
+                    # so skipping this copy cannot delete the only copy.
+                    # Deliberately NOT appended here, because appending would
+                    # race the subject's iteration through the `fresh` snapshot
+                    # and could mark it seen before the right company reads it.
+                    cross_roster.append((ticker, owner, row))
+                else:
+                    # Nobody else on the roster will read this one, so it is
+                    # marked seen here or it is refetched every run for ever.
+                    cross_offroster.append((ticker, subject, row))
+                    state["seen"].append(row["accession"])
+                continue
+
+            state["seen"].append(row["accession"])
             kind, prev, key = classify(state, ticker, people, pct)
             if advances_baseline(kind, pct):
                 state["holders"][key] = pct
@@ -825,6 +872,34 @@ def main():
         print(f"\n--- {embed['title']}")
         print(embed["description"])
         print(f"    {embed['footer']['text']}")
+
+    # EVERY SKIP ARM PRINTS. A filing dropped because it is about somebody
+    # else is the right outcome, but a silent right outcome is the shape this
+    # whole component keeps getting caught by: it is indistinguishable from a
+    # filing dropped because something broke. The counts are the difference.
+    if cross_roster:
+        print(f"\n{len(cross_roster)} filing(s) skipped under the company that "
+              f"FILED them, and left for the company they are ABOUT:")
+        for t, owner, row in cross_roster[:10]:
+            print(f"  {t} {row['form']} {row['filed']} {row['accession']} "
+                  f"-> recorded under {owner}")
+        if len(cross_roster) > 10:
+            print(f"  ...and {len(cross_roster) - 10} more")
+    if cross_offroster:
+        print(f"\n{len(cross_offroster)} filing(s) are about a company not on "
+              f"the roster, marked seen and not posted:")
+        for t, subj, row in cross_offroster[:10]:
+            print(f"  {t} {row['form']} {row['filed']} {row['accession']} "
+                  f"-> subject CIK {subj}")
+        if len(cross_offroster) > 10:
+            print(f"  ...and {len(cross_offroster) - 10} more")
+    if no_subject:
+        print(f"\n{len(no_subject)} filing(s) NAME NO SUBJECT and were refused "
+              f"rather than attributed. Not marked seen, so they retry:")
+        for t, row in no_subject[:10]:
+            print(f"  {t} {row['form']} {row['filed']} {row['accession']}")
+        print("  Measured 0 of 350 on 2026-09-10, so a non-zero count here "
+              "means the schema moved.")
 
     if legacy_seen:
         print(f"\nLegacy SC-spelling filings present and not read: "

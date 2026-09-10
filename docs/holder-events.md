@@ -180,6 +180,99 @@ case where pruning is catastrophic rather than harmless.
 succeeds, which is the whole distinction: an empty result means the company
 has no 13D/G, an exception means this run does not know.
 
+## Critical: which company is this filing about
+
+EDGAR lists a Schedule 13D/G under **every reporting person's CIK as well as
+the subject's**. Until 2026-09-10 the main loop labelled each filing with the
+ticker of the roster iteration it was read under and never asked, so a roster
+company that filed about somebody else was recorded as holding a stake in
+itself.
+
+**It published.** Run `31810564097`, 2026-08-14, posted nine embeds opening
+
+```
+RIOT — activist stake disclosed
+Riot Platforms, Inc.
+16.30% of class
+```
+
+and walking down 14.60, 13.40, 12.30, 11.20, 9.80, 8.30, 7.20, 4.60. Every one
+is Riot's own filing about Bitfarms Ltd. The arrival caveat on the first cites
+`2025-04-09`, which is that same filing's date, so the line written to qualify
+a false arrival was calibrated off the thing that should not have been there.
+
+**Measured on the runner over all 350 structured 13D/G under the 22 roster
+CIKs, every index page** (`probe_holders.py`, phase `subjects`):
+
+| Read under | Count | Actually about |
+|---|---|---|
+| RIOT | 9 | Bitfarms Ltd. |
+| CRWV | 2 | Applied Digital (on the roster) |
+| APLD | 2 | ChronoScale Corp |
+| CIFR | 1 | Canaan Inc. |
+| HUT | 1 | American Bitcoin (on the roster) |
+
+The subject CIK is present in **350 of 350**, always at
+`edgarSubmission/formData/coverPageHeader/issuerInfo/`, so there is no
+cannot-determine case to design around today. **The spelling splits on form
+family**: `issuerCIK` in 103 of 103 13Ds, `issuerCik` in 247 of 247 13Gs.
+Tag comparison is case sensitive, so a rule accepting one spelling would drop
+seven filings in ten. `filing_subject.subject_cik` lowercases the tag rather
+than freezing a tuple of known spellings, because two measured is not two
+guaranteed and this repo has the SC 13D rename on record.
+
+### What each arm does, and why each one prints
+
+| Subject | Action | `seen` |
+|---|---|---|
+| this company | posts as before | appended |
+| another roster company | skipped, left for that company's own iteration | **not** appended |
+| not on the roster | skipped | appended |
+| the document does not say | **refused**, not attributed | **not** appended |
+
+Skipping the filer's copy cannot delete the only copy: all three
+roster-subject filings were measured **present under the subject's CIK as
+well**, so the subject's own iteration records them. It is deliberately not
+appended there, because appending would race the subject's iteration through
+the `fresh` snapshot and could mark it seen before the right company reads it.
+
+Suppression is on a **positive mismatch only**. Refusing whenever the subject
+is merely missing would convert a visible wrong post into an invisible missing
+one, which is the worse direction in a component whose normal state is a quiet
+channel. The refusal arm is unreachable today at 0 of 350, and its retry is
+unbounded by design: a filing that cannot be attributed must not fall back on
+the index it happened to be read from, which is the assumption that produced
+the nine embeds.
+
+Every arm prints a count. A filing dropped because it is about somebody else is
+the right outcome, and a silent right outcome is indistinguishable from a
+filing dropped because something broke.
+
+### What this does not fix
+
+The wrong records are still on disk: `RIOT|Riot Platforms, Inc.` 4.6,
+`HUT|American Bitcoin Holdings LLC | ...` 64.5, `APLD|Applied Digital
+Corporation` 96.1, `CIFR|Cipher Digital Inc. | ...` 7.7, and two contaminated
+era floors (HUT `2025-09-10` should be `2025-10-23`, RIOT `2025-04-09` should
+be `2025-05-12`). `GLXY|Galaxy Group Investments LLC` 49.937 looks like the
+same shape and is **not**: the probe did not flag it, so it is a genuine
+holder. A name-based rule would have deleted it, and would also have deleted
+ABTC's correct 64.5% record, whose lead signatory is "American Bitcoin
+Holdings LLC".
+
+`build_snapshot` labels by the same roster loop and publishes
+`issuers/RIOT/filings/SCHEDULE 13D count 9` to `snapshot.json`, a public file,
+where the true count is zero. It has not adopted this rule yet.
+`press_monitor` is **not** exposed: it claims only that a filing exists under a
+CIK, and "RIOT filed a SCHEDULE 13D" is true.
+
+**A dry run cannot show this working**, and that is worth stating rather than
+implying otherwise. All fifteen misattributed accessions are already in `seen`,
+so they are never re-read and no arm fires. The evidence is the probe's census
+over live data and the unit checks built from the real filing's structure. The
+first observable proof will be either a new cross-filing arriving or the state
+repair removing those accessions.
+
 ## The floor measures movement since the last PUBLISHED figure
 
 `≥0.5 points` is measured against the last percentage this component actually

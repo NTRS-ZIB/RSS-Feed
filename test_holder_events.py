@@ -48,6 +48,8 @@ os.environ["HOLDER_STATE"] = os.path.join(
 sys.modules.setdefault("requests", types.ModuleType("requests"))
 
 import holder_events as he            # noqa: E402
+import filing_subject as fs           # noqa: E402
+import xml.etree.ElementTree as ET    # noqa: E402
 
 PASS, FAIL = "PASS", "FAIL"
 results = []
@@ -371,6 +373,94 @@ def main():
           "seen.remove() on a failed post deletes one copy of two, and "
           "0000950170-25-114068 really is in the live file twice")
     check("the cap is honoured", len(written) <= 3, str(written))
+
+    print("\nWHICH COMPANY IS THIS FILING ACTUALLY ABOUT")
+    # THE ONE THAT MATTERS. EDGAR lists a 13D/G under every reporting person's
+    # CIK as well as the subject's. On 2026-08-14 run 31810564097 posted nine
+    # embeds reading "RIOT, activist stake disclosed / Riot Platforms, Inc. /
+    # 16.30% of class", walking down to 4.60. Those are Riot's own filings
+    # about Bitfarms. The fixture below is the real shape of accession
+    # 0000950170-25-114068: Hut 8 Corp. filing about American Bitcoin, which
+    # put HUT into holder_state.json at 64.5% of itself.
+    #
+    # These checks live here rather than in a suite of their own because
+    # holder_events is the only caller today. When build_snapshot adopts the
+    # rule they should move to test_filing_subject.py.
+    D13 = ET.fromstring("""
+      <edgarSubmission><formData><coverPageHeader>
+        <issuerInfo>
+          <issuerCIK>0001755953</issuerCIK>
+          <issuerName>American Bitcoin Corp.</issuerName>
+        </issuerInfo>
+        <coverPageHeaderReportingPersonDetails>
+          <reportingPersonName>Hut 8 Corp.</reportingPersonName>
+          <reportingPersonCIK>0001964789</reportingPersonCIK>
+        </coverPageHeaderReportingPersonDetails>
+      </coverPageHeader></formData></edgarSubmission>""")
+    check("THE REAL HUT FILING IS ABOUT AMERICAN BITCOIN, NOT HUT",
+          fs.subject_cik(D13) == 1755953,
+          "1964789 is Hut 8, the filer; this is the record that read 64.5% "
+          "of HUT")
+    # A CHECK WAS WRITTEN HERE AND REPLACED. "the filer's own CIK is not
+    # mistaken for the subject" asserted != 1964789, which the check above
+    # already implies: if the answer is 1755953 it is not 1964789, so no
+    # mutation can redden one without the other. What is actually worth
+    # asserting is the SCOPE, so the fixture below puts a stray issuerCIK
+    # earlier in document order than the real one.
+    STRAY = ET.fromstring("""
+      <edgarSubmission><formData>
+        <someOtherBlock><issuerCIK>0001964789</issuerCIK></someOtherBlock>
+        <coverPageHeader>
+          <issuerInfo><issuerCIK>0001755953</issuerCIK></issuerInfo>
+        </coverPageHeader>
+      </formData></edgarSubmission>""")
+    check("ONLY THE issuerInfo BLOCK IS READ",
+          fs.subject_cik(STRAY) == 1755953,
+          "a bare tree scan takes document order and would answer 1964789")
+
+    # 13D spells it issuerCIK and 13G spells it issuerCik, measured 103 of 103
+    # and 247 of 247. ElementTree tag comparison is case sensitive, so a rule
+    # accepting one spelling drops seven filings in ten.
+    G13 = ET.fromstring("""
+      <edgarSubmission><formData><coverPageHeader>
+        <issuerInfo><issuerCik>0001144879</issuerCik></issuerInfo>
+      </coverPageHeader></formData></edgarSubmission>""")
+    check("THE 13G LOWERCASE SPELLING IS HONOURED",
+          fs.subject_cik(G13) == 1144879,
+          "issuerCik against issuerCIK; the split runs on form family")
+
+    NS = ET.fromstring("""
+      <edgarSubmission xmlns="http://www.sec.gov/edgar/schedule13">
+        <formData><coverPageHeader>
+          <issuerInfo><issuerCIK>0001812477</issuerCIK></issuerInfo>
+        </coverPageHeader></formData></edgarSubmission>""")
+    check("a namespaced document still resolves",
+          fs.subject_cik(NS) == 1812477,
+          "tag_of strips the namespace; without it every tag is a URL")
+
+    NONE = ET.fromstring("<edgarSubmission><formData/></edgarSubmission>")
+    check("a document that names no issuer returns None, not a guess",
+          fs.subject_cik(NONE) is None,
+          "the caller refuses rather than falling back on the index")
+    EMPTY = ET.fromstring("""
+      <edgarSubmission><issuerInfo><issuerCIK>  </issuerCIK></issuerInfo>
+      </edgarSubmission>""")
+    check("AN EMPTY ELEMENT IS None, NOT ZERO",
+          fs.subject_cik(EMPTY) is None,
+          "0 compares unequal to every roster CIK, so it would report the "
+          "whole corpus as misattributed")
+    TWO = ET.fromstring("""
+      <edgarSubmission><issuerInfo>
+        <issuerCIK></issuerCIK><issuerCIK>0001591956</issuerCIK>
+      </issuerInfo></edgarSubmission>""")
+    check("an empty element does not stop a later one being read",
+          fs.subject_cik(TWO) == 1591956)
+
+    check("ZERO PADDING DOES NOT CHANGE THE ANSWER",
+          fs.as_cik("0001755953") == fs.as_cik("1755953") == 1755953,
+          "watchlist pads to ten, EDGAR writes both in one payload")
+    check("a non-numeric CIK is None", fs.as_cik("n/a") is None)
+    check("an absent CIK is None", fs.as_cik(None) is None)
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
