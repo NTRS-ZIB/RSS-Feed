@@ -114,30 +114,46 @@ WATCHLIST = [
         # 84841L407 changeover, 2023-06-29. Same placeholder as DGXX's
         # DGHIZZZZ. Listed because it occurs in the data.
         "alt_symbols": ["DRK", "ANYZZZZ"],   # DRK pending, ANYZZZZ historical
-        # FEED SUSPENDED 2026-09-10 at the owner's instruction, until they say
-        # the new site is up. Sphere 3D is rebuilding it, and the rename to DRK
-        # is still pending, so the URL is expected to move rather than return.
+        # RESTORED 2026-09-10, the same day it was suspended, when the new
+        # site went up. The feed is THE WIRE, NOT THE NEWSROOM, which is the
+        # BGDE shape and needs saying because darkhorse.inc looks like the
+        # obvious answer and is not one.
         #
-        # THE WHOLE HOST REFUSES, not just this path: the site root 401s too.
-        # Measured across six header sets before concluding that, because a
-        # refusal is a per-host User-Agent bet before it is a fact about the
-        # host, and this repo has been wrong that way once already. The
-        # identifying UA, Firefox, curl and no UA at all get 401, Chrome gets
-        # 403, and a feed-reader UA has its connection reset. Nothing reaches
-        # content, so it is the host.
+        # darkhorse.inc IS NOT A SOURCE. It is a client-rendered React shell:
+        # /investors and / both return the same 904 bytes ending in
+        # <div id="root"></div>, with no server-side content and no feed
+        # autodiscovery. Its /api/investors endpoint serves SEC filings and a
+        # stock quote, which EDGAR already gives us, and no press releases at
+        # all. The four release links on the page are HARDCODED CONSTANTS in
+        # the JavaScript bundle, so scraping it would yield four undated items
+        # and break on the next rebuild.
         #
-        # ONLY PRESS RELEASES STOP. EDGAR is untouched, so 8-Ks, Form 4s and
-        # 13D/G keep posting for this company on the usual path.
+        # The old gcs-web feed is gone rather than moved: that whole host
+        # answers 401, site root included, across six header sets.
         #
-        # RESTORING IT IS THIS ONE LINE AND NEEDS NO FIRST-RUN GUARD. That was
-        # measured: commit 20a42ac added three feeds and the next run posted
-        # four items out of sixty new, MAX_AGE_DAYS having dropped the rest.
-        # See that constant in press_monitor.py, and docs/rejected.md, where
-        # the guard was proposed three times in one day before anyone read the
-        # log. Put the new URL here; do not resurrect the one below.
+        # MEASURED BEFORE ADOPTING, against the newsroom page rather than
+        # against today's date, which is the rule this repo added after two
+        # dead DGXX feeds served stale items at HTTP 200 for months. The
+        # Newsfile company page for id 1705 lists 20 releases with a newest of
+        # 2026-09-08; the feed returns 10 entries with a newest of 2026-09-08
+        # 16:05 -0400. They agree to the day. Channel title is "Sphere 3D Corp.
+        # News Releases", all ten entries are this company, and every one
+        # carries a parseable pubDate and a stable guid, so none of them can
+        # mint the epoch-zero timestamp that would drop an item silently.
         #
-        #   was: https://sphere3d.gcs-web.com/rss/news-releases.xml
-        "ir_feed": None,                  # suspended, see above
+        # No HOST_HEADERS override: all six header sets get 200 with identical
+        # bytes from feeds.newsfilecorp.com, so this host takes no per-host
+        # bet either way. Recorded because absence of an override should be a
+        # measurement rather than an omission. On www.newsfilecorp.com, which
+        # is where the release bodies live, a feed-reader UA gets 202 and zero
+        # bytes while the five others get 200; we do not send that UA.
+        #
+        # THE RENAME IS COMING BUT HAS NOT LANDED. Shareholders approved the
+        # change to DarkHorse on 2026-08-24 (the release of that date says so),
+        # and the company's own API still reports "symbol": "ANY". DRK stays in
+        # alt_symbols above, and the day it flips this feed does not need to
+        # change: the wire keys by company id, not by ticker.
+        "ir_feed": "https://feeds.newsfilecorp.com/company/1705",
     },
     {
         "ticker": "SLNH",

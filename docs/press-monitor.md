@@ -612,7 +612,7 @@ answer.
 | New Era Energy & Digital | 0002028336 | Q4 Inc |
 | IREN Limited | 0001878848 | gcs-web |
 | Vulcan Infrastructure and Power | 0001844971 | gcs-web |
-| Sphere 3D | 0001591956 | gcs-web, **suspended 2026-09-10**, see below |
+| Sphere 3D | 0001591956 | **Newsfile** (the wire, not the newsroom) |
 | Soluna Holdings | 0000064463 | WordPress (`/news/feed/`) |
 | Big Digital Energy | 0001218683 | **GlobeNewswire** (the wire, not the newsroom) |
 | WhiteFiber | 0002042022 | **investorroom** (separate IR host) |
@@ -621,11 +621,12 @@ answer.
 | Hut 8 Corp | 0001964789 | none — **scraped**, see below |
 | Cipher Digital | 0001819989 | gcs-web |
 
-The three IR platforms use different feed conventions:
+The IR platforms use different feed conventions:
 
 - Equisolve: `/news-events/press-releases/rss`
 - Q4 Inc: `/rss/pressrelease.aspx`
 - Notified / gcs-web: `/rss/news-releases.xml`
+- Newsfile (a wire, not an IR platform): `feeds.newsfilecorp.com/company/<id>`
 
 Note that IR platforms migrate. Bakkt moved from Q4 to gcs-web, which broke
 its feed URL with a 404. If a previously working feed starts failing, check
@@ -644,38 +645,46 @@ Bitdeer is the counter-case to the conventions above. Its newsroom is
 `/news-events/news-releases/rss` **returns nothing** — the feed is the gcs-web
 one at the host root. **The newsroom path does not identify the platform.**
 
-Sphere 3D's feed is **suspended**, not broken, since 2026-09-10. The company
-is rebuilding its site and its rename to DRK is still pending, so the owner
-asked for the lookup to stop until the new site is up rather than have it fail
-every run. `ir_feed` is `None` and `watchlist.py` carries the restore
-instruction on the entry.
+Sphere 3D moved to a new site on 2026-09-10 and its feed moved to **the wire,
+not the newsroom**. That is the same answer BGDE has, and it needs saying
+because the obvious answer is wrong.
 
-The host refuses everything, not just the feed path: `sphere3d.gcs-web.com`
-returns 401 for its own site root. That was measured across six header sets
-before it was called a host problem, because on this repo a refusal is a
-per-host User-Agent bet before it is a fact about the host, and reading it the
-other way cost 22 hours of silent outage on BGDE. The identifying UA, Firefox,
-curl and no UA at all get 401; Chrome gets 403; a feed-reader UA has its
-connection reset.
+**`darkhorse.inc` is not a source.** `/investors` and `/` both return the same
+904 bytes, ending in `<div id="root"></div>`: a client-rendered React shell
+with no server-side content and no feed autodiscovery. Its `/api/investors`
+endpoint serves SEC filings and a stock quote, both of which EDGAR already
+gives us, and no press releases whatsoever. The four release links the page
+displays are **hardcoded constants in the JavaScript bundle**, so a scraper
+would return four undated items and break on the next rebuild.
 
-**Only press releases stop.** EDGAR coverage is untouched, so Sphere 3D's 8-Ks,
-Form 4s and 13D/G keep posting on the usual path.
+The old `sphere3d.gcs-web.com` feed did not move, it died: the whole host
+answers 401, site root included, across six header sets.
 
-Suspending a feed strands its health record, which the dry run caught rather
-than reasoning finding. `report_feed_health` only touches labels it was asked
-to check, but its summary reads every *stored* record, so ANY sat at
-`failing: {'ANY': 212}` and would have printed that on every run for good,
-about a feed nobody was asking for. Its `alerted` flag was stuck `True` as
-well, so the day the feed came back it would have posted "answering again
-after 212 consecutive failed reads" about runs that never fetched anything.
+**Checked against the newsroom page, not against today's date.** Newsfile's
+company page for id 1705 lists 20 releases with a newest of 2026-09-08. The
+feed returns 10 entries, newest 2026-09-08 16:05 -0400. They agree to the day.
+The channel is titled "Sphere 3D Corp. News Releases", every entry is this
+company, and every one carries a parseable `pubDate` and a stable `guid`, so
+none can mint the epoch-zero timestamp that drops an item silently in all three
+health checks.
 
-The function now drops records for labels that are no longer configured, and
-says so once. **The condition is configuration, not outcome**, which is what
-keeps it clear of the `first_run` prune trap: `collect_ir` puts every
-configured feed in `feed_ok` either way, `False` when the read failed, so a
-broken feed is present rather than absent and cannot be pruned. An empty
-`feed_ok` prunes nothing, because `IR_FEEDS` failing to build is a config
-error rather than twenty-two retirements.
+**No `HOST_HEADERS` override, and that is a measurement rather than an
+omission.** All six header sets get 200 with byte-identical responses from
+`feeds.newsfilecorp.com`. On `www.newsfilecorp.com`, where the release bodies
+live, a feed-reader UA gets **202 and zero bytes** while the other five get
+200; we do not send that UA, but it is worth knowing the host discriminates.
+
+**One item posts on restore.** Only the 2026-09-08 release falls inside
+`MAX_AGE_DAYS`, and that is the release behind the 8-K that never reached the
+channel. The other nine are 16 to 117 days old and the age floor drops them,
+which is the behaviour measured when three feeds were added at once in commit
+`20a42ac`: four posts out of sixty new.
+
+**The rename is approved but has not landed.** Shareholders approved the change
+to DarkHorse on 2026-08-24, and the company's own API still reports
+`"symbol": "ANY"`. When the ticker flips, this feed does not change: Newsfile
+keys by company id, not by ticker.
+
 
 Applied Digital's platform returns **byte-identical responses for `/rss`,
 `/rss/news-releases.xml` and `/rss/pressrelease.aspx`** — 7,741 bytes each. It
