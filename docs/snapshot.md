@@ -174,9 +174,27 @@ stated carefully because the three totals were consistent with it first, and
 believing it on that basis would have been a number true about something
 adjacent to the question.
 
-**The legacy spellings are not an inference about their subjects.** `SC 13D/G`
-predate the structured schema and carry no parseable issuer block, so nothing
-here knows what they are about. The rule applied is the narrower, directly
+**Age was tested as an alternative explanation and refuted.** A blank could
+have meant EDGAR simply populated the field less consistently on older filings,
+in which case the rule would mis-fire on age rather than on the docket, and
+these counts would be wrong in the other direction. The date ranges say
+otherwise:
+
+| Family | Blank | Numbered |
+|---|---|---|
+| `SC 13D` | 2000-12-11 to 2024-09-23 | 1996-04-05 to 2024-11-29 |
+| `SC 13G` | 2001-02-14 to 2003-01-02 | 2000-02-14 to 2024-11-14 |
+| `SCHEDULE 13D` | 2025-04-09 to 2026-06-26 | 2024-12-16 to 2026-08-26 |
+| `SCHEDULE 13G` | 2025-06-04 to 2026-02-25 | 2024-01-26 to 2026-09-01 |
+
+Every range overlaps. `SC 13G` is the clearest: three blanks from 2001 to 2003
+sitting inside a numbered range beginning in 2000. Filings from the same weeks
+both do and do not carry the number, so it tracks the docket rather than the
+era.
+
+**The legacy spellings are still not an inference about their subjects.**
+`SC 13D/G` predate the structured schema and carry no parseable issuer block,
+so nothing here knows what they are about. The rule applied is the narrower, directly
 checkable one: a filing with no file number is not on this issuer's 13D/G
 docket. The legacy blanks are dominated by RIOT `SC 13D` through mid-2024,
 which is the same Bitfarms campaign in its older spelling, so the two readings
