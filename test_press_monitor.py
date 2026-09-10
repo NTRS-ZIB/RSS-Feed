@@ -91,20 +91,40 @@ def main():
         pm.FORM_TYPES = original
 
     print("\nPER-HOST HEADERS")
-    # A browser-like User-Agent is a per-host bet. GlobeNewswire stalls a
-    # Chrome-claiming request from the runner and answers a plain one in
-    # 0.1s; not knowing that cost 22 hours of silent outage.
-    gnw = pm.headers_for("https://www.globenewswire.com/rss/organization/x")
-    check("a host in HOST_HEADERS gets its override",
-          gnw is pm.HOST_HEADERS["www.globenewswire.com"],
-          "losing this bet presents as a dead host, not as a refusal")
+    # HOST_HEADERS HAS BEEN EMPTY SINCE 2026-09-09, so no real key can
+    # exercise the lookup and a synthetic one is used instead. This is the
+    # only thing keeping headers_for's case-folding and path-independence
+    # honest: an empty dict matches nothing, and a mechanism that matches
+    # nothing looks exactly like one whose matches never occur.
+    probe_host = "override.example"
+    sentinel = {"User-Agent": "sentinel"}
+    pm.HOST_HEADERS[probe_host] = sentinel
+    try:
+        check("a host in HOST_HEADERS gets its override",
+              pm.headers_for("https://override.example/rss") is sentinel)
+        check("the netloc lookup is case-insensitive",
+              pm.headers_for("https://OVERRIDE.Example/x") is sentinel,
+              "a casing miss silently reverts the host to the shared default")
+        check("a path does not affect the lookup",
+              pm.headers_for("https://override.example/") is sentinel)
+    finally:
+        del pm.HOST_HEADERS[probe_host]
     check("any other host gets IR_HEADERS",
           pm.headers_for("https://ir.mara.com/feed") is pm.IR_HEADERS)
-    check("the netloc lookup is case-insensitive",
-          pm.headers_for("https://WWW.GlobeNewswire.COM/x") is gnw,
-          "a casing miss silently reverts the host to the losing bet")
-    check("a path does not affect the lookup",
-          pm.headers_for("https://www.globenewswire.com/") is gnw)
+    check("HOST_HEADERS IS EMPTY, so every host shares one header set",
+          pm.HOST_HEADERS == {},
+          "GlobeNewswire's override went when the default became its own UA")
+
+    # THE DEFAULT MUST NOT GO BACK TO A BROWSER STRING. It was Chrome/126
+    # until 2026-09-09, by which time it had aged into a signature that eight
+    # of nineteen hosts stalled on, with no commit to blame. A pinned browser
+    # version is a claim with an expiry date and no alarm on it, so this fails
+    # if a future block is "fixed" by pinning a newer one.
+    check("THE DEFAULT USER-AGENT IS NOT A BROWSER STRING",
+          "Mozilla/" not in pm.IR_AGENT and "Chrome/" not in pm.IR_AGENT,
+          "a pinned browser version decays; an identifying one does not")
+    check("the default User-Agent identifies the tool and a contact",
+          "InfraMonitor" in pm.IR_AGENT and "github.com" in pm.IR_AGENT)
 
     print("\nSTALENESS")
     import io as _io, time as _time, contextlib as _ctx

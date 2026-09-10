@@ -108,6 +108,7 @@ probe_spike_norm.py               maintenance: reproduce the spike normalisation
 probe_undated_items.py            maintenance: date material each IR source offers
 probe_cadence_corpus.py           maintenance: what a change to the cadence rule moves
 probe_lag_coverage.py             maintenance: is the published +/- figure honest
+probe_ir_headers.py               maintenance: does any IR host need a browser User-Agent
 loop_state.py                     loop harness: the state file, one writer
 loop_approval.py                  loop harness: has this irreversible action been authorised
 loop_verdict.py                   loop harness: validate a gate verdict, trusting none of it
@@ -151,6 +152,7 @@ grid_context.py                   grid demand and natural gas
 .github/workflows/probe-undated-items.yml  undated item census, manual only
 .github/workflows/regime.yml      filing regime census, manual only
 .github/workflows/baseline-test.yml  baseline rule test, manual only
+.github/workflows/probe-ir-headers.yml  IR header probe, manual only
 .github/workflows/failure-notice.yml  fires on a watched workflow finishing; posts failures to ops
 .github/workflows/workflow-list-gate.yml  fails a push that adds a workflow nothing watches
 .github/workflows/tests.yml       every module parses and imports, then the eight offline suites; on every push touching Python

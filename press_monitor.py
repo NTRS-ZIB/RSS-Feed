@@ -346,50 +346,78 @@ DRY_RUN = os.environ.get("DRY_RUN", "").strip().lower() in ("1", "true", "yes")
 SEC_USER_AGENT = os.environ.get("SEC_USER_AGENT", "").strip()
 STATE_FILE = Path(os.environ.get("STATE_FILE", "state.json"))
 
-# Several IR platforms sit behind WAFs that stall non-browser User-Agents
-# instead of returning an error, so this is the right default for most hosts.
-# IT IS NOT A GENERAL RULE: GlobeNewswire does exactly the reverse and stalls
-# this header set instead. See HOST_HEADERS above, and never assume a browser
-# UA is the safe choice for a new source without measuring it.
-IR_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-)
 # A BROWSER-LIKE USER-AGENT IS A PER-HOST BET, NOT A SAFE DEFAULT, AND LOSING
-# THE BET LOOKS LIKE AN OUTAGE RATHER THAN A REJECTION.
+# THE BET LOOKS LIKE AN OUTAGE RATHER THAN A REJECTION. That was learned twice,
+# and the second time inverted the answer: the default here is an IDENTIFYING
+# User-Agent, and was a browser string until 2026-09-09.
 #
-# GlobeNewswire stalls a browser-claiming request from this runner and answers
-# a plain one in a tenth of a second. Measured 2026-08-11 against both the org
-# feed and an ordinary release page, two URLs per case so the result could not
-# be read as being about feeds:
+# ROUND ONE, 2026-08-11. GlobeNewswire stalled a browser-claiming request from
+# this runner and answered a plain one in a tenth of a second. Measured against
+# both the org feed and an ordinary release page, two URLs per case so the
+# result could not be read as being about feeds:
 #
-#   Chrome/126 (what IR_AGENT sends)     ReadTimeout after 15s
-#   Chrome/140, browser Accept           ReadTimeout after 15s
-#   Firefox/131, browser Accept          ReadTimeout after 15s
-#   Feedly's UA                          ReadTimeout after 15s
-#   python-requests, curl, no UA at all  200 in 0.0-0.1s, 20 entries
-#   an identifying UA naming this tool   200 in 0.0s, 20 entries
+#   Chrome/126 (what IR_AGENT then sent)  ReadTimeout after 15s
+#   Chrome/140, browser Accept            ReadTimeout after 15s
+#   Firefox/131, browser Accept           ReadTimeout after 15s
+#   Feedly's UA                           ReadTimeout after 15s
+#   python-requests, curl, no UA at all   200 in 0.0-0.1s, 20 entries
+#   an identifying UA naming this tool    200 in 0.0s, 20 entries
 #
 # The reading is that a browser UA arriving from a datacenter IP with no
 # matching fingerprint scores worse than an honest non-browser client. BGDE's
 # feed was never dead: it served 20 entries throughout, to anyone not claiming
 # to be Chrome. It cost 22 hours of silent outage and five probe dispatches to
-# establish, because a stall is indistinguishable from a dead host.
+# establish, because a stall is indistinguishable from a dead host. The
+# conclusion drawn was a one-host exception, and that browser UAs remained
+# right for everyone else.
+#
+# ROUND TWO, 2026-09-09: THE EXCEPTION WAS THE RULE. Seven more hosts began
+# stalling the same Chrome/126 string between 13:00 and 17:05 UTC that day,
+# BKKT, IREN, VIP, ANY, CIFR, GLXY and BTDR, all on one investor-relations
+# platform. NOTHING IN THIS REPO CHANGED. The string aged into a blocked
+# signature: Chrome/126 was current when it was written and is about two years
+# stale now, which is what a WAF scoring browser versions treats as a bot. A
+# failure that arrives with no commit to blame is why the history explained
+# nothing. It cost three failed runs a day: a stalled feed burns 30s, then a
+# 90s retry, then a gap, so seven of them eat about 17 of the 55-minute budget
+# per pass and every pass died before finishing.
+#
+# Measured across all 19 feeds on 2026-09-09, changing ONLY the User-Agent and
+# leaving Accept, Accept-Language and Connection exactly as they were:
+#
+#   Chrome/126, as shipped   8 of 19 stall at 15s, 11 answer
+#   identifying UA           18 of 19 answer 200 in 0.1-0.4s
+#
+# The exception is ANY, HTTP 401, a feed already dead for unrelated reasons: it
+# refuses in 0.2s and costs no budget. NOT ONE HOST ON THIS ROSTER REQUIRES A
+# BROWSER UA, including GlobeNewswire, which answers the plain default with 20
+# entries in 0.2s. Re-derive with probe_ir_headers.py.
+#
+# A PINNED BROWSER UA DECAYS, and that is the durable lesson rather than the
+# behaviour of any one WAF. An identifying string stays true; a browser string
+# is a claim with an expiry date and no alarm on it.
 #
 # The identifying UA is chosen over curl or an absent header even though all
 # three work: it is what a host operator sees in their logs, and this repo
 # already identifies itself by name to the SEC for the same reason.
-GNW_HEADERS = {
-    "User-Agent": "InfraMonitor/1.0 (press release monitor; "
-                  "contact via github.com/NTRS-ZIB/RSS-Feed)",
-    "Accept": "*/*",
-}
+IR_AGENT = (
+    "InfraMonitor/1.0 (press release monitor; "
+    "contact via github.com/NTRS-ZIB/RSS-Feed)"
+)
 
-# One entry, because this is a bet per host and not a policy. Anything not
-# listed gets IR_HEADERS below, which several IR platforms genuinely require.
-HOST_HEADERS = {
-    "www.globenewswire.com": GNW_HEADERS,
-}
+# EMPTY SINCE 2026-09-09, and kept rather than deleted. Its one entry was
+# www.globenewswire.com, which needed the identifying UA back when the default
+# was a browser string. The default IS that UA now, so the override would set
+# what the host already gets, and an exception that changes nothing is a claim
+# that something is special when it is not.
+#
+# The MECHANISM stays because the next host that genuinely needs different
+# headers should get an entry here carrying its measurement, rather than a
+# change to the shared default. Being empty, it now matches nothing, which is
+# the shape this repo warns about: headers_for's lookup is exercised only by
+# the synthetic entry in test_press_monitor.py. Do not delete that test on the
+# grounds that the dict is empty.
+HOST_HEADERS = {}
 
 IR_HEADERS = {
     "User-Agent": IR_AGENT,

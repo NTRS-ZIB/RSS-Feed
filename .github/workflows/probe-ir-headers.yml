@@ -1,0 +1,45 @@
+name: Probe IR headers
+
+# Maintenance tool, not a component. Read-only: fetches each IR source twice,
+# once with the headers press_monitor ships and once with a browser
+# User-Agent, prints which stall, exits. No webhook, no state, no commit, no
+# schedule. It runs only when started by hand.
+#
+# Run it when a feed reads as dead without refusing, when adding an IR source,
+# and before changing press_monitor.IR_AGENT in either direction.
+#
+# WHY IT RUNS HERE RATHER THAN LOCALLY. The 2026-08-11 finding was that a
+# browser User-Agent scores worse FROM A DATACENTER IP, so a result from a home
+# connection can disagree with production and be right about the wrong network.
+# The runner is the network that matters.
+#
+# See probe_ir_headers.py and the comment above press_monitor.IR_AGENT.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        # press_monitor imports both at module scope, and this probe imports
+        # press_monitor so that it measures the SHIPPED headers rather than a
+        # copy that can drift from them.
+        run: pip install feedparser requests
+      - name: Probe
+        # Two fetches per target across 19 feeds and 6 non-feed URLs, each
+        # bounded by a 15s timeout, so a fully stalled roster is about 13
+        # minutes. Longer than that means something new, which is worth seeing
+        # rather than hiding behind a generous timeout.
+        timeout-minutes: 20
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: python -u probe_ir_headers.py
