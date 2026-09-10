@@ -454,32 +454,55 @@ def as_pct(text):
 
 
 def read_filing(cik, row):
-    """(signatories, percent, event_date, subject_cik) or None.
+    """(record, None) on success, or (None, reason) on failure.
+
+    THREE OUTCOMES USED TO SHARE ONE RETURN VALUE AND ONLY ONE OF THEM PRINTED.
+    A fetch or parse failure logged a line; a document that parsed but carried
+    no known reporting-person block returned the same bare None in silence, and
+    the caller could not tell them apart. A block-name rename at EDGAR hits
+    every filing at once, so the whole component would go quiet while the
+    per-company counts read normally and the run stayed green. That is this
+    repo's oldest shape: a pattern matching nothing looks exactly like one
+    whose matches never occur.
+
+    The no-block reason NAMES THE TAGS ACTUALLY PRESENT, because the useful
+    question after a rename is what the document calls them now, and answering
+    it by hand means downloading the filing again.
 
     `percent` is the LARGEST reported by any signatory. A group files one
     position; the members report overlapping slices of it, and the maximum is
     the group's stake rather than a sum, which would double-count.
+
+    `unnamed_blocks` counts reporting-person blocks whose NAME field is empty.
+    Those are skipped while the others are kept, so a group of five read as
+    three gets a different signature and can read as an ARRIVAL a year later.
+    NOBODY HAS EVER MEASURED THIS, which is why it is counted rather than acted
+    on: a guard built on an unmeasured case is a guess with a log line.
     """
     url = ARCHIVE.format(cik=int(cik), nodash=row["accession"].replace("-", ""),
                          doc=raw_xml_path(row["doc"]))
     try:
         root = ET.fromstring(sec_get(url, as_json=False))
     except Exception as e:                                      # noqa: BLE001
-        print(f"    {row['accession']}: {type(e).__name__}")
-        return None
+        return None, f"fetch or parse failed, {type(e).__name__}"
 
-    people, pcts = [], []
+    people, pcts, unnamed = [], [], 0
     for block_name, (n_tag, p_tag, _a) in VARIANTS.items():
         for b in (el for el in root.iter() if tag_of(el) == block_name):
             name = field(b, n_tag)
             if not name:
+                unnamed += 1
                 continue
             people.append(name)
             p = as_pct(field(b, p_tag))
             if p is not None:
                 pcts.append(p)
     if not people:
-        return None
+        present = sorted({tag_of(el) for el in root.iter()})
+        return None, ("no reporting-person block; tags present: "
+                      + ", ".join(present[:14])
+                      + (f" ...and {len(present) - 14} more"
+                         if len(present) > 14 else ""))
 
     ev = None
     for el in root.iter():
@@ -488,7 +511,8 @@ def read_filing(cik, row):
             break
     # The subject comes from the SAME document, so reading it costs no extra
     # request. See filing_subject for why it is scoped and case-insensitive.
-    return people, (max(pcts) if pcts else None), ev, subject_cik(root)
+    return {"people": people, "pct": (max(pcts) if pcts else None), "event": ev,
+            "subject": subject_cik(root), "unnamed_blocks": unnamed}, None
 
 
 def signature(people):
@@ -556,6 +580,28 @@ def classify(state, ticker, people, pct):
     if abs(pct - prev) < NOTABLE_MOVE_PCT:
         return None, prev, key
     return CHANGE, prev, key
+
+
+def suppressed_run(ticker, form, first_run, backfill, newly_watched,
+                   newly_forms, old_forms):
+    """Could an event from this filing reach the channel on THIS run?
+
+    THE WHOLE SAFETY OF THE UNREADABLE-FILING RULE RESTS ON THIS. A filing that
+    could not have posted anyway costs nothing extra by being marked seen: that
+    is exactly what happens today. One that COULD have posted must stay unseen
+    so it retries.
+
+    Module level rather than a closure inside main() so it can be tested. The
+    behaviour it guards is only reachable through main(), but the decision
+    itself does not have to be.
+
+    All three suppression axes, because all three end with the same outcome:
+    a cold start where the whole file is new, a company added to the roster
+    since the last run, and a form prefix this component started tracking since
+    the last run.
+    """
+    return bool(first_run or backfill or ticker in newly_watched
+                or newly_tracked(form, newly_forms, old_forms, str.startswith))
 
 
 def advances_baseline(kind, pct):
@@ -752,6 +798,10 @@ def main():
                                    "form types"))
     events, legacy_seen, measured = [], [], set()
     cross_roster, cross_offroster, no_subject = [], [], []
+    unreadable, unnamed_blocks = [], Counter()
+    fetched = classified = below_floor = 0
+    old_forms = set(state["forms"]) - newly_forms
+
 
     for ticker, (cik, name) in sorted(CIKS.items()):
         try:
@@ -778,11 +828,30 @@ def main():
 
         for row in sorted(fresh, key=lambda r: r["filed"]):
             time.sleep(REQUEST_GAP)
-            parsed = read_filing(cik, row)
+            fetched += 1
+            parsed, why = read_filing(cik, row)
             if parsed is None:
-                state["seen"].append(row["accession"])
+                # MARKED SEEN ONLY IF IT COULD NOT HAVE POSTED ANYWAY, and the
+                # naive fix is the one to avoid here. Moving this append below
+                # unconditionally reads as the obvious correction and is worse:
+                # `measured` and state["read"] are written the instant the
+                # SUBMISSIONS request returns, before any document is fetched,
+                # so a company whose index read fine is recorded established no
+                # matter how many of its documents failed. Leave those unseen
+                # and the company drops out of newly_watched on the next run,
+                # and its unreadable back catalogue posts one run after its
+                # suppression window closed: 2026-08-14 reached through a
+                # transient instead of a floor.
+                unreadable.append((ticker, row, why))
+                if suppressed_run(ticker, row["form"], first_run,
+                                   backfill, newly_watched, newly_forms,
+                                   old_forms):
+                    state["seen"].append(row["accession"])
                 continue
-            people, pct, ev, subject = parsed
+            people = parsed["people"]
+            pct, ev, subject = parsed["pct"], parsed["event"], parsed["subject"]
+            if parsed["unnamed_blocks"]:
+                unnamed_blocks[ticker] += parsed["unnamed_blocks"]
 
             # WHICH COMPANY IS THIS FILING ABOUT? EDGAR lists a 13D/G under
             # every reporting person's CIK as well as the subject's, and until
@@ -826,9 +895,11 @@ def main():
             if advances_baseline(kind, pct):
                 state["holders"][key] = pct
             if kind is None:
+                below_floor += 1
                 print(f"    {row['filed']} {people[0][:30]} "
                       f"{pct}% — below the {NOTABLE_MOVE_PCT}pt floor")
                 continue
+            classified += 1
             note = era_note(state, ticker, row["filed"]) if kind == ARRIVAL \
                 else None
             events.append((ticker, name, row, kind, people, pct, prev, ev,
@@ -912,6 +983,45 @@ def main():
         print(f"\n--- {embed['title']}")
         print(embed["description"])
         print(f"    {embed['footer']['text']}")
+
+    # THE RECONCILIATION, and the identity is the point rather than the counts.
+    # Every filing this run fetched has exactly one outcome, so they must sum.
+    # A block-name rename at EDGAR would move filings from `classified` into
+    # `unreadable` without changing a single per-company line, and nothing else
+    # in this component would notice: the counts stay normal, the run stays
+    # green, and the channel simply goes quiet. Reconciling the 2026-08-17 run
+    # by hand was the only way to know it had not happened.
+    outcomes = (classified + below_floor + len(unreadable) + len(cross_roster)
+                + len(cross_offroster) + len(no_subject))
+    print(f"\nread {fetched} filing(s): {classified} classified, "
+          f"{below_floor} below the floor, {len(unreadable)} unreadable, "
+          f"{len(cross_roster)} about another roster company, "
+          f"{len(cross_offroster)} about an off-roster company, "
+          f"{len(no_subject)} naming no subject")
+    if outcomes != fetched:
+        print(f"  RECONCILIATION FAILED: {outcomes} outcomes against "
+              f"{fetched} filings read. A filing has been counted twice or "
+              f"not at all, which means this summary cannot be trusted and "
+              f"neither can the ones above it.")
+    print(f"  block names tracked: {', '.join(sorted(VARIANTS))}")
+
+    if unreadable:
+        print(f"\n{len(unreadable)} filing(s) could not be read. Marked seen "
+              f"ONLY where this run would have suppressed the event anyway:")
+        for t, row, why in unreadable[:10]:
+            mark = "seen" if row["accession"] in set(state["seen"]) else "retry"
+            print(f"  {t} {row['form']} {row['filed']} {row['accession']} "
+                  f"[{mark}] {why}")
+        if len(unreadable) > 10:
+            print(f"  ...and {len(unreadable) - 10} more")
+    if unnamed_blocks:
+        total = sum(unnamed_blocks.values())
+        print(f"\n{total} reporting-person block(s) carried no name and were "
+              f"skipped: "
+              + ", ".join(f"{t} {n}" for t, n in sorted(unnamed_blocks.items())))
+        print("  The rest of the group was still read, so its signature is "
+              "short and could read as an arrival later. Never measured "
+              "before today; counted rather than acted on.")
 
     # EVERY SKIP ARM PRINTS. A filing dropped because it is about somebody
     # else is the right outcome, but a silent right outcome is the shape this

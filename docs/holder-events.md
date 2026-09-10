@@ -180,6 +180,71 @@ case where pruning is catastrophic rather than harmless.
 succeeds, which is the whole distinction: an empty result means the company
 has no 13D/G, an exception means this run does not know.
 
+## Three outcomes shared one bare `None`
+
+`read_filing` returned `None` for three different things and printed for only
+one of them:
+
+| Outcome | Before | Now |
+|---|---|---|
+| fetch or parse failed | one line, accession and exception class | a reason naming the exception |
+| parsed, no known reporting-person block | **silent** | a reason **naming the tags actually present** |
+| a block with an empty name field | **silent**, the rest of the group kept | counted per company |
+
+The middle one is the dangerous one. A block-name rename at EDGAR hits every
+filing at once, so the component would go quiet while the per-company counts
+read normally and the run stayed green. That is this repo's oldest shape: a
+pattern matching nothing looks exactly like one whose matches never occur. The
+reason names the tags present because the useful question after a rename is
+what the document calls them now, and answering it by hand means downloading
+the filing again.
+
+The third has **never been measured**. A group of five read as three gets a
+different signature and can read as an ARRIVAL a year later. It is counted
+rather than acted on: a guard built on an unmeasured case is a guess with a log
+line attached.
+
+### The reconciliation is the part that cannot be faked
+
+```
+read N filing(s): E classified, F below the floor, U unreadable,
+  C about another roster company, O about an off-roster company,
+  S naming no subject
+```
+
+Every filing fetched has exactly one outcome, so they must sum to `N`. When
+they do not, the run says so and says that the summaries above it cannot be
+trusted either. Reconciling the 2026-08-17 run by hand was the only way anyone
+knew a schema change had not already happened, and nothing in the component
+kept that arithmetic.
+
+## An unreadable filing is marked seen only if it could not have posted
+
+The accession used to be appended to `seen` before the failure check, so one
+bad HTTP response deleted a 13D/G event permanently. The same file had applied
+the opposite reasoning to a failed POST 110 lines later, with the comment "a
+failed post must not be marked seen or it is lost silently".
+
+**The obvious fix is worse than the bug.** Moving the append below the check
+unconditionally reads as the correction and is not: `measured` and
+`state["read"]` are written the instant the submissions request returns, before
+any document is fetched, so a company whose index read fine is recorded
+established however many of its documents failed. Leave those unseen and the
+company drops out of `newly_watched` on the next run, and its unreadable back
+catalogue posts one run after its suppression window closed. That is
+2026-08-14 reached through a transient instead of a floor.
+
+So the append is **paired** with `suppressed_run()`, which asks whether an
+event from this filing could have reached the channel on this run at all. All
+three suppression axes count, because all three end the same way: a cold start,
+a company added since the last run, and a form prefix newly tracked since the
+last run. If any holds, the filing is marked seen, because that costs exactly
+what today costs. Otherwise it stays unseen and retries.
+
+`suppressed_run` sits at module level rather than inside `main()` so it can be
+tested. The behaviour it guards is only reachable through `main()`; the
+decision does not have to be.
+
 ## `filings.recent` is a window, not the index
 
 EDGAR's `filings.recent` page holds roughly a thousand filings and rolls. For a

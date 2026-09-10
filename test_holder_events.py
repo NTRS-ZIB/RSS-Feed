@@ -520,6 +520,117 @@ def main():
         he.sec_get = saved_get
     check("A SHORT COLUMN YIELDS AN EMPTY FIELD, NOT AN IndexError", ok, why)
 
+    print("\nTHREE OUTCOMES, NOT ONE BARE None")
+    # A fetch failure logged a line; a document that parsed but held no known
+    # reporting-person block returned the SAME bare None in silence, and the
+    # caller could not tell them apart. A block-name rename at EDGAR hits every
+    # filing at once, so the component would go quiet while the per-company
+    # counts read normally and the run stayed green.
+    def as_get(xml):
+        def go(url, as_json=True):
+            if isinstance(xml, Exception):
+                raise xml
+            return xml
+        return go
+
+    row = {"accession": "0000950170-25-114068", "doc": "primary_doc.xml"}
+    saved = he.sec_get
+    try:
+        he.sec_get = as_get(RuntimeError("boom"))
+        rec, why = he.read_filing("0001964789", row)
+        check("A FETCH FAILURE NAMES THE EXCEPTION",
+              rec is None and "RuntimeError" in why, why)
+        fetch_why = why
+
+        he.sec_get = as_get(
+            "<edgarSubmission><formData><somethingElse>"
+            "<newBlockName>X</newBlockName></somethingElse>"
+            "</formData></edgarSubmission>")
+        rec, why = he.read_filing("0001964789", row)
+        check("A DOCUMENT WITH NO KNOWN BLOCK NAMES THE TAGS PRESENT",
+              rec is None and "newBlockName" in why,
+              "after a rename the useful question is what it is called now")
+        check("and it is distinguishable from a fetch failure",
+              why != fetch_why and "no reporting-person block" in why)
+
+        he.sec_get = as_get("""
+          <edgarSubmission><formData><coverPageHeader>
+            <issuerInfo><issuerCIK>0001755953</issuerCIK></issuerInfo>
+            <reportingPersonInfo>
+              <reportingPersonName>Hut 8 Corp.</reportingPersonName>
+              <percentOfClass>64.5</percentOfClass>
+            </reportingPersonInfo>
+            <reportingPersonInfo>
+              <reportingPersonName>U.S. Data Mining Group, Inc.</reportingPersonName>
+              <percentOfClass>12.0</percentOfClass>
+            </reportingPersonInfo>
+            <dateOfEvent>09/03/2025</dateOfEvent>
+          </coverPageHeader></formData></edgarSubmission>""")
+        rec, why = he.read_filing("0001964789", row)
+        check("a readable filing returns a record and no reason",
+              rec is not None and why is None)
+        check("THE PERCENT IS THE LARGEST SIGNATORY'S, NOT A SUM",
+              rec["pct"] == 64.5,
+              "the members report overlapping slices of one position; "
+              "76.5 would double-count")
+        check("the subject rides along from the same document",
+              rec["subject"] == 1755953)
+        check("the event date parses from the US format",
+              str(rec["event"]) == "2025-09-03")
+        check("both signatories are read", len(rec["people"]) == 2)
+
+        # A block with no name is skipped while the rest of the group is kept,
+        # so the signature comes out short. Never measured before today.
+        he.sec_get = as_get("""
+          <edgarSubmission><reportingPersonInfo>
+            <reportingPersonName></reportingPersonName>
+            <percentOfClass>5.0</percentOfClass>
+          </reportingPersonInfo><reportingPersonInfo>
+            <reportingPersonName>Real Holder LP</reportingPersonName>
+            <percentOfClass>6.0</percentOfClass>
+          </reportingPersonInfo></edgarSubmission>""")
+        rec, why = he.read_filing("0001964789", row)
+        check("AN UNNAMED BLOCK IS COUNTED, NOT IGNORED",
+              rec is not None and rec["unnamed_blocks"] == 1,
+              "the group reads short and could look like an arrival later")
+        check("and the named signatory is still read",
+              rec["people"] == ["Real Holder LP"])
+    finally:
+        he.sec_get = saved
+
+    print("\nAN UNREADABLE FILING IS ONLY MARKED SEEN IF IT COULD NOT POST")
+    # The naive fix, moving the append below the None check unconditionally,
+    # reads as the obvious correction and is worse: `measured` and state["read"]
+    # are written the instant the submissions request returns, so a company
+    # whose index read fine is recorded established however many documents
+    # failed. Its unreadable back catalogue would then post one run after the
+    # suppression window closed.
+    ARGS = dict(first_run=False, backfill=False, newly_watched=set(),
+                newly_forms=set(), old_forms={"SCHEDULE 13D", "SCHEDULE 13G"})
+    check("AN ORDINARY RUN LEAVES IT UNSEEN, so it retries",
+          he.suppressed_run("CORZ", "SCHEDULE 13D", **ARGS) is False)
+    check("a cold start marks it seen",
+          he.suppressed_run("CORZ", "SCHEDULE 13D", **{**ARGS, "first_run": True}))
+    check("a roster backfill marks it seen",
+          he.suppressed_run("CORZ", "SCHEDULE 13D", **{**ARGS, "backfill": True}))
+    check("A NEWLY WATCHED COMPANY MARKS IT SEEN",
+          he.suppressed_run("CORZ", "SCHEDULE 13D",
+                            **{**ARGS, "newly_watched": {"CORZ"}}),
+          "this is the 2026-08-14 axis, and the reason the append is paired")
+    check("another company being new does not",
+          he.suppressed_run("CORZ", "SCHEDULE 13D",
+                            **{**ARGS, "newly_watched": {"CRWV"}}) is False)
+    check("A NEWLY TRACKED FORM PREFIX MARKS IT SEEN",
+          he.suppressed_run("CORZ", "SCHEDULE 13G",
+                            **{**ARGS, "newly_forms": {"SCHEDULE 13G"},
+                               "old_forms": {"SCHEDULE 13D"}}),
+          "the capability axis, reached by editing a constant")
+    check("a form the PREVIOUS set already matched is not new",
+          he.suppressed_run("CORZ", "SCHEDULE 13D/A",
+                            **{**ARGS, "newly_forms": {"SCHEDULE 13D/A"},
+                               "old_forms": {"SCHEDULE 13D"}}) is False,
+          "adding 13D/A beside 13D adds no filings, so nothing may go quiet")
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0
