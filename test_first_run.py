@@ -136,11 +136,20 @@ def wiring():
 
 
 def event(ticker, form="SCHEDULE 13D"):
-    """A holder_events event tuple. Fields 0 and 2 are read by the filters,
-    but the arity has to match or the unpack in drop_newly_watched would pass
-    here and fail in production."""
-    return (ticker, "Name", {"form": form}, "ARRIVAL", ["A Holder"], 7.5,
-            None, None, None)
+    """A holder_events event record.
+
+    THE COMPONENT'S OWN TYPE, not a hand-rolled tuple. This used to build a
+    nine-element tuple and the docstring warned that "the arity has to match or
+    the unpack in drop_newly_watched would pass here and fail in production".
+    On 2026-09-10 exactly that happened, in the other direction: the component
+    grew a tenth field and a reader inside main() was left unpacking nine, so
+    every run with an event raised ValueError while this fixture stayed green.
+    Constructing the real record means a field added or renamed there fails
+    HERE, which is the whole point of the fixture.
+    """
+    return holder_events.Event(ticker, "Name", {"form": form}, "ARRIVAL",
+                               ["A Holder"], 7.5, None, None, None,
+                               f"{ticker}|A Holder")
 
 
 def per_component():
@@ -157,7 +166,8 @@ def per_component():
     events, per = holder_events.drop_newly_watched(
         [event("RIOT"), event("CORZ"), event("CORZ")], new)
     check("a newly watched company's events are dropped",
-          [e[0] for e in events] == ["RIOT"], f"kept {[e[0] for e in events]}")
+          [e.ticker for e in events] == ["RIOT"],
+          f"kept {[e.ticker for e in events]}")
     check("and are counted, per company", dict(per) == {"CORZ": 2})
     # The backfill: absent namespace, so nobody is new and nothing is held.
     kept, _ = holder_events.drop_newly_watched(
