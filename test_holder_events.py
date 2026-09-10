@@ -358,7 +358,10 @@ def main():
               "holders": {}, "era": {}, "read": {}}
         he.save_state(st)
         with open(os.environ["HOLDER_STATE"], encoding="utf-8") as fh:
-            written = json.load(fh)["seen"]
+            # .get, not [], for the same reason as everywhere else here: a
+            # mutation that writes an empty state would raise KeyError and
+            # take the harness down before any check could report.
+            written = json.load(fh).get("seen", [])
     finally:
         he.SEEN_CAP = saved_cap
         if os.path.exists(os.environ["HOLDER_STATE"]):
@@ -630,6 +633,68 @@ def main():
                             **{**ARGS, "newly_forms": {"SCHEDULE 13D/A"},
                                "old_forms": {"SCHEDULE 13D"}}) is False,
           "adding 13D/A beside 13D adds no filings, so nothing may go quiet")
+
+    print("\nA FAILED POST MUST LEAVE NO TRACE")
+    # Un-marking `seen` was only half of it. The baseline was already advanced
+    # for the event, so the retry re-reads the same filing as a zero-point move
+    # and drops it as sub-floor: un-marked, re-fetched, silently never posted.
+    # Inert until the workflow stopped discarding a failed run's state, which
+    # is why the two changed together.
+    row = {"accession": "ACC-1", "form": "SCHEDULE 13D", "filed": "2026-09-01"}
+    st = {"seen": ["OLD-1"], "holders": {"CORZ|Two Seas Capital LP": 6.0},
+          "era": {}, "read": {}}
+    before = json.dumps(st, sort_keys=True)
+    st["seen"].append("ACC-1")
+    st["holders"]["CORZ|Two Seas Capital LP"] = 9.0        # a CHANGE was built
+    he.undo_event(st, row, 6.0, "CORZ|Two Seas Capital LP")
+    check("the accession is un-marked", "ACC-1" not in st["seen"])
+    check("THE BASELINE GOES BACK TO WHAT IT PUBLISHED",
+          st["holders"]["CORZ|Two Seas Capital LP"] == 6.0,
+          "left at 9.0 the retry is a zero-point move and never posts")
+    check("STATE IS BYTE-IDENTICAL TO BEFORE THE EVENT",
+          json.dumps(st, sort_keys=True) == before,
+          "anything left behind is a difference the retry cannot see")
+
+    # An arrival had no key beforehand, so the key GOES rather than being set
+    # to None: a key present with a null value matches on the next run and
+    # classifies as a change against nothing.
+    st = {"seen": [], "holders": {}, "era": {}, "read": {}}
+    before = json.dumps(st, sort_keys=True)
+    st["seen"].append("ACC-2")
+    st["holders"]["NUAI|New Holder LP"] = 7.5
+    he.undo_event(st, {"accession": "ACC-2"}, None, "NUAI|New Holder LP")
+    check("AN ARRIVAL'S KEY IS REMOVED, NOT NULLED",
+          "NUAI|New Holder LP" not in st["holders"],
+          "a null-valued key matches next run and reads as a change")
+    check("and that state is byte-identical too",
+          json.dumps(st, sort_keys=True) == before)
+
+    print("\nTHE STATE FILE IS WRITTEN ATOMICALLY")
+    # always() on the persist step means a run killed mid-write now reaches
+    # `git add`. A truncated file commits, and the next run reads a JSON error
+    # and starts from nothing: a cold start reached by a clock.
+    path = os.environ["HOLDER_STATE"]
+    st = {"seen": ["A-1"], "holders": {}, "era": {}, "read": {}}
+    # Wrapped, and read with .get: the mutations that prove this one write
+    # truncated or empty content, and both would raise before the check could
+    # report. A mutation that crashes the harness has shown nothing.
+    back, leftovers, err = None, None, None
+    try:
+        he.save_state(st)
+        with open(path, encoding="utf-8") as fh:
+            back = json.load(fh)
+        leftovers = os.path.exists(path + ".tmp")
+    except Exception as e:                                      # noqa: BLE001
+        err = type(e).__name__
+    finally:
+        for f in (path, path + ".tmp"):
+            if os.path.exists(f):
+                os.remove(f)
+    check("the file reads back as JSON, with the state in it",
+          isinstance(back, dict) and back.get("seen") == ["A-1"],
+          err or f"got {back}")
+    check("NO TEMPORARY FILE IS LEFT BEHIND", not leftovers,
+          "os.replace is the rename that makes the write atomic")
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")

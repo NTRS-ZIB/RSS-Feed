@@ -56,10 +56,43 @@ jobs:
         run: python -u holder_events.py
 
       - name: Persist state
-        if: github.event_name == 'schedule'
+        # ALWAYS, and gated on the DRY RUN rather than on the EVENT. Two
+        # defects lived in the one line this replaces.
+        #
+        # A step `if:` containing no status-check function carries an implicit
+        # success(), so `github.event_name == 'schedule'` read as
+        # `success() && ...` and was SKIPPED whenever the python step failed.
+        # holder_events returns 1 on a partial post failure, so the whole run's
+        # state was discarded and every embed that HAD posted was reposted on
+        # the next run: the 2026-08-04 duplicate incident reached by a
+        # different route. pushpin.yml:114 already carries always() for the
+        # same reason.
+        #
+        # And the event test was the wrong question. DRY_RUN below resolves to
+        # inputs.dry_run on a dispatch, so unticking the box posted live to
+        # Discord and then never saved, guaranteeing a repost. Seven dispatches
+        # have run and all seven were dry, so this has never fired.
+        #
+        # `!inputs.dry_run` on a SCHEDULE is measured rather than assumed: the
+        # inputs context is unpopulated there, and snapshot.yml:56 carries the
+        # same expression on a scheduled workflow whose "Commit if changed"
+        # step reports `success` rather than `skipped` and whose snapshot.json
+        # is committed daily.
+        #
+        # SAFE ONLY BECAUSE holder_events.py CHANGED FIRST. always() is what
+        # puts a failed run's state on disk, so the failed-post path had to
+        # roll back the holders baseline as well as `seen`, and save_state had
+        # to become atomic, before this line could move.
+        if: ${{ always() && !inputs.dry_run }}
         run: |
           git config user.name "holder-bot"
           git config user.email "holder-bot@users.noreply.github.com"
+          # NEVER COMMIT A FILE WE CANNOT READ BACK. always() means this step
+          # now runs after a killed or failed python step, and a run stopped
+          # mid-write by the job timeout would otherwise commit a truncated
+          # state file, which the next run reads as a JSON error and treats as
+          # a cold start. save_state writes atomically; this is the second belt.
+          python -c "import json,sys; json.load(open('holder_state.json'))"             || { echo "holder_state.json is not readable JSON, refusing to commit" >&2; exit 1; }
           git add holder_state.json
           if git diff --cached --quiet; then
             echo "No state change."

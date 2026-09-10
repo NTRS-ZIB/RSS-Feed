@@ -333,7 +333,14 @@ def save_state(state):
     # now rather than urgent, and it is written down because nothing else
     # records it.
     state["seen"] = list(dict.fromkeys(state["seen"]))[-SEEN_CAP:]
-    STATE_FILE.write_text(json.dumps(state, indent=1, sort_keys=True))
+    # ATOMIC, because the workflow now persists after a FAILED step. A run
+    # killed by the job timeout mid-write would otherwise leave a truncated
+    # holder_state.json for `git add` to commit, and the next run would read a
+    # JSON error and start from an empty state: a cold start reached by a
+    # clock. write_text is not atomic; os.replace on the same filesystem is.
+    tmp = STATE_FILE.with_suffix(STATE_FILE.suffix + ".tmp")
+    tmp.write_text(json.dumps(state, indent=1, sort_keys=True))
+    os.replace(tmp, STATE_FILE)
 
 
 # ------------------------------------------------------------------- FETCH
@@ -602,6 +609,32 @@ def suppressed_run(ticker, form, first_run, backfill, newly_watched,
     """
     return bool(first_run or backfill or ticker in newly_watched
                 or newly_tracked(form, newly_forms, old_forms, str.startswith))
+
+
+def undo_event(state, row, prev, key):
+    """Undo everything an event wrote, so a failed post can be retried.
+
+    UN-MARKING `seen` WAS ONLY HALF OF IT. The baseline was already advanced
+    for this event, so on the retry the same filing re-reads as a zero-point
+    move and is dropped as sub-floor: un-marked, re-fetched, and silently never
+    posted. The comment that used to sit here said "a failed post must not be
+    marked seen or it is lost silently" and was right about the mechanism and
+    incomplete about the state.
+
+    `prev` is what the baseline held BEFORE this event, which is exactly what
+    restores it. It is None for an arrival and for a first sighting below the
+    threshold, and there the key did not exist beforehand, so the key goes
+    rather than being set to None: a key present with a null value would match
+    on the next run and classify as a change against nothing.
+
+    Inert until the workflow stopped discarding a failed run's state, which is
+    why the two changed together.
+    """
+    state["seen"].remove(row["accession"])
+    if prev is None:
+        state["holders"].pop(key, None)
+    else:
+        state["holders"][key] = prev
 
 
 def advances_baseline(kind, pct):
@@ -903,7 +936,7 @@ def main():
             note = era_note(state, ticker, row["filed"]) if kind == ARRIVAL \
                 else None
             events.append((ticker, name, row, kind, people, pct, prev, ev,
-                           note))
+                           note, key))
 
     # A NEWLY WATCHED COMPANY POSTS NOTHING, and unlike the cold-start rule
     # below this one filters in a DRY RUN too. The cold-start exception exists
@@ -1062,14 +1095,23 @@ def main():
         return 0
 
     posted = 0
-    for ticker, name, row, kind, people, pct, prev, ev, note in events:
+    for ticker, name, row, kind, people, pct, prev, ev, note, key in events:
         if post(build_embed(ticker, name, row, kind, people, pct, prev, ev,
                             note)):
             posted += 1
         else:
-            # State is saved regardless below, but a failed post must not be
-            # marked seen or it is lost silently.
-            state["seen"].remove(row["accession"])
+            # A FAILED POST MUST LEAVE NO TRACE, and un-marking `seen` was only
+            # half of that. The baseline was already advanced for this event,
+            # so on the retry the same filing re-reads as a zero-point move and
+            # is dropped as sub-floor: un-marked, re-fetched, and silently
+            # never posted.
+            #
+            # This was inert while the workflow discarded the whole run's state
+            # on a non-zero exit. The `always()` gate below is exactly what
+            # makes it reach disk, which is why the two had to change together:
+            # the gate alone converts today's bounded duplicate into permanent
+            # silent loss.
+            undo_event(state, row, prev, key)
     save_state(state)
     print(f"\nPosted {posted} of {len(events)}.")
     return 0 if posted == len(events) else 1

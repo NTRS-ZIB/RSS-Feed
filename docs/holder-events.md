@@ -180,6 +180,67 @@ case where pruning is catastrophic rather than harmless.
 succeeds, which is the whole distinction: an empty result means the company
 has no 13D/G, an exception means this run does not know.
 
+## The persist gate answered the wrong question, twice
+
+```yaml
+- name: Persist state
+  if: github.event_name == 'schedule'      # until 2026-09-10
+```
+
+**Two defects in one line.**
+
+A step `if:` containing no status-check function carries an implicit
+`success()`, so this read as `success() && github.event_name == 'schedule'` and
+was skipped whenever the python step failed. `holder_events` returns 1 on a
+partial post failure, so the whole run's state was discarded and every embed
+that *had* posted was reposted next run: the 2026-08-04 duplicate incident
+reached by a different route. `pushpin.yml:114` already carries `always()` for
+exactly this, documented there.
+
+And the event was the wrong test. `DRY_RUN` resolves to `inputs.dry_run` on a
+dispatch, so unticking the box posted live to Discord and then never saved,
+guaranteeing a repost. Seven dispatches have run and all seven were dry, so it
+has never fired.
+
+Now `if: ${{ always() && !inputs.dry_run }}`.
+
+**`!inputs.dry_run` on a schedule is measured, not assumed.** The `inputs`
+context is unpopulated on a scheduled event. `snapshot.yml:56` carries the same
+expression on a scheduled workflow, and its "Commit if changed" step reports
+`success` rather than `skipped` on scheduled runs while `snapshot.json` is
+committed daily. That is this repo's own evidence rather than the documentation.
+
+The implicit-`success()` half is **not** measured here, and cannot be from the
+run history: seven runs have failed in the repo's whole life and none was in a
+workflow with a conditional later step. It rests on GitHub's documentation and
+on `pushpin.yml`'s existing comment. The fix is correct either way, which is
+why it was safe to land without settling it: if the implicit `success()` is
+real, `always()` removes it; if it is not, `always()` changes nothing.
+
+### Three things had to change first
+
+`always()` is what puts a failed run's state on disk, so it is exactly what
+makes two dormant defects live. All three shipped together.
+
+- **`undo_event()` rolls back the baseline, not just `seen`.** A failed post
+  un-marked the accession and left `holders[key]` advanced, so the retry
+  re-read the same filing as a zero-point move and dropped it as sub-floor:
+  un-marked, re-fetched, and silently never posted. `prev` is what the baseline
+  held before the event, which is exactly what restores it. For an arrival
+  `prev` is `None` and the key did not exist, so the key is **removed** rather
+  than set to `None`: a null-valued key matches on the next run and classifies
+  as a change against nothing.
+- **`save_state` writes atomically.** A run killed by the job timeout mid-write
+  would otherwise leave a truncated file for `git add`, and the next run reads a
+  JSON error and starts from an empty state: a cold start reached by a clock.
+  `write_text` is not atomic, `os.replace` is.
+- **The workflow refuses to commit a file it cannot read back**, as a second
+  belt on the same failure.
+
+`digest.yml:121` carries the identical expression and is **not** exposed,
+because `digest_render.produce()` writes nothing when the post fails. Seven
+other state-writing workflows carry no `if:` at all and are unaffected.
+
 ## Three outcomes shared one bare `None`
 
 `read_filing` returned `None` for three different things and printed for only
