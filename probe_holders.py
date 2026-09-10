@@ -1175,7 +1175,7 @@ def phase_subjects():
 
     print("Reading every 13D/G under each roster CIK, paginated.\n")
 
-    for ticker, cik in sorted(ros.items()):
+    for ticker, (cik, _name) in sorted(ros.items()):
         try:
             rows, older, ragged = indexed(cik)
         except Exception as e:                                  # noqa: BLE001
@@ -1192,6 +1192,20 @@ def phase_subjects():
               f"{1 + len(older)} page(s), {len(structured)} structured "
               f"({recent} on the recent page, "
               f"{len(structured) - recent} only on older pages)")
+
+    # A CENSUS OVER NOTHING PRINTS AS GOOD NEWS. The first run of this phase
+    # unpacked roster() wrongly, all 22 index reads raised, and the sections
+    # below still ran and reported "0 filings are about another company" and
+    # "TOTAL unseen: 0". Both are what a clean bill of health looks like and
+    # both were measured over an empty set. So it refuses instead, which is
+    # the rule the components follow: an empty result and a failed fetch are
+    # different measurements and must never share an output.
+    if not per_ticker:
+        print("\nREFUSING TO SUMMARISE. No index could be read, so every "
+              "count below would be zero over an empty set, which reads "
+              "exactly like "
+              "a clean bill of health. Fix the errors above and re-run.")
+        return
 
     print()
     for ticker, rec in sorted(per_ticker.items()):
@@ -1224,6 +1238,13 @@ def phase_subjects():
     if docs_read >= MAX_DOCS:
         print(f"HIT THE {MAX_DOCS}-DOCUMENT CEILING. Every count below is a "
               f"floor, not a census. Re-run with a higher HOLDERS_MAX_DOCS.\n")
+
+    if not docs_read:
+        print("\nREFUSING TO SUMMARISE. Indexes were read but NO document "
+              "was fetched, so the subject census below would be empty and "
+              "would read as nothing is misattributed. That is the opposite "
+              "of what it would mean.")
+        return
 
     # ------------------------------------------------------------ structure
     print("=" * 70)
@@ -1450,7 +1471,7 @@ def phase_subjects():
 
 def main():
     print(f"phase: {PHASE}   roster: "
-          f"{', '.join(sorted(roster())) if ONLY else 'all 19'}\n")
+          f"{', '.join(sorted(roster())) if ONLY else f'all {len(roster())}'}\n")
     {"inventory": phase_inventory,
      "structured": phase_structured,
      "legacy": phase_legacy,
