@@ -1403,9 +1403,42 @@ def phase_subjects():
                 disagree += 1
     print(f"\n  filings where subject is self: {agree}, "
           f"where it is another company: {disagree}, no file number: {unknown}")
-    print("  Read the file numbers above: if every mismatch carries a DIFFERENT")
-    print("  005- number from the roster company's own filings, it separates")
-    print("  them. If they collide, it does not, and the document fetch stays.")
+    # PER ROW, NOT PER AGGREGATE. The three counts above are consistent with
+    # "every filing lacking a 005- file number is one filed ABOUT SOMEBODY
+    # ELSE", and that is a deduction from totals rather than a measurement of
+    # the rows. Believing it on that basis would be the trap this repo names:
+    # a number true about something adjacent to the question is not an answer
+    # to the question. So the two sets are compared element by element, and
+    # BOTH asymmetric differences are named, because each refutes the rule in a
+    # different direction.
+    no_fn = set()
+    for _t, rec in sorted(per_ticker.items()):
+        for r in rec["read"]:
+            if r.get("error") or not r["issuer_hits"]:
+                continue
+            if not (r.get("file_no") or "").strip():
+                no_fn.add(r["accession"])
+    mismatch_accs = {r["accession"] for _t, _m, _s, r in mismatches}
+    print(f"\n  accessions with NO file number: {len(no_fn)}")
+    print(f"  accessions read under the wrong company: {len(mismatch_accs)}")
+    print(f"  IDENTICAL SETS: {no_fn == mismatch_accs}")
+    only_fn = sorted(no_fn - mismatch_accs)
+    only_mm = sorted(mismatch_accs - no_fn)
+    if only_fn:
+        print(f"  no file number but CORRECTLY attributed ({len(only_fn)}), so "
+              f"absence does not imply misattribution:")
+        for a in only_fn[:10]:
+            print(f"    {a}")
+    if only_mm:
+        print(f"  misattributed but HAS a file number ({len(only_mm)}), so a "
+              f"file number does not imply correctness:")
+        for a in only_mm[:10]:
+            print(f"    {a}")
+    if no_fn == mismatch_accs and no_fn:
+        print("  On this corpus the two are the same set. That is a "
+              "measurement of 350")
+        print("  filings on one day, not a guarantee about how EDGAR fills "
+              "the field.")
 
     if index_keys:
         print(f"\n  submissions recent keys: {index_keys}")
