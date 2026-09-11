@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-10T22:47:38+00:00",
+  "generated": "2026-09-11T14:42:18+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -464,7 +464,7 @@
     },
     "BGDE": {
       "cik": "0001218683",
-      "filing_count": 733,
+      "filing_count": 734,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-037417",
@@ -492,12 +492,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026045631/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0000912282-26-001201",
-          "count": 136,
-          "filed": "2026-09-02",
+          "accession": "0000912282-26-001260",
+          "count": 137,
+          "filed": "2026-09-10",
           "form": "4",
-          "period": "2026-08-28",
-          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000091228226001201/xslF345X06/form4.xml"
+          "period": "2026-09-09",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000091228226001260/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -584,7 +584,7 @@
         "OphthaliX, Inc.",
         "DENALI CONCRETE MANAGEMENT INC"
       ],
-      "latest_filing_date": "2026-09-02",
+      "latest_filing_date": "2026-09-10",
       "name": "Big Digital Energy, Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -993,7 +993,7 @@
     },
     "CLSK": {
       "cik": "0000827876",
-      "filing_count": 770,
+      "filing_count": 774,
       "filings": {
         "10-K": {
           "accession": "0001193125-25-297510",
@@ -1021,12 +1021,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/827876/000095017024113822/xslF345X02/ownership.xml"
         },
         "4": {
-          "accession": "0001193125-26-386880",
-          "count": 240,
-          "filed": "2026-09-09",
+          "accession": "0001193125-26-388317",
+          "count": 244,
+          "filed": "2026-09-10",
           "form": "4",
-          "period": "2026-09-04",
-          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526386880/xslF345X06/ownership.xml"
+          "period": "2026-06-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526388317/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -1111,7 +1111,7 @@
         "STRATEAN INC.",
         "SMARTDATA CORP"
       ],
-      "latest_filing_date": "2026-09-09",
+      "latest_filing_date": "2026-09-10",
       "name": "CLEANSPARK, INC.",
       "off_docket_13dg": 0,
       "projection": {
@@ -1271,7 +1271,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1111,
+      "filing_count": 1114,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1299,12 +1299,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000155/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0001769628-26-000416",
-          "count": 460,
-          "filed": "2026-09-03",
+          "accession": "0001769628-26-000419",
+          "count": 463,
+          "filed": "2026-09-10",
           "form": "4",
-          "period": "2026-09-01",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000416/xslF345X06/form4.xml"
+          "period": "2026-09-08",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000419/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1367,7 +1367,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-09-08",
+      "latest_filing_date": "2026-09-10",
       "name": "CoreWeave, Inc.",
       "off_docket_13dg": 5,
       "projection": {
