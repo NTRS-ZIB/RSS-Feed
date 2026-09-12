@@ -21,6 +21,8 @@ names. The mutation that reddens each group is written above it; the sweep is
 in the docstring of `main` at the bottom.
 """
 
+import contextlib
+import io
 import os
 import sys
 from datetime import date
@@ -213,14 +215,33 @@ def run():
     # Mutation: `out.sort(key=lambda t: t[0], reverse=True)` — by PERIOD, which
     # is build_snapshot's order. The two components are supposed to read the
     # same index two ways; adopting the other's order here merges them silently.
-    # An amended filing submitted late for an old period is what separates them,
-    # so that is the fixture.
-    serve(page(("10-Q", "2025-03-31", "2026-08-20"),     # late amendment
+    #
+    # THE SEPARATING CASE IS A LATE-FILED ORIGINAL, NOT AN AMENDMENT, and the
+    # distinction is not pedantry: PERIODIC_FORMS is exact-membership, so
+    # `10-Q/A` is filtered out of BOTH callers by rows_from and never reaches
+    # either ordering. `filing_cadence`'s own docstring argues the split from
+    # the amendment case, which the code cannot see. A delinquent filer
+    # catching up on an old period is the case that actually reaches here.
+    serve(page(("10-Q", "2025-03-31", "2026-08-20"),     # delinquent, caught up late
                ("10-Q", "2026-06-30", "2026-08-12")), None)
     order = ec.periodic_filings("0001769628").filings
     check("SORTED BY FILED DATE, NOT BY PERIOD",
           [r[0] for r in order] == [date(2025, 3, 31), date(2026, 6, 30)],
           f"got periods {[str(r[0]) for r in order]}; by period this reverses")
+
+    # Mutation: DELETE the `out.sort(...)` line. The check above cannot catch
+    # that — its fixture is already filed-descending as EDGAR returns it, so
+    # removing the sort leaves it untouched. Measured: with the sort line gone,
+    # all 27 other checks stayed green. An unfalsifiable line is the same
+    # finding as a check that cannot fail, so this fixture arrives ASCENDING.
+    serve(page(("10-Q", "2025-06-30", "2025-08-13"),     # oldest first
+               ("10-Q", "2026-03-31", "2026-05-08"),
+               ("10-Q", "2026-06-30", "2026-08-12")), None)
+    unsorted = ec.periodic_filings("0001769628").filings
+    check("A PAGE ARRIVING OUT OF ORDER IS SORTED, NOT TRUSTED",
+          [r[1] for r in unsorted] == [date(2026, 8, 12), date(2026, 5, 8),
+                                       date(2025, 8, 13)],
+          f"got {[str(r[1]) for r in unsorted]}")
 
     print("\nTHE RATE GAP IS PAID ON EVERY PATH")
     # Mutation: move `time.sleep(REQUEST_GAP)` out of the `finally` and back
@@ -293,13 +314,36 @@ def run():
           read.filings == [] and read.complete is False)
 
     # Mutation: delete the `complete` field / always return True. An empty
-    # index is a MEASUREMENT — this company has filed nothing periodic — and
-    # must not share a label with a read that failed.
+    # RECENT page is a MEASUREMENT — this company has filed nothing periodic —
+    # and must not share a label with a read that failed.
     serve(page(), None)
     read = ec.periodic_filings("0001769628")
     check("AN EMPTY INDEX IS COMPLETE, and a failed one is not",
           read.filings == [] and read.complete is True,
           "0 filings read is a fact about the company; a failure is not")
+
+    # Mutation: `if page is None:` — the narrower guard this replaced.
+    #
+    # AN EMPTY OLDER PAGE IS THE OPPOSITE MEASUREMENT, and reading it the same
+    # way was a real defect in the paging fix rather than a hypothetical: the
+    # page is listed only because `recent` overflowed into it, so it holds
+    # filings by construction. Until this guard, an older page coming back as
+    # `{}` returned complete=True with its filings silently absent — the exact
+    # silent partial the `complete` flag was added to make impossible, one
+    # branch further in.
+    # Through `attempt` on both, because the narrower `is None` guard does not
+    # merely mis-answer these — it hands a list to rows_from and raises, and a
+    # mutation that crashes the harness has shown nothing.
+    serve(CRWV_RECENT, {})
+    read, raised = attempt(ec.periodic_filings, "0001769628")
+    check("AN OLDER PAGE WITH NO FILINGS IS A FAILED READ",
+          raised is None and read == ec.Read([], False),
+          f"raised {raised!r}" if raised else f"got {read}")
+    serve(CRWV_RECENT, [{"not": "an index"}])
+    read, raised = attempt(ec.periodic_filings, "0001769628")
+    check("and so is one that is not an object at all",
+          raised is None and read == ec.Read([], False),
+          f"raised {raised!r}" if raised else f"got {read}")
 
     print("\nTHE POST KEEPS THE TWO APART")
     # Mutation: `if unread:` -> `if False:`, or fold unread into `missing`.
@@ -318,6 +362,48 @@ def run():
     only_unread = post_description(missing=[], unread=["CRWV"])
     check("no floor line when nothing was thin",
           "Too few periodic filings" not in only_unread)
+
+    print("\nONE BAD PAYLOAD DOES NOT COST THE REST THEIR POST")
+    # Mutation: delete the try/except around `periodic_filings(cik)` in main().
+    #
+    # `periodic_filings` reaches into whatever the response body parsed to, so
+    # a payload that is a list or a string rather than an object raises
+    # AttributeError straight out of the company loop. Without the guard that
+    # ends the run, and the other 21 companies lose their row over one bad
+    # response. holder_events and build_snapshot both wrap their index read per
+    # company; this one did not until 2026-09-12.
+    #
+    # DRIVEN THROUGH main(), because the guard lives there and nothing else
+    # reaches it — the reason this component went so long with the floor note
+    # untested too.
+    good = {"filings": {"recent": CRWV_RECENT}}
+
+    def two_companies(url):
+        if "0000000001" in url:
+            return [{"not": "an index"}]      # raises inside periodic_filings
+        return good
+
+    out, real = io.StringIO(), (ec.COMPANIES, ec.DRY_RUN, ec.sec_get)
+    ec.COMPANIES = {"BAD": ("0000000001", "Bad Payload Inc"),
+                    "OK": ("0001769628", "CoreWeave")}
+    ec.DRY_RUN, ec.sec_get = True, two_companies
+    try:
+        with contextlib.redirect_stdout(out):
+            ec.main()
+        printed, blew_up = out.getvalue(), None
+    except BaseException as e:                  # SystemExit included
+        printed, blew_up = out.getvalue(), e
+    finally:
+        ec.COMPANIES, ec.DRY_RUN, ec.sec_get = real
+
+    check("THE RUN SURVIVES A COMPANY WHOSE PAYLOAD IS THE WRONG SHAPE",
+          blew_up is None, f"raised {blew_up!r}")
+    check("the good company still projects", "CoreWeave" in printed
+          or "Fri 13 Nov" in printed or "1 projected" in printed,
+          "so the failure cost it nothing")
+    check("and the bad one is reported as unread, not as thin history",
+          "unread this run" in printed and "BAD" in printed
+          and "BAD 0/" not in printed)
 
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")

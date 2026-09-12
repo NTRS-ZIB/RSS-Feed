@@ -105,6 +105,21 @@ the run does not know what it did not read. Before this change `[]` meant both,
 and two comments in `main()` said so and worked around it by refusing to state
 a cause.
 
+Two guards make that promise real, and both were added after an adversarial
+review found the first version did not keep it:
+
+- **An older page with no `form` array is a failed read, not an empty one.**
+  It is listed in `filings.files` only because `recent` overflowed into it, so
+  it holds filings by construction. An `is None` check was not enough: a `{}`
+  body returned `complete=True` with the older filings silently absent, which
+  is the exact silent partial the flag exists to prevent, one branch further
+  in.
+- **The index read is wrapped per company**, the way `holder_events` and
+  `build_snapshot` both wrap theirs. `periodic_filings` reaches into whatever
+  the body parsed to, so a payload that is a list rather than an object raised
+  `AttributeError` out of the company loop and would have ended the run,
+  costing the other 21 companies their row over one bad response.
+
 ## Critical: annual and quarterly lags must never be pooled
 
 Annual reports are filed 60–90 days after fiscal year end; quarterlies around

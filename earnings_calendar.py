@@ -168,7 +168,14 @@ def rows_from(block):
         # `covers_a_period` here as well as inside `cadence`, so the count
         # this component prints and the count it reports against the floor
         # ("SPCX 1/2") describe the same filings the decision used.
-        if rd and fd and fd >= rd and covers_a_period(rd):
+        #
+        # This read `if rd and fd and fd >= rd and ...` until 2026-09-12. The
+        # first two clauses could not be False: date.fromisoformat raises for
+        # "" and for None three lines above and is caught there, and every date
+        # it returns is truthy. They read as a guard, no mutation could redden
+        # them, and a clause that cannot fail is worse than no clause because
+        # the next reader budgets for it.
+        if fd >= rd and covers_a_period(rd):
             out.append((rd, fd, form))
     return out
 
@@ -248,7 +255,18 @@ def periodic_filings(cik):
     out = rows_from(filings.get("recent") or {})
     for extra in filings.get("files") or []:
         page = sec_get(OLDER.format(name=extra.get("name") or ""))
-        if page is None:
+        # AN OLDER PAGE WITH NO `form` ARRAY IS A FAILED READ, NOT AN EMPTY
+        # ONE, and the distinction is the whole point of `complete`. The page
+        # is listed in `filings.files` because `recent` overflowed into it, so
+        # it holds filings by construction; one that came back without them did
+        # not come back. `{}` returned complete=True until this guard existed —
+        # the silent partial this return shape is supposed to make
+        # unrepresentable, still representable, one branch further in.
+        #
+        # Wider than `is None` deliberately: sec_get returns whatever the body
+        # parsed to, and EDGAR serving an error document as JSON gives a dict
+        # with no `form`, or a list, neither of which is None.
+        if not isinstance(page, dict) or not page.get("form"):
             return Read([], False)
         out += rows_from(page)
     # NEWEST FIRST BY CONSTRUCTION, not by assumption about how EDGAR orders
@@ -535,7 +553,19 @@ def main():
     filing_counts = {}
     for label, (cik, name) in COMPANIES.items():
         print(f"  {label}...")
-        read = periodic_filings(cik)
+        # PER COMPANY, the way holder_events and build_snapshot both wrap their
+        # index read. `periodic_filings` reaches into whatever the body parsed
+        # to, and a payload that is a list or a string rather than an object
+        # raises AttributeError out of this loop — which today would end the
+        # run and cost the other 21 companies their post, over one bad
+        # response. Demonstrated: sec_get returning `[{"a": 1}]` raises.
+        try:
+            read = periodic_filings(cik)
+        except Exception as e:                  # noqa: BLE001 - one bad payload
+            print(f"    {type(e).__name__} while reading the index; "
+                  f"no projection attempted")
+            unread.append(label)
+            continue
         if not read.complete:
             # NOT `missing`. That line says "too few periodic filings", which
             # is a claim about the company; this is a claim about the run.
