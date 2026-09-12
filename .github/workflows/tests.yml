@@ -58,7 +58,7 @@ jobs:
               sys.exit("Not run by this workflow: " + ", ".join(missing))
           print("All %d suites are run." % len(run))
           PY
-      # Only fourteen files have suites. These two steps cover all 62, cheaply,
+      # Only fifteen files have suites. These two steps cover all 62, cheaply,
       # and run first because they are the broader check: daily_recap.py is
       # loaded by no suite, directly or transitively, so before this a typo in
       # it merged green. TWENTY-THREE modules are in that position, and the
@@ -140,6 +140,8 @@ jobs:
         run: python -u test_pushpin.py
       - name: holder_events
         run: python -u test_holder_events.py
+      - name: earnings_calendar
+        run: python -u test_earnings_calendar.py
       # NOT A SUITE, and the reason is the same one the cadence branch check
       # below carries: on the only component that destroys, a green suite is
       # not evidence. This applies each of the fourteen named one-line changes

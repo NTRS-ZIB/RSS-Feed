@@ -20,6 +20,7 @@ import os
 import statistics
 import sys
 import time
+from collections import namedtuple
 from datetime import date, datetime, timedelta, timezone
 
 import requests
@@ -92,39 +93,68 @@ SEC_USER_AGENT = os.environ.get("SEC_USER_AGENT", "").strip()
 DRY_RUN = os.environ.get("DRY_RUN", "").strip().lower() in ("1", "true", "yes")
 
 SUBMISSIONS = "https://data.sec.gov/submissions/CIK{cik}.json"
+# The older index pages `filings.files` names. `filings.recent` is a rolling
+# window, not the index; see periodic_filings().
+OLDER = "https://data.sec.gov/submissions/{name}"
+
+# Paid after EVERY request, including the ones that fail. SEC's fair-access
+# limit is 10 req/sec; this run makes 27.
+REQUEST_GAP = 0.15
 
 UP, AMBER, FLAT = 0x3FB950, 0xD29922, 0x8B949E
 
 
 def sec_get(url):
     try:
-        r = requests.get(url, timeout=(10, 30), headers={
-            "User-Agent": SEC_USER_AGENT,
-            "Accept-Encoding": "gzip, deflate",
-        })
-    except requests.RequestException as e:
-        print(f"    {type(e).__name__}")
-        return None
-    if r.status_code != 200:
-        print(f"    HTTP {r.status_code}")
-        return None
-    time.sleep(0.15)          # stay well under SEC's 10 req/sec
-    try:
-        return r.json()
-    except ValueError:
-        print("    unparseable JSON")
-        return None
+        try:
+            r = requests.get(url, timeout=(10, 30), headers={
+                "User-Agent": SEC_USER_AGENT,
+                "Accept-Encoding": "gzip, deflate",
+            })
+        except requests.RequestException as e:
+            print(f"    {type(e).__name__}")
+            return None
+        if r.status_code != 200:
+            print(f"    HTTP {r.status_code}")
+            return None
+        try:
+            return r.json()
+        except ValueError:
+            print("    unparseable JSON")
+            return None
+    finally:
+        # ON EVERY PATH, AND THE FAILURES ARE THE ONES THAT NEEDED IT. The gap
+        # used to be paid only after a 200, so a transport error or a non-200
+        # returned immediately and the next company was requested with no wait
+        # at all. That is backwards: the case where this component fires a
+        # burst at SEC is precisely the case where every request is failing.
+        # A wrong SEC_USER_AGENT returns 403 from every sec.gov endpoint, so
+        # the whole roster fails in a row, and paging makes that 27 requests
+        # rather than 22.
+        time.sleep(REQUEST_GAP)
 
 
-def periodic_filings(cik):
-    """[(reportDate, filingDate, form), ...] newest first, periodic forms only."""
-    data = sec_get(SUBMISSIONS.format(cik=cik))
-    if not data:
-        return []
-    recent = (data.get("filings") or {}).get("recent") or {}
-    forms = recent.get("form") or []
-    filed = recent.get("filingDate") or []
-    period = recent.get("reportDate") or []
+# NAMED, NOT POSITIONAL, and for the reason build_snapshot.Row carries the
+# same note: on 2026-09-10 a plain tuple in holder_events gained a field, one
+# of its two readers kept unpacking the old width, and every live run raised
+# ValueError while four green dry runs missed it. `complete` was added to this
+# return on 2026-09-12. A field added to a namedtuple cannot silently break a
+# reader.
+Read = namedtuple("Read", "filings complete")
+
+
+def rows_from(block):
+    """[(period_end, filed, form)] for the periodic filings on one index page.
+
+    INDEX ORDER IS PRESERVED AND THAT IS LOAD-BEARING. `cadence` truncates its
+    lag pool positionally at LAG_SAMPLE and documents that the caller owns the
+    order, because this component passes EDGAR's arrays newest-first by FILED
+    date while build_snapshot sorts by PERIOD. Sorting here would silently move
+    every median this component publishes.
+    """
+    forms = block.get("form") or []
+    filed = block.get("filingDate") or []
+    period = block.get("reportDate") or []
 
     out = []
     for i, form in enumerate(forms):
@@ -141,6 +171,102 @@ def periodic_filings(cik):
         if rd and fd and fd >= rd and covers_a_period(rd):
             out.append((rd, fd, form))
     return out
+
+
+def periodic_filings(cik):
+    """Read(filings, complete) — every periodic filing on the index, newest first.
+
+    `filings.recent` IS A ROLLING WINDOW, NOT THE INDEX. It holds roughly the
+    newest thousand filings, and for an issuer that files a lot of Form 4s that
+    window can be shorter than the cadence history this component projects
+    from. This read only that page until 2026-09-12, and the loss was live:
+
+      CRWV's recent page holds 1001 filings reaching back only to 2025-07-31,
+      because 460 of them are Form 4s. Its 10-Q for period 2025-03-31, filed
+      2025-05-15, accession 0001769628-25-000014, sits on the older page. That
+      filing's lag is 45 days, THE LONGEST of its five, so dropping it pulled
+      the published median down and the range in:
+
+          unpaged  lags [43, 38, 44, 44]      median 43  range 6  sample 4
+          paged    lags [43, 38, 44, 44, 45]  median 44  range 7  sample 5
+
+      and this component posted `expected 2026-11-12` to Discord while
+      `snapshot.json` — built by build_snapshot, which has paged all along —
+      published 2026-11-13 off the same index. Two components answering the
+      same question from the same source and disagreeing, with the untested one
+      wrong, is the exact shape CLAUDE.md names.
+
+    MEASURED ACROSS THE ROSTER, 2026-09-12, recent-only against paged
+    (probe_earnings_paging.py, all 22 companies read, no page failures):
+
+      * five companies have a second index page: CRWV, MARA, RIOT, SLNH, WULF
+      * ONE published row moves, CRWV's, exactly as above. The other four gain
+        8, 19, 51 and 5 periodic filings and publish IDENTICAL rows, because
+        each already had LAG_SAMPLE=8 on the recent page and `pool[:LAG_SAMPLE]`
+        takes the same eight either way
+
+    CRWV IS NOT SPECIAL, AND THE RULE IS WORTH MORE THAN THE CASE. A company is
+    exposed when BOTH hold: its selected pool is under LAG_SAMPLE, and it has a
+    second index page. Positional truncation makes everything else invisible —
+    SLNH gains 51 periodic filings and publishes the same row. Measured over
+    BOTH pools for all 22, annual and quarterly separately, exactly one moved
+    and exactly one gained filings while under the floor, and they are the same
+    pool. Today's roster puts every company on the quarterly branch, so the
+    annual arm was measured directly rather than inferred from the post: RIOT,
+    MARA and SLNH gain 4, 2 and 12 annual filings and their annual median,
+    range and fiscal-year-end month are unchanged.
+
+    The rule is what to re-check when the roster changes. A new listing starts
+    under LAG_SAMPLE by definition, and it becomes exposed the moment it also
+    acquires a second page.
+      * no row APPEARS and none DISAPPEARS, so this cannot flood the post the
+        way a roster addition does
+      * the `±` column does not move even for CRWV: it prints `spread // 2`,
+        and 7 // 2 == 6 // 2 == 3. The range is nowhere near
+        LOW_CONFIDENCE_SPREAD = 30, so no `~` moves and no confidence flips
+      * the newest-first-by-filed-date order HOLDS over the concatenated list
+        for all 22, so `cadence`'s positional truncation still sees what it
+        was written to see
+
+    WHY A FAILED OLDER PAGE RETURNS NOTHING RATHER THAN A SHORT LIST. A
+    partial read still projects, and it projects the pre-fix number without
+    saying so — the defect above, reappearing on any transient failure with no
+    log line. Both siblings already refuse this: holder_events.sec_get raises,
+    and build_snapshot catches per company and skips it. `complete` is False so
+    main() can report the company as a SOURCE FAILURE rather than as thin
+    history, which CLAUDE.md requires be different lines. That distinction was
+    impossible before this change: `[]` meant both, and two comments in main()
+    said so and worked around it by refusing to state a cause.
+
+    Five extra requests per run across the roster, one per company with a
+    second page, each behind the 0.15s gap sec_get already takes.
+    """
+    data = sec_get(SUBMISSIONS.format(cik=cik))
+    if not data:
+        return Read([], False)
+    filings = (data.get("filings") or {})
+    out = rows_from(filings.get("recent") or {})
+    for extra in filings.get("files") or []:
+        page = sec_get(OLDER.format(name=extra.get("name") or ""))
+        if page is None:
+            return Read([], False)
+        out += rows_from(page)
+    # NEWEST FIRST BY CONSTRUCTION, not by assumption about how EDGAR orders
+    # its pages. `cadence` truncates pool[:LAG_SAMPLE] positionally and takes
+    # the caller's order as given, so what that order IS has to be a fact about
+    # this function rather than about a page layout nobody here controls. The
+    # concatenation happens to arrive ordered for all 22 companies today
+    # (probe_earnings_paging.py checks it explicitly and it held), so this sorts
+    # nothing at present; that is the point. "A default sort is not a date sort,
+    # and document order is not date order" is a trap this repo has already paid
+    # for once, on DGXX's CMS returning an eight-month-old item first.
+    #
+    # By FILED date, never by period. Sorting by period is build_snapshot's
+    # order, deliberately different, and adopting it here would silently merge
+    # two components that are supposed to read the same index two ways.
+    # Python's sort is stable, so filings sharing a date keep index order.
+    out.sort(key=lambda t: t[1], reverse=True)
+    return Read(out, True)
 
 
 def project(label, name, filings):
@@ -347,7 +473,13 @@ def build_message(rows, announced=None):
     return "\n".join(lines)
 
 
-def post(text, missing):
+def post(text, missing, unread):
+    # `unread` IS REQUIRED, WITHOUT A DEFAULT, and that is deliberate. Given
+    # one, a future caller that forgets the third argument drops the
+    # source-failure line from the embed while the console still prints it —
+    # the run looks complete to the reader and correct to whoever is watching
+    # the log. The two places that must agree are a function signature apart,
+    # so let the signature enforce it.
     desc = ("Projected from each company's own filing history — period end plus "
             "its median filing lag. These are estimates, not announced dates; "
             "the ± figure is half the spread in that company's past lags.")
@@ -356,6 +488,15 @@ def post(text, missing):
         # "SPCX 1/2" — see where `missing` is built.
         desc += (f"\n\nToo few periodic filings to project: "
                  f"{', '.join(missing)}")
+    if unread:
+        # ITS OWN LINE, AND NO COUNT. "Too little history yet" and "the source
+        # failed" are different measurements and must never share a label —
+        # a young company reported as a failure trains the reader to ignore the
+        # failure line. The count belongs on the line above, where it measures
+        # something; here there is no count to give, because the run does not
+        # know what it did not read.
+        desc += (f"\n\nEDGAR index unread this run, so no projection: "
+                 f"{', '.join(unread)}")
 
     embed = {
         "title": "Expected reporting dates",
@@ -384,16 +525,25 @@ def main():
     if not SEC_USER_AGENT:
         sys.exit("SEC_USER_AGENT is not set. Use: 'Your Name your@email.com'")
 
-    rows, missing = [], []
+    rows, missing, unread = [], [], []
     # Kept so the "announced but not applied" note below can cite how many
-    # periodic filings were actually seen for that CIK, rather than asserting
-    # why project() returned nothing — periodic_filings() returns [] on a
-    # fetch failure exactly as it does on genuine thin history, so a stated
-    # cause would be a guess dressed as an observation.
+    # periodic filings were actually seen for that CIK. A CIK whose index did
+    # not read is ABSENT from this map rather than holding 0, because 0 is a
+    # measurement — "this company has filed nothing periodic" — and a failed
+    # read has not earned it. `filing_counts.get(cik)` returning None is what
+    # the note below branches on.
     filing_counts = {}
     for label, (cik, name) in COMPANIES.items():
         print(f"  {label}...")
-        filings = periodic_filings(cik)
+        read = periodic_filings(cik)
+        if not read.complete:
+            # NOT `missing`. That line says "too few periodic filings", which
+            # is a claim about the company; this is a claim about the run.
+            unread.append(label)
+            print("    EDGAR index did not read in full; no projection "
+                  "attempted, and this is not a filing count")
+            continue
+        filings = read.filings
         filing_counts[cik] = len(filings)
         projection = project(label, name, filings)
         if projection:
@@ -459,7 +609,15 @@ def main():
             # both on genuine thin history and on an SEC fetch failure, so
             # asserting a cause here would be right by luck rather than by
             # evidence. The count against the floor is the useful part.
-            n = filing_counts.get(cik, 0)
+            n = filing_counts.get(cik)
+            if n is None:
+                # The index did not read, so there is no count to state. Saying
+                # "0 periodic filing(s) seen" here would report a failed read
+                # as a company that has never filed.
+                print(f"  {label} has an announced date; its EDGAR index did "
+                      f"not read this run, so there is no period end to apply "
+                      f"it against")
+                continue
             # The count, without naming which floor stopped it. project()
             # returns None both below MIN_PERIODIC_FILINGS and when no single
             # form type reaches two, so citing the former reads "2/2 seen, not
@@ -487,12 +645,16 @@ def main():
     if missing:
         print(f"Too few periodic filings to project: "
               f"{', '.join(missing)}\n")
+    if unread:
+        print(f"EDGAR index unread this run, so no projection: "
+              f"{', '.join(unread)}\n")
 
     if DRY_RUN:
-        print(f"Dry run complete: {len(rows)} projected, {len(missing)} skipped.")
+        print(f"Dry run complete: {len(rows)} projected, "
+              f"{len(missing)} below the floor, {len(unread)} unread.")
         return
 
-    if post(text, missing):
+    if post(text, missing, unread):
         print(f"Posted calendar for {len(rows)} company(s).")
     else:
         sys.exit("Post failed.")

@@ -38,3 +38,7 @@ venv/
 
 # Local backups. May contain PII and secrets, never commit.
 /backup/
+
+# probe_earnings_paging.py caches EDGAR index pages here when PROBE_CACHE is
+# unset. Re-downloadable, and large.
+/probe_cache_earnings/

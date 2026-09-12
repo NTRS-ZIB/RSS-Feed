@@ -35,6 +35,76 @@ threshold reads the range rather than the half deliberately: `range // 2 > 15`
 is `range >= 32` where `range > 30` is `range >= 31`, so halving first would
 have moved the `~` on a range of exactly 31.
 
+## Critical: `filings.recent` is a rolling window, not the index
+
+The submissions API splits a company's index. `filings.recent` holds roughly
+the newest thousand filings; anything older sits on the pages named in
+`filings.files`. Until 2026-09-12 this component read the first and stopped,
+which for a heavy Form 4 filer means the cadence history is read through a
+window that can be barely a year wide.
+
+**It had already cost a published date.** CRWV's recent page holds 1001 filings
+reaching back only to 2025-07-31, because 460 of them are Form 4s. Its 10-Q for
+period 2025-03-31 (accession `0001769628-25-000014`) sat on the older page and
+went unread — and that filing carries the **longest** lag of its five, so
+dropping it pulled the median down:
+
+| | lags | median | range | sample | published |
+|---|---|---|---|---|---|
+| unpaged | `[43, 38, 44, 44]` | 43 | 6 | 4 | Thu 12 Nov |
+| paged | `[43, 38, 44, 44, 45]` | 44 | 7 | 5 | Fri 13 Nov |
+
+`snapshot.json` said `2026-11-13` the whole time. `build_snapshot` has paged
+all along, so the two components were projecting the same issuer off the same
+index and publishing different dates. That is the drift `filing_cadence` was
+extracted to end, and it survived the extraction because **the merge shared
+the rule and not the corpus**: `probe_cadence_corpus.py` feeds both
+presentations the same synthetic list, so it could never have seen this.
+
+### The exposure rule, which outlives the case
+
+A company is exposed when **both** hold:
+
+1. its selected lag pool is under `LAG_SAMPLE` (8), and
+2. it has a second index page.
+
+`cadence` truncates `pool[:LAG_SAMPLE]` positionally, so a company already
+holding eight in the pool it uses cannot move however much history it gains.
+Measured across all 22 roster companies on 2026-09-12, over the annual and
+quarterly pools separately: five have a second page, SLNH gains 51 periodic
+filings and RIOT 19, and **exactly one pool moved** — CRWV's quarterly. It is
+also the only pool that gained filings while under the floor. The two sets are
+the same set.
+
+That rule is what to re-check when the roster changes, because a new listing
+starts under `LAG_SAMPLE` by definition and becomes exposed the moment it
+acquires a second page.
+
+The `±` column did not move even for CRWV: it prints `spread // 2`, and
+`7 // 2 == 6 // 2 == 3`. The range is nowhere near `LOW_CONFIDENCE_SPREAD`
+(30), so no `~` moved and no confidence flipped.
+
+## A failed read and a thin history are different measurements
+
+Paging means a read can now half-succeed, and a partial read still projects —
+it would republish the pre-fix number with no log line and nothing to notice.
+So `periodic_filings` returns `Read(filings, complete)`, and **any** failed
+page yields nothing rather than a short list. Both siblings already refuse the
+partial: `holder_events.sec_get` raises, and `build_snapshot` catches per
+company and skips it.
+
+The company then appears on its own line, in the console and in the embed:
+
+```
+Too few periodic filings to project: SPCX 1/2
+EDGAR index unread this run, so no projection: CRWV
+```
+
+The first carries a count against the floor, the second carries none, because
+the run does not know what it did not read. Before this change `[]` meant both,
+and two comments in `main()` said so and worked around it by refusing to state
+a cause.
+
 ## Critical: annual and quarterly lags must never be pooled
 
 Annual reports are filed 60–90 days after fiscal year end; quarterlies around
