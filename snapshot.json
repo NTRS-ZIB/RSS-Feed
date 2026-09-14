@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-11T14:42:18+00:00",
+  "generated": "2026-09-14T16:42:11+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -155,7 +155,7 @@
     },
     "ANY": {
       "cik": "0001591956",
-      "filing_count": 816,
+      "filing_count": 818,
       "filings": {
         "10-K": {
           "accession": "0001591956-26-000004",
@@ -222,12 +222,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1591956/000159195622000025/a6-kresultsofshareholdersm.htm"
         },
         "8-K": {
-          "accession": "0001213900-26-098043",
-          "count": 144,
-          "filed": "2026-09-08",
+          "accession": "0001213900-26-099458",
+          "count": 146,
+          "filed": "2026-09-14",
           "form": "8-K",
-          "period": "2026-09-01",
-          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000121390026098043/ea0304863-8k_sphere.htm"
+          "period": "2026-09-14",
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000121390026099458/ea0305367-8k_sphere.htm"
         },
         "DEF 14A": {
           "accession": "0001591956-26-000017",
@@ -293,7 +293,7 @@
       "former_names": [
         "Sphere 3D Corp"
       ],
-      "latest_filing_date": "2026-09-10",
+      "latest_filing_date": "2026-09-14",
       "name": "Sphere 3D Corp.",
       "off_docket_13dg": 0,
       "projection": {
@@ -1385,7 +1385,7 @@
     },
     "DGXX": {
       "cik": "0001854368",
-      "filing_count": 249,
+      "filing_count": 250,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-050340",
@@ -1473,12 +1473,12 @@
         "NT 40-F": null,
         "S-1": null,
         "S-3": {
-          "accession": "0001213900-26-079177",
-          "count": 2,
-          "filed": "2026-07-17",
-          "form": "S-3",
+          "accession": "0001213900-26-099261",
+          "count": 3,
+          "filed": "2026-09-11",
+          "form": "S-3/A",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026079177/ea0297919-s3_digi.htm"
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026099261/ea0304511-s3a1_digi.htm"
         },
         "SC 13D": null,
         "SC 13G": {
@@ -1502,7 +1502,7 @@
       "former_names": [
         "Digihost Technology Inc."
       ],
-      "latest_filing_date": "2026-08-21",
+      "latest_filing_date": "2026-09-11",
       "name": "Digi Power X Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -2295,7 +2295,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1571,
+      "filing_count": 1572,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2341,12 +2341,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001493152-26-041870",
-          "count": 356,
-          "filed": "2026-09-09",
+          "accession": "0001493152-26-042479",
+          "count": 357,
+          "filed": "2026-09-14",
           "form": "8-K",
-          "period": "2026-09-09",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226041870/form8-k.htm"
+          "period": "2026-09-14",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226042479/form8-k.htm"
         },
         "DEF 14A": {
           "accession": "0001628280-26-058611",
@@ -2412,7 +2412,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-09-09",
+      "latest_filing_date": "2026-09-14",
       "name": "Soluna Holdings, Inc",
       "off_docket_13dg": 17,
       "projection": {
@@ -2521,7 +2521,7 @@
     },
     "VIP": {
       "cik": "0001844971",
-      "filing_count": 427,
+      "filing_count": 431,
       "filings": {
         "10-K": {
           "accession": "0001844971-26-000011",
@@ -2549,12 +2549,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828025040941/xslF345X02/wk-form3_1755737282.xml"
         },
         "4": {
-          "accession": "0001628280-26-049591",
-          "count": 80,
-          "filed": "2026-07-24",
+          "accession": "0001628280-26-061590",
+          "count": 82,
+          "filed": "2026-09-11",
           "form": "4",
-          "period": "2026-07-24",
-          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828026049591/xslF345X06/wk-form4_1784923537.xml"
+          "period": "2026-09-09",
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828026061590/xslF345X06/wk-form4_1789160717.xml"
         },
         "40-F": null,
         "424": {
@@ -2626,19 +2626,26 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1844971/000094787122000243/ss798306_sc13g.htm"
         },
         "SCHEDULE 13D": {
-          "accession": "0001193125-26-309174",
-          "count": 5,
-          "filed": "2026-07-20",
-          "form": "SCHEDULE 13D/A",
+          "accession": "0000895345-26-000408",
+          "count": 6,
+          "filed": "2026-09-11",
+          "form": "SCHEDULE 13D",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000119312526309174/xslSCHEDULE_13D_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000089534526000408/xslSCHEDULE_13D_X02/primary_doc.xml"
         },
-        "SCHEDULE 13G": null
+        "SCHEDULE 13G": {
+          "accession": "0001213900-26-099322",
+          "count": 1,
+          "filed": "2026-09-11",
+          "form": "SCHEDULE 13G",
+          "period": null,
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000121390026099322/xslSCHEDULE_13G_X02/primary_doc.xml"
+        }
       },
       "former_names": [
         "Greenidge Generation Holdings Inc."
       ],
-      "latest_filing_date": "2026-09-10",
+      "latest_filing_date": "2026-09-11",
       "name": "Vulcan Infrastructure & Power Inc.",
       "off_docket_13dg": 2,
       "projection": {
@@ -2656,7 +2663,7 @@
     },
     "WULF": {
       "cik": "0001083301",
-      "filing_count": 1236,
+      "filing_count": 1237,
       "filings": {
         "10-K": {
           "accession": "0001083301-26-000031",
@@ -2684,12 +2691,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1083301/000207478625000007/xslF345X02/wk-form3a_1755567904.xml"
         },
         "4": {
-          "accession": "0001628280-26-061206",
-          "count": 557,
-          "filed": "2026-09-09",
+          "accession": "0001628280-26-061623",
+          "count": 558,
+          "filed": "2026-09-11",
           "form": "4",
-          "period": "2026-09-08",
-          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000162828026061206/xslF345X06/wk-form4_1789004127.xml"
+          "period": "2026-09-10",
+          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000162828026061623/xslF345X06/wk-form4_1789174330.xml"
         },
         "40-F": null,
         "424": {
@@ -2774,7 +2781,7 @@
         "IKONICS CORP",
         "CHROMALINE CORP"
       ],
-      "latest_filing_date": "2026-09-09",
+      "latest_filing_date": "2026-09-11",
       "name": "TERAWULF INC.",
       "off_docket_13dg": 0,
       "projection": {
@@ -2792,7 +2799,7 @@
     },
     "WYFI": {
       "cik": "0002042022",
-      "filing_count": 83,
+      "filing_count": 84,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-034341",
@@ -2838,12 +2845,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001213900-26-094022",
-          "count": 15,
-          "filed": "2026-08-26",
-          "form": "8-K/A",
-          "period": "2026-08-16",
-          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026094022/ea0303443-8ka1_whitefiber.htm"
+          "accession": "0001213900-26-099424",
+          "count": 16,
+          "filed": "2026-09-14",
+          "form": "8-K",
+          "period": "2026-09-14",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026099424/ea0305257-8k_white.htm"
         },
         "DEF 14A": null,
         "NT 10-K": null,
@@ -2874,7 +2881,7 @@
       "former_names": [
         "White Fiber, Inc."
       ],
-      "latest_filing_date": "2026-09-01",
+      "latest_filing_date": "2026-09-14",
       "name": "WhiteFiber, Inc.",
       "off_docket_13dg": 0,
       "projection": {
