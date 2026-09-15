@@ -188,7 +188,7 @@
   "SPCX|Alphabet Inc. | Google LLC | XXVI Holdings Inc.": 7.2,
   "SPCX|Antonio J. Gracias": 6.5,
   "SPCX|Elon R. Musk": 48.4,
-  "VIP|Andrew M. Bursky | Atlas Capital GP LP | Atlas Capital Resources (A9) LP | Atlas Capital Resources (A9-Parallel) LP | Atlas Capital Resources (P) LP | Atlas Capital Resources GP LLC | GGH Bridge Investment LP | Timothy J. Fazio": 23.1,
+  "VIP|Andrew M. Bursky | Atlas Capital GP LP | Atlas Capital Resources (A9) LP | Atlas Capital Resources (A9-Parallel) LP | Atlas Capital Resources (P) LP | Atlas Capital Resources GP LLC | GGH Bridge Investment LP | Timothy J. Fazio": 20.0,
   "VIP|B. Riley Securities, Inc. | BRC Group Holdings, Inc. | Bryant Riley": 7.1,
   "VIP|Conversant Capital LLC | Conversant PIF VIP Holdco LLC | Michael J. Simanovsky": 9.8,
   "WULF|Allin WULF LLC | Beowulf Electricity & Data Inc. | Heorot Power Holdings LLC | Lucky Liefern LLC | Paul B. Prager | Paul B. Prager 2020 Revocable Trust | Riesling Power LLC | Stammtisch Investments LLC": 10.7,
@@ -222,28 +222,28 @@
   "0000950170-25-114068"
  ],
  "read": {
-  "ABTC": "2026-09-14",
-  "ANY": "2026-09-14",
-  "APLD": "2026-09-14",
-  "BGDE": "2026-09-14",
-  "BKKT": "2026-09-14",
-  "BTDR": "2026-09-14",
-  "CIFR": "2026-09-14",
-  "CLSK": "2026-09-14",
-  "CORZ": "2026-09-14",
-  "CRWV": "2026-09-14",
-  "DGXX": "2026-09-14",
-  "GLXY": "2026-09-14",
-  "HUT": "2026-09-14",
-  "IREN": "2026-09-14",
-  "MARA": "2026-09-14",
-  "NUAI": "2026-09-14",
-  "RIOT": "2026-09-14",
-  "SLNH": "2026-09-14",
-  "SPCX": "2026-09-14",
-  "VIP": "2026-09-14",
-  "WULF": "2026-09-14",
-  "WYFI": "2026-09-14"
+  "ABTC": "2026-09-15",
+  "ANY": "2026-09-15",
+  "APLD": "2026-09-15",
+  "BGDE": "2026-09-15",
+  "BKKT": "2026-09-15",
+  "BTDR": "2026-09-15",
+  "CIFR": "2026-09-15",
+  "CLSK": "2026-09-15",
+  "CORZ": "2026-09-15",
+  "CRWV": "2026-09-15",
+  "DGXX": "2026-09-15",
+  "GLXY": "2026-09-15",
+  "HUT": "2026-09-15",
+  "IREN": "2026-09-15",
+  "MARA": "2026-09-15",
+  "NUAI": "2026-09-15",
+  "RIOT": "2026-09-15",
+  "SLNH": "2026-09-15",
+  "SPCX": "2026-09-15",
+  "VIP": "2026-09-15",
+  "WULF": "2026-09-15",
+  "WYFI": "2026-09-15"
  },
  "repairs": [
   "2026-09-10-subject-misattribution"
@@ -597,6 +597,7 @@
   "0002100121-26-000988",
   "0002107389-26-000001",
   "0000895345-26-000408",
-  "0001213900-26-099322"
+  "0001213900-26-099322",
+  "0001193125-26-390907"
  ]
 }
