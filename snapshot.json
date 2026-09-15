@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-14T16:42:11+00:00",
+  "generated": "2026-09-15T15:20:36+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -311,7 +311,7 @@
     },
     "APLD": {
       "cik": "0001144879",
-      "filing_count": 812,
+      "filing_count": 813,
       "filings": {
         "10-K": {
           "accession": "0001144879-26-000048",
@@ -339,12 +339,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1144879/000149315226023991/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001628280-26-054432",
-          "count": 212,
-          "filed": "2026-08-06",
+          "accession": "0001900445-26-000004",
+          "count": 213,
+          "filed": "2026-09-14",
           "form": "4",
-          "period": "2026-08-04",
-          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000162828026054432/xslF345X06/wk-form4_1786049520.xml"
+          "period": "2026-09-12",
+          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000190044526000004/xslF345X06/wk-form4_1789418949.xml"
         },
         "40-F": null,
         "424": {
@@ -446,7 +446,7 @@
         "FLIGHT SAFETY TECHNOLOGIES INC",
         "REEL STAFF INC"
       ],
-      "latest_filing_date": "2026-08-06",
+      "latest_filing_date": "2026-09-14",
       "name": "Applied Digital Corp.",
       "off_docket_13dg": 2,
       "projection": {
@@ -1271,7 +1271,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1114,
+      "filing_count": 1115,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1367,7 +1367,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-09-10",
+      "latest_filing_date": "2026-09-14",
       "name": "CoreWeave, Inc.",
       "off_docket_13dg": 5,
       "projection": {
@@ -2521,7 +2521,7 @@
     },
     "VIP": {
       "cik": "0001844971",
-      "filing_count": 431,
+      "filing_count": 442,
       "filings": {
         "10-K": {
           "accession": "0001844971-26-000011",
@@ -2541,20 +2541,20 @@
         },
         "20-F": null,
         "3": {
-          "accession": "0001628280-25-040941",
-          "count": 20,
-          "filed": "2025-08-20",
+          "accession": "0001628280-26-061887",
+          "count": 23,
+          "filed": "2026-09-14",
           "form": "3",
-          "period": "2025-08-11",
-          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828025040941/xslF345X02/wk-form3_1755737282.xml"
+          "period": "2026-09-10",
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828026061887/xslF345X06/wk-form3_1789419069.xml"
         },
         "4": {
-          "accession": "0001628280-26-061590",
-          "count": 82,
-          "filed": "2026-09-11",
+          "accession": "0001193125-26-390887",
+          "count": 89,
+          "filed": "2026-09-14",
           "form": "4",
-          "period": "2026-09-09",
-          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828026061590/xslF345X06/wk-form4_1789160717.xml"
+          "period": "2026-09-10",
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000119312526390887/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -2626,12 +2626,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1844971/000094787122000243/ss798306_sc13g.htm"
         },
         "SCHEDULE 13D": {
-          "accession": "0000895345-26-000408",
-          "count": 6,
-          "filed": "2026-09-11",
-          "form": "SCHEDULE 13D",
+          "accession": "0001193125-26-390907",
+          "count": 7,
+          "filed": "2026-09-14",
+          "form": "SCHEDULE 13D/A",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000089534526000408/xslSCHEDULE_13D_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000119312526390907/xslSCHEDULE_13D_X02/primary_doc.xml"
         },
         "SCHEDULE 13G": {
           "accession": "0001213900-26-099322",
@@ -2645,7 +2645,7 @@
       "former_names": [
         "Greenidge Generation Holdings Inc."
       ],
-      "latest_filing_date": "2026-09-11",
+      "latest_filing_date": "2026-09-14",
       "name": "Vulcan Infrastructure & Power Inc.",
       "off_docket_13dg": 2,
       "projection": {
