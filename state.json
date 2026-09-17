@@ -1277,7 +1277,12 @@
   "https://www.galaxy.com/newsroom/galaxy-curation-adds-two-institutional-vaults-on-kamino",
   "urn:tag:sec.gov,2008:accession-number=0001628280-26-062352",
   "urn:tag:sec.gov,2008:accession-number=0001959173-26-007026",
-  "urn:tag:sec.gov,2008:accession-number=0001959173-26-007019"
+  "urn:tag:sec.gov,2008:accession-number=0001959173-26-007019",
+  "urn:tag:sec.gov,2008:accession-number=0000921895-26-002571",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-100953",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-043141",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-043140",
+  "urn:tag:sec.gov,2008:accession-number=0000905148-26-004212"
  ],
  "initialized": true,
  "feeds": {
