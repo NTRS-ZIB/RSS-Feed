@@ -1,23 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001493152-25-008789",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-25-008787",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-25-008785",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-25-008783",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-25-008781",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-25-008779",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-25-008777",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-25-008775",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-25-008773",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-25-007763",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-25-005080",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-25-005078",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-25-005076",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-25-003109",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-25-003107",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-25-002442",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-24-052183",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-24-052181",
   "urn:tag:sec.gov,2008:accession-number=0001493152-24-050668",
   "urn:tag:sec.gov,2008:accession-number=0001493152-24-050667",
   "urn:tag:sec.gov,2008:accession-number=0001493152-24-050295",
@@ -1282,7 +1264,8 @@
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-392929",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-100537",
   "9821",
-  "urn:tag:sec.gov,2008:accession-number=0000905148-26-004205"
+  "urn:tag:sec.gov,2008:accession-number=0000905148-26-004205",
+  "urn:tag:sec.gov,2008:accession-number=0001769628-26-000427"
  ],
  "initialized": true,
  "feeds": {
