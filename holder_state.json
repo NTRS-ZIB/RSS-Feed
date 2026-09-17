@@ -191,6 +191,7 @@
   "VIP|Andrew M. Bursky | Atlas Capital GP LP | Atlas Capital Resources (A9) LP | Atlas Capital Resources (A9-Parallel) LP | Atlas Capital Resources (P) LP | Atlas Capital Resources GP LLC | GGH Bridge Investment LP | Timothy J. Fazio": 20.0,
   "VIP|B. Riley Securities, Inc. | BRC Group Holdings, Inc. | Bryant Riley": 7.1,
   "VIP|Conversant Capital LLC | Conversant PIF VIP Holdco LLC | Michael J. Simanovsky": 9.8,
+  "VIP|Eric W. Rosenthal | MIG REF II INFR, LLC": 8.23,
   "WULF|Allin WULF LLC | Beowulf Electricity & Data Inc. | Heorot Power Holdings LLC | Lucky Liefern LLC | Paul B. Prager | Paul B. Prager 2020 Revocable Trust | Riesling Power LLC | Stammtisch Investments LLC": 10.7,
   "WULF|BANK OF NOVA SCOTIA": 7.7,
   "WULF|Bayshore Capital LLC | Bryan J. Pascual": 4.9,
@@ -222,28 +223,28 @@
   "0000950170-25-114068"
  ],
  "read": {
-  "ABTC": "2026-09-16",
-  "ANY": "2026-09-16",
-  "APLD": "2026-09-16",
-  "BGDE": "2026-09-16",
-  "BKKT": "2026-09-16",
-  "BTDR": "2026-09-16",
-  "CIFR": "2026-09-16",
-  "CLSK": "2026-09-16",
-  "CORZ": "2026-09-16",
-  "CRWV": "2026-09-16",
-  "DGXX": "2026-09-16",
-  "GLXY": "2026-09-16",
-  "HUT": "2026-09-16",
-  "IREN": "2026-09-16",
-  "MARA": "2026-09-16",
-  "NUAI": "2026-09-16",
-  "RIOT": "2026-09-16",
-  "SLNH": "2026-09-16",
-  "SPCX": "2026-09-16",
-  "VIP": "2026-09-16",
-  "WULF": "2026-09-16",
-  "WYFI": "2026-09-16"
+  "ABTC": "2026-09-17",
+  "ANY": "2026-09-17",
+  "APLD": "2026-09-17",
+  "BGDE": "2026-09-17",
+  "BKKT": "2026-09-17",
+  "BTDR": "2026-09-17",
+  "CIFR": "2026-09-17",
+  "CLSK": "2026-09-17",
+  "CORZ": "2026-09-17",
+  "CRWV": "2026-09-17",
+  "DGXX": "2026-09-17",
+  "GLXY": "2026-09-17",
+  "HUT": "2026-09-17",
+  "IREN": "2026-09-17",
+  "MARA": "2026-09-17",
+  "NUAI": "2026-09-17",
+  "RIOT": "2026-09-17",
+  "SLNH": "2026-09-17",
+  "SPCX": "2026-09-17",
+  "VIP": "2026-09-17",
+  "WULF": "2026-09-17",
+  "WYFI": "2026-09-17"
  },
  "repairs": [
   "2026-09-10-subject-misattribution"
@@ -598,6 +599,7 @@
   "0002107389-26-000001",
   "0000895345-26-000408",
   "0001213900-26-099322",
-  "0001193125-26-390907"
+  "0001193125-26-390907",
+  "0001193125-26-392929"
  ]
 }
