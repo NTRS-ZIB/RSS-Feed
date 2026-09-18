@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-17T15:22:10+00:00",
+  "generated": "2026-09-18T14:42:06+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -155,7 +155,7 @@
     },
     "ANY": {
       "cik": "0001591956",
-      "filing_count": 818,
+      "filing_count": 819,
       "filings": {
         "10-K": {
           "accession": "0001591956-26-000004",
@@ -222,12 +222,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1591956/000159195622000025/a6-kresultsofshareholdersm.htm"
         },
         "8-K": {
-          "accession": "0001213900-26-099458",
-          "count": 146,
-          "filed": "2026-09-14",
+          "accession": "0001213900-26-100953",
+          "count": 147,
+          "filed": "2026-09-17",
           "form": "8-K",
-          "period": "2026-09-14",
-          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000121390026099458/ea0305367-8k_sphere.htm"
+          "period": "2026-09-16",
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000121390026100953/ea0305703-8k_darkhorse.htm"
         },
         "DEF 14A": {
           "accession": "0001591956-26-000017",
@@ -291,10 +291,11 @@
         }
       },
       "former_names": [
+        "Sphere 3D Corp.",
         "Sphere 3D Corp"
       ],
-      "latest_filing_date": "2026-09-14",
-      "name": "Sphere 3D Corp.",
+      "latest_filing_date": "2026-09-17",
+      "name": "DarkHorse Technologies Inc.",
       "off_docket_13dg": 0,
       "projection": {
         "available": true,
@@ -1129,7 +1130,7 @@
     },
     "CORZ": {
       "cik": "0001839341",
-      "filing_count": 666,
+      "filing_count": 667,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019505",
@@ -1157,12 +1158,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003445/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0000905148-26-004205",
-          "count": 156,
-          "filed": "2026-09-16",
+          "accession": "0000905148-26-004212",
+          "count": 157,
+          "filed": "2026-09-17",
           "form": "4",
-          "period": "2026-09-14",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826004205/xslF345X06/form4.xml"
+          "period": "2026-09-15",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826004212/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1253,7 +1254,7 @@
       "former_names": [
         "Power & Digital Infrastructure Acquisition Corp."
       ],
-      "latest_filing_date": "2026-09-16",
+      "latest_filing_date": "2026-09-17",
       "name": "Core Scientific, Inc./tx",
       "off_docket_13dg": 0,
       "projection": {
@@ -1271,7 +1272,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1121,
+      "filing_count": 1122,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1299,12 +1300,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000155/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0001769628-26-000427",
-          "count": 465,
-          "filed": "2026-09-16",
+          "accession": "0001769628-26-000430",
+          "count": 466,
+          "filed": "2026-09-17",
           "form": "4",
-          "period": "2026-09-14",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000427/xslF345X06/form4.xml"
+          "period": "2026-09-15",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000430/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1882,7 +1883,7 @@
     },
     "MARA": {
       "cik": "0001507605",
-      "filing_count": 1107,
+      "filing_count": 1108,
       "filings": {
         "10-K": {
           "accession": "0001507605-26-000007",
@@ -2295,7 +2296,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1572,
+      "filing_count": 1574,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2323,12 +2324,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226034093/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001493152-26-041566",
-          "count": 612,
-          "filed": "2026-09-04",
+          "accession": "0001493152-26-043141",
+          "count": 614,
+          "filed": "2026-09-17",
           "form": "4",
-          "period": "2026-09-03",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226041566/xslF345X06/ownership.xml"
+          "period": "2026-09-01",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226043141/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -2412,7 +2413,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-09-14",
+      "latest_filing_date": "2026-09-17",
       "name": "Soluna Holdings, Inc",
       "off_docket_13dg": 17,
       "projection": {
@@ -2521,7 +2522,7 @@
     },
     "VIP": {
       "cik": "0001844971",
-      "filing_count": 443,
+      "filing_count": 444,
       "filings": {
         "10-K": {
           "accession": "0001844971-26-000011",
@@ -2626,12 +2627,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1844971/000094787122000243/ss798306_sc13g.htm"
         },
         "SCHEDULE 13D": {
-          "accession": "0001193125-26-392929",
-          "count": 8,
-          "filed": "2026-09-16",
+          "accession": "0000921895-26-002571",
+          "count": 9,
+          "filed": "2026-09-17",
           "form": "SCHEDULE 13D",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000119312526392929/xslSCHEDULE_13D_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000092189526002571/xslSCHEDULE_13D_X02/primary_doc.xml"
         },
         "SCHEDULE 13G": {
           "accession": "0001213900-26-099322",
@@ -2645,7 +2646,7 @@
       "former_names": [
         "Greenidge Generation Holdings Inc."
       ],
-      "latest_filing_date": "2026-09-16",
+      "latest_filing_date": "2026-09-17",
       "name": "Vulcan Infrastructure & Power Inc.",
       "off_docket_13dg": 2,
       "projection": {
