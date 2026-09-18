@@ -1289,7 +1289,10 @@
   "urn:tag:sec.gov,2008:accession-number=0001957799-26-000177",
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-395727",
   "8d1d0e13-8c5b-41eb-ae78-0dabce2e5601",
-  "urn:tag:sec.gov,2008:accession-number=0001104659-26-109005"
+  "urn:tag:sec.gov,2008:accession-number=0001104659-26-109005",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-043433",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-043432",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-043431"
  ],
  "initialized": true,
  "feeds": {
