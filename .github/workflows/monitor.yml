@@ -13,10 +13,41 @@ on:
     # history. Simulated against the measured filing and delay distributions,
     # 07:07 catches 85% of filings within 15 minutes against 77% for 10:07.
     #
-    # BUDGET_MIN stays at 55. A 75-minute budget reaches 88%, but three points
-    # cost 23% of fires cancelled by supersession against 3% — and cancelled
-    # fires are the mechanism behind the duplicate posting this schedule work
-    # started from. See docs/press-monitor.md.
+    # BUDGET_MIN IS 165, RAISED FROM 55 ON 2026-09-18, AND THE CONSTRAINT THAT
+    # SET 55 NO LONGER EXISTS. The old note read: "A 75-minute budget reaches
+    # 88%, but three points cost 23% of fires cancelled by supersession against
+    # 3%, and cancelled fires are the mechanism behind the duplicate posting
+    # this schedule work started from." That arithmetic assumed fires arriving
+    # about an hour apart, which is what a 55-minute job had to fit inside.
+    #
+    # They no longer do. On 2026-08-26 GitHub stopped delivering most of this
+    # repo's sub-daily fires: measured over 18 weekdays, 4 delivered per weekday
+    # against a cron asking 17, with a median gap between delivered fires of
+    # 3.64h. A 165-minute job finishes inside that gap, so supersession is back
+    # near zero rather than at the 23% the old note priced.
+    #
+    # WHY 165 AND NOT MORE. The cause of the shedding is inferred, not proven,
+    # and the strongest discriminator is DUTY CYCLE: this workflow and Volume
+    # spikes are the only two that hold a runner for ~95% of their own cron
+    # period, together ~90% of the repo's Actions minutes, and they are exactly
+    # the two that collapsed. So the budget is capped at the point where total
+    # runner minutes stay BELOW the pre-collapse level that GitHub was already
+    # sustaining: 14 fires x ~50m = ~700 min/weekday before, 4 x 165 = 660 now.
+    # Asking for more than the repo consumed when delivery was healthy would be
+    # betting against the only hypothesis the evidence supports.
+    #
+    # WHAT THIS DOES NOT FIX. A budget extends coverage FORWARD from whenever a
+    # fire lands; it cannot make an earlier fire land. Delivery per cron hour,
+    # measured: 07-11 UTC all at 0.06 fires/weekday, 12:00 at 0.67. The morning
+    # is dark because those fires are never delivered, and no budget recovers
+    # it. See docs/press-monitor.md.
+    #
+    # IF DELIVERY RECOVERS to hourly, this becomes a ~100% duty cycle and
+    # supersession returns in force. That is safe for correctness — the stale
+    # checkout that caused the duplicate posting is handled by refresh_state
+    # before the monitor step and the fetch-and-retry around the push — but it
+    # is the condition under which this number should be reconsidered, and the
+    # delivered-fires-per-weekday count is what shows it.
     #
     # GitHub cron is UTC and has no DST awareness:
     #   EDT (summer, UTC-4): 3am - 8pm ET
@@ -45,7 +76,7 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 85
+    timeout-minutes: 195
     steps:
       - uses: actions/checkout@v5
 
@@ -70,8 +101,8 @@ jobs:
         #
         # A dispatch runs a single pass. Looping for an hour on a manual dry
         # run holds a runner and shows nothing the first pass did not.
-        # BUDGET_MIN + the per-pass timeout below + slack.
-        timeout-minutes: 75
+        # BUDGET_MIN + the per-pass timeout below + slack: 165 + 13 + 7.
+        timeout-minutes: 185
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           WEBHOOK_URL_INSIDER: ${{ secrets.WEBHOOK_URL_INSIDER }}
@@ -176,7 +207,7 @@ jobs:
           # regime. Mornings run 83-173m late, so a gap is expected there; the
           # budget VALUE is a separate question from the budget FRAME, and
           # only the frame is being fixed here.
-          BUDGET_MIN=55
+          BUDGET_MIN=165
           # A boundary this close is the same check twice — skip to the next.
           MIN_GAP=180
           started=$(date -u +%s)

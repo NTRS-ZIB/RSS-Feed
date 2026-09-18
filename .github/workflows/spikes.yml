@@ -54,7 +54,7 @@ concurrency:
 jobs:
   spikes:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v5
 
@@ -79,8 +79,8 @@ jobs:
         #
         # A dispatch runs a single pass. Looping for an hour on a manual dry
         # run holds a runner and shows nothing the first pass did not.
-        # BUDGET_MIN + the per-pass timeout below + slack.
-        timeout-minutes: 65
+        # BUDGET_MIN + the per-pass timeout below + slack: 130 + 5 + 5.
+        timeout-minutes: 140
         env:
           ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
           ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
@@ -157,11 +157,29 @@ jobs:
           # run would have printed "1 pass(es), 0 failed" and read as success.
           # Elapsed budget is immune to where in the hour the job starts.
           #
-          # 55m sits just under the 61m mean arrival gap in the afternoon
-          # regime. Mornings run 83-173m late, so a gap is expected there; the
-          # budget VALUE is a separate question from the budget FRAME, and
-          # only the frame is being fixed here.
-          BUDGET_MIN=55
+          # 55m SAT JUST UNDER THE 61m MEAN ARRIVAL GAP, and that gap is gone.
+          # Raised to 130 on 2026-09-18. Since 2026-08-26 GitHub delivers a
+          # median 3 of this workflow's 11 daily fires, 3.24h apart, so a 55m
+          # budget covered 28% of the interval between them.
+          #
+          # 130 RATHER THAN THE 135 THAT WOULD HOLD RUNNER MINUTES AT PARITY.
+          # Pre-collapse this workflow spent ~8 fires x ~50m = ~400 min/weekday;
+          # 3 x 130 = 390, just under. The cap matters because duty cycle is the
+          # best available explanation for the shedding — this workflow and the
+          # press monitor are the only two holding a runner for ~95% of their
+          # own cron period, and the only two that collapsed. Buying coverage by
+          # spending more minutes would be betting against that.
+          #
+          # IT DOES NOT RECOVER THE MORNING, which is the loss that matters
+          # here. A budget extends coverage forward from whenever a fire lands.
+          # Measured delivery per cron hour since the collapse: 12:00 UTC 0.00
+          # fires/weekday, 13:00 0.06, 14:00 0.00, 15:00 0.06, 16:00 0.71. The
+          # first look of a session moved from 09:09 ET to 12:49 ET, and hours
+          # 10 and 11 ET are the normalised hours whose tier escalation is lost
+          # for good, because ratio_for's denominator grows with the wall clock
+          # and no past hour is ever re-evaluated. Backfilling those hours from
+          # bars every run already downloads is the fix for that; this is not.
+          BUDGET_MIN=130
           # A boundary this close is the same check twice — skip to the next.
           MIN_GAP=180
           started=$(date -u +%s)

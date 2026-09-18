@@ -240,8 +240,12 @@ The platform has already done it and kept the right one, and a run that does
 start is not doing stale work anyway — "check for new items now" is a timeless
 question, so a late start asks the same question with better data.
 
-This is why the ~3% cancellation rate at `BUDGET_MIN=55` is routine rather
-than a fault, and why `failure-notice.yml` never reports `cancelled`.
+This is why a low cancellation rate is routine rather than a fault, and why
+`failure-notice.yml` never reports `cancelled`. The rate was ~3% when
+`BUDGET_MIN` was 55 and fires arrived hourly. Since the 2026-08-26 delivery
+collapse fires arrive a median 3.64h apart and a 165-minute job still finishes
+inside that gap, so cancellation stays low for a different reason than it used
+to. It returns in force if delivery recovers to hourly; see below.
 
 ### Registration lag when a cron changes
 
@@ -287,13 +291,62 @@ Next boundary 18:00:00Z is past the deadline 17:55:04Z. Stopping after 4 pass(es
 4 pass(es), 0 failed, 55m budget, ran 45m.
 ```
 
-**`BUDGET_MIN` is 55 and is very likely wrong.** It was set from the only two
-observations available at the time — 51 and 52 minutes — and both came from
-16:07 and 17:09 fires, squarely in the fast regime. The morning half of the
-window runs 83–173 minutes late, so morning arrivals will be spaced far wider
-than 55 minutes and coverage will have gaps there. The budget *value* and the
-window *start* are both open, and both need morning delay data that did not exist
-when this was written.
+**`BUDGET_MIN` was 55 and was very likely wrong; it is 165 since 2026-09-18.**
+It had been set from the only two observations available at the time — 51 and
+52 minutes — and both came from 16:07 and 17:09 fires, squarely in the fast
+regime. This section asked for the missing measurement. The measurement arrived
+from an unwelcome direction.
+
+**On 2026-08-26 GitHub stopped delivering most of this repo's sub-daily fires,
+and nothing noticed for 23 days.** Measured over 18 weekdays after against 20
+before:
+
+| | fires/weekday | median gap between delivered fires |
+|---|---|---|
+| Press release monitor (cron asks 17) | 14 → **4** | 1.00h → **3.64h** |
+| Volume spikes (cron asks 11) | 8 → **3** | 1.03h → **3.24h** |
+
+Every fire that did arrive succeeded, so `failure-notice.yml` never fired: an
+undelivered scheduled run emits no `workflow_run` event at all. The daily and
+weekly crons are unaffected.
+
+`BUDGET_MIN` is the one lever that answers this, and it is the rare fix that
+asks GitHub for **fewer** events rather than more. 165 minutes covers 76% of
+the 3.64h median gap where 55 covered 25%.
+
+**Why 165 and not the runner's 6-hour ceiling.** The cause is inferred rather
+than proven, and the strongest discriminator is duty cycle: this workflow and
+Volume spikes are the only two holding a runner for ~95% of their own cron
+period, together ~90% of the repo's Actions minutes, and they are exactly the
+two that collapsed. So the budget is capped where total runner minutes stay
+*below* the level GitHub was already sustaining — ~700 min/weekday before, 4 ×
+165 = 660 now. Volume spikes takes 130 on the same arithmetic (~400 before, 3 ×
+130 = 390). Buying coverage by spending more minutes bets against the only
+hypothesis the evidence supports.
+
+**What it does not fix, and this is the larger half.** A budget extends coverage
+FORWARD from whenever a fire lands; it cannot make an earlier fire land.
+Delivery per cron hour since the collapse:
+
+```
+press monitor  07-11 UTC 0.06 each   12:00 0.67   16:00 0.39  19:00 0.56  22:00 0.39
+volume spikes  12:00 0.00  13:00 0.06  14:00 0.00  15:00 0.06  16:00 0.71  19:00 0.59  22:00 0.65
+```
+
+The morning is dark because those fires are never delivered. For the press
+monitor that is latency only — the feed and cap margins below all hold at these gaps.
+For Volume spikes it is permanent: the first look of a session moved from 09:09
+ET to 12:49 ET, and `ratio_for`'s normalised denominator grows with the wall
+clock while no past hour is ever re-evaluated, so a tier crossed at 10:00 ET has
+decayed before anything looks. That needs a backfill of the unwatched hours from
+bars every run already downloads, not a bigger budget.
+
+**Reconsider this number if delivery recovers.** At hourly delivery a 165-minute
+job is a ~100% duty cycle and supersession returns in force. That is safe for
+correctness — the stale checkout behind the original duplicate posting is
+handled by `refresh_state` and the fetch-and-retry around the push — but it is
+the condition under which 165 stops being the right answer. Delivered fires per
+weekday is the number that shows it.
 
 ### Overlapping runs need no handling
 
