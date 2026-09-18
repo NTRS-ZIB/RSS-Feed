@@ -152,12 +152,63 @@ close is all of it. The footer says `the complete 09:00-16:00 IEX day`.
 
 So after an outage, **dispatch it rather than writing the day off.**
 
-The one thing it cannot recover is a *tier crossed and receded*. State resets
-on a new Eastern date and records only the highest tier reached, so a ticker
-that touched 3x at noon and fell back to 1.8x by the close alerts at 1.8x on a
-single late run, where the hourly schedule would have caught the 3x. Late is
+**A tier crossed and receded used to be unrecoverable. Since 2026-09-18 it is
+not.** This paragraph previously read: *"a ticker that touched 3x at noon and
+fell back to 1.8x by the close alerts at 1.8x on a single late run... Late is
 the most accurate reading of the session; it is not a substitute for having
-watched it.
+watched it."* That was written for an outage. On 2026-08-26 it became the daily
+condition.
+
+### Why the reading decays
+
+`ratio_for` divides today's cumulative volume by the baseline's cumulative
+volume **through the current wall-clock hour**. The denominator grows as the
+day advances whether or not the stock keeps trading, so the ratio is
+non-monotone. A stock reading `R` at hour `h` and then trading at its own
+baseline pace reads
+
+```
+R' = 1 + (R - 1) * S(h) / S(h')
+```
+
+at a later hour `h'`, where `S` is the baseline's volume through an hour. At
+`b = S(h)/S(h') = 0.5`, against `TIERS = [1.5, 3.0, 5.0, 10.0]`:
+
+| true ratio at 10:00 | reads at 12:51 | outcome |
+|---|---|---|
+| 5.0 | 3.00 | still posts, **one tier understated** |
+| 3.0 | 2.00 | still posts, two tiers understated |
+| 2.0 | 1.50 | marginal |
+| 1.5 | 1.25 | **vanishes** |
+
+So the strong events survived as understated tiers and the **weak-to-moderate
+band disappeared entirely** — the opposite of the intuition that a big spike is
+the one you lose.
+
+### What changed
+
+`session_series` now evaluates **every elapsed hour of today**, and `evaluate`
+alerts on the session's peak rather than on this instant's reading.
+
+**It costs no request.** `hourly_bars` already asks for 50 days with no `end`
+parameter, so every run had already downloaded every bar of today including the
+hours nobody watched, and `slot_totals` already aggregated them per hour and
+then read only the past days. The data was in hand the whole time.
+
+Each hour is a **complete evaluation as of itself**: the volume floors are
+applied against that hour's own cumulative volume, never against the day's
+total, or an afternoon's trading would qualify a ratio measured at 10:00 on a
+fraction of it. The gate at `NORMALISE_FROM_HOUR` still holds, so backfilling
+cannot reach behind it into 09:00.
+
+The last entry of the series reproduces exactly what the component has always
+published, which is what makes this safe to land: it recovers past hours
+without moving the current reading.
+
+**A recovered row is marked `*` and the footer says which hour it was read at.**
+The row was 27 characters against a 28 ceiling, so the marker fits without a
+column going. The ratio on a marked row is a fact about that earlier hour; the
+close and the percent move on the same row are facts about now.
 
 ## The gate, and why it is not just a floor
 

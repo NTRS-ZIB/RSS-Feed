@@ -249,6 +249,76 @@ def elapsed_through(day_slots, hour):
                if SESSION_OPEN.hour <= h <= hour)
 
 
+def cumulative_through(day_slots, hour):
+    """Everything traded up to and including `hour`, extended hours included.
+
+    NOT elapsed_through, AND THE DIFFERENCE IS LOAD-BEARING. That one starts at
+    the session open; this one starts at the first bar of the day, so it counts
+    the pre-market hours too.
+
+    The asymmetry is deliberate and it is not new: `daily_totals` has always
+    summed every bar of the day, extended hours included, and `build_metrics`
+    has always passed that total as the numerator while the slot baseline
+    counts only 09:00 onward. Reproducing that asymmetry is the whole point of
+    this function. At the current hour it returns exactly what `daily_totals`
+    returns for today, so the reading this series takes at `now` is the reading
+    the component has always published; anything else would move a live number
+    while claiming to backfill past ones.
+    """
+    return sum(v for h, v in day_slots.items() if h <= hour)
+
+
+def session_series(today_slots, past_slots, full_base, upto_hour):
+    """[(hour, volume, ratio, basis)] — what each elapsed hour would have read.
+
+    THE COMPONENT SAMPLES, AND SINCE 2026-08-26 IT SAMPLES LATE. `ratio_for`
+    divides today's cumulative volume by the baseline's cumulative volume
+    THROUGH THE CURRENT WALL-CLOCK HOUR, so the denominator grows as the day
+    advances whether or not the stock keeps trading. The ratio is therefore
+    NON-MONOTONE: a stock that reads R at hour h and then trades at its own
+    baseline pace reads
+
+        R' = 1 + (R - 1) * S(h) / S(h')
+
+    at a later hour h', where S is the baseline's volume through an hour. A
+    5.0x at 10:00 ET first looked at by 12:51 ET reads about 3.0x, and a 1.5x
+    disappears under TIERS[0] entirely. Nothing re-evaluated a past hour, and
+    state resets at ET midnight, so those readings were simply never taken.
+
+    MEASURED: GitHub stopped delivering this workflow's morning fires on
+    2026-08-26, and the first look of a session moved from 09:09 ET (19 of 19
+    sessions, all in 09:03-09:43) to 12:49 ET (16 of 16, in 12:18-18:15 — the
+    two distributions do not overlap). Two sessions were first looked at after
+    the 16:00 close. Hours 10 and 11 are normalised hours and go unsampled
+    every weekday. Raising the poll budget cannot recover them: a budget
+    extends coverage forward from whenever a fire lands, and those fires are
+    not delivered at all.
+
+    THIS COSTS NO REQUEST. `hourly_bars` already asks for 50 days of hourly
+    bars with no `end` parameter, so every run has already downloaded every
+    bar of today including the hours nobody watched, and `slot_totals` already
+    aggregates them per hour and then reads only the past days. The data was
+    in hand the whole time.
+
+    Hours below NORMALISE_FROM_HOUR are included and fall through to the
+    full-session denominator exactly as a live run at that hour would, so the
+    gate that holds 09:00 back from normalisation still holds here. An hour
+    with no volume is skipped rather than recorded as a zero reading.
+    """
+    if not today_slots:
+        return []
+    out = []
+    for hour in range(min(today_slots), upto_hour + 1):
+        volume = cumulative_through(today_slots, hour)
+        if volume <= 0:
+            continue
+        slot_base = [elapsed_through(d, hour) for d in past_slots]
+        slot_base = [v for v in slot_base if v > 0]
+        ratio, basis = ratio_for(volume, hour, slot_base, full_base)
+        out.append((hour, volume, ratio, basis))
+    return out
+
+
 def ratio_for(volume, hour, slot_base, full_base):
     """(ratio, basis) — the gated session-normalised measure.
 
@@ -316,17 +386,51 @@ def build_metrics(bars):
                   f"too illiquid for a reliable ratio, skipping")
             excluded[symbol] = base
             continue
+        full_base = [totals[d][0] for d in past if totals[d][0] > 0]
         out[symbol] = {
             "volume": volume,
             "base": base,
             "slot_base": slot_base,
-            "full_base": [totals[d][0] for d in past if totals[d][0] > 0],
+            "full_base": full_base,
             "hour": hour,
+            # EVERY ELAPSED HOUR, not just this one. The bars are already here;
+            # see session_series for why the hours nobody watched are the ones
+            # that matter. The last entry reproduces the reading this component
+            # has always taken, so wiring this in moved no published number.
+            "series": session_series(slots.get(today, {}),
+                                     [slots.get(d, {}) for d in past],
+                                     full_base, hour),
             "close": close,
             "prev_close": totals[history[-1]][1] if history else None,
             "sessions": len(past),
         }
     return out, excluded
+
+
+def peak_reading(m):
+    """The strongest hour today that clears its own floors, or None.
+
+    THE FLOORS ARE APPLIED PER HOUR, against that hour's own volume, and that
+    is the part it would be easy to get wrong. `MIN_ALERT_VOLUME` exists
+    because "3x of almost nothing is still almost nothing"; testing it against
+    today's FINAL volume would let an afternoon's trading qualify a ratio that
+    was measured at 10:00 on a fraction of it. Each entry is a complete
+    evaluation as of its own hour or it is not evidence about that hour.
+
+    Ties go to the earlier hour, because the question this component answers is
+    when the move started.
+    """
+    best = None
+    for hour, volume, ratio, basis in m.get("series") or []:
+        if volume < MIN_ALERT_VOLUME:
+            continue
+        # The normalised measure divides by a smaller number, so it needs a
+        # higher absolute floor. Derived, not chosen — see the constant.
+        if basis == "normalised" and volume < MIN_NORMALISED_VOLUME:
+            continue
+        if best is None or ratio > best[2]:
+            best = (hour, volume, ratio, basis)
+    return best
 
 
 def tier_for(ratio):
@@ -344,18 +448,19 @@ def evaluate(metrics, state):
 
     alerts = []
     for symbol, m in metrics.items():
-        ratio, basis = ratio_for(m["volume"], m["hour"], m["slot_base"],
-                                 m["full_base"])
+        # THE SESSION'S PEAK, NOT THIS INSTANT'S READING. The floors are
+        # applied inside, per hour, so each candidate is a complete evaluation
+        # as of its own hour. `peak_reading` returns None when nothing today
+        # cleared them, which is the same answer the old volume checks gave.
+        best = peak_reading(m)
+        if best is None:
+            continue
+        peak_hour, volume, ratio, basis = best
         m["basis"] = basis
         m["ratio"] = ratio
+        m["peak_hour"] = peak_hour
         tier = tier_for(ratio)
         if tier is None:
-            continue
-        if m["volume"] < MIN_ALERT_VOLUME:
-            continue          # 3x of almost nothing is still almost nothing
-        # The normalised measure divides by a smaller number, so it needs a
-        # higher absolute floor. Derived, not chosen — see the constant.
-        if basis == "normalised" and m["volume"] < MIN_NORMALISED_VOLUME:
             continue
         if state["alerted"].get(symbol, 0) >= tier:
             continue          # already alerted at this level or higher today
@@ -368,7 +473,13 @@ def evaluate(metrics, state):
             "ratio": ratio,
             "basis": basis,
             "tier": tier,
-            "volume": m["volume"],
+            "volume": volume,
+            # The hour the peak was read at, against the hour this run is
+            # reading. When they differ the row is a recovered reading rather
+            # than a live one, and build_embed says so: the ratio is a fact
+            # about `peak_hour`, while close and pct are facts about now.
+            "peak_hour": peak_hour,
+            "read_hour": m["hour"],
             "close": close,
             "pct": ((close - prev) / prev * 100) if (prev and close) else None,
         })
@@ -430,7 +541,16 @@ def build_embed(alerts):
     lines = []
     for a in alerts:
         move = f"{a['pct']:+.1f}%" if a["pct"] is not None else "n/a"
-        lines.append(f"{a['symbol']:<5}{a['ratio']:>5.1f}x"
+        # ONE CHARACTER, WHICH IS EXACTLY WHAT WAS SPARE. The row was 27 and
+        # the ceiling is 28, so this marker fits without a column going — the
+        # only reason a new field was affordable here at all.
+        #
+        # `*` says the ratio is a fact about an earlier hour than the footer's
+        # read time. Close and pct on the same row are still facts about now,
+        # and mixing them is deliberate: the reader wants the size of the move
+        # and the price it left behind.
+        mark = "*" if a.get("peak_hour") != a.get("read_hour") else " "
+        lines.append(f"{a['symbol']:<5}{a['ratio']:>5.1f}x{mark}"
                      f"{a['close']:>8.2f}{move:>8}")
     clock, pct = session_position()
     bases = {a.get("basis", "full-session") for a in alerts}
@@ -447,6 +567,22 @@ def build_embed(alerts):
     # reaches the other branch.
     elapsed = ("the complete 09:00-16:00 IEX day" if pct >= 1.0
                else f"{int(pct * 100)}% through the 09:00-16:00 IEX day")
+
+    # THE MARKED ROWS NEED THEIR OWN LATENCY, because the footer's read time is
+    # not theirs. A recovered peak is a reading taken as of an earlier hour,
+    # and the hour is the whole difference between "this is happening" and
+    # "this happened and has since faded". Stating the range rather than one
+    # hour per row keeps it out of the 28-character block.
+    early = sorted({a["peak_hour"] for a in alerts
+                    if a.get("peak_hour") != a.get("read_hour")
+                    and a.get("peak_hour") is not None})
+    if not early:
+        recovered = ""
+    elif len(early) == 1:
+        recovered = f" · * peak read at {early[0]:02d}:00 ET, not now"
+    else:
+        recovered = (f" · * peak read at {early[0]:02d}:00-{early[-1]:02d}:00 "
+                     f"ET, not now")
 
     return {
         "title": "Unusual volume",
@@ -467,7 +603,7 @@ def build_embed(alerts):
         # understates. Before 10:00 ET, and wherever the slot baseline is too
         # thin, the second is used — see ratio_for().
         "footer": {"text": f"Alpaca IEX feed · read {clock} ET, {elapsed}, "
-                           f"against {basis_note}"},
+                           f"against {basis_note}{recovered}"},
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
