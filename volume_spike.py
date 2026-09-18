@@ -640,7 +640,10 @@ def main():
     alerts = evaluate(metrics, state)
 
     # Always show the full picture in the log, not just what alerted.
-    print("\nCurrent ratios (IEX day, 09:00-15:59 ET):")
+    # PEAK, not current, since the backfill landed. evaluate() writes the
+    # session's strongest qualifying reading back onto each metric, so a
+    # heading saying "current" would have described the wrong number.
+    print("\nPeak ratio today (IEX day, 09:00-15:59 ET):")
     firing = {a["symbol"] for a in alerts}
     for symbol in TICKERS:
         m = metrics.get(symbol)
@@ -657,11 +660,25 @@ def main():
         # evaluate() writes it back onto the metric, so the log cannot drift
         # from what fired — which it would have, silently, on any fire before
         # the two measures converge at the close.
-        ratio = m.get("ratio", m["volume"] / m["base"])
-        basis = m.get("basis", "full-session")
+        #
+        # SINCE THE BACKFILL LANDED THAT VALUE IS THE SESSION'S PEAK, not this
+        # hour's reading, and the heading above says so. The peak hour is
+        # printed whenever it is not this one, because a 1.5x that happened at
+        # 10:00 and a 1.5x happening now are different facts and the line gave
+        # a reader no way to tell them apart.
+        ratio = m.get("ratio")
+        if ratio is None:
+            # No hour today cleared the volume floors, so there is no peak to
+            # report. Labelled rather than quietly shown as though it were one.
+            ratio = m["volume"] / m["base"]
+            detail = "full-session, no hour above the alert floors"
+        else:
+            when = ("" if m.get("peak_hour") == m.get("hour")
+                    else f", peak at {m['peak_hour']:02d}:00 ET")
+            detail = f"{m.get('basis', 'full-session')}{when}"
         print(f" {mark}{symbol:<6}{ratio:>6.2f}x   "
               f"({human(m['volume'])} vs {human(m['base'])} avg, "
-              f"{m['sessions']}d, {basis})")
+              f"{m['sessions']}d, {detail})")
 
     if not alerts:
         print("\nNothing above threshold.")
