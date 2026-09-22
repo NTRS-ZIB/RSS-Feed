@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-21T16:42:08+00:00",
+  "generated": "2026-09-22T15:15:53+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -2522,7 +2522,7 @@
     },
     "VIP": {
       "cik": "0001844971",
-      "filing_count": 444,
+      "filing_count": 445,
       "filings": {
         "10-K": {
           "accession": "0001844971-26-000011",
@@ -2550,12 +2550,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828026061887/xslF345X06/wk-form3_1789419069.xml"
         },
         "4": {
-          "accession": "0001193125-26-390887",
-          "count": 89,
-          "filed": "2026-09-14",
-          "form": "4",
-          "period": "2026-09-10",
-          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000119312526390887/xslF345X06/ownership.xml"
+          "accession": "0001628280-26-062889",
+          "count": 90,
+          "filed": "2026-09-21",
+          "form": "4/A",
+          "period": "2026-09-09",
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828026062889/xslF345X06/wk-form4a_1790021764.xml"
         },
         "40-F": null,
         "424": {
@@ -2646,7 +2646,7 @@
       "former_names": [
         "Greenidge Generation Holdings Inc."
       ],
-      "latest_filing_date": "2026-09-17",
+      "latest_filing_date": "2026-09-21",
       "name": "Vulcan Infrastructure & Power Inc.",
       "off_docket_13dg": 2,
       "projection": {
