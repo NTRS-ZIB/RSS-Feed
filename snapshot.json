@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-24T15:35:27+00:00",
+  "generated": "2026-09-25T15:40:29+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -858,7 +858,7 @@
     },
     "CIFR": {
       "cik": "0001819989",
-      "filing_count": 609,
+      "filing_count": 610,
       "filings": {
         "10-K": {
           "accession": "0001819989-26-000009",
@@ -904,12 +904,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001819989-26-000038",
-          "count": 88,
-          "filed": "2026-08-04",
+          "accession": "0001819989-26-000043",
+          "count": 89,
+          "filed": "2026-09-25",
           "form": "8-K",
-          "period": "2026-08-04",
-          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000181998926000038/cifr-20260804.htm"
+          "period": "2026-09-24",
+          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000181998926000043/cifr-20260924.htm"
         },
         "DEF 14A": {
           "accession": "0001819989-26-000016",
@@ -976,7 +976,7 @@
         "Cipher Mining Inc.",
         "GOOD WORKS ACQUISITION CORP."
       ],
-      "latest_filing_date": "2026-08-13",
+      "latest_filing_date": "2026-09-25",
       "name": "Cipher Digital Inc.",
       "off_docket_13dg": 1,
       "projection": {
@@ -1272,7 +1272,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1128,
+      "filing_count": 1130,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1300,12 +1300,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000155/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0001769628-26-000433",
-          "count": 468,
-          "filed": "2026-09-22",
+          "accession": "0001769628-26-000435",
+          "count": 470,
+          "filed": "2026-09-24",
           "form": "4",
-          "period": "2026-09-18",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000433/xslF345X06/form4.xml"
+          "period": "2026-09-22",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000435/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1368,7 +1368,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-09-22",
+      "latest_filing_date": "2026-09-24",
       "name": "CoreWeave, Inc.",
       "off_docket_13dg": 5,
       "projection": {
@@ -1635,7 +1635,7 @@
     },
     "HUT": {
       "cik": "0001964789",
-      "filing_count": 254,
+      "filing_count": 255,
       "filings": {
         "10-K": {
           "accession": "0001104659-26-019392",
@@ -1736,7 +1736,7 @@
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-08-25",
+      "latest_filing_date": "2026-09-24",
       "name": "Hut 8 Corp.",
       "off_docket_13dg": 1,
       "projection": {
@@ -2296,7 +2296,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1574,
+      "filing_count": 1575,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2324,12 +2324,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226034093/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001493152-26-043141",
-          "count": 614,
-          "filed": "2026-09-17",
+          "accession": "0001493152-26-044152",
+          "count": 615,
+          "filed": "2026-09-24",
           "form": "4",
-          "period": "2026-09-01",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226043141/xslF345X06/ownership.xml"
+          "period": "2026-09-23",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226044152/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
@@ -2413,7 +2413,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-09-17",
+      "latest_filing_date": "2026-09-24",
       "name": "Soluna Holdings, Inc",
       "off_docket_13dg": 17,
       "projection": {
@@ -2431,7 +2431,7 @@
     },
     "SPCX": {
       "cik": "0001181412",
-      "filing_count": 83,
+      "filing_count": 84,
       "filings": {
         "10-K": null,
         "10-Q": {
@@ -2452,12 +2452,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1181412/000162828026044455/xslF345X06/wk-form3_1781830397.xml"
         },
         "4": {
-          "accession": "0001213900-26-100186",
-          "count": 2,
-          "filed": "2026-09-15",
+          "accession": "0001628280-26-063378",
+          "count": 3,
+          "filed": "2026-09-24",
           "form": "4",
-          "period": "2026-09-11",
-          "url": "https://www.sec.gov/Archives/edgar/data/1181412/000121390026100186/xslF345X06/ownership.xml"
+          "period": "2026-04-18",
+          "url": "https://www.sec.gov/Archives/edgar/data/1181412/000162828026063378/xslF345X06/wk-form4_1790280657.xml"
         },
         "40-F": null,
         "424": {
@@ -2504,7 +2504,7 @@
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-09-22",
+      "latest_filing_date": "2026-09-24",
       "name": "SPACE EXPLORATION TECHNOLOGIES CORP",
       "off_docket_13dg": 0,
       "projection": {
@@ -2522,7 +2522,7 @@
     },
     "VIP": {
       "cik": "0001844971",
-      "filing_count": 445,
+      "filing_count": 446,
       "filings": {
         "10-K": {
           "accession": "0001844971-26-000011",
@@ -2646,7 +2646,7 @@
       "former_names": [
         "Greenidge Generation Holdings Inc."
       ],
-      "latest_filing_date": "2026-09-21",
+      "latest_filing_date": "2026-09-24",
       "name": "Vulcan Infrastructure & Power Inc.",
       "off_docket_13dg": 2,
       "projection": {
