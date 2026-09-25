@@ -1151,7 +1151,8 @@
   "urn:tag:sec.gov,2008:accession-number=0001769628-26-000434",
   "urn:tag:sec.gov,2008:accession-number=0001819989-26-000043",
   "11781",
-  "https://investors.corescientific.com/news-events/press-releases/detail/144/core-scientific-appoints-jay-elms-as-chief-commercial-officer"
+  "https://investors.corescientific.com/news-events/press-releases/detail/144/core-scientific-appoints-jay-elms-as-chief-commercial-officer",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-402852"
  ],
  "initialized": true,
  "feeds": {
@@ -1160,7 +1161,7 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 1,
+   "fails": 0,
    "alerted": false
   },
   "BKKT": {
