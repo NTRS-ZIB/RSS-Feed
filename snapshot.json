@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-25T15:40:29+00:00",
+  "generated": "2026-09-28T18:18:30+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -312,7 +312,7 @@
     },
     "APLD": {
       "cik": "0001144879",
-      "filing_count": 813,
+      "filing_count": 817,
       "filings": {
         "10-K": {
           "accession": "0001144879-26-000048",
@@ -366,12 +366,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1144879/000114487926000044/apld-20260727.htm"
         },
         "DEF 14A": {
-          "accession": "0001493152-25-014495",
-          "count": 10,
-          "filed": "2025-09-22",
+          "accession": "0001493152-26-044325",
+          "count": 11,
+          "filed": "2026-09-25",
           "form": "DEF 14A",
-          "period": "2025-09-22",
-          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000149315225014495/formdef14a.htm"
+          "period": "2026-09-25",
+          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000149315226044325/formdef14a.htm"
         },
         "NT 10-K": {
           "accession": "0001144879-24-000213",
@@ -447,7 +447,7 @@
         "FLIGHT SAFETY TECHNOLOGIES INC",
         "REEL STAFF INC"
       ],
-      "latest_filing_date": "2026-09-14",
+      "latest_filing_date": "2026-09-25",
       "name": "Applied Digital Corp.",
       "off_docket_13dg": 2,
       "projection": {
@@ -465,7 +465,7 @@
     },
     "BGDE": {
       "cik": "0001218683",
-      "filing_count": 739,
+      "filing_count": 740,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-037417",
@@ -585,7 +585,7 @@
         "OphthaliX, Inc.",
         "DENALI CONCRETE MANAGEMENT INC"
       ],
-      "latest_filing_date": "2026-09-24",
+      "latest_filing_date": "2026-09-25",
       "name": "Big Digital Energy, Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -603,7 +603,7 @@
     },
     "BKKT": {
       "cik": "0001820302",
-      "filing_count": 761,
+      "filing_count": 764,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019870",
@@ -631,12 +631,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026059219/xslF345X06/wk-form3_1787849870.xml"
         },
         "4": {
-          "accession": "0001628280-26-057900",
-          "count": 238,
-          "filed": "2026-08-19",
+          "accession": "0001628280-26-063638",
+          "count": 241,
+          "filed": "2026-09-25",
           "form": "4",
-          "period": "2026-08-18",
-          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026057900/xslF345X06/wk-form4_1787163725.xml"
+          "period": "2026-09-23",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026063638/xslF345X06/wk-form4_1790374280.xml"
         },
         "40-F": null,
         "424": {
@@ -735,7 +735,7 @@
         "Bakkt Holdings, Inc.",
         "VPC Impact Acquisition Holdings"
       ],
-      "latest_filing_date": "2026-08-27",
+      "latest_filing_date": "2026-09-25",
       "name": "Bakkt, Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -994,7 +994,7 @@
     },
     "CLSK": {
       "cik": "0000827876",
-      "filing_count": 776,
+      "filing_count": 777,
       "filings": {
         "10-K": {
           "accession": "0001193125-25-297510",
@@ -1040,12 +1040,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001193125-26-395727",
-          "count": 216,
-          "filed": "2026-09-18",
+          "accession": "0001193125-26-402944",
+          "count": 217,
+          "filed": "2026-09-25",
           "form": "8-K",
-          "period": "2026-09-18",
-          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526395727/clsk-20260918.htm"
+          "period": "2026-09-25",
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526402944/clsk-20260925.htm"
         },
         "DEF 14A": {
           "accession": "0001193125-26-019447",
@@ -1112,7 +1112,7 @@
         "STRATEAN INC.",
         "SMARTDATA CORP"
       ],
-      "latest_filing_date": "2026-09-18",
+      "latest_filing_date": "2026-09-25",
       "name": "CLEANSPARK, INC.",
       "off_docket_13dg": 0,
       "projection": {
@@ -1635,7 +1635,7 @@
     },
     "HUT": {
       "cik": "0001964789",
-      "filing_count": 255,
+      "filing_count": 256,
       "filings": {
         "10-K": {
           "accession": "0001104659-26-019392",
@@ -1681,12 +1681,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001104659-26-090041",
-          "count": 41,
-          "filed": "2026-08-04",
+          "accession": "0001104659-26-111154",
+          "count": 42,
+          "filed": "2026-09-28",
           "form": "8-K",
-          "period": "2026-08-04",
-          "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926090041/tm2621890d1_8k.htm"
+          "period": "2026-09-24",
+          "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926111154/tm2625691d1_8k.htm"
         },
         "DEF 14A": {
           "accession": "0001104659-26-049711",
@@ -1736,7 +1736,7 @@
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-09-24",
+      "latest_filing_date": "2026-09-28",
       "name": "Hut 8 Corp.",
       "off_docket_13dg": 1,
       "projection": {
@@ -1883,7 +1883,7 @@
     },
     "MARA": {
       "cik": "0001507605",
-      "filing_count": 1112,
+      "filing_count": 1113,
       "filings": {
         "10-K": {
           "accession": "0001507605-26-000007",
@@ -1929,12 +1929,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001507605-26-000020",
-          "count": 290,
-          "filed": "2026-08-06",
+          "accession": "0000950142-26-002607",
+          "count": 291,
+          "filed": "2026-09-25",
           "form": "8-K",
-          "period": "2026-08-06",
-          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000150760526000020/mara-20260806.htm"
+          "period": "2026-09-21",
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000095014226002607/eh260835247_8k.htm"
         },
         "DEF 14A": {
           "accession": "0001507605-26-000010",
@@ -2010,7 +2010,7 @@
         "American Strategic Minerals Corp",
         "VERVE VENTURES INC"
       ],
-      "latest_filing_date": "2026-09-18",
+      "latest_filing_date": "2026-09-25",
       "name": "MARA Holdings, Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -2150,7 +2150,7 @@
     },
     "RIOT": {
       "cik": "0001167419",
-      "filing_count": 1592,
+      "filing_count": 1593,
       "filings": {
         "10-K": {
           "accession": "0001104659-26-022322",
@@ -2196,12 +2196,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001104659-26-097330",
-          "count": 396,
-          "filed": "2026-08-14",
+          "accession": "0001104659-26-111003",
+          "count": 397,
+          "filed": "2026-09-25",
           "form": "8-K",
-          "period": "2026-08-10",
-          "url": "https://www.sec.gov/Archives/edgar/data/1167419/000110465926097330/riot-20260810x8k.htm"
+          "period": "2026-09-21",
+          "url": "https://www.sec.gov/Archives/edgar/data/1167419/000110465926111003/riot-20260921x8k.htm"
         },
         "DEF 14A": {
           "accession": "0001104659-26-053098",
@@ -2278,7 +2278,7 @@
         "AspenBio Pharma, Inc.",
         "ASPENBIO INC"
       ],
-      "latest_filing_date": "2026-08-14",
+      "latest_filing_date": "2026-09-25",
       "name": "Riot Platforms, Inc.",
       "off_docket_13dg": 23,
       "projection": {
@@ -2296,7 +2296,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1575,
+      "filing_count": 1576,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2342,12 +2342,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001493152-26-042479",
-          "count": 357,
-          "filed": "2026-09-14",
+          "accession": "0001493152-26-044444",
+          "count": 358,
+          "filed": "2026-09-28",
           "form": "8-K",
-          "period": "2026-09-14",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226042479/form8-k.htm"
+          "period": "2026-09-28",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226044444/form8-k.htm"
         },
         "DEF 14A": {
           "accession": "0001628280-26-058611",
@@ -2413,7 +2413,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-09-24",
+      "latest_filing_date": "2026-09-28",
       "name": "Soluna Holdings, Inc",
       "off_docket_13dg": 17,
       "projection": {
@@ -2664,7 +2664,7 @@
     },
     "WULF": {
       "cik": "0001083301",
-      "filing_count": 1240,
+      "filing_count": 1241,
       "filings": {
         "10-K": {
           "accession": "0001083301-26-000031",
@@ -2770,19 +2770,19 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1083301/000110465925085721/xslSCHEDULE_13D_X01/primary_doc.xml"
         },
         "SCHEDULE 13G": {
-          "accession": "0000895421-26-000270",
-          "count": 17,
-          "filed": "2026-08-13",
+          "accession": "0001193125-26-402852",
+          "count": 18,
+          "filed": "2026-09-25",
           "form": "SCHEDULE 13G",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000089542126000270/xslSCHEDULE_13G_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000119312526402852/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
         "IKONICS CORP",
         "CHROMALINE CORP"
       ],
-      "latest_filing_date": "2026-09-23",
+      "latest_filing_date": "2026-09-25",
       "name": "TERAWULF INC.",
       "off_docket_13dg": 0,
       "projection": {
