@@ -194,6 +194,7 @@
   "VIP|Eric W. Rosenthal | MIG REF II INFR, LLC": 8.23,
   "VIP|Rogers George Ted III": 8.5,
   "WULF|Allin WULF LLC | Beowulf Electricity & Data Inc. | Heorot Power Holdings LLC | Lucky Liefern LLC | Paul B. Prager | Paul B. Prager 2020 Revocable Trust | Riesling Power LLC | Stammtisch Investments LLC": 10.7,
+  "WULF|Alphabet Inc. | Google LLC | XXVI Holdings Inc.": 7.6,
   "WULF|BANK OF NOVA SCOTIA": 7.7,
   "WULF|Bayshore Capital LLC | Bryan J. Pascual": 4.9,
   "WULF|BlackRock, Inc.": 4.5,
@@ -224,28 +225,28 @@
   "0000950170-25-114068"
  ],
  "read": {
-  "ABTC": "2026-09-25",
-  "ANY": "2026-09-25",
-  "APLD": "2026-09-25",
-  "BGDE": "2026-09-25",
-  "BKKT": "2026-09-25",
-  "BTDR": "2026-09-25",
-  "CIFR": "2026-09-25",
-  "CLSK": "2026-09-25",
-  "CORZ": "2026-09-25",
-  "CRWV": "2026-09-25",
-  "DGXX": "2026-09-25",
-  "GLXY": "2026-09-25",
-  "HUT": "2026-09-25",
-  "IREN": "2026-09-25",
-  "MARA": "2026-09-25",
-  "NUAI": "2026-09-25",
-  "RIOT": "2026-09-25",
-  "SLNH": "2026-09-25",
-  "SPCX": "2026-09-25",
-  "VIP": "2026-09-25",
-  "WULF": "2026-09-25",
-  "WYFI": "2026-09-25"
+  "ABTC": "2026-09-28",
+  "ANY": "2026-09-28",
+  "APLD": "2026-09-28",
+  "BGDE": "2026-09-28",
+  "BKKT": "2026-09-28",
+  "BTDR": "2026-09-28",
+  "CIFR": "2026-09-28",
+  "CLSK": "2026-09-28",
+  "CORZ": "2026-09-28",
+  "CRWV": "2026-09-28",
+  "DGXX": "2026-09-28",
+  "GLXY": "2026-09-28",
+  "HUT": "2026-09-28",
+  "IREN": "2026-09-28",
+  "MARA": "2026-09-28",
+  "NUAI": "2026-09-28",
+  "RIOT": "2026-09-28",
+  "SLNH": "2026-09-28",
+  "SPCX": "2026-09-28",
+  "VIP": "2026-09-28",
+  "WULF": "2026-09-28",
+  "WYFI": "2026-09-28"
  },
  "repairs": [
   "2026-09-10-subject-misattribution"
@@ -602,6 +603,7 @@
   "0001213900-26-099322",
   "0001193125-26-390907",
   "0001193125-26-392929",
-  "0000921895-26-002571"
+  "0000921895-26-002571",
+  "0001193125-26-402852"
  ]
 }
