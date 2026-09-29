@@ -69,7 +69,7 @@
   "APLD|The Vanguard Group": 0.0,
   "APLD|Vanguard Portfolio Management": 4.81,
   "APLD|Wesley Cummins": 7.6,
-  "BGDE|Cody Smith | Endeavor Blockchain, LLC | Joshua Kilgore | PM Squared, LLC": 46.5,
+  "BGDE|Cody Smith | Endeavor Blockchain, LLC | Joshua Kilgore | PM Squared, LLC": 44.3,
   "BGDE|Rahul Mewawalla": 24.1,
   "BKKT|Akshay Sudhir Naheta": 22.3,
   "BKKT|Alyeska Fund GP, LLC | Alyeska Investment Group, L.P. | Anand Parekh": 0.0,
@@ -225,28 +225,28 @@
   "0000950170-25-114068"
  ],
  "read": {
-  "ABTC": "2026-09-28",
-  "ANY": "2026-09-28",
-  "APLD": "2026-09-28",
-  "BGDE": "2026-09-28",
-  "BKKT": "2026-09-28",
-  "BTDR": "2026-09-28",
-  "CIFR": "2026-09-28",
-  "CLSK": "2026-09-28",
-  "CORZ": "2026-09-28",
-  "CRWV": "2026-09-28",
-  "DGXX": "2026-09-28",
-  "GLXY": "2026-09-28",
-  "HUT": "2026-09-28",
-  "IREN": "2026-09-28",
-  "MARA": "2026-09-28",
-  "NUAI": "2026-09-28",
-  "RIOT": "2026-09-28",
-  "SLNH": "2026-09-28",
-  "SPCX": "2026-09-28",
-  "VIP": "2026-09-28",
-  "WULF": "2026-09-28",
-  "WYFI": "2026-09-28"
+  "ABTC": "2026-09-29",
+  "ANY": "2026-09-29",
+  "APLD": "2026-09-29",
+  "BGDE": "2026-09-29",
+  "BKKT": "2026-09-29",
+  "BTDR": "2026-09-29",
+  "CIFR": "2026-09-29",
+  "CLSK": "2026-09-29",
+  "CORZ": "2026-09-29",
+  "CRWV": "2026-09-29",
+  "DGXX": "2026-09-29",
+  "GLXY": "2026-09-29",
+  "HUT": "2026-09-29",
+  "IREN": "2026-09-29",
+  "MARA": "2026-09-29",
+  "NUAI": "2026-09-29",
+  "RIOT": "2026-09-29",
+  "SLNH": "2026-09-29",
+  "SPCX": "2026-09-29",
+  "VIP": "2026-09-29",
+  "WULF": "2026-09-29",
+  "WYFI": "2026-09-29"
  },
  "repairs": [
   "2026-09-10-subject-misattribution"
@@ -604,6 +604,7 @@
   "0001193125-26-390907",
   "0001193125-26-392929",
   "0000921895-26-002571",
-  "0001193125-26-402852"
+  "0001193125-26-402852",
+  "0000912282-26-001308"
  ]
 }
