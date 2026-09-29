@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-28T18:18:30+00:00",
+  "generated": "2026-09-29T16:41:26+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -465,7 +465,7 @@
     },
     "BGDE": {
       "cik": "0001218683",
-      "filing_count": 740,
+      "filing_count": 742,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-037417",
@@ -493,12 +493,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026045631/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0000912282-26-001303",
-          "count": 141,
-          "filed": "2026-09-23",
+          "accession": "0000912282-26-001310",
+          "count": 142,
+          "filed": "2026-09-28",
           "form": "4",
-          "period": "2026-09-21",
-          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000091228226001303/xslF345X06/form4.xml"
+          "period": "2026-09-24",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000091228226001310/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -570,12 +570,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390021009599/ea135724-13ga2rubini_wize.htm"
         },
         "SCHEDULE 13D": {
-          "accession": "0000912282-26-000965",
-          "count": 15,
-          "filed": "2026-07-10",
+          "accession": "0000912282-26-001308",
+          "count": 16,
+          "filed": "2026-09-28",
           "form": "SCHEDULE 13D/A",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000091228226000965/xslSCHEDULE_13D_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000091228226001308/xslSCHEDULE_13D_X02/primary_doc.xml"
         },
         "SCHEDULE 13G": null
       },
@@ -585,7 +585,7 @@
         "OphthaliX, Inc.",
         "DENALI CONCRETE MANAGEMENT INC"
       ],
-      "latest_filing_date": "2026-09-25",
+      "latest_filing_date": "2026-09-28",
       "name": "Big Digital Energy, Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -1635,7 +1635,7 @@
     },
     "HUT": {
       "cik": "0001964789",
-      "filing_count": 256,
+      "filing_count": 257,
       "filings": {
         "10-K": {
           "accession": "0001104659-26-019392",
@@ -1663,12 +1663,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465925089589/xslF345X02/tm2525948-1_3seq1.xml"
         },
         "4": {
-          "accession": "0001964789-26-000038",
-          "count": 77,
-          "filed": "2026-08-25",
+          "accession": "0001964789-26-000040",
+          "count": 78,
+          "filed": "2026-09-28",
           "form": "4",
-          "period": "2026-08-21",
-          "url": "https://www.sec.gov/Archives/edgar/data/1964789/000196478926000038/xslF345X06/form4.xml"
+          "period": "2026-09-24",
+          "url": "https://www.sec.gov/Archives/edgar/data/1964789/000196478926000040/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
