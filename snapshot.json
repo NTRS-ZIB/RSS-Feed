@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-29T16:41:26+00:00",
+  "generated": "2026-09-30T16:33:00+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -753,7 +753,7 @@
     },
     "BTDR": {
       "cik": "0001899123",
-      "filing_count": 280,
+      "filing_count": 281,
       "filings": {
         "10-K": null,
         "10-Q": null,
@@ -791,12 +791,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026087060/ea030073702-424b5_bitdeer.htm"
         },
         "6-K": {
-          "accession": "0001213900-26-100537",
-          "count": 105,
-          "filed": "2026-09-16",
+          "accession": "0001213900-26-104638",
+          "count": 106,
+          "filed": "2026-09-29",
           "form": "6-K",
-          "period": "2026-09-16",
-          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026100537/ea0305235-6k_bitdeer.htm"
+          "period": "2026-06-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026104638/ea0306473-6k_bitdeer.htm"
         },
         "8-K": null,
         "DEF 14A": null,
@@ -840,7 +840,7 @@
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-09-16",
+      "latest_filing_date": "2026-09-29",
       "name": "Bitdeer Technologies Group",
       "off_docket_13dg": 0,
       "projection": {
@@ -1272,7 +1272,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1130,
+      "filing_count": 1132,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1368,7 +1368,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-09-24",
+      "latest_filing_date": "2026-09-29",
       "name": "CoreWeave, Inc.",
       "off_docket_13dg": 5,
       "projection": {
@@ -1635,7 +1635,7 @@
     },
     "HUT": {
       "cik": "0001964789",
-      "filing_count": 257,
+      "filing_count": 258,
       "filings": {
         "10-K": {
           "accession": "0001104659-26-019392",
@@ -1736,7 +1736,7 @@
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-09-28",
+      "latest_filing_date": "2026-09-29",
       "name": "Hut 8 Corp.",
       "off_docket_13dg": 1,
       "projection": {
@@ -2522,7 +2522,7 @@
     },
     "VIP": {
       "cik": "0001844971",
-      "filing_count": 446,
+      "filing_count": 447,
       "filings": {
         "10-K": {
           "accession": "0001844971-26-000011",
@@ -2568,12 +2568,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001193805-26-001214",
-          "count": 114,
-          "filed": "2026-09-10",
+          "accession": "0001628280-26-063839",
+          "count": 115,
+          "filed": "2026-09-29",
           "form": "8-K",
-          "period": "2026-09-10",
-          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000119380526001214/e665775_8k-vulcan.htm"
+          "period": "2026-09-23",
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828026063839/gree-20260923.htm"
         },
         "DEF 14A": {
           "accession": "0001193805-26-000547",
@@ -2646,7 +2646,7 @@
       "former_names": [
         "Greenidge Generation Holdings Inc."
       ],
-      "latest_filing_date": "2026-09-24",
+      "latest_filing_date": "2026-09-29",
       "name": "Vulcan Infrastructure & Power Inc.",
       "off_docket_13dg": 2,
       "projection": {
@@ -2664,7 +2664,7 @@
     },
     "WULF": {
       "cik": "0001083301",
-      "filing_count": 1241,
+      "filing_count": 1242,
       "filings": {
         "10-K": {
           "accession": "0001083301-26-000031",
@@ -2692,12 +2692,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1083301/000207478625000007/xslF345X02/wk-form3a_1755567904.xml"
         },
         "4": {
-          "accession": "0001628280-26-063153",
-          "count": 560,
-          "filed": "2026-09-23",
+          "accession": "0001628280-26-063883",
+          "count": 561,
+          "filed": "2026-09-29",
           "form": "4",
-          "period": "2026-09-22",
-          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000162828026063153/xslF345X06/wk-form4_1790168617.xml"
+          "period": "2026-09-29",
+          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000162828026063883/xslF345X06/wk-form4_1790731110.xml"
         },
         "40-F": null,
         "424": {
@@ -2782,7 +2782,7 @@
         "IKONICS CORP",
         "CHROMALINE CORP"
       ],
-      "latest_filing_date": "2026-09-25",
+      "latest_filing_date": "2026-09-29",
       "name": "TERAWULF INC.",
       "off_docket_13dg": 0,
       "projection": {
