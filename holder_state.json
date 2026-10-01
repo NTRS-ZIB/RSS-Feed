@@ -143,6 +143,7 @@
   "HUT|Brian F. Doherty | David F. Craver | Kelly A. Granat | Kerry A. Tyler | Lone Pine Capital LLC | Stephen F. Mandel, Jr.": 5.6,
   "HUT|G1 Execution Services, LLC | SIG Brokerage, LP | Susquehanna Investment Group | Susquehanna Securities, LLC": 2.7,
   "HUT|JANE STREET GROUP, LLC | Jane Street Capital, LLC | Jane Street Global Trading, LLC | Jane Street Options, LLC": 2.0,
+  "HUT|Michael Ho": 5.13,
   "HUT|The Vanguard Group": 0.0,
   "HUT|Vanguard Portfolio Management": 5.6,
   "IREN|Awassi Capital Holdings 1 Pty Ltd (ACN 629 820 499) | The Awassi Capital Trust #1 | William Gregory Roberts": 2.41,
@@ -225,28 +226,28 @@
   "0000950170-25-114068"
  ],
  "read": {
-  "ABTC": "2026-09-30",
-  "ANY": "2026-09-30",
-  "APLD": "2026-09-30",
-  "BGDE": "2026-09-30",
-  "BKKT": "2026-09-30",
-  "BTDR": "2026-09-30",
-  "CIFR": "2026-09-30",
-  "CLSK": "2026-09-30",
-  "CORZ": "2026-09-30",
-  "CRWV": "2026-09-30",
-  "DGXX": "2026-09-30",
-  "GLXY": "2026-09-30",
-  "HUT": "2026-09-30",
-  "IREN": "2026-09-30",
-  "MARA": "2026-09-30",
-  "NUAI": "2026-09-30",
-  "RIOT": "2026-09-30",
-  "SLNH": "2026-09-30",
-  "SPCX": "2026-09-30",
-  "VIP": "2026-09-30",
-  "WULF": "2026-09-30",
-  "WYFI": "2026-09-30"
+  "ABTC": "2026-10-01",
+  "ANY": "2026-10-01",
+  "APLD": "2026-10-01",
+  "BGDE": "2026-10-01",
+  "BKKT": "2026-10-01",
+  "BTDR": "2026-10-01",
+  "CIFR": "2026-10-01",
+  "CLSK": "2026-10-01",
+  "CORZ": "2026-10-01",
+  "CRWV": "2026-10-01",
+  "DGXX": "2026-10-01",
+  "GLXY": "2026-10-01",
+  "HUT": "2026-10-01",
+  "IREN": "2026-10-01",
+  "MARA": "2026-10-01",
+  "NUAI": "2026-10-01",
+  "RIOT": "2026-10-01",
+  "SLNH": "2026-10-01",
+  "SPCX": "2026-10-01",
+  "VIP": "2026-10-01",
+  "WULF": "2026-10-01",
+  "WYFI": "2026-10-01"
  },
  "repairs": [
   "2026-09-10-subject-misattribution"
@@ -605,6 +606,8 @@
   "0001193125-26-392929",
   "0000921895-26-002571",
   "0001193125-26-402852",
-  "0000912282-26-001308"
+  "0000912282-26-001308",
+  "0001104659-26-112495",
+  "0001104659-26-112411"
  ]
 }
