@@ -38,13 +38,47 @@ DRY_RUN = os.environ.get("DRY_RUN", "").strip().lower() in ("1", "true", "yes")
 
 STATE_FILE = Path("pushpin_state.json")
 
-AGE_DAYS = int(os.environ.get("PUSHPIN_AGE_DAYS", "30"))
+class Halt(Exception):
+    """Something the run must not continue past. Never raised for a condition
+    that merely keeps a message.
+
+    DEFINED HERE, above the configuration, because env_int raises it and the
+    configuration constants CALL env_int at import time. With the class further
+    down the file a bad PUSHPIN_* value raised NameError instead, which is a
+    different and much less informative failure than the one it was written to
+    give.
+    """
+
+
+def env_int(name, default):
+    """An integer from the environment, treating absent and EMPTY alike.
+
+    `int(os.environ.get(name, default))` is the obvious form and it raises on an
+    empty string, because `os.environ.get` returns "" rather than the default
+    when a variable is set to nothing. A GitHub Actions workflow sets exactly
+    that: `${{ inputs.foo }}` renders empty on a `schedule` event, so wiring any
+    of these to a dispatch input would have crashed every scheduled run at
+    import with a ValueError, before a single guard in this file ran.
+
+    Found while adding the max_deletes input rather than after it shipped, which
+    is the only reason it is a comment instead of another row in the trap table.
+    """
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        raise Halt(f"{name} is not an integer: {raw!r}")
+
+
+AGE_DAYS = env_int("PUSHPIN_AGE_DAYS", 30)
 
 # A message is not eligible until AGE_DAYS + GRACE_DAYS. This buys the HUMAN
 # time: somebody adding the marker on the day a message turns 30 is racing the
 # sweep, and Discord's own docs warn that client actions "may be executed in
 # any order (if executed at all)".
-GRACE_DAYS = int(os.environ.get("PUSHPIN_GRACE_DAYS", "1"))
+GRACE_DAYS = env_int("PUSHPIN_GRACE_DAYS", 1)
 
 # An eligible message is CONDEMNED on one run and deleted on a later one. This
 # buys the OPERATOR time: a logic error, a permissions change or a Discord API
@@ -54,16 +88,16 @@ GRACE_DAYS = int(os.environ.get("PUSHPIN_GRACE_DAYS", "1"))
 # max(1, ...) is not decoration: 0 collapses BOTH independent margins into a
 # single run, so a message could be condemned and deleted before anyone could
 # see it condemned.
-CONDEMN_HOURS = max(1, int(os.environ.get("PUSHPIN_CONDEMN_HOURS", "20")))
+CONDEMN_HOURS = max(1, env_int("PUSHPIN_CONDEMN_HOURS", 20))
 
 # How many condemned messages a DRY RUN puts through the reaction check. Four
 # read-only requests each, so this bounds a dry run's API cost while still
 # exercising the code that authorises a delete.
-DRY_SAMPLE = int(os.environ.get("PUSHPIN_DRY_SAMPLE", "25"))
+DRY_SAMPLE = env_int("PUSHPIN_DRY_SAMPLE", 25)
 
 # Bounds a logic bug. Sized well above one day of traffic in a quiet channel
 # and well below "the whole channel".
-MAX_DELETES = int(os.environ.get("PUSHPIN_MAX_DELETES", "200"))
+MAX_DELETES = env_int("PUSHPIN_MAX_DELETES", 200)
 
 # Discord returns 40333 to a request it considers poorly identified, which
 # reads as a permissions problem rather than a header problem.
@@ -109,11 +143,6 @@ PACE = 0.35
 
 
 # --------------------------------------------------------------------- HTTP
-
-
-class Halt(Exception):
-    """Something the run must not continue past. Never raised for a condition
-    that merely keeps a message."""
 
 
 def call(method, path, **kw):

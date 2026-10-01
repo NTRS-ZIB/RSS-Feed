@@ -377,6 +377,37 @@ def reaction_store():
         pushpin.call, pushpin.CHANNEL_ID = orig, orig_ch
 
 
+def env_ints():
+    print("\nenv_int")
+    orig = os.environ.get("PUSHPIN_TEST_N")
+    try:
+        os.environ.pop("PUSHPIN_TEST_N", None)
+        check("an absent variable takes the default",
+              pushpin.env_int("PUSHPIN_TEST_N", 200) == 200)
+
+        os.environ["PUSHPIN_TEST_N"] = ""
+        check("AN EMPTY VARIABLE TAKES THE DEFAULT",
+              pushpin.env_int("PUSHPIN_TEST_N", 200) == 200,
+              "a schedule event renders ${{ inputs.x }} as empty, and int('') "
+              "raises, so this would crash every cron run at import")
+
+        os.environ["PUSHPIN_TEST_N"] = "  "
+        check("whitespace takes the default",
+              pushpin.env_int("PUSHPIN_TEST_N", 200) == 200)
+
+        os.environ["PUSHPIN_TEST_N"] = "750"
+        check("a real value is used",
+              pushpin.env_int("PUSHPIN_TEST_N", 200) == 750)
+
+        os.environ["PUSHPIN_TEST_N"] = "banana"
+        check("a non-integer halts rather than crashing opaquely",
+              raises_halt(pushpin.env_int, "PUSHPIN_TEST_N", 200))
+    finally:
+        os.environ.pop("PUSHPIN_TEST_N", None)
+        if orig is not None:
+            os.environ["PUSHPIN_TEST_N"] = orig
+
+
 def the_cap():
     print("\ncap_halts")
     orig_max, orig_dry = pushpin.MAX_DELETES, pushpin.DRY_RUN
@@ -462,8 +493,11 @@ MUTATIONS = [
      '    if "thread" in msg:\n        return "keep", "has-thread"',
      '    if False:\n        return "keep", "has-thread"'),
     ("condemn floor removed",
-     'CONDEMN_HOURS = max(1, int(os.environ.get("PUSHPIN_CONDEMN_HOURS", "20")))',
-     'CONDEMN_HOURS = int(os.environ.get("PUSHPIN_CONDEMN_HOURS", "0"))'),
+     'CONDEMN_HOURS = max(1, env_int("PUSHPIN_CONDEMN_HOURS", 20))',
+     'CONDEMN_HOURS = env_int("PUSHPIN_CONDEMN_HOURS", 0)'),
+    ("env_int returns the wrong value for an empty variable",
+     '    if not raw:\n        return default',
+     '    if not raw:\n        return 0'),
     ("the cap halts a dry run too, which deadlocks the component",
      "    return condemned_count > MAX_DELETES and not DRY_RUN",
      "    return condemned_count > MAX_DELETES"),
@@ -556,6 +590,7 @@ def main():
     state_file()
     pins_and_permissions()
     reaction_store()
+    env_ints()
     the_cap()
     configuration()
 

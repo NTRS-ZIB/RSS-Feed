@@ -22,6 +22,16 @@ on:
         description: "Classify and log without deleting anything or saving state"
         type: boolean
         default: true
+      max_deletes:
+        # A PER-DISPATCH CAP, so the cron's own bound is never touched to clear
+        # a backlog. The cap exists to stop a logic bug, and raising it in the
+        # file to drain an expected backlog is how it stops doing that: the
+        # higher number stays behind long after the reason for it is gone.
+        #
+        # Empty on a schedule event, which env_int reads as the default of 200.
+        description: "Override PUSHPIN_MAX_DELETES for this run only. Blank uses 200."
+        type: string
+        default: ""
 
 permissions:
   contents: write # commits pushpin_state.json
@@ -77,37 +87,36 @@ jobs:
           # Infrastructure noise belongs in ops, not in a market channel.
           WEBHOOK_URL_OPS: ${{ secrets.WEBHOOK_URL_OPS }}
           # ============================================================
-          # ROLLOUT, STAGE 1 OF 3. HARDCODED TRUE: nothing is ever
-          # deleted while this line reads "true", on the cron or on a
-          # dispatch with the box unticked.
+          # ROLLOUT, STAGE 2 OF 3, since 2026-10-01.
           #
-          # GO LIVE IN TWO STEPS, NOT ONE. The house pattern is the bare
-          # `${{ inputs.dry_run }}`, because `inputs` is empty on a
-          # schedule event and scheduled runs are therefore live. That is
-          # right for a component whose worst case is a duplicate post.
-          # It is wrong here: applied to this line it takes the component
-          # from "can never delete" to "an unattended 03:40 cron deletes
-          # for real" in a single commit, with no state in between where
-          # a person can watch a live run happen.
+          # THE CRON IS STILL DRY. A dispatch with the box unticked is
+          # LIVE and will permanently delete messages.
           #
-          #   STAGE 2, once a dry run has proposed real deletions and a
-          #   person has read the log. Cron stays dry, a dispatch can go
-          #   live and be watched:
-          #     DRY_RUN: ${{ github.event_name == 'schedule' && 'true' || inputs.dry_run }}
+          # Stage 1 was the hardcoded literal "true", which could not
+          # delete under any circumstances. It earned its keep: 27 dry
+          # runs, and the first eligible day exposed a cap deadlock that
+          # a live run would have hit instead.
           #
-          #   STAGE 3, once a supervised live dispatch has been read:
+          # Why not go straight to the house pattern, the bare
+          # `${{ inputs.dry_run }}`? Because `inputs` is empty on a
+          # schedule event, so that line makes the CRON live. It is right
+          # for a component whose worst case is a duplicate post, and
+          # wrong as a single step here: it would go from "can never
+          # delete" to "an unattended 03:40 cron deletes for real" with
+          # no state in between where a person can watch a live run.
+          #
+          #   STAGE 3, only once a supervised live dispatch has been read
+          #   and the backlog has drained:
           #     DRY_RUN: ${{ inputs.dry_run }}
           #
           # Do NOT write `${{ inputs.dry_run || 'true' }}`: a deliberately
           # unticked box is boolean false, which is falsy there, so a live
-          # dispatch would silently stay dry and stage 2 would be
+          # dispatch would silently stay dry and this stage would be
           # unreachable.
-          #
-          # Nothing in the channel is eligible before roughly 2026-09-27,
-          # so every run until then correctly proposes nothing and a green
-          # run proves less than it looks like it does.
           # ============================================================
-          DRY_RUN: "true"
+          DRY_RUN: ${{ github.event_name == 'schedule' && 'true' || inputs.dry_run }}
+          # Blank on a schedule, which env_int reads as the default 200.
+          PUSHPIN_MAX_DELETES: ${{ inputs.max_deletes }}
           PYTHONUNBUFFERED: "1"
         run: python -u pushpin.py
 

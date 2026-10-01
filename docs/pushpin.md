@@ -92,27 +92,37 @@ gh workflow run "Pushpin scope probe"
 
 ## Rollout, in three stages
 
-`DRY_RUN` in [`pushpin.yml`](../.github/workflows/pushpin.yml) is currently the
-hardcoded literal `"true"`, so **nothing can be deleted**, on the cron or on a
-dispatch with the box unticked.
+**Stage 2 since 2026-10-01. The cron is still dry. A dispatch with the box
+unticked is LIVE and permanently deletes messages.**
 
-Going live takes two more commits, and the split is deliberate: the house
-pattern (`${{ inputs.dry_run }}`, which is empty on a schedule and therefore
-live) would take this from "can never delete" to "an unattended cron deletes for
-real" in one step, with no state in between where a person can watch a live run.
+Stage 1 was the hardcoded literal `"true"`, which could not delete under any
+circumstances. It earned its keep: 27 dry runs, and the first eligible day
+exposed a cap deadlock that a live run would have hit instead.
 
-1. **Now.** Dry on everything. Read a run that proposes real deletions.
+1. ~~Hardcoded `"true"`.~~ Done, 2026-09-05 to 2026-10-01.
 2. **`${{ github.event_name == 'schedule' && 'true' || inputs.dry_run }}`.**
-   Cron stays dry; a dispatch can go live and be watched.
-3. **`${{ inputs.dry_run }}`.** The house pattern. Cron is live.
+   Where it is now. Cron dry, dispatch can go live and be watched.
+3. **`${{ inputs.dry_run }}`.** The house pattern. Cron is live. Only after a
+   supervised live dispatch has been read and the backlog has drained.
 
 Do not write `${{ inputs.dry_run || 'true' }}`: an unticked box is boolean
 false, which is falsy there, so a live dispatch would silently stay dry and
 stage 2 would be unreachable.
 
-Nothing in the channel is eligible before roughly **2026-09-27**, so every run
-until then correctly proposes nothing, and a green run proves less than it
-looks like it does.
+### The first live run
+
+The backlog is larger than the cap, so a live run needs its own cap. Pass it on
+the dispatch rather than editing the file, because a cap raised in the file to
+clear an expected backlog stays raised long after the reason for it is gone, and
+then no longer bounds the bug it exists for.
+
+```bash
+gh workflow run "Pushpin" -f dry_run=false -f max_deletes=800
+```
+
+Watch it, then put nothing back: the input is blank on a schedule and
+`env_int` reads blank as 200. Once the backlog has drained, a normal day's
+intake sits well under 200.
 
 ## Configuration
 
@@ -125,6 +135,11 @@ looks like it does.
 | `PUSHPIN_CONDEMN_HOURS` | 20 | Buys the operator time to notice. Floored at 1. |
 | `PUSHPIN_MAX_DELETES` | 200 | Halts above this many condemned at once. |
 | `PUSHPIN_DRY_SAMPLE` | 25 | How many a dry run puts through the reaction check. |
+
+Every one of these is read through `env_int`, which treats an EMPTY value as
+the default. That matters because `${{ inputs.x }}` renders empty on a schedule
+event, and `int("")` raises: wiring any of them to a dispatch input without it
+would crash every cron run at import, before a single guard ran.
 
 ## When it halts
 
