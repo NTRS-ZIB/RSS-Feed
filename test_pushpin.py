@@ -377,6 +377,30 @@ def reaction_store():
         pushpin.call, pushpin.CHANNEL_ID = orig, orig_ch
 
 
+def the_cap():
+    print("\ncap_halts")
+    orig_max, orig_dry = pushpin.MAX_DELETES, pushpin.DRY_RUN
+    try:
+        pushpin.MAX_DELETES = 200
+
+        pushpin.DRY_RUN = False
+        check("a LIVE run over the cap halts", pushpin.cap_halts(201))
+        check("a live run at the cap does not halt",
+              not pushpin.cap_halts(200), "the comparison is strictly greater")
+        check("a live run under the cap does not halt",
+              not pushpin.cap_halts(54))
+
+        pushpin.DRY_RUN = True
+        check("A DRY RUN OVER THE CAP DOES NOT HALT",
+              not pushpin.cap_halts(545),
+              "measured: the halt sat before the DRY_RUN exit, so 27 good dry "
+              "runs were followed by a permanent red that could never clear")
+        check("a dry run under the cap does not halt",
+              not pushpin.cap_halts(54))
+    finally:
+        pushpin.MAX_DELETES, pushpin.DRY_RUN = orig_max, orig_dry
+
+
 def configuration():
     print("\nconfiguration")
     check("CONDEMN_HOURS is floored at 1", pushpin.CONDEMN_HOURS >= 1,
@@ -440,6 +464,9 @@ MUTATIONS = [
     ("condemn floor removed",
      'CONDEMN_HOURS = max(1, int(os.environ.get("PUSHPIN_CONDEMN_HOURS", "20")))',
      'CONDEMN_HOURS = int(os.environ.get("PUSHPIN_CONDEMN_HOURS", "0"))'),
+    ("the cap halts a dry run too, which deadlocks the component",
+     "    return condemned_count > MAX_DELETES and not DRY_RUN",
+     "    return condemned_count > MAX_DELETES"),
     ("an invalid alternate encoding makes every message unknown",
      "                if index and code == UNKNOWN_EMOJI:",
      "                if False:"),
@@ -529,6 +556,7 @@ def main():
     state_file()
     pins_and_permissions()
     reaction_store()
+    the_cap()
     configuration()
 
     bad = sum(1 for r, _ in results if r == FAIL)

@@ -139,8 +139,34 @@ to delete looks exactly like one with nothing to do.
 | `pin list is truncated` | More than 50 pins. The keep-set would be short. |
 | `missing in the target channel` | Channel overwrites changed. |
 | `holds ADMINISTRATOR` | Every overwrite is bypassed and the scoping is inert. |
-| `over the ... cap` | More condemned than `PUSHPIN_MAX_DELETES`. Expected on the first eligible day if there is a backlog. |
+| `over the ... cap` | More condemned than `PUSHPIN_MAX_DELETES`. Expected once a backlog accumulates. **A LIVE run halts; a dry run reports and continues.** See below. |
 | `HTTP 403 code ...` | In order: the channel overwrite, `MANAGE_MESSAGES`, then whether the guild requires 2FA while the app owner has none. |
+
+## The cap, and the deadlock it caused
+
+`PUSHPIN_MAX_DELETES` bounds a logic bug: if the classifier suddenly condemns
+the channel, a live run stops rather than acting on it.
+
+**It tripped for real on 2026-09-29**, and the first version deadlocked. The
+halt sat before the `DRY_RUN` exit, so a dry run could not get past it either,
+and because a dry run saves no state nothing was ever deleted, so the backlog
+only grew. Measured:
+
+| Date | Condemned | Run |
+|---|---|---|
+| 2026-09-28 | 54 | success |
+| 2026-09-29 | over 200 | **failure** |
+| 2026-10-01 | 545 | **failure** |
+
+Twenty-seven good dry runs, then a permanent red that could never clear, whose
+only output was the halt itself: the one state that says nothing about whether
+the cap is right.
+
+A dry run now reports `OVER CAP` and continues. A live run still refuses. If a
+live run halts on the cap, the choice is to raise `PUSHPIN_MAX_DELETES`
+deliberately or to work the backlog down in bounded runs, and neither should be
+done by reflex: a cap raised to clear a backlog is a cap that no longer bounds
+the bug it exists for.
 
 ## Tests
 

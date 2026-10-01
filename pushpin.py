@@ -169,6 +169,20 @@ def call(method, path, **kw):
     return None, {}
 
 
+def cap_halts(condemned_count):
+    """Whether the per-run cap must stop this run.
+
+    A LIVE run over the cap halts. A DRY run over the cap does not, and the
+    asymmetry fixes a real deadlock rather than being a convenience: a dry run
+    cannot destroy anything, so the bound protects nothing, while halting
+    withholds the only numbers that say what the cap should be.
+
+    Lives outside main() so it can be tested. The cap condition was inline and
+    therefore untestable, which is why the deadlock below shipped.
+    """
+    return condemned_count > MAX_DELETES and not DRY_RUN
+
+
 def snowflake_time(mid):
     """UTC datetime a snowflake was created. The id carries its own timestamp,
     which is why this component needs no stored dates and no content."""
@@ -738,9 +752,33 @@ def main():
     print(f"\n  condemned {len(fresh)} new, released {len(released)}, "
           f"{len(condemned)} pending")
 
-    if len(condemned) > MAX_DELETES:
+    # THE CAP HALTS A LIVE RUN AND ONLY REPORTS ON A DRY ONE, and the asymmetry
+    # is the fix for a real deadlock rather than a convenience.
+    #
+    # Measured: 27 dry runs succeeded, then the cap tripped on 2026-09-29 and
+    # the component went red every night after. The halt sat BEFORE the DRY_RUN
+    # exit, so a dry run could not get past it either. And because a dry run
+    # saves no state, nothing was ever deleted, so the backlog only grew: 54
+    # condemned on 2026-09-28, 545 by 2026-10-01. The cap could never be
+    # satisfied and the only output was a halt, which is the one state that
+    # tells the operator nothing about whether the cap is right.
+    #
+    # A dry run cannot destroy anything, so the bound protects nothing there.
+    # On a live run it still refuses outright.
+    over_cap = len(condemned) > MAX_DELETES
+    if cap_halts(len(condemned)):
         raise Halt(f"{len(condemned)} messages are condemned, over the "
-                   f"{MAX_DELETES} cap. Refusing to run.")
+                   f"{MAX_DELETES} cap. Refusing to run. Either raise "
+                   f"PUSHPIN_MAX_DELETES deliberately or work the backlog down "
+                   f"in bounded runs.")
+    if over_cap:
+        print(f"\n  OVER CAP: {len(condemned)} condemned against a "
+              f"{MAX_DELETES} cap.")
+        print(f"    A LIVE run would halt here and delete nothing. This dry run "
+              f"continues,")
+        print(f"    because it cannot destroy anything and halting would "
+              f"withhold the")
+        print(f"    numbers that decide what the cap should be.")
 
     # --------------------------------------------------------------- DELETE
 
