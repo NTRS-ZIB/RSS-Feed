@@ -1281,8 +1281,8 @@
    "alerted": false
   },
   "SLNH": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "SPCX": {
    "fails": 0,
