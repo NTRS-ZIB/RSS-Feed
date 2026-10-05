@@ -1236,7 +1236,8 @@
   "https://investors.terawulf.com/news-events/press-releases/detail/146/terawulf-expands-contracted-power-capacity-at-its-muskie-data-campus-to-1-gw",
   "urn:tag:sec.gov,2008:accession-number=0001683168-26-007630",
   "urn:tag:sec.gov,2008:accession-number=0000905148-26-004361",
-  "urn:tag:sec.gov,2008:accession-number=0000905148-26-004360"
+  "urn:tag:sec.gov,2008:accession-number=0000905148-26-004360",
+  "urn:tag:sec.gov,2008:accession-number=0001628280-26-065122"
  ],
  "initialized": true,
  "feeds": {
@@ -1281,7 +1282,7 @@
    "alerted": false
   },
   "SLNH": {
-   "fails": 2,
+   "fails": 3,
    "alerted": true
   },
   "SPCX": {
