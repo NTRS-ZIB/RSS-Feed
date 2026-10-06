@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-05T19:31:22+00:00",
+  "generated": "2026-10-06T16:59:16+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -312,7 +312,7 @@
     },
     "APLD": {
       "cik": "0001144879",
-      "filing_count": 817,
+      "filing_count": 818,
       "filings": {
         "10-K": {
           "accession": "0001144879-26-000048",
@@ -340,12 +340,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1144879/000149315226023991/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001900445-26-000004",
-          "count": 213,
-          "filed": "2026-09-14",
+          "accession": "0001628280-26-065122",
+          "count": 214,
+          "filed": "2026-10-05",
           "form": "4",
-          "period": "2026-09-12",
-          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000190044526000004/xslF345X06/wk-form4_1789418949.xml"
+          "period": "2026-10-04",
+          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000162828026065122/xslF345X06/wk-form4_1791241026.xml"
         },
         "40-F": null,
         "424": {
@@ -447,7 +447,7 @@
         "FLIGHT SAFETY TECHNOLOGIES INC",
         "REEL STAFF INC"
       ],
-      "latest_filing_date": "2026-09-25",
+      "latest_filing_date": "2026-10-05",
       "name": "Applied Digital Corp.",
       "off_docket_13dg": 2,
       "projection": {
@@ -1130,7 +1130,7 @@
     },
     "CORZ": {
       "cik": "0001839341",
-      "filing_count": 669,
+      "filing_count": 671,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019505",
@@ -1158,12 +1158,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003445/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0000905148-26-004306",
-          "count": 159,
-          "filed": "2026-09-30",
+          "accession": "0000905148-26-004361",
+          "count": 161,
+          "filed": "2026-10-05",
           "form": "4",
-          "period": "2026-09-28",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826004306/xslF345X06/form4.xml"
+          "period": "2026-10-01",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826004361/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1254,7 +1254,7 @@
       "former_names": [
         "Power & Digital Infrastructure Acquisition Corp."
       ],
-      "latest_filing_date": "2026-09-30",
+      "latest_filing_date": "2026-10-05",
       "name": "Core Scientific, Inc./tx",
       "off_docket_13dg": 0,
       "projection": {
@@ -1521,7 +1521,7 @@
     },
     "GLXY": {
       "cik": "0001859392",
-      "filing_count": 281,
+      "filing_count": 282,
       "filings": {
         "10-K": {
           "accession": "0001859392-26-000016",
@@ -1541,12 +1541,12 @@
         },
         "20-F": null,
         "3": {
-          "accession": "0002154593-26-000003",
-          "count": 17,
-          "filed": "2026-09-30",
+          "accession": "0001683168-26-007630",
+          "count": 18,
+          "filed": "2026-10-05",
           "form": "3",
-          "period": "2026-09-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000215459326000003/xslF345X06/wk-form3_1790802290.xml"
+          "period": "2026-05-14",
+          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000168316826007630/xslF345X06/ownership.xml"
         },
         "4": {
           "accession": "0001706614-26-000004",
@@ -1617,7 +1617,7 @@
       "former_names": [
         "Galaxy Digital Pubco Inc."
       ],
-      "latest_filing_date": "2026-09-30",
+      "latest_filing_date": "2026-10-05",
       "name": "Galaxy Digital Inc.",
       "off_docket_13dg": 0,
       "projection": {
