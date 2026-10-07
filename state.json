@@ -1319,8 +1319,8 @@
    "alerted": false
   },
   "ANY": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   }
  },
  "companies": {
