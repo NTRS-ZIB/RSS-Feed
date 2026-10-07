@@ -1241,7 +1241,8 @@
   "https://www.newsfilecorp.com/release/317541",
   "https://ir.applieddigital.com/news-events/press-releases/detail/162/applied-digital-secures-up-to-1-gw-of-potential-power",
   "urn:tag:sec.gov,2008:accession-number=0001950047-26-010081",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-107258"
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-107258",
+  "c63880b1-29f4-47f9-b572-fe37055def38"
  ],
  "initialized": true,
  "feeds": {
@@ -1318,7 +1319,7 @@
    "alerted": false
   },
   "ANY": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   }
  },
