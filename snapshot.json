@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-06T16:59:16+00:00",
+  "generated": "2026-10-07T17:36:26+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -155,7 +155,7 @@
     },
     "ANY": {
       "cik": "0001591956",
-      "filing_count": 820,
+      "filing_count": 821,
       "filings": {
         "10-K": {
           "accession": "0001591956-26-000004",
@@ -274,12 +274,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1591956/000106299324002916/formsc13ga.htm"
         },
         "SCHEDULE 13D": {
-          "accession": "0000912282-26-001163",
-          "count": 2,
-          "filed": "2026-08-26",
-          "form": "SCHEDULE 13D/A",
+          "accession": "0001213900-26-107258",
+          "count": 3,
+          "filed": "2026-10-06",
+          "form": "SCHEDULE 13D",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000091228226001163/xslSCHEDULE_13D_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000121390026107258/xslSCHEDULE_13D_X02/primary_doc.xml"
         },
         "SCHEDULE 13G": {
           "accession": "0001062993-26-003723",
@@ -294,7 +294,7 @@
         "Sphere 3D Corp.",
         "Sphere 3D Corp"
       ],
-      "latest_filing_date": "2026-09-23",
+      "latest_filing_date": "2026-10-06",
       "name": "DarkHorse Technologies Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -1272,7 +1272,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1148,
+      "filing_count": 1149,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1368,7 +1368,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-10-02",
+      "latest_filing_date": "2026-10-06",
       "name": "CoreWeave, Inc.",
       "off_docket_13dg": 5,
       "projection": {
