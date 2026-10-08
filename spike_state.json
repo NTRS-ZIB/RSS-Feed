@@ -1,11 +1,16 @@
 {
- "date": "2026-10-07",
+ "date": "2026-10-08",
  "alerted": {
   "APLD": 1.5,
-  "DGXX": 1.5,
-  "GLXY": 3.0,
+  "CIFR": 1.5,
+  "CLSK": 1.5,
+  "CORZ": 1.5,
+  "GLXY": 1.5,
   "HUT": 1.5,
   "IREN": 1.5,
-  "BKKT": 1.5
+  "MARA": 1.5,
+  "NUAI": 1.5,
+  "RIOT": 1.5,
+  "WULF": 1.5
  }
 }
