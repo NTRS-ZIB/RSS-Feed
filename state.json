@@ -1091,7 +1091,9 @@
   "https://www.newsfilecorp.com/release/318024",
   "https://www.hut8.com/news-insights/press-releases/hut-8-schedules-third-quarter-2026-earnings-release-and-conference-call",
   "abtc:2f539a00-a899-43c4-82b5-fa557d1f700e",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-107955"
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-107955",
+  "urn:tag:sec.gov,2008:accession-number=0001769628-26-000447",
+  "urn:tag:sec.gov,2008:accession-number=0001769628-26-000446"
  ],
  "initialized": true,
  "feeds": {
