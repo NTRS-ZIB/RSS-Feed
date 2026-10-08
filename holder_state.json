@@ -90,7 +90,7 @@
   "BTDR|Mega Galaxy International Limited | Yuesheng Ge": 4.3,
   "BTDR|Paloma International L.P. | Paloma Partners Advisors LP | Paloma Partners Advisors, Inc. | Paloma Partners Management Co | S. Donald Sussman | Sunrise Partners Limited Partnership": 9.0,
   "BTDR|Shinning Stone Invest Co., Ltd. | Zhaofeng Zhao": 4.92,
-  "CIFR|Bitfury Group Ltd | Bitfury Holding B.V. | Bitfury Top HoldCo B.V. | V3 Holding Ltd | Vavilovs Valerijs": 14.6,
+  "CIFR|Bitfury Group Ltd | Bitfury Holding B.V. | Bitfury Top HoldCo B.V. | V3 Holding Ltd | Vavilovs Valerijs": 13.2,
   "CIFR|BlackRock, Inc.": 6.5,
   "CIFR|G1 Execution Services, LLC | SIG Brokerage, LP | Susquehanna Securities, LLC": 3.7,
   "CIFR|JANE STREET GROUP, LLC | Jane Street Capital, LLC | Jane Street Global Trading, LLC | Jane Street Options, LLC": 5.3,
@@ -227,28 +227,28 @@
   "0000950170-25-114068"
  ],
  "read": {
-  "ABTC": "2026-10-07",
-  "ANY": "2026-10-07",
-  "APLD": "2026-10-07",
-  "BGDE": "2026-10-07",
-  "BKKT": "2026-10-07",
-  "BTDR": "2026-10-07",
-  "CIFR": "2026-10-07",
-  "CLSK": "2026-10-07",
-  "CORZ": "2026-10-07",
-  "CRWV": "2026-10-07",
-  "DGXX": "2026-10-07",
-  "GLXY": "2026-10-07",
-  "HUT": "2026-10-07",
-  "IREN": "2026-10-07",
-  "MARA": "2026-10-07",
-  "NUAI": "2026-10-07",
-  "RIOT": "2026-10-07",
-  "SLNH": "2026-10-07",
-  "SPCX": "2026-10-07",
-  "VIP": "2026-10-07",
-  "WULF": "2026-10-07",
-  "WYFI": "2026-10-07"
+  "ABTC": "2026-10-08",
+  "ANY": "2026-10-08",
+  "APLD": "2026-10-08",
+  "BGDE": "2026-10-08",
+  "BKKT": "2026-10-08",
+  "BTDR": "2026-10-08",
+  "CIFR": "2026-10-08",
+  "CLSK": "2026-10-08",
+  "CORZ": "2026-10-08",
+  "CRWV": "2026-10-08",
+  "DGXX": "2026-10-08",
+  "GLXY": "2026-10-08",
+  "HUT": "2026-10-08",
+  "IREN": "2026-10-08",
+  "MARA": "2026-10-08",
+  "NUAI": "2026-10-08",
+  "RIOT": "2026-10-08",
+  "SLNH": "2026-10-08",
+  "SPCX": "2026-10-08",
+  "VIP": "2026-10-08",
+  "WULF": "2026-10-08",
+  "WYFI": "2026-10-08"
  },
  "repairs": [
   "2026-09-10-subject-misattribution"
@@ -610,6 +610,7 @@
   "0000912282-26-001308",
   "0001104659-26-112495",
   "0001104659-26-112411",
-  "0001213900-26-107258"
+  "0001213900-26-107258",
+  "0001123292-26-001382"
  ]
 }
