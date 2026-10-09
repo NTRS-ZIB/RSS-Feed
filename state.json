@@ -1,16 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001663577-20-000178",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-20-000030",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-19-000447",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-19-000444",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-19-000442",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-19-000440",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-19-000438",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-19-000096",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-19-000026",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-19-000024",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-18-000219",
   "urn:tag:sec.gov,2008:accession-number=0001663577-18-000187",
   "urn:tag:sec.gov,2008:accession-number=0001663577-18-000100",
   "urn:tag:sec.gov,2008:accession-number=0001663577-18-000025",
@@ -1098,7 +1087,8 @@
   "urn:tag:sec.gov,2008:accession-number=0001887627-26-000012",
   "urn:tag:sec.gov,2008:accession-number=0001887623-26-000021",
   "urn:tag:sec.gov,2008:accession-number=0001887616-26-000024",
-  "9876"
+  "9876",
+  "463567a7-9978-4a02-a2d0-62fbf80ddd29"
  ],
  "initialized": true,
  "feeds": {
@@ -1107,19 +1097,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "BKKT": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "BTDR": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "CIFR": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "CLSK": {
@@ -1127,11 +1117,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "IREN": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "MARA": {
@@ -1151,7 +1141,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "WULF": {
