@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-08T17:39:27+00:00",
+  "generated": "2026-10-09T17:14:39+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -753,7 +753,7 @@
     },
     "BTDR": {
       "cik": "0001899123",
-      "filing_count": 282,
+      "filing_count": 283,
       "filings": {
         "10-K": null,
         "10-Q": null,
@@ -791,12 +791,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026087060/ea030073702-424b5_bitdeer.htm"
         },
         "6-K": {
-          "accession": "0001213900-26-106360",
-          "count": 107,
-          "filed": "2026-10-02",
+          "accession": "0001213900-26-107955",
+          "count": 108,
+          "filed": "2026-10-08",
           "form": "6-K",
-          "period": "2026-10-02",
-          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026106360/ea0307497-6k_bitdeer.htm"
+          "period": "2026-10-08",
+          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026107955/ea0307821-6k_bitdeer.htm"
         },
         "8-K": null,
         "DEF 14A": null,
@@ -840,7 +840,7 @@
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-10-02",
+      "latest_filing_date": "2026-10-08",
       "name": "Bitdeer Technologies Group",
       "off_docket_13dg": 0,
       "projection": {
@@ -858,7 +858,7 @@
     },
     "CIFR": {
       "cik": "0001819989",
-      "filing_count": 617,
+      "filing_count": 621,
       "filings": {
         "10-K": {
           "accession": "0001819989-26-000009",
@@ -886,12 +886,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1819989/000211168426000002/xslF345X02/wk-form3_1771867590.xml"
         },
         "4": {
-          "accession": "0001123292-26-001381",
-          "count": 260,
-          "filed": "2026-10-07",
-          "form": "4",
-          "period": "2026-10-05",
-          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000112329226001381/xslF345X06/form4.xml"
+          "accession": "0001887616-26-000024",
+          "count": 264,
+          "filed": "2026-10-08",
+          "form": "4/A",
+          "period": "2026-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000188761626000024/xslF345X06/wk-form4a_1791500258.xml"
         },
         "40-F": null,
         "424": {
@@ -976,7 +976,7 @@
         "Cipher Mining Inc.",
         "GOOD WORKS ACQUISITION CORP."
       ],
-      "latest_filing_date": "2026-10-07",
+      "latest_filing_date": "2026-10-08",
       "name": "Cipher Digital Inc.",
       "off_docket_13dg": 1,
       "projection": {
@@ -1272,7 +1272,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1149,
+      "filing_count": 1151,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1300,12 +1300,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000155/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0001769628-26-000445",
-          "count": 479,
-          "filed": "2026-10-02",
+          "accession": "0001769628-26-000447",
+          "count": 481,
+          "filed": "2026-10-08",
           "form": "4",
-          "period": "2026-09-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000445/xslF345X06/form4.xml"
+          "period": "2026-10-06",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000447/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1368,7 +1368,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-10-06",
+      "latest_filing_date": "2026-10-08",
       "name": "CoreWeave, Inc.",
       "off_docket_13dg": 5,
       "projection": {
