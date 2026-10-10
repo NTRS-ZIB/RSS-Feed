@@ -1,23 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001663577-18-000187",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-18-000100",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-18-000025",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-16-000431",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-16-000428",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-16-000378",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-16-000376",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-16-000235",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-16-000229",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-16-000209",
-  "urn:tag:sec.gov,2008:accession-number=0001663577-16-000197",
-  "urn:tag:sec.gov,2008:accession-number=0001255294-15-000156",
-  "urn:tag:sec.gov,2008:accession-number=0001255294-15-000147",
-  "urn:tag:sec.gov,2008:accession-number=0001255294-15-000141",
-  "urn:tag:sec.gov,2008:accession-number=0001255294-15-000139",
-  "urn:tag:sec.gov,2008:accession-number=0001628280-25-017765",
-  "urn:tag:sec.gov,2008:accession-number=0000950170-25-052844",
-  "urn:tag:sec.gov,2008:accession-number=0001628280-25-015526",
   "urn:tag:sec.gov,2008:accession-number=0001628280-25-015524",
   "urn:tag:sec.gov,2008:accession-number=0001628280-25-015523",
   "urn:tag:sec.gov,2008:accession-number=0001628280-25-013511",
@@ -1100,19 +1082,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 25,
+   "fails": 26,
    "alerted": true
   },
   "BKKT": {
-   "fails": 25,
+   "fails": 26,
    "alerted": true
   },
   "BTDR": {
-   "fails": 25,
+   "fails": 26,
    "alerted": true
   },
   "CIFR": {
-   "fails": 25,
+   "fails": 26,
    "alerted": true
   },
   "CLSK": {
@@ -1120,11 +1102,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 25,
+   "fails": 26,
    "alerted": true
   },
   "IREN": {
-   "fails": 25,
+   "fails": 26,
    "alerted": true
   },
   "MARA": {
@@ -1144,7 +1126,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 25,
+   "fails": 26,
    "alerted": true
   },
   "WULF": {
