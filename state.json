@@ -1,7 +1,5 @@
 {
  "seen": [
-  "be22552d-9149-42b0-895a-d7eb8096ab77",
-  "d935a5b6-4209-48ac-aeac-3b0ae849314e",
   "ff9088a8-0855-4c94-bf2c-dbc21a3acad6",
   "036cb10d-377e-4abf-af13-7596a1b4307a",
   "3e05b31e-cdac-4d1c-8702-66f73826201b",
@@ -1007,7 +1005,9 @@
   "5ebc1112-0c40-4f1a-8a29-4dda0cf7eadf",
   "b26b814d-0f05-4d26-b478-1fe29d02e4b9",
   "aa81997d-aace-43db-a399-ac7f34b66da2",
-  "eb9b1e28-675b-4002-b69b-144dcb22c6fa"
+  "eb9b1e28-675b-4002-b69b-144dcb22c6fa",
+  "35330e7a-b57d-4c86-b187-8b15ae1de0f3",
+  "https://investors.terawulf.com/news-events/press-releases/detail/147/terawulf-schedules-conference-call-for-third-quarter-2026-financial-results"
  ],
  "initialized": true,
  "feeds": {
@@ -1016,19 +1016,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 42,
+   "fails": 43,
    "alerted": true
   },
   "BKKT": {
-   "fails": 42,
+   "fails": 43,
    "alerted": true
   },
   "BTDR": {
-   "fails": 42,
+   "fails": 43,
    "alerted": true
   },
   "CIFR": {
-   "fails": 42,
+   "fails": 43,
    "alerted": true
   },
   "CLSK": {
@@ -1036,11 +1036,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 42,
+   "fails": 43,
    "alerted": true
   },
   "IREN": {
-   "fails": 42,
+   "fails": 43,
    "alerted": true
   },
   "MARA": {
@@ -1060,7 +1060,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 42,
+   "fails": 43,
    "alerted": true
   },
   "WULF": {
