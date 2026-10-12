@@ -1,6 +1,5 @@
 {
  "seen": [
-  "35330e7a-b57d-4c86-b187-8b15ae1de0f3",
   "be22552d-9149-42b0-895a-d7eb8096ab77",
   "d935a5b6-4209-48ac-aeac-3b0ae849314e",
   "ff9088a8-0855-4c94-bf2c-dbc21a3acad6",
@@ -1007,7 +1006,8 @@
   "25e9011d-86c1-4359-b031-77f9702cfd78",
   "5ebc1112-0c40-4f1a-8a29-4dda0cf7eadf",
   "b26b814d-0f05-4d26-b478-1fe29d02e4b9",
-  "aa81997d-aace-43db-a399-ac7f34b66da2"
+  "aa81997d-aace-43db-a399-ac7f34b66da2",
+  "eb9b1e28-675b-4002-b69b-144dcb22c6fa"
  ],
  "initialized": true,
  "feeds": {
@@ -1016,19 +1016,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 41,
+   "fails": 42,
    "alerted": true
   },
   "BKKT": {
-   "fails": 41,
+   "fails": 42,
    "alerted": true
   },
   "BTDR": {
-   "fails": 41,
+   "fails": 42,
    "alerted": true
   },
   "CIFR": {
-   "fails": 41,
+   "fails": 42,
    "alerted": true
   },
   "CLSK": {
@@ -1036,11 +1036,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 41,
+   "fails": 42,
    "alerted": true
   },
   "IREN": {
-   "fails": 41,
+   "fails": 42,
    "alerted": true
   },
   "MARA": {
@@ -1060,7 +1060,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 41,
+   "fails": 42,
    "alerted": true
   },
   "WULF": {
