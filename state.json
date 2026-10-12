@@ -1,8 +1,5 @@
 {
  "seen": [
-  "1e5b2b2c-e258-481b-9510-c801eb7a6c0f",
-  "4baf1f2b-9b01-42a8-a6a4-1f87e69adf7f",
-  "5ebc1112-0c40-4f1a-8a29-4dda0cf7eadf",
   "b26b814d-0f05-4d26-b478-1fe29d02e4b9",
   "aa81997d-aace-43db-a399-ac7f34b66da2",
   "eb9b1e28-675b-4002-b69b-144dcb22c6fa",
@@ -1007,7 +1004,10 @@
   "https://ir.mara.com/news-events/press-releases/detail/1421/mara-announces-launch-of-consent-solicitation-for-the-8-750-senior-secured-notes-due-2032-of-long-ridge-energy-llc",
   "https://ir.mara.com/news-events/press-releases/detail/1420/mara-schedules-conference-call-forfirst-quarter-2026-financial-results",
   "https://ir.mara.com/news-events/press-releases/detail/1419/mara-advances-its-optimized-digital-infrastructure-strategy-with-agreement-to-acquire-long-ridge-energy-power",
-  "https://ir.mara.com/news-events/press-releases/detail/1418/mara-holdings-inc-announces-1-0-billion-repurchase-of-0-00-convertible-senior-notes-due-2030-and-2031-and-sale-of-15133-bitcoin"
+  "https://ir.mara.com/news-events/press-releases/detail/1418/mara-holdings-inc-announces-1-0-billion-repurchase-of-0-00-convertible-senior-notes-due-2030-and-2031-and-sale-of-15133-bitcoin",
+  "865a5eaa-b3ac-4212-aa8a-59c27def8766",
+  "c962de03-0cd9-4f6a-a6b5-107d40a8a42e",
+  "25e9011d-86c1-4359-b031-77f9702cfd78"
  ],
  "initialized": true,
  "feeds": {
@@ -1016,19 +1016,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 37,
+   "fails": 38,
    "alerted": true
   },
   "BKKT": {
-   "fails": 37,
+   "fails": 38,
    "alerted": true
   },
   "BTDR": {
-   "fails": 37,
+   "fails": 38,
    "alerted": true
   },
   "CIFR": {
-   "fails": 37,
+   "fails": 38,
    "alerted": true
   },
   "CLSK": {
@@ -1036,11 +1036,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 37,
+   "fails": 38,
    "alerted": true
   },
   "IREN": {
-   "fails": 37,
+   "fails": 38,
    "alerted": true
   },
   "MARA": {
@@ -1060,7 +1060,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 37,
+   "fails": 38,
    "alerted": true
   },
   "WULF": {
