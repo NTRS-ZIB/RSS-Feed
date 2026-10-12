@@ -159,7 +159,7 @@
   "MARA|The Vanguard Group": 0.0,
   "MARA|Vanguard Capital Management": 5.05,
   "MARA|Vanguard Portfolio Management": 6.99,
-  "NUAI|AMC Fund, L.P. | KCM Capital Inc | MCCARTHY KENT C": 5.1,
+  "NUAI|AMC Fund, L.P. | KCM Capital Inc | MCCARTHY KENT C": 10.9,
   "NUAI|Anthony A. Yoseloff | Davidson Kempner Arbitrage, Equities & Relative Value LP | Davidson Kempner Capital Management LP | M.H. Davidson & Co.": 0.37,
   "NUAI|BlackRock, Inc.": 6.1,
   "NUAI|CHLM Sponsor-5 LLC": 5.04,
@@ -227,28 +227,28 @@
   "0000950170-25-114068"
  ],
  "read": {
-  "ABTC": "2026-10-09",
-  "ANY": "2026-10-09",
-  "APLD": "2026-10-09",
-  "BGDE": "2026-10-09",
-  "BKKT": "2026-10-09",
-  "BTDR": "2026-10-09",
-  "CIFR": "2026-10-09",
-  "CLSK": "2026-10-09",
-  "CORZ": "2026-10-09",
-  "CRWV": "2026-10-09",
-  "DGXX": "2026-10-09",
-  "GLXY": "2026-10-09",
-  "HUT": "2026-10-09",
-  "IREN": "2026-10-09",
-  "MARA": "2026-10-09",
-  "NUAI": "2026-10-09",
-  "RIOT": "2026-10-09",
-  "SLNH": "2026-10-09",
-  "SPCX": "2026-10-09",
-  "VIP": "2026-10-09",
-  "WULF": "2026-10-09",
-  "WYFI": "2026-10-09"
+  "ABTC": "2026-10-12",
+  "ANY": "2026-10-12",
+  "APLD": "2026-10-12",
+  "BGDE": "2026-10-12",
+  "BKKT": "2026-10-12",
+  "BTDR": "2026-10-12",
+  "CIFR": "2026-10-12",
+  "CLSK": "2026-10-12",
+  "CORZ": "2026-10-12",
+  "CRWV": "2026-10-12",
+  "DGXX": "2026-10-12",
+  "GLXY": "2026-10-12",
+  "HUT": "2026-10-12",
+  "IREN": "2026-10-12",
+  "MARA": "2026-10-12",
+  "NUAI": "2026-10-12",
+  "RIOT": "2026-10-12",
+  "SLNH": "2026-10-12",
+  "SPCX": "2026-10-12",
+  "VIP": "2026-10-12",
+  "WULF": "2026-10-12",
+  "WYFI": "2026-10-12"
  },
  "repairs": [
   "2026-09-10-subject-misattribution"
@@ -611,6 +611,7 @@
   "0001104659-26-112495",
   "0001104659-26-112411",
   "0001213900-26-107258",
-  "0001123292-26-001382"
+  "0001123292-26-001382",
+  "0002026745-26-000008"
  ]
 }
