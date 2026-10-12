@@ -1,6 +1,5 @@
 {
  "seen": [
-  "b26b814d-0f05-4d26-b478-1fe29d02e4b9",
   "aa81997d-aace-43db-a399-ac7f34b66da2",
   "eb9b1e28-675b-4002-b69b-144dcb22c6fa",
   "35330e7a-b57d-4c86-b187-8b15ae1de0f3",
@@ -1007,7 +1006,8 @@
   "https://ir.mara.com/news-events/press-releases/detail/1418/mara-holdings-inc-announces-1-0-billion-repurchase-of-0-00-convertible-senior-notes-due-2030-and-2031-and-sale-of-15133-bitcoin",
   "865a5eaa-b3ac-4212-aa8a-59c27def8766",
   "c962de03-0cd9-4f6a-a6b5-107d40a8a42e",
-  "25e9011d-86c1-4359-b031-77f9702cfd78"
+  "25e9011d-86c1-4359-b031-77f9702cfd78",
+  "5ebc1112-0c40-4f1a-8a29-4dda0cf7eadf"
  ],
  "initialized": true,
  "feeds": {
@@ -1016,19 +1016,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 38,
+   "fails": 39,
    "alerted": true
   },
   "BKKT": {
-   "fails": 38,
+   "fails": 39,
    "alerted": true
   },
   "BTDR": {
-   "fails": 38,
+   "fails": 39,
    "alerted": true
   },
   "CIFR": {
-   "fails": 38,
+   "fails": 39,
    "alerted": true
   },
   "CLSK": {
@@ -1036,11 +1036,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 38,
+   "fails": 39,
    "alerted": true
   },
   "IREN": {
-   "fails": 38,
+   "fails": 39,
    "alerted": true
   },
   "MARA": {
@@ -1060,7 +1060,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 38,
+   "fails": 39,
    "alerted": true
   },
   "WULF": {
