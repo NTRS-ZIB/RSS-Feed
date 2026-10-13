@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-12T20:03:08+00:00",
+  "generated": "2026-10-13T17:51:16+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -858,7 +858,7 @@
     },
     "CIFR": {
       "cik": "0001819989",
-      "filing_count": 621,
+      "filing_count": 622,
       "filings": {
         "10-K": {
           "accession": "0001819989-26-000009",
@@ -904,12 +904,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001819989-26-000043",
-          "count": 89,
-          "filed": "2026-09-25",
+          "accession": "0001193125-26-419743",
+          "count": 90,
+          "filed": "2026-10-13",
           "form": "8-K",
-          "period": "2026-09-24",
-          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000181998926000043/cifr-20260924.htm"
+          "period": "2026-10-13",
+          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000119312526419743/d134900d8k.htm"
         },
         "DEF 14A": {
           "accession": "0001819989-26-000016",
@@ -976,7 +976,7 @@
         "Cipher Mining Inc.",
         "GOOD WORKS ACQUISITION CORP."
       ],
-      "latest_filing_date": "2026-10-08",
+      "latest_filing_date": "2026-10-13",
       "name": "Cipher Digital Inc.",
       "off_docket_13dg": 1,
       "projection": {
@@ -1130,7 +1130,7 @@
     },
     "CORZ": {
       "cik": "0001839341",
-      "filing_count": 672,
+      "filing_count": 673,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019505",
@@ -1254,7 +1254,7 @@
       "former_names": [
         "Power & Digital Infrastructure Acquisition Corp."
       ],
-      "latest_filing_date": "2026-10-07",
+      "latest_filing_date": "2026-10-13",
       "name": "Core Scientific, Inc./tx",
       "off_docket_13dg": 0,
       "projection": {
@@ -1272,7 +1272,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1151,
+      "filing_count": 1153,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1368,7 +1368,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-10-08",
+      "latest_filing_date": "2026-10-13",
       "name": "CoreWeave, Inc.",
       "off_docket_13dg": 5,
       "projection": {
@@ -2529,7 +2529,7 @@
     },
     "VIP": {
       "cik": "0001844971",
-      "filing_count": 449,
+      "filing_count": 450,
       "filings": {
         "10-K": {
           "accession": "0001844971-26-000011",
@@ -2653,7 +2653,7 @@
       "former_names": [
         "Greenidge Generation Holdings Inc."
       ],
-      "latest_filing_date": "2026-10-09",
+      "latest_filing_date": "2026-10-13",
       "name": "Vulcan Infrastructure & Power Inc.",
       "off_docket_13dg": 2,
       "projection": {
