@@ -1007,7 +1007,12 @@
   "aa81997d-aace-43db-a399-ac7f34b66da2",
   "eb9b1e28-675b-4002-b69b-144dcb22c6fa",
   "35330e7a-b57d-4c86-b187-8b15ae1de0f3",
-  "https://investors.terawulf.com/news-events/press-releases/detail/147/terawulf-schedules-conference-call-for-third-quarter-2026-financial-results"
+  "https://investors.terawulf.com/news-events/press-releases/detail/147/terawulf-schedules-conference-call-for-third-quarter-2026-financial-results",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-419743",
+  "dgxx:qazai6trbq9ygucn04pwaybs",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-010164",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-010179",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-010166"
  ],
  "initialized": true,
  "feeds": {
@@ -1016,19 +1021,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 59,
+   "fails": 60,
    "alerted": true
   },
   "BKKT": {
-   "fails": 59,
+   "fails": 60,
    "alerted": true
   },
   "BTDR": {
-   "fails": 59,
+   "fails": 60,
    "alerted": true
   },
   "CIFR": {
-   "fails": 59,
+   "fails": 60,
    "alerted": true
   },
   "CLSK": {
@@ -1036,11 +1041,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 59,
+   "fails": 60,
    "alerted": true
   },
   "IREN": {
-   "fails": 59,
+   "fails": 60,
    "alerted": true
   },
   "MARA": {
@@ -1060,7 +1065,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 59,
+   "fails": 60,
    "alerted": true
   },
   "WULF": {
