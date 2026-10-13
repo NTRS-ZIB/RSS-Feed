@@ -1,4 +1,12 @@
 {
  "date": "2026-10-13",
- "alerted": {}
+ "alerted": {
+  "ABTC": 1.5,
+  "APLD": 1.5,
+  "CIFR": 3.0,
+  "CORZ": 1.5,
+  "DGXX": 1.5,
+  "HUT": 1.5,
+  "WULF": 1.5
+ }
 }
