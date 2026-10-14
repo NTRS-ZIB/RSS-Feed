@@ -1,12 +1,17 @@
 {
- "date": "2026-10-13",
+ "date": "2026-10-14",
  "alerted": {
-  "ABTC": 3.0,
   "APLD": 1.5,
-  "CIFR": 3.0,
+  "BTDR": 1.5,
+  "CIFR": 1.5,
+  "CLSK": 1.5,
   "CORZ": 1.5,
+  "CRWV": 3.0,
   "DGXX": 1.5,
+  "GLXY": 1.5,
   "HUT": 1.5,
+  "IREN": 1.5,
+  "NUAI": 3.0,
   "WULF": 1.5
  }
 }
