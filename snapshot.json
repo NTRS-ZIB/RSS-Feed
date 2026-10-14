@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-13T17:51:16+00:00",
+  "generated": "2026-10-14T15:38:11+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -312,7 +312,7 @@
     },
     "APLD": {
       "cik": "0001144879",
-      "filing_count": 820,
+      "filing_count": 822,
       "filings": {
         "10-K": {
           "accession": "0001144879-26-000048",
@@ -340,12 +340,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1144879/000149315226023991/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001628280-26-065122",
-          "count": 214,
-          "filed": "2026-10-05",
+          "accession": "0001391935-26-000007",
+          "count": 215,
+          "filed": "2026-10-13",
           "form": "4",
-          "period": "2026-10-04",
-          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000162828026065122/xslF345X06/wk-form4_1791241026.xml"
+          "period": "2026-10-10",
+          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000139193526000007/xslF345X06/wk-form4_1791926896.xml"
         },
         "40-F": null,
         "424": {
@@ -447,7 +447,7 @@
         "FLIGHT SAFETY TECHNOLOGIES INC",
         "REEL STAFF INC"
       ],
-      "latest_filing_date": "2026-10-07",
+      "latest_filing_date": "2026-10-13",
       "name": "Applied Digital Corp.",
       "off_docket_13dg": 2,
       "projection": {
@@ -858,7 +858,7 @@
     },
     "CIFR": {
       "cik": "0001819989",
-      "filing_count": 622,
+      "filing_count": 623,
       "filings": {
         "10-K": {
           "accession": "0001819989-26-000009",
@@ -904,12 +904,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001193125-26-419743",
-          "count": 90,
-          "filed": "2026-10-13",
+          "accession": "0001193125-26-421035",
+          "count": 91,
+          "filed": "2026-10-14",
           "form": "8-K",
-          "period": "2026-10-13",
-          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000119312526419743/d134900d8k.htm"
+          "period": "2026-10-14",
+          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000119312526421035/d77312d8k.htm"
         },
         "DEF 14A": {
           "accession": "0001819989-26-000016",
@@ -976,7 +976,7 @@
         "Cipher Mining Inc.",
         "GOOD WORKS ACQUISITION CORP."
       ],
-      "latest_filing_date": "2026-10-13",
+      "latest_filing_date": "2026-10-14",
       "name": "Cipher Digital Inc.",
       "off_docket_13dg": 1,
       "projection": {
@@ -1272,7 +1272,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1153,
+      "filing_count": 1154,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1761,7 +1761,7 @@
     },
     "IREN": {
       "cik": "0001878848",
-      "filing_count": 318,
+      "filing_count": 321,
       "filings": {
         "10-K": {
           "accession": "0001878848-26-000052",
@@ -1829,12 +1829,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000051/iren-20260827.htm"
         },
         "DEF 14A": {
-          "accession": "0001140361-25-037383",
-          "count": 1,
-          "filed": "2025-10-06",
+          "accession": "0001140361-26-039451",
+          "count": 2,
+          "filed": "2026-10-13",
           "form": "DEF 14A",
-          "period": "2025-11-19",
-          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000114036125037383/ny20053824x2_def14a.htm"
+          "period": "2026-11-24",
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000114036126039451/ny20078226x1_def14a.htm"
         },
         "NT 10-K": null,
         "NT 10-Q": null,
@@ -1872,7 +1872,7 @@
         "Iris Energy Ltd",
         "Iris Energy Pty Ltd"
       ],
-      "latest_filing_date": "2026-09-30",
+      "latest_filing_date": "2026-10-13",
       "name": "IREN Ltd",
       "off_docket_13dg": 0,
       "projection": {
@@ -2529,7 +2529,7 @@
     },
     "VIP": {
       "cik": "0001844971",
-      "filing_count": 450,
+      "filing_count": 451,
       "filings": {
         "10-K": {
           "accession": "0001844971-26-000011",
@@ -2575,12 +2575,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001628280-26-064758",
-          "count": 116,
-          "filed": "2026-10-05",
+          "accession": "0001628280-26-065739",
+          "count": 117,
+          "filed": "2026-10-13",
           "form": "8-K",
-          "period": "2026-10-05",
-          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828026064758/gree-20261005.htm"
+          "period": "2026-10-13",
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828026065739/gree-20261013.htm"
         },
         "DEF 14A": {
           "accession": "0001193805-26-000547",
