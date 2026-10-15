@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-14T15:38:11+00:00",
+  "generated": "2026-10-15T15:24:07+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -603,7 +603,7 @@
     },
     "BKKT": {
       "cik": "0001820302",
-      "filing_count": 768,
+      "filing_count": 769,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019870",
@@ -735,7 +735,7 @@
         "Bakkt Holdings, Inc.",
         "VPC Impact Acquisition Holdings"
       ],
-      "latest_filing_date": "2026-10-02",
+      "latest_filing_date": "2026-10-15",
       "name": "Bakkt, Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -1130,7 +1130,7 @@
     },
     "CORZ": {
       "cik": "0001839341",
-      "filing_count": 673,
+      "filing_count": 674,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019505",
@@ -1158,12 +1158,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003445/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0000905148-26-004398",
-          "count": 162,
-          "filed": "2026-10-07",
+          "accession": "0000905148-26-004467",
+          "count": 163,
+          "filed": "2026-10-14",
           "form": "4",
-          "period": "2026-10-05",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826004398/xslF345X06/form4.xml"
+          "period": "2026-10-12",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826004467/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1254,7 +1254,7 @@
       "former_names": [
         "Power & Digital Infrastructure Acquisition Corp."
       ],
-      "latest_filing_date": "2026-10-13",
+      "latest_filing_date": "2026-10-14",
       "name": "Core Scientific, Inc./tx",
       "off_docket_13dg": 0,
       "projection": {
@@ -1272,7 +1272,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1154,
+      "filing_count": 1156,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1300,12 +1300,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000155/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0001769628-26-000447",
-          "count": 481,
-          "filed": "2026-10-08",
+          "accession": "0001769628-26-000449",
+          "count": 483,
+          "filed": "2026-10-14",
           "form": "4",
-          "period": "2026-10-06",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000447/xslF345X06/form4.xml"
+          "period": "2026-10-12",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000449/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1368,7 +1368,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-10-13",
+      "latest_filing_date": "2026-10-14",
       "name": "CoreWeave, Inc.",
       "off_docket_13dg": 5,
       "projection": {
@@ -2035,7 +2035,7 @@
     },
     "NUAI": {
       "cik": "0002028336",
-      "filing_count": 192,
+      "filing_count": 194,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-027143",
@@ -2055,20 +2055,20 @@
         },
         "20-F": null,
         "3": {
-          "accession": "0001213900-26-076485",
-          "count": 9,
-          "filed": "2026-07-08",
+          "accession": "0001225028-26-000005",
+          "count": 10,
+          "filed": "2026-10-14",
           "form": "3",
-          "period": "2026-04-28",
-          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026076485/xslF345X06/ownership.xml"
+          "period": "2026-10-08",
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000122502826000005/xslF345X06/primary_doc.xml"
         },
         "4": {
-          "accession": "0001213900-26-076486",
-          "count": 2,
-          "filed": "2026-07-08",
+          "accession": "0001225028-26-000006",
+          "count": 3,
+          "filed": "2026-10-14",
           "form": "4",
-          "period": "2026-04-28",
-          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026076486/xslF345X06/ownership.xml"
+          "period": "2026-10-09",
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000122502826000006/xslF345X06/primary_doc.xml"
         },
         "40-F": null,
         "424": {
@@ -2139,7 +2139,7 @@
         "NEW ERA HELIUM INC.",
         "Roth CH V Holdings, Inc."
       ],
-      "latest_filing_date": "2026-10-09",
+      "latest_filing_date": "2026-10-14",
       "name": "New ERA Energy & Digital, Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -2157,7 +2157,7 @@
     },
     "RIOT": {
       "cik": "0001167419",
-      "filing_count": 1594,
+      "filing_count": 1595,
       "filings": {
         "10-K": {
           "accession": "0001104659-26-022322",
@@ -2203,12 +2203,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001104659-26-114374",
-          "count": 398,
-          "filed": "2026-10-07",
+          "accession": "0001104659-26-115855",
+          "count": 399,
+          "filed": "2026-10-14",
           "form": "8-K",
-          "period": "2026-10-01",
-          "url": "https://www.sec.gov/Archives/edgar/data/1167419/000110465926114374/riot-20261001x8k.htm"
+          "period": "2026-10-07",
+          "url": "https://www.sec.gov/Archives/edgar/data/1167419/000110465926115855/riot-20261007x8k.htm"
         },
         "DEF 14A": {
           "accession": "0001104659-26-053098",
@@ -2285,7 +2285,7 @@
         "AspenBio Pharma, Inc.",
         "ASPENBIO INC"
       ],
-      "latest_filing_date": "2026-10-07",
+      "latest_filing_date": "2026-10-14",
       "name": "Riot Platforms, Inc.",
       "off_docket_13dg": 23,
       "projection": {
