@@ -1009,7 +1009,8 @@
   "urn:tag:sec.gov,2008:accession-number=0001769628-26-000448",
   "https://investors.corescientific.com/news-events/press-releases/detail/145/core-scientific-inc-schedules-third-quarter-fiscal-year-2026-earnings-release-conference-call-and-webcast",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-109819",
-  "urn:tag:sec.gov,2008:accession-number=0001166816-26-000007"
+  "urn:tag:sec.gov,2008:accession-number=0001166816-26-000007",
+  "urn:tag:sec.gov,2008:accession-number=0002090886-26-000012"
  ],
  "initialized": true,
  "feeds": {
@@ -1018,19 +1019,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 175,
+   "fails": 176,
    "alerted": true
   },
   "BKKT": {
-   "fails": 175,
+   "fails": 176,
    "alerted": true
   },
   "BTDR": {
-   "fails": 175,
+   "fails": 176,
    "alerted": true
   },
   "CIFR": {
-   "fails": 175,
+   "fails": 176,
    "alerted": true
   },
   "CLSK": {
@@ -1038,11 +1039,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 175,
+   "fails": 176,
    "alerted": true
   },
   "IREN": {
-   "fails": 175,
+   "fails": 176,
    "alerted": true
   },
   "MARA": {
@@ -1062,7 +1063,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 175,
+   "fails": 176,
    "alerted": true
   },
   "WULF": {
