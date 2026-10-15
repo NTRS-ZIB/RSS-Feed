@@ -1,22 +1,5 @@
 {
  "seen": [
-  "ff9088a8-0855-4c94-bf2c-dbc21a3acad6",
-  "036cb10d-377e-4abf-af13-7596a1b4307a",
-  "3e05b31e-cdac-4d1c-8702-66f73826201b",
-  "12451",
-  "12431",
-  "12411",
-  "12401",
-  "12341",
-  "12326",
-  "12306",
-  "12296",
-  "12281",
-  "12251",
-  "9396",
-  "9356",
-  "9316",
-  "9251",
   "9236",
   "9206",
   "9191",
@@ -1033,19 +1016,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 128,
+   "fails": 129,
    "alerted": true
   },
   "BKKT": {
-   "fails": 128,
+   "fails": 129,
    "alerted": true
   },
   "BTDR": {
-   "fails": 128,
+   "fails": 129,
    "alerted": true
   },
   "CIFR": {
-   "fails": 128,
+   "fails": 129,
    "alerted": true
   },
   "CLSK": {
@@ -1053,11 +1036,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 128,
+   "fails": 129,
    "alerted": true
   },
   "IREN": {
-   "fails": 128,
+   "fails": 129,
    "alerted": true
   },
   "MARA": {
@@ -1077,7 +1060,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 128,
+   "fails": 129,
    "alerted": true
   },
   "WULF": {
