@@ -1007,7 +1007,8 @@
   "urn:tag:sec.gov,2008:accession-number=0001225028-26-000005",
   "urn:tag:sec.gov,2008:accession-number=0001769628-26-000449",
   "urn:tag:sec.gov,2008:accession-number=0001769628-26-000448",
-  "https://investors.corescientific.com/news-events/press-releases/detail/145/core-scientific-inc-schedules-third-quarter-fiscal-year-2026-earnings-release-conference-call-and-webcast"
+  "https://investors.corescientific.com/news-events/press-releases/detail/145/core-scientific-inc-schedules-third-quarter-fiscal-year-2026-earnings-release-conference-call-and-webcast",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-109819"
  ],
  "initialized": true,
  "feeds": {
@@ -1016,19 +1017,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 164,
+   "fails": 165,
    "alerted": true
   },
   "BKKT": {
-   "fails": 164,
+   "fails": 165,
    "alerted": true
   },
   "BTDR": {
-   "fails": 164,
+   "fails": 165,
    "alerted": true
   },
   "CIFR": {
-   "fails": 164,
+   "fails": 165,
    "alerted": true
   },
   "CLSK": {
@@ -1036,11 +1037,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 164,
+   "fails": 165,
    "alerted": true
   },
   "IREN": {
-   "fails": 164,
+   "fails": 165,
    "alerted": true
   },
   "MARA": {
@@ -1060,7 +1061,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 164,
+   "fails": 165,
    "alerted": true
   },
   "WULF": {
