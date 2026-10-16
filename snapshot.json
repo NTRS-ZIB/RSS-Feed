@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-15T15:24:07+00:00",
+  "generated": "2026-10-16T15:04:22+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -312,7 +312,7 @@
     },
     "APLD": {
       "cik": "0001144879",
-      "filing_count": 822,
+      "filing_count": 823,
       "filings": {
         "10-K": {
           "accession": "0001144879-26-000048",
@@ -340,12 +340,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1144879/000149315226023991/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001391935-26-000007",
-          "count": 215,
-          "filed": "2026-10-13",
+          "accession": "0001166816-26-000007",
+          "count": 216,
+          "filed": "2026-10-15",
           "form": "4",
-          "period": "2026-10-10",
-          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000139193526000007/xslF345X06/wk-form4_1791926896.xml"
+          "period": "2026-10-13",
+          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000116681626000007/xslF345X06/wk-form4_1792098158.xml"
         },
         "40-F": null,
         "424": {
@@ -447,7 +447,7 @@
         "FLIGHT SAFETY TECHNOLOGIES INC",
         "REEL STAFF INC"
       ],
-      "latest_filing_date": "2026-10-13",
+      "latest_filing_date": "2026-10-15",
       "name": "Applied Digital Corp.",
       "off_docket_13dg": 2,
       "projection": {
@@ -858,7 +858,7 @@
     },
     "CIFR": {
       "cik": "0001819989",
-      "filing_count": 623,
+      "filing_count": 624,
       "filings": {
         "10-K": {
           "accession": "0001819989-26-000009",
@@ -886,12 +886,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1819989/000211168426000002/xslF345X02/wk-form3_1771867590.xml"
         },
         "4": {
-          "accession": "0001887616-26-000024",
-          "count": 264,
-          "filed": "2026-10-08",
-          "form": "4/A",
-          "period": "2026-09-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000188761626000024/xslF345X06/wk-form4a_1791500258.xml"
+          "accession": "0002090886-26-000012",
+          "count": 265,
+          "filed": "2026-10-15",
+          "form": "4",
+          "period": "2026-10-14",
+          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000209088626000012/xslF345X06/wk-form4_1792106929.xml"
         },
         "40-F": null,
         "424": {
@@ -976,7 +976,7 @@
         "Cipher Mining Inc.",
         "GOOD WORKS ACQUISITION CORP."
       ],
-      "latest_filing_date": "2026-10-14",
+      "latest_filing_date": "2026-10-15",
       "name": "Cipher Digital Inc.",
       "off_docket_13dg": 1,
       "projection": {
@@ -1386,7 +1386,7 @@
     },
     "DGXX": {
       "cik": "0001854368",
-      "filing_count": 251,
+      "filing_count": 252,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-050340",
@@ -1421,12 +1421,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026003391/xslF345X02/ownership.xml"
         },
         "4": {
-          "accession": "0001213900-26-092545",
-          "count": 16,
-          "filed": "2026-08-21",
+          "accession": "0001213900-26-109819",
+          "count": 17,
+          "filed": "2026-10-15",
           "form": "4",
-          "period": "2026-05-15",
-          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026092545/xslF345X06/ownership.xml"
+          "period": "2026-10-14",
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026109819/xslF345X06/ownership.xml"
         },
         "40-F": {
           "accession": "0001213900-22-015327",
@@ -1503,7 +1503,7 @@
       "former_names": [
         "Digihost Technology Inc."
       ],
-      "latest_filing_date": "2026-09-15",
+      "latest_filing_date": "2026-10-15",
       "name": "Digi Power X Inc.",
       "off_docket_13dg": 0,
       "projection": {
