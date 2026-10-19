@@ -1,6 +1,5 @@
 {
  "seen": [
-  "https://www.solunacomputing.com/?post_type=news&p=16153",
   "https://www.solunacomputing.com/?post_type=news&p=16135",
   "https://www.solunacomputing.com/?post_type=news&p=16131",
   "https://www.solunacomputing.com/?post_type=news&p=16115",
@@ -999,7 +998,8 @@
   "urn:tag:sec.gov,2008:accession-number=0001391935-26-000009",
   "urn:tag:sec.gov,2008:accession-number=0000009631-26-000030",
   "urn:tag:sec.gov,2008:accession-number=0000009631-26-000029",
-  "urn:tag:sec.gov,2008:accession-number=0000009631-26-000037"
+  "urn:tag:sec.gov,2008:accession-number=0000009631-26-000037",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-110703"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 247,
+   "fails": 248,
    "alerted": true
   },
   "BKKT": {
-   "fails": 247,
+   "fails": 248,
    "alerted": true
   },
   "BTDR": {
-   "fails": 247,
+   "fails": 248,
    "alerted": true
   },
   "CIFR": {
-   "fails": 247,
+   "fails": 248,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 247,
+   "fails": 248,
    "alerted": true
   },
   "IREN": {
-   "fails": 247,
+   "fails": 248,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 247,
+   "fails": 248,
    "alerted": true
   },
   "WULF": {
