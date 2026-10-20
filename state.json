@@ -1,6 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0000912282-26-000910",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-076486",
   "urn:tag:sec.gov,2008:accession-number=0001628280-26-048610",
   "urn:tag:sec.gov,2008:accession-number=0001628280-26-048608",
@@ -999,7 +998,8 @@
   "urn:tag:sec.gov,2008:accession-number=0001628280-26-066482",
   "urn:tag:sec.gov,2008:accession-number=0000905148-26-004522",
   "urn:tag:sec.gov,2008:accession-number=0000905148-26-004521",
-  "https://www.riotplatforms.com/riot-announces-third-quarter-2026-earnings-conference-call/"
+  "https://www.riotplatforms.com/riot-announces-third-quarter-2026-earnings-conference-call/",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-111062"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 293,
+   "fails": 294,
    "alerted": true
   },
   "BKKT": {
-   "fails": 293,
+   "fails": 294,
    "alerted": true
   },
   "BTDR": {
-   "fails": 293,
+   "fails": 294,
    "alerted": true
   },
   "CIFR": {
-   "fails": 293,
+   "fails": 294,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 293,
+   "fails": 294,
    "alerted": true
   },
   "IREN": {
-   "fails": 293,
+   "fails": 294,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 293,
+   "fails": 294,
    "alerted": true
   },
   "WULF": {
