@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-20T15:28:51+00:00",
+  "generated": "2026-10-21T15:44:20+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -155,7 +155,7 @@
     },
     "ANY": {
       "cik": "0001591956",
-      "filing_count": 822,
+      "filing_count": 824,
       "filings": {
         "10-K": {
           "accession": "0001591956-26-000004",
@@ -206,12 +206,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1591956/000159195617000003/form40-facover.htm"
         },
         "424": {
-          "accession": "0001062993-26-003958",
-          "count": 21,
-          "filed": "2026-07-31",
-          "form": "424B5",
+          "accession": "0001213900-26-111062",
+          "count": 22,
+          "filed": "2026-10-20",
+          "form": "424B3",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000106299326003958/form424b5.htm"
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000121390026111062/ea0309086-424b3_darkhorse.htm"
         },
         "6-K": {
           "accession": "0001591956-22-000025",
@@ -294,7 +294,7 @@
         "Sphere 3D Corp.",
         "Sphere 3D Corp"
       ],
-      "latest_filing_date": "2026-10-09",
+      "latest_filing_date": "2026-10-20",
       "name": "DarkHorse Technologies Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -603,7 +603,7 @@
     },
     "BKKT": {
       "cik": "0001820302",
-      "filing_count": 769,
+      "filing_count": 770,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019870",
@@ -735,7 +735,7 @@
         "Bakkt Holdings, Inc.",
         "VPC Impact Acquisition Holdings"
       ],
-      "latest_filing_date": "2026-10-15",
+      "latest_filing_date": "2026-10-20",
       "name": "Bakkt, Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -1130,7 +1130,7 @@
     },
     "CORZ": {
       "cik": "0001839341",
-      "filing_count": 674,
+      "filing_count": 676,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019505",
@@ -1158,12 +1158,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003445/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0000905148-26-004467",
-          "count": 163,
-          "filed": "2026-10-14",
+          "accession": "0000905148-26-004522",
+          "count": 165,
+          "filed": "2026-10-20",
           "form": "4",
-          "period": "2026-10-12",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826004467/xslF345X06/form4.xml"
+          "period": "2026-10-16",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826004522/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1254,7 +1254,7 @@
       "former_names": [
         "Power & Digital Infrastructure Acquisition Corp."
       ],
-      "latest_filing_date": "2026-10-14",
+      "latest_filing_date": "2026-10-20",
       "name": "Core Scientific, Inc./tx",
       "off_docket_13dg": 0,
       "projection": {
@@ -2303,7 +2303,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1578,
+      "filing_count": 1579,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2349,12 +2349,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001493152-26-047705",
-          "count": 360,
-          "filed": "2026-10-20",
+          "accession": "0001493152-26-047846",
+          "count": 361,
+          "filed": "2026-10-21",
           "form": "8-K",
-          "period": "2026-10-20",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226047705/form8-k.htm"
+          "period": "2026-10-21",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226047846/form8-k.htm"
         },
         "DEF 14A": {
           "accession": "0001628280-26-058611",
@@ -2420,7 +2420,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-10-20",
+      "latest_filing_date": "2026-10-21",
       "name": "Soluna Holdings, Inc",
       "off_docket_13dg": 17,
       "projection": {
@@ -2438,7 +2438,7 @@
     },
     "SPCX": {
       "cik": "0001181412",
-      "filing_count": 85,
+      "filing_count": 86,
       "filings": {
         "10-K": null,
         "10-Q": {
@@ -2477,12 +2477,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001628280-26-056945",
-          "count": 8,
-          "filed": "2026-08-14",
+          "accession": "0001628280-26-066482",
+          "count": 9,
+          "filed": "2026-10-20",
           "form": "8-K",
-          "period": "2026-08-14",
-          "url": "https://www.sec.gov/Archives/edgar/data/1181412/000162828026056945/spcx-20260814.htm"
+          "period": "2026-10-20",
+          "url": "https://www.sec.gov/Archives/edgar/data/1181412/000162828026066482/spcx-20261020.htm"
         },
         "DEF 14A": null,
         "NT 10-K": null,
@@ -2511,7 +2511,7 @@
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-09-30",
+      "latest_filing_date": "2026-10-20",
       "name": "SPACE EXPLORATION TECHNOLOGIES CORP",
       "off_docket_13dg": 0,
       "projection": {
