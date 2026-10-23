@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-22T15:44:22+00:00",
+  "generated": "2026-10-23T15:32:18+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -1272,7 +1272,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1156,
+      "filing_count": 1158,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1300,12 +1300,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000155/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0001769628-26-000449",
-          "count": 483,
-          "filed": "2026-10-14",
+          "accession": "0001769628-26-000451",
+          "count": 485,
+          "filed": "2026-10-22",
           "form": "4",
-          "period": "2026-10-12",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000449/xslF345X06/form4.xml"
+          "period": "2026-10-20",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000451/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1368,7 +1368,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-10-14",
+      "latest_filing_date": "2026-10-22",
       "name": "CoreWeave, Inc.",
       "off_docket_13dg": 5,
       "projection": {
@@ -2438,16 +2438,16 @@
     },
     "SPCX": {
       "cik": "0001181412",
-      "filing_count": 86,
+      "filing_count": 88,
       "filings": {
         "10-K": null,
         "10-Q": {
-          "accession": "0001628280-26-052535",
-          "count": 1,
-          "filed": "2026-08-04",
+          "accession": "0001628280-26-066880",
+          "count": 2,
+          "filed": "2026-10-22",
           "form": "10-Q",
-          "period": "2026-06-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1181412/000162828026052535/spcx-20260630.htm"
+          "period": "2026-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1181412/000162828026066880/spcx-20260930.htm"
         },
         "20-F": null,
         "3": {
@@ -2511,20 +2511,20 @@
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-10-20",
+      "latest_filing_date": "2026-10-22",
       "name": "SPACE EXPLORATION TECHNOLOGIES CORP",
       "off_docket_13dg": 0,
       "projection": {
-        "available": false,
-        "confidence": null,
-        "expected": null,
+        "available": true,
+        "confidence": "normal",
+        "expected": "2027-01-28",
         "fiscal_year_end_month": null,
-        "kind": null,
-        "median_lag_days": null,
-        "period_end": null,
-        "reason": "1/2 quarterly and 0/2 annual filings",
-        "sample": 1,
-        "spread_days": null
+        "kind": "quarterly",
+        "median_lag_days": 28,
+        "period_end": "2026-12-31",
+        "reason": null,
+        "sample": 2,
+        "spread_days": 6
       }
     },
     "VIP": {
