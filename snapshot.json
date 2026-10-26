@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-23T15:32:18+00:00",
+  "generated": "2026-10-26T17:03:38+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -465,7 +465,7 @@
     },
     "BGDE": {
       "cik": "0001218683",
-      "filing_count": 743,
+      "filing_count": 745,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-037417",
@@ -519,12 +519,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026102866/ea0306466-8k_bigdigital.htm"
         },
         "DEF 14A": {
-          "accession": "0001213900-25-084502",
-          "count": 11,
-          "filed": "2025-09-04",
+          "accession": "0001213900-26-111954",
+          "count": 12,
+          "filed": "2026-10-23",
           "form": "DEF 14A",
-          "period": "2025-10-15",
-          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390025084502/ea0254396-04.htm"
+          "period": "2026-11-13",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026111954/ea0306344-05.htm"
         },
         "NT 10-K": null,
         "NT 10-Q": {
@@ -585,7 +585,7 @@
         "OphthaliX, Inc.",
         "DENALI CONCRETE MANAGEMENT INC"
       ],
-      "latest_filing_date": "2026-10-09",
+      "latest_filing_date": "2026-10-23",
       "name": "Big Digital Energy, Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -2303,7 +2303,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1580,
+      "filing_count": 1581,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2349,12 +2349,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001493152-26-047930",
-          "count": 362,
-          "filed": "2026-10-21",
+          "accession": "0001493152-26-048420",
+          "count": 363,
+          "filed": "2026-10-26",
           "form": "8-K",
-          "period": "2026-10-20",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226047930/form8-k.htm"
+          "period": "2026-10-26",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226048420/form8-k.htm"
         },
         "DEF 14A": {
           "accession": "0001628280-26-058611",
@@ -2420,7 +2420,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-10-21",
+      "latest_filing_date": "2026-10-26",
       "name": "Soluna Holdings, Inc",
       "off_docket_13dg": 17,
       "projection": {
@@ -2438,7 +2438,7 @@
     },
     "SPCX": {
       "cik": "0001181412",
-      "filing_count": 88,
+      "filing_count": 89,
       "filings": {
         "10-K": null,
         "10-Q": {
@@ -2477,12 +2477,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001628280-26-066482",
-          "count": 9,
-          "filed": "2026-10-20",
+          "accession": "0001104659-26-118614",
+          "count": 10,
+          "filed": "2026-10-26",
           "form": "8-K",
-          "period": "2026-10-20",
-          "url": "https://www.sec.gov/Archives/edgar/data/1181412/000162828026066482/spcx-20261020.htm"
+          "period": "2026-10-24",
+          "url": "https://www.sec.gov/Archives/edgar/data/1181412/000110465926118614/tm2628247d1_8k.htm"
         },
         "DEF 14A": null,
         "NT 10-K": null,
@@ -2511,7 +2511,7 @@
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-10-22",
+      "latest_filing_date": "2026-10-26",
       "name": "SPACE EXPLORATION TECHNOLOGIES CORP",
       "off_docket_13dg": 0,
       "projection": {
@@ -2671,7 +2671,7 @@
     },
     "WULF": {
       "cik": "0001083301",
-      "filing_count": 1247,
+      "filing_count": 1248,
       "filings": {
         "10-K": {
           "accession": "0001083301-26-000031",
@@ -2717,12 +2717,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001628280-26-064757",
-          "count": 251,
-          "filed": "2026-10-05",
+          "accession": "0001628280-26-067100",
+          "count": 252,
+          "filed": "2026-10-23",
           "form": "8-K",
-          "period": "2026-10-01",
-          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000162828026064757/wulf-20261001.htm"
+          "period": "2026-10-23",
+          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000162828026067100/wulf-20261023.htm"
         },
         "DEF 14A": {
           "accession": "0001083301-26-000077",
@@ -2789,7 +2789,7 @@
         "IKONICS CORP",
         "CHROMALINE CORP"
       ],
-      "latest_filing_date": "2026-10-19",
+      "latest_filing_date": "2026-10-23",
       "name": "TERAWULF INC.",
       "off_docket_13dg": 0,
       "projection": {
