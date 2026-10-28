@@ -1,6 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001062993-26-003958",
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-309174",
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-298548",
   "urn:tag:sec.gov,2008:accession-number=0000912282-26-001018",
@@ -999,7 +998,8 @@
   "urn:tag:sec.gov,2008:accession-number=0001123292-26-001436",
   "urn:tag:sec.gov,2008:accession-number=0002012383-26-003924",
   "urn:tag:sec.gov,2008:accession-number=0002012383-26-003738",
-  "urn:tag:sec.gov,2008:accession-number=0000070858-26-000535"
+  "urn:tag:sec.gov,2008:accession-number=0000070858-26-000535",
+  "urn:tag:sec.gov,2008:accession-number=0000905148-26-004585"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 548,
+   "fails": 549,
    "alerted": true
   },
   "BKKT": {
-   "fails": 548,
+   "fails": 549,
    "alerted": true
   },
   "BTDR": {
-   "fails": 548,
+   "fails": 549,
    "alerted": true
   },
   "CIFR": {
-   "fails": 548,
+   "fails": 549,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 548,
+   "fails": 549,
    "alerted": true
   },
   "IREN": {
-   "fails": 548,
+   "fails": 549,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 548,
+   "fails": 549,
    "alerted": true
   },
   "WULF": {
