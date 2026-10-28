@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-27T16:06:38+00:00",
+  "generated": "2026-10-28T16:53:14+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -753,7 +753,7 @@
     },
     "BTDR": {
       "cik": "0001899123",
-      "filing_count": 284,
+      "filing_count": 285,
       "filings": {
         "10-K": null,
         "10-Q": null,
@@ -831,16 +831,16 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1899123/000110465926079298/xslSCHEDULE_13D_X02/primary_doc.xml"
         },
         "SCHEDULE 13G": {
-          "accession": "0001446580-26-000091",
-          "count": 9,
-          "filed": "2026-08-14",
-          "form": "SCHEDULE 13G",
+          "accession": "0002012383-26-003738",
+          "count": 10,
+          "filed": "2026-10-27",
+          "form": "SCHEDULE 13G/A",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000144658026000091/xslSCHEDULE_13G_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000201238326003738/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-10-19",
+      "latest_filing_date": "2026-10-27",
       "name": "Bitdeer Technologies Group",
       "off_docket_13dg": 0,
       "projection": {
@@ -858,7 +858,7 @@
     },
     "CIFR": {
       "cik": "0001819989",
-      "filing_count": 628,
+      "filing_count": 629,
       "filings": {
         "10-K": {
           "accession": "0001819989-26-000009",
@@ -886,12 +886,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1819989/000211168426000002/xslF345X02/wk-form3_1771867590.xml"
         },
         "4": {
-          "accession": "0002090886-26-000012",
-          "count": 265,
-          "filed": "2026-10-15",
+          "accession": "0001123292-26-001436",
+          "count": 266,
+          "filed": "2026-10-27",
           "form": "4",
-          "period": "2026-10-14",
-          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000209088626000012/xslF345X06/wk-form4_1792106929.xml"
+          "period": "2026-10-26",
+          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000112329226001436/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -976,7 +976,7 @@
         "Cipher Mining Inc.",
         "GOOD WORKS ACQUISITION CORP."
       ],
-      "latest_filing_date": "2026-10-21",
+      "latest_filing_date": "2026-10-27",
       "name": "Cipher Digital Inc.",
       "off_docket_13dg": 1,
       "projection": {
@@ -2303,7 +2303,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1582,
+      "filing_count": 1583,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2409,18 +2409,18 @@
         },
         "SCHEDULE 13D": null,
         "SCHEDULE 13G": {
-          "accession": "0001088226-26-000005",
-          "count": 9,
-          "filed": "2026-08-05",
-          "form": "SCHEDULE 13G",
+          "accession": "0002012383-26-003924",
+          "count": 10,
+          "filed": "2026-10-27",
+          "form": "SCHEDULE 13G/A",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000108822626000005/xslSCHEDULE_13G_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000201238326003924/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-10-26",
+      "latest_filing_date": "2026-10-27",
       "name": "Soluna Holdings, Inc",
       "off_docket_13dg": 17,
       "projection": {
