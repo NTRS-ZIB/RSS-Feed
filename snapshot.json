@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-28T16:53:14+00:00",
+  "generated": "2026-10-29T17:11:49+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -1130,7 +1130,7 @@
     },
     "CORZ": {
       "cik": "0001839341",
-      "filing_count": 676,
+      "filing_count": 678,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019505",
@@ -1158,12 +1158,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003445/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0000905148-26-004522",
-          "count": 165,
-          "filed": "2026-10-20",
+          "accession": "0000905148-26-004585",
+          "count": 166,
+          "filed": "2026-10-28",
           "form": "4",
-          "period": "2026-10-16",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826004522/xslF345X06/form4.xml"
+          "period": "2026-10-26",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826004585/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1243,18 +1243,18 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1839341/000091957426004796/xslSCHEDULE_13D_X02/primary_doc.xml"
         },
         "SCHEDULE 13G": {
-          "accession": "0000919574-26-005527",
-          "count": 27,
-          "filed": "2026-08-14",
-          "form": "SCHEDULE 13G/A",
+          "accession": "0001193125-26-436502",
+          "count": 28,
+          "filed": "2026-10-28",
+          "form": "SCHEDULE 13G",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000091957426005527/xslSCHEDULE_13G_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000119312526436502/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
         "Power & Digital Infrastructure Acquisition Corp."
       ],
-      "latest_filing_date": "2026-10-20",
+      "latest_filing_date": "2026-10-28",
       "name": "Core Scientific, Inc./tx",
       "off_docket_13dg": 0,
       "projection": {
@@ -1761,7 +1761,7 @@
     },
     "IREN": {
       "cik": "0001878848",
-      "filing_count": 321,
+      "filing_count": 322,
       "filings": {
         "10-K": {
           "accession": "0001878848-26-000052",
@@ -1860,19 +1860,19 @@
         },
         "SCHEDULE 13D": null,
         "SCHEDULE 13G": {
-          "accession": "0001104659-26-112411",
-          "count": 18,
-          "filed": "2026-09-30",
-          "form": "SCHEDULE 13G",
+          "accession": "0000070858-26-000535",
+          "count": 19,
+          "filed": "2026-10-28",
+          "form": "SCHEDULE 13G/A",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000110465926112411/xslSCHEDULE_13G_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000007085826000535/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
         "Iris Energy Ltd",
         "Iris Energy Pty Ltd"
       ],
-      "latest_filing_date": "2026-10-13",
+      "latest_filing_date": "2026-10-28",
       "name": "IREN Ltd",
       "off_docket_13dg": 0,
       "projection": {
@@ -2035,7 +2035,7 @@
     },
     "NUAI": {
       "cik": "0002028336",
-      "filing_count": 196,
+      "filing_count": 197,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-027143",
@@ -2081,12 +2081,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001213900-26-107704",
-          "count": 56,
-          "filed": "2026-10-08",
+          "accession": "0001213900-26-113530",
+          "count": 57,
+          "filed": "2026-10-29",
           "form": "8-K",
-          "period": "2026-10-07",
-          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026107704/ea0308042-8k_newera.htm"
+          "period": "2026-10-28",
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026113530/ea0310066-8k_newera.htm"
         },
         "DEF 14A": {
           "accession": "0001213900-26-028314",
@@ -2139,7 +2139,7 @@
         "NEW ERA HELIUM INC.",
         "Roth CH V Holdings, Inc."
       ],
-      "latest_filing_date": "2026-10-21",
+      "latest_filing_date": "2026-10-29",
       "name": "New ERA Energy & Digital, Inc.",
       "off_docket_13dg": 0,
       "projection": {
