@@ -1,6 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0000912282-26-000965",
   "urn:tag:sec.gov,2008:accession-number=0000912282-26-000917",
   "urn:tag:sec.gov,2008:accession-number=0001104659-26-084631",
   "urn:tag:sec.gov,2008:accession-number=0000009631-26-000023",
@@ -999,7 +998,8 @@
   "urn:tag:sec.gov,2008:accession-number=0000905148-26-004585",
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-436502",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-113530",
-  "f3bdba32-828c-4772-af76-7d6417b82c24"
+  "f3bdba32-828c-4772-af76-7d6417b82c24",
+  "https://whitefiber.investorroom.com/2026-10-29-WhiteFiber-Announces-Third-Quarter-2026-Earnings-Conference-Call"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 582,
+   "fails": 583,
    "alerted": true
   },
   "BKKT": {
-   "fails": 582,
+   "fails": 583,
    "alerted": true
   },
   "BTDR": {
-   "fails": 582,
+   "fails": 583,
    "alerted": true
   },
   "CIFR": {
-   "fails": 582,
+   "fails": 583,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 582,
+   "fails": 583,
    "alerted": true
   },
   "IREN": {
-   "fails": 582,
+   "fails": 583,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 582,
+   "fails": 583,
    "alerted": true
   },
   "WULF": {
