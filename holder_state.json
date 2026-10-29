@@ -111,6 +111,7 @@
   "CORZ|Carl Shulman | Leopold Aschenbrenner | SAF AI GP LP | Situational Awareness LLC | Situational Awareness LP | Situational Awareness Partners LP": 4.4,
   "CORZ|Christopher R. Hansen | Valiant Capital Management, L.P. | Valiant Capital Management, LLC": 5.3,
   "CORZ|Citadel Advisors Holdings LP | Citadel Advisors LLC | Citadel GP LLC | Citadel Securities GP LLC | Citadel Securities Group LP | Citadel Securities LLC | Kenneth Griffin": 6.5,
+  "CORZ|Farhad Nanji | MFN Partners GP, LLC | MFN Partners Management, LLC | MFN Partners Management, LP | MFN Partners, LP | Michael F. DeMichele": 7.6,
   "CORZ|G1 Execution Services, LLC | SIG Brokerage, LP | Susquehanna Investment Group | Susquehanna Securities, LLC": 4.6,
   "CORZ|JANE STREET GROUP, LLC | Jane Street Capital, LLC | Jane Street Global Trading, LLC": 6.3,
   "CORZ|Jericho Capital Asset Management L.P. | Josh Resnick": 7.2,
@@ -228,28 +229,28 @@
   "0000950170-25-114068"
  ],
  "read": {
-  "ABTC": "2026-10-28",
-  "ANY": "2026-10-28",
-  "APLD": "2026-10-28",
-  "BGDE": "2026-10-28",
-  "BKKT": "2026-10-28",
-  "BTDR": "2026-10-28",
-  "CIFR": "2026-10-28",
-  "CLSK": "2026-10-28",
-  "CORZ": "2026-10-28",
-  "CRWV": "2026-10-28",
-  "DGXX": "2026-10-28",
-  "GLXY": "2026-10-28",
-  "HUT": "2026-10-28",
-  "IREN": "2026-10-28",
-  "MARA": "2026-10-28",
-  "NUAI": "2026-10-28",
-  "RIOT": "2026-10-28",
-  "SLNH": "2026-10-28",
-  "SPCX": "2026-10-28",
-  "VIP": "2026-10-28",
-  "WULF": "2026-10-28",
-  "WYFI": "2026-10-28"
+  "ABTC": "2026-10-29",
+  "ANY": "2026-10-29",
+  "APLD": "2026-10-29",
+  "BGDE": "2026-10-29",
+  "BKKT": "2026-10-29",
+  "BTDR": "2026-10-29",
+  "CIFR": "2026-10-29",
+  "CLSK": "2026-10-29",
+  "CORZ": "2026-10-29",
+  "CRWV": "2026-10-29",
+  "DGXX": "2026-10-29",
+  "GLXY": "2026-10-29",
+  "HUT": "2026-10-29",
+  "IREN": "2026-10-29",
+  "MARA": "2026-10-29",
+  "NUAI": "2026-10-29",
+  "RIOT": "2026-10-29",
+  "SLNH": "2026-10-29",
+  "SPCX": "2026-10-29",
+  "VIP": "2026-10-29",
+  "WULF": "2026-10-29",
+  "WYFI": "2026-10-29"
  },
  "repairs": [
   "2026-09-10-subject-misattribution"
@@ -624,6 +625,7 @@
   "0001225028-26-000008",
   "0002012383-26-003738",
   "0000070858-26-000535",
-  "0002012383-26-003924"
+  "0002012383-26-003924",
+  "0001193125-26-436502"
  ]
 }
