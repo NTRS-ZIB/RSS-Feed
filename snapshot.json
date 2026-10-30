@@ -1,9 +1,9 @@
 {
-  "generated": "2026-10-29T17:11:49+00:00",
+  "generated": "2026-10-30T16:52:41+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
-      "filing_count": 673,
+      "filing_count": 674,
       "filings": {
         "10-K": {
           "accession": "0001193125-26-127278",
@@ -123,12 +123,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1755953/000121390025124157/xslSCHEDULE_13D_X01/primary_doc.xml"
         },
         "SCHEDULE 13G": {
-          "accession": "0001641172-25-023990",
-          "count": 2,
-          "filed": "2025-08-14",
-          "form": "SCHEDULE 13G/A",
+          "accession": "0002100119-26-001536",
+          "count": 3,
+          "filed": "2026-10-30",
+          "form": "SCHEDULE 13G",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1755953/000164117225023990/xslSCHEDULE_13G_X01/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1755953/000210011926001536/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
@@ -137,7 +137,7 @@
         "Akerna Corp.",
         "MTech Acquisition Holdings Inc."
       ],
-      "latest_filing_date": "2026-08-07",
+      "latest_filing_date": "2026-10-30",
       "name": "American Bitcoin Corp.",
       "off_docket_13dg": 0,
       "projection": {
@@ -1521,7 +1521,7 @@
     },
     "GLXY": {
       "cik": "0001859392",
-      "filing_count": 283,
+      "filing_count": 284,
       "filings": {
         "10-K": {
           "accession": "0001859392-26-000016",
@@ -1617,7 +1617,7 @@
       "former_names": [
         "Galaxy Digital Pubco Inc."
       ],
-      "latest_filing_date": "2026-10-27",
+      "latest_filing_date": "2026-10-30",
       "name": "Galaxy Digital Inc.",
       "off_docket_13dg": 0,
       "projection": {
