@@ -1,16 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0000354204-26-000787",
-  "urn:tag:sec.gov,2008:accession-number=0002012383-26-002199",
-  "urn:tag:sec.gov,2008:accession-number=0002012383-26-003194",
-  "urn:tag:sec.gov,2008:accession-number=0000895345-26-000329",
-  "urn:tag:sec.gov,2008:accession-number=0001062993-26-003723",
-  "urn:tag:sec.gov,2008:accession-number=0001062993-26-003562",
-  "urn:tag:sec.gov,2008:accession-number=0002012383-26-003142",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-079673",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-079177",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-076485",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-26-034093",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-084223",
   "urn:tag:sec.gov,2008:accession-number=0000070858-26-000397",
   "urn:tag:sec.gov,2008:accession-number=0002100121-26-000988",
@@ -999,7 +988,18 @@
   "https://whitefiber.investorroom.com/2026-10-29-WhiteFiber-Announces-Third-Quarter-2026-Earnings-Conference-Call",
   "urn:tag:sec.gov,2008:accession-number=0002100119-26-001536",
   "urn:tag:sec.gov,2008:accession-number=0001959173-26-007568",
-  "urn:tag:sec.gov,2008:accession-number=0001769628-26-000452"
+  "urn:tag:sec.gov,2008:accession-number=0001769628-26-000452",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-442089",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-442076",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-442053",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-442045",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-442023",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-442010",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-442003",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-441994",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-441989",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-441978",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-441951"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 625,
+   "fails": 626,
    "alerted": true
   },
   "BKKT": {
-   "fails": 625,
+   "fails": 626,
    "alerted": true
   },
   "BTDR": {
-   "fails": 625,
+   "fails": 626,
    "alerted": true
   },
   "CIFR": {
-   "fails": 625,
+   "fails": 626,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 625,
+   "fails": 626,
    "alerted": true
   },
   "IREN": {
-   "fails": 625,
+   "fails": 626,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 625,
+   "fails": 626,
    "alerted": true
   },
   "WULF": {
