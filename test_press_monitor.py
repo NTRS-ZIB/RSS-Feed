@@ -826,6 +826,80 @@ def main():
           and state["feeds"]["ANY"] == {"fails": 0, "alerted": False},
           "212 of those runs never asked the host for anything")
 
+    print("\nA REFUSED FEED IS NOT A MISSING ONE")
+    # Mutation: `if read.status in REFUSED` -> `if False`, restoring the single
+    # sentence this replaced.
+    #
+    # THE DEFECT THIS EXISTS FOR RAN FOR THREE WEEKS. parse_feed printed
+    # "HTTP 403" and then returned the same empty list it returns for a dead
+    # URL, so the caller concluded "NO FEED - needs a scraper or manual URL"
+    # for BGDE on 610 consecutive passes. The feed was live and correct the
+    # whole time and held the release that went unposted. Acting on that line
+    # means hunting a replacement URL; the investigation that eventually
+    # happened did exactly that, for an hour, before reading the feed in a
+    # browser and finding it fine.
+    refused = pm.feed_verdict(pm.FeedRead([], 403))
+    check("a 403 is reported as REFUSED", refused.startswith("REFUSED"),
+          refused[:58])
+    check("AND SAYS RE-PINNING WILL NOT HELP",
+          "re-pinning it changes nothing" in refused,
+          "naming the wrong remedy is what cost three weeks")
+
+    # Mutation: drop 401/429/451, leaving only 403 in REFUSED.
+    for code in (401, 429, 451):
+        v = pm.feed_verdict(pm.FeedRead([], code))
+        check(f"HTTP {code} is a refusal too", v.startswith("REFUSED"), v[:38])
+
+    # Mutation: `if read.status == 200` -> `if False`. A feed that answers and
+    # serves nothing is the DGXX shape: alive, parseable, empty. That needs a
+    # different look than a URL which does not resolve.
+    empty = pm.feed_verdict(pm.FeedRead([], 200))
+    check("a 200 with no entries is reported as EMPTY",
+          empty.startswith("EMPTY"), empty[:48])
+    check("and is not confused with a refusal",
+          "REFUSED" not in empty and "scraper" not in empty)
+
+    # Mutation: drop the status from the fallback message.
+    for status in ("fetch", "parse", 500):
+        v = pm.feed_verdict(pm.FeedRead([], status))
+        check(f"{status!r} still reads as NO FEED, carrying its reason",
+              v.startswith("NO FEED") and str(status) in v, v[:44])
+
+    print("\nPARSE_FEED REPORTS WHY, NOT JUST WHETHER")
+
+    # Mutation: `FeedRead([], r.status_code ...)` -> `FeedRead([], 200)`.
+    class Resp:
+        def __init__(self, code, content=b""):
+            self.status_code, self.content = code, content
+
+    real_get = pm.requests.get
+    try:
+        pm.requests.get = lambda *a, **k: Resp(403)
+        r = pm.parse_feed("https://example.invalid/f")
+        check("A REFUSAL CARRIES ITS STATUS OUT OF parse_feed",
+              r.entries == [] and r.status == 403, f"got {r!r}")
+
+        pm.requests.get = lambda *a, **k: Resp(500)
+        check("so does a server error",
+              pm.parse_feed("https://example.invalid/f").status == 500)
+
+        def boom(*a, **k):
+            raise pm.requests.RequestException("down")
+
+        pm.requests.get = boom
+        r = pm.parse_feed("https://example.invalid/f")
+        check("a transport failure reports 'fetch', not a status code",
+              r.status == "fetch", f"got {r.status!r}")
+    finally:
+        pm.requests.get = real_get
+
+    # Mutation: make REFUSED empty. It is the only place the do-not-re-fetch
+    # decision is encoded, and discovery would otherwise hit a host that has
+    # just said no, doubling the request rate against it.
+    check("REFUSED names the statuses discovery must not retry",
+          403 in pm.REFUSED and 200 not in pm.REFUSED,
+          f"REFUSED = {pm.REFUSED}")
+
     bad = sum(1 for r, _ in results if r == FAIL)
     print(f"\n{len(results) - bad}/{len(results)} checks passed")
     return 1 if bad else 0

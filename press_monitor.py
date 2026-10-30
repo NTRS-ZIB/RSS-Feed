@@ -19,7 +19,7 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 from calendar import timegm
-from collections import Counter
+from collections import Counter, namedtuple
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
@@ -1054,9 +1054,63 @@ def discover_feed(page_url):
 READ_TIMEOUTS = (30, 90)
 
 
+# Statuses that mean THE FEED IS FINE AND WILL NOT SERVE US. Separated from
+# every other failure because the remedy is completely different: a refusal is
+# not a missing URL, and treating it as one sends the reader looking for a
+# replacement that does not exist. 2026-10-09 cost three weeks and an
+# investigation to that exact confusion; see FeedRead.
+REFUSED = (401, 403, 429, 451)
+
+# NAMED, NOT POSITIONAL, for the reason build_snapshot.Row and
+# earnings_calendar.Read both carry: on 2026-09-10 a field added to a plain
+# tuple left one of two readers unpacking the old width and every live run
+# raised ValueError, while four green dry runs missed it.
+#
+# `status` is the HTTP status when a response came back at all, or a short
+# string naming the stage that failed ("fetch", "parse"). It exists because
+# parse_feed ALREADY PRINTED "HTTP 403" and then returned the same empty list
+# it returns for a dead URL, so the caller's conclusion contradicted the line
+# above it: BGDE's feed was reported as "NO FEED — needs a scraper or manual
+# URL" for 610 consecutive passes while the feed was live, correct, and
+# serving the release that was missed. The truth was on screen and the label
+# buried it.
+FeedRead = namedtuple("FeedRead", "entries status")
+
+
+def feed_verdict(read):
+    """Why a feed produced no entries, in the words a reader needs.
+
+    THREE OUTCOMES, THREE SENTENCES. They were one sentence until 2026-10-30,
+    and that sentence named the wrong remedy for the case that was actually
+    happening: "NO FEED — needs a scraper or manual URL" was printed for BGDE
+    on 610 consecutive passes while its feed was live, correct, and carrying
+    the release that went unposted. Acting on that line means hunting for a
+    replacement URL, and there is none to find.
+
+    OUTSIDE collect_all SO IT CAN BE TESTED AT ALL. The branch was inline, and
+    inline is why the wrong wording survived 610 passes. `cap_halts` in
+    pushpin.py was extracted for the same reason after the same kind of bug.
+    """
+    if read.status in REFUSED:
+        return (f"REFUSED — HTTP {read.status}. The feed is reachable and this "
+                f"client is not welcome. NOT a missing URL and NOT a scraper "
+                f"job: re-pinning it changes nothing. "
+                f"See docs/press-monitor.md.")
+    if read.status == 200:
+        return ("EMPTY — answered HTTP 200 and parsed to no entries. The URL "
+                "resolves; it is serving nothing.")
+    return f"NO FEED ({read.status}) — needs a scraper or manual URL"
+
+
 def parse_feed(url):
-    """Fetch and parse a feed. Never blocks indefinitely. Retries once, with
-    a longer read timeout on the retry."""
+    """FeedRead(entries, status). Never blocks indefinitely. Retries once, with
+    a longer read timeout on the retry.
+
+    RETURNS WHY, NOT JUST WHETHER. An empty list is the same value for a URL
+    that is not a feed, a feed that answered 200 with nothing in it, and a
+    feed that refused this client outright. Those need three different
+    responses from a human and used to get one sentence.
+    """
     r = None
     for attempt, read_timeout in enumerate(READ_TIMEOUTS):
         started = time.time()
@@ -1076,15 +1130,15 @@ def parse_feed(url):
             else:
                 print(f"    fetch failed: {type(e).__name__} after "
                       f"{waited:.0f}s at a {read_timeout}s read timeout")
-                return []
+                return FeedRead([], "fetch")
     if r is None or r.status_code != 200:
         print(f"    HTTP {r.status_code if r is not None else '?'}")
-        return []
+        return FeedRead([], r.status_code if r is not None else "fetch")
     try:
-        return feedparser.parse(r.content).entries or []
+        return FeedRead(feedparser.parse(r.content).entries or [], 200)
     except Exception as e:
         print(f"    parse failed: {type(e).__name__}")
-        return []
+        return FeedRead([], "parse")
 
 
 def scrape_hut8():
@@ -1957,20 +2011,27 @@ def collect_ir():
 
     for label, url in IR_FEEDS.items():
         print(f"  {label}...")
-        entries = parse_feed(url)
+        read = parse_feed(url)
+        entries = read.entries
         source_url = url
 
-        if not entries:
+        # NOT ON A REFUSAL. Discovery re-fetches the same host to look for a
+        # <link rel="alternate"> on the page, which is useful when the URL was
+        # wrong and pointless when the host is refusing this client: it cannot
+        # answer the discovery request either. It also doubles the request rate
+        # against a host that has just said no.
+        if not entries and read.status not in REFUSED:
             # Not a feed, or a dead URL. Try to find the real feed on the page.
             found = discover_feed(url)
             if found and found != url:
-                entries = parse_feed(found)
-                if entries:
+                second = parse_feed(found)
+                if second.entries:
+                    entries, read = second.entries, second
                     source_url = found
                     print(f"  {label}: discovered feed at {found}")
 
         if not entries:
-            print(f"  {label}: NO FEED — needs a scraper or manual URL")
+            print(f"  {label}: {feed_verdict(read)}")
             feed_ok[label] = False
             continue
 

@@ -655,6 +655,112 @@ bot-written and guarded by the pre-commit hook — see
 [local workflow](local-workflow.md). Posting it by hand is usually the better
 answer.
 
+## Seven feeds refused this client on 2026-10-09, and the log said the wrong thing
+
+**BGDE, BKKT, BTDR, CIFR, GLXY, IREN and VIP all began returning HTTP 403 on the
+same pass, 2026-10-09T14:17, and have failed every pass since.** Dated from
+`state.json`'s own history: the failing set changed to exactly those seven at
+that commit and never recovered. By 2026-10-30 each sat at 610 consecutive
+failures.
+
+Measured across all nineteen IR sources from a separate machine on 2026-10-30:
+the same seven return 403 and the other twelve return 200. Nineteen for
+nineteen. So this is **source-side**, not a code change and not specific to the
+runner. Six of the seven are one investor-relations platform (the
+`*/rss/news-releases.xml` endpoints); the seventh is GlobeNewswire.
+
+A real browser loads all of them. These hosts have started refusing
+non-browser clients.
+
+### THE PIN IS CORRECT. DO NOT GO LOOKING FOR A NEW URL.
+
+This is the part worth writing down, because an hour was spent on it.
+
+`watchlist.BGDE.ir_feed` points at
+`globenewswire.com/rssfeed/organization/z9WJvxXYqqA-t7lWEcsvqw==`, which is
+Mawson Infrastructure Group's organisation ID. BGDE *is* the renamed Mawson, so
+the ID looks stale. It is not. Loaded in a browser that feed returns
+`<title>Big Digital Energy, Inc.</title>`, a `lastBuildDate` of
+`Thu, 22 Oct 2026 20:01:00 GMT`, and as its first item the release that went
+unposted. **GlobeNewswire renamed the organisation in place and kept the ID.**
+
+Two plausible cross-checks said otherwise, and both were wrong:
+
+- GlobeNewswire's organisation *search* page returns "No articles were found"
+  for that ID. That page takes a **name-based** token
+  (`Big%2520Digital%2520Energy%CE%B4%2520Inc%C2%A7`), not the opaque feed ID.
+  Two namespaces, and feeding one to the other produces a confident empty
+  result.
+- `globenewswire.com/rss/list` offers feeds by subject, industry and location
+  and **no per-organisation option**, which reads as the feature having been
+  retired. The per-organisation endpoint works fine.
+
+CLAUDE.md's rule applies exactly: a plausible cross-check can confirm the wrong
+answer, and two of them agreeing means nothing when both rest on the same
+mistaken premise.
+
+BGDE's own newsroom is no help either. `bigdigital.energy/news-media/press-releases/`
+answers 200 but its HTML carries none of the headlines: the list is a
+**QuoteMedia `qmod` widget** rendered client-side from QuoteMedia's API. There
+is no server-rendered page to scrape and no feed declared on the domain.
+
+### Why the log pointed the wrong way
+
+`parse_feed` printed `HTTP 403` and then returned the same empty list it
+returns for a URL that is not a feed. The caller saw an empty list and
+concluded:
+
+```
+BGDE: NO FEED — needs a scraper or manual URL
+```
+
+for 610 consecutive passes, while the feed was live, correct, and carrying the
+missing release. The truth was on screen one line above and the conclusion
+buried it. Acting on that line means hunting a replacement URL, which is what
+happened.
+
+`parse_feed` now returns `FeedRead(entries, status)` and `feed_verdict` turns
+that into one of three sentences:
+
+| status | verdict |
+|---|---|
+| 401, 403, 429, 451 | `REFUSED` — reachable, will not serve us, re-pinning changes nothing |
+| 200 with no entries | `EMPTY` — the URL resolves and is serving nothing |
+| anything else | `NO FEED (<reason>)` — needs a scraper or manual URL |
+
+`feed_verdict` lives outside `collect_all` so it can be tested at all. The
+branch was inline, and inline is why the wrong wording survived 610 passes;
+`pushpin.cap_halts` was extracted after the same kind of bug.
+
+Discovery is also skipped on a refusal. `discover_feed` re-fetches the same
+host looking for a `<link rel="alternate">`, which cannot work when that host
+is refusing this client and doubles the request rate against something that has
+just said no.
+
+### What this cost, and what is still open
+
+**"Big Digital Energy to Release Third Quarter 2026 Results November 5th",
+2026-10-22 16:01 ET**, was issued thirteen days into the outage. BGDE filed no
+8-K in that window, only proxy materials, a Form 4 and a 13D/A, so the EDGAR
+path had nothing to pick up either. Both routes were closed.
+
+`report_feed_health` did its job and fired once. It alerts **once per episode,
+not once per run**, deliberately, so there was one ops notice around 10-09 and
+silence for three weeks. Its own docstring describes the previous BGDE outage
+being found "22 hours later... only because an expected release never
+appeared". Same source, same way of finding out, three weeks instead of 22
+hours. A latched alert makes a six-week outage look identical to a resolved
+one.
+
+Still open, and a policy question rather than a bug: these seven sources have
+chosen to block automated clients. Disguising the client to get past that is
+circumvention and is deliberately not done here. The options are each
+platform's documented or permitted feed, relying on EDGAR alone and accepting
+that wire-only releases are missed, or asking the providers for access.
+`MARA`'s feed is separately **stale** (parses cleanly, newest item 84 days old)
+and `DGXX` returns 403 from its CMS API, so nine of nineteen IR sources are
+degraded.
+
 ## Coverage
 
 | Company | CIK | IR feed |
