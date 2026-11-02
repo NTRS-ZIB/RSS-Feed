@@ -1,9 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-084223",
-  "urn:tag:sec.gov,2008:accession-number=0000070858-26-000397",
-  "urn:tag:sec.gov,2008:accession-number=0002100121-26-000988",
-  "urn:tag:sec.gov,2008:accession-number=0002012383-26-003109",
   "urn:tag:sec.gov,2008:accession-number=0000009631-26-000020",
   "urn:tag:sec.gov,2008:accession-number=0001104659-26-080583",
   "urn:tag:sec.gov,2008:accession-number=0002100121-26-000928",
@@ -999,7 +995,11 @@
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-441994",
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-441989",
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-441978",
-  "urn:tag:sec.gov,2008:accession-number=0001193125-26-441951"
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-441951",
+  "urn:tag:sec.gov,2008:accession-number=0001819989-26-000050",
+  "urn:tag:sec.gov,2008:accession-number=0001819989-26-000047",
+  "https://ir.mara.com/news-events/press-releases/detail/1428/mara-schedules-conference-call-for-third-quarter-2026-financial-results",
+  "urn:tag:sec.gov,2008:accession-number=0001959173-26-007589"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 648,
+   "fails": 649,
    "alerted": true
   },
   "BKKT": {
-   "fails": 648,
+   "fails": 649,
    "alerted": true
   },
   "BTDR": {
-   "fails": 648,
+   "fails": 649,
    "alerted": true
   },
   "CIFR": {
-   "fails": 648,
+   "fails": 649,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 648,
+   "fails": 649,
    "alerted": true
   },
   "IREN": {
-   "fails": 648,
+   "fails": 649,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 648,
+   "fails": 649,
    "alerted": true
   },
   "WULF": {
