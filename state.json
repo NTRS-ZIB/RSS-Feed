@@ -1,19 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0002100121-26-000928",
-  "urn:tag:sec.gov,2008:accession-number=0001104659-26-084862",
-  "urn:tag:sec.gov,2008:accession-number=0001887623-26-000016",
-  "https://investors.terawulf.com/news-events/press-releases/detail/143/terawulf-schedules-conference-call-for-second-quarter-2026-financial-results",
-  "https://investors.terawulf.com/news-events/press-releases/detail/142/terawulf-announces-anthropic-lease-at-justified-data-campus-and-sale-of-majority-interest-in-abernathy-joint-venture-to-fluidstack",
-  "https://investors.terawulf.com/news-events/press-releases/detail/141/terawulf-expands-infrastructure-platform-with-acquisition-of-1-gw-eastern-kentucky-hpc-campus",
-  "https://investors.terawulf.com/news-events/press-releases/detail/140/terawulf-reports-first-quarter-2026-results",
-  "https://investors.terawulf.com/news-events/press-releases/detail/139/terawulf-announces-participation-in-upcoming-investor-and-industry-conferences",
-  "https://investors.terawulf.com/news-events/press-releases/detail/138/terawulf-schedules-conference-call-for-first-quarter-2026-financial-results",
-  "https://investors.terawulf.com/news-events/press-releases/detail/137/terawulf-announces-closing-of-common-stock-offering",
-  "https://investors.terawulf.com/news-events/press-releases/detail/136/terawulf-announces-pricing-of-upsized-common-stock-offering",
-  "https://investors.terawulf.com/news-events/press-releases/detail/135/terawulf-announces-common-stock-offering",
-  "https://investors.terawulf.com/news-events/press-releases/detail/134/terawulf-reports-preliminary-first-quarter-2026-financial-results",
-  "11686",
   "11676",
   "11561",
   "11531",
@@ -999,7 +985,38 @@
   "https://ir.mara.com/news-events/press-releases/detail/1428/mara-schedules-conference-call-for-third-quarter-2026-financial-results",
   "urn:tag:sec.gov,2008:accession-number=0001959173-26-007589",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-114925",
-  "urn:tag:sec.gov,2008:accession-number=0001906218-26-000004"
+  "urn:tag:sec.gov,2008:accession-number=0001906218-26-000004",
+  "12086",
+  "11926",
+  "11846",
+  "11776",
+  "11726",
+  "11701",
+  "11601",
+  "6a4c90a8-1fad-4c09-b1dd-30b98dccb26e",
+  "12666",
+  "12651",
+  "12451",
+  "12431",
+  "12411",
+  "9641",
+  "9396",
+  "9356",
+  "9316",
+  "https://www.globenewswire.com/news-release/2026/11/02/3393147/0/en/big-digital-energy-to-participate-in-the-cantor-crypto-and-ai-infrastructure-conference.html",
+  "https://www.globenewswire.com/news-release/2026/10/22/3386866/0/en/big-digital-energy-to-release-third-quarter-2026-results-november-5th.html",
+  "11961",
+  "11931",
+  "11911",
+  "11896",
+  "11851",
+  "11841",
+  "11796",
+  "11591",
+  "9946",
+  "9931",
+  "9916",
+  "9891"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,32 +1025,32 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 682,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "BKKT": {
-   "fails": 682,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "BTDR": {
-   "fails": 682,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "CIFR": {
-   "fails": 682,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "CLSK": {
    "fails": 0,
    "alerted": false
   },
   "GLXY": {
-   "fails": 682,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "IREN": {
-   "fails": 682,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "MARA": {
    "fails": 0,
@@ -1052,8 +1069,8 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 682,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "WULF": {
    "fails": 0,

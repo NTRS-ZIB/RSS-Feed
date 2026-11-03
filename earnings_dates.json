@@ -3,10 +3,11 @@
  "companies": {
   "0001218683": {
    "ticker": "BGDE",
-   "date": "2026-08-12",
-   "source_uid": "https://www.globenewswire.com/news-release/2026/07/29/3335631/0/en/big-digital-energy-to-release-second-quarter-2026-results-august-12th.html",
-   "source_title": "Big Digital Energy to Release Second Quarter 2026 Results August 12th",
-   "source_published": "2026-07-29T20:36:00+00:00"
+   "date": "2026-11-05",
+   "source_uid": "https://www.globenewswire.com/news-release/2026/10/22/3386866/0/en/big-digital-energy-to-release-third-quarter-2026-results-november-5th.html",
+   "source_title": "Big Digital Energy to Release Third Quarter 2026 Results November 5th",
+   "source_published": "2026-10-22T20:01:00+00:00",
+   "source": "title"
   },
   "0001854368": {
    "ticker": "DGXX",
@@ -17,10 +18,10 @@
   },
   "0001878848": {
    "ticker": "IREN",
-   "date": "2026-08-27",
-   "source_uid": "12531",
-   "source_title": "IREN to Release FY26 Results on August 27, 2026",
-   "source_published": "2026-08-13T20:01:28+00:00",
+   "date": "2026-11-05",
+   "source_uid": "12666",
+   "source_title": "IREN to Release Q1 FY27 Results on November 5, 2026",
+   "source_published": "2026-10-22T20:01:12+00:00",
    "source": "title"
   },
   "0001964789": {
@@ -70,6 +71,22 @@
    "source_title": "WhiteFiber Announces Third Quarter 2026 Earnings Conference Call",
    "source_published": "2026-10-29T20:30:00+00:00",
    "source": "body"
+  },
+  "0001820302": {
+   "ticker": "BKKT",
+   "date": "2026-11-09",
+   "source_uid": "12086",
+   "source_title": "Bakkt Schedules Conference Call to Discuss Third Quarter 2026 Results",
+   "source_published": "2026-10-26T20:30:00+00:00",
+   "source": "body"
+  },
+  "0001899123": {
+   "ticker": "BTDR",
+   "date": "2026-11-10",
+   "source_uid": "9931",
+   "source_title": "Bitdeer Announces Third Quarter 2026 Earnings Conference Call for November 10th, 2026",
+   "source_published": "2026-10-27T20:30:29+00:00",
+   "source": "title"
   }
  }
 }
