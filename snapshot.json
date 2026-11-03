@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-02T20:34:23+00:00",
+  "generated": "2026-11-03T18:09:53+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -1386,7 +1386,7 @@
     },
     "DGXX": {
       "cik": "0001854368",
-      "filing_count": 253,
+      "filing_count": 256,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-050340",
@@ -1460,7 +1460,14 @@
           "period": "2026-08-14",
           "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026089450/ea0301730-8k_digi.htm"
         },
-        "DEF 14A": null,
+        "DEF 14A": {
+          "accession": "0001213900-26-114925",
+          "count": 1,
+          "filed": "2026-11-02",
+          "form": "DEF 14A",
+          "period": "2026-12-21",
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026114925/ea0310068-def14a_digi.htm"
+        },
         "NT 10-K": null,
         "NT 10-Q": null,
         "NT 20-F": {
@@ -1503,7 +1510,7 @@
       "former_names": [
         "Digihost Technology Inc."
       ],
-      "latest_filing_date": "2026-10-16",
+      "latest_filing_date": "2026-11-02",
       "name": "Digi Power X Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -1521,7 +1528,7 @@
     },
     "GLXY": {
       "cik": "0001859392",
-      "filing_count": 284,
+      "filing_count": 285,
       "filings": {
         "10-K": {
           "accession": "0001859392-26-000016",
@@ -1549,12 +1556,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1859392/000168316826007630/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001706614-26-000004",
-          "count": 63,
-          "filed": "2026-09-10",
+          "accession": "0001906218-26-000004",
+          "count": 64,
+          "filed": "2026-11-02",
           "form": "4",
-          "period": "2026-09-08",
-          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000170661426000004/xslF345X06/wk-form4_1789039013.xml"
+          "period": "2026-10-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000190621826000004/xslF345X06/wk-form4_1793653946.xml"
         },
         "40-F": null,
         "424": {
@@ -1617,7 +1624,7 @@
       "former_names": [
         "Galaxy Digital Pubco Inc."
       ],
-      "latest_filing_date": "2026-10-30",
+      "latest_filing_date": "2026-11-02",
       "name": "Galaxy Digital Inc.",
       "off_docket_13dg": 0,
       "projection": {
