@@ -1,6 +1,5 @@
 {
  "seen": [
-  "https://whitefiber.investorroom.com/2026-05-27-WhiteFiber-Secures-100-Million-Delayed-Draw-Facility-to-Support-Near-Term-Growth-Initiatives",
   "https://whitefiber.investorroom.com/2026-05-21-WhiteFiber-Signs-AI-Compute-Agreement-with-Total-Contract-Value-in-Excess-of-160-Million-with-Investment-Grade-Technology-Customer",
   "https://whitefiber.investorroom.com/2026-05-14-WhiteFiber,-Inc-Reports-First-Quarter-2026-Results",
   "https://whitefiber.investorroom.com/2026-05-08-WhiteFiber-Announces-First-Quarter-2026-Earnings-Conference-Call",
@@ -999,7 +998,8 @@
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-447441",
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-447413",
   "urn:tag:sec.gov,2008:accession-number=0001123292-26-001460",
-  "urn:tag:sec.gov,2008:accession-number=0000905148-26-004648"
+  "urn:tag:sec.gov,2008:accession-number=0000905148-26-004648",
+  "https://ir.mara.com/news-events/press-releases/detail/1426/mara-appoints-two-new-independent-directors-to-board"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,32 +1008,32 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "BKKT": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "BTDR": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "CIFR": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "CLSK": {
    "fails": 0,
    "alerted": false
   },
   "GLXY": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "IREN": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "MARA": {
    "fails": 0,
@@ -1052,8 +1052,8 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "WULF": {
    "fails": 0,
