@@ -1,18 +1,5 @@
 {
  "seen": [
-  "https://www.globenewswire.com/news-release/2025/11/07/3183921/0/en/Mawson-Infrastructure-Group-Inc-Announces-Lease-Extension-For-Its-Bellefonte-PA-Facility.html",
-  "urn:tag:sec.gov,2008:accession-number=0001083301-26-000154",
-  "urn:tag:sec.gov,2008:accession-number=0001083301-26-000153",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-26-035933",
-  "urn:tag:sec.gov,2008:accession-number=0001140361-26-031055",
-  "urn:tag:sec.gov,2008:accession-number=0001140361-26-031053",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-084921",
-  "urn:tag:sec.gov,2008:accession-number=0001104659-26-090041",
-  "urn:tag:sec.gov,2008:accession-number=0001104659-26-090025",
-  "urn:tag:sec.gov,2008:accession-number=0001819989-26-000038",
-  "https://ir.mara.com/news-events/press-releases/detail/1426/mara-appoints-two-new-independent-directors-to-board",
-  "12476",
-  "https://whitefiber.investorroom.com/2026-07-09-WhiteFiber-Announces-Cross-Data-Center-AI-Infrastructure-Innovation-Delivering-111-2-Tbps-Bandwidth-with-Sub-Millisecond-Latency-Across-83km",
   "https://whitefiber.investorroom.com/2026-05-27-WhiteFiber-Secures-100-Million-Delayed-Draw-Facility-to-Support-Near-Term-Growth-Initiatives",
   "https://whitefiber.investorroom.com/2026-05-21-WhiteFiber-Signs-AI-Compute-Agreement-with-Total-Contract-Value-in-Excess-of-160-Million-with-Investment-Grade-Technology-Customer",
   "https://whitefiber.investorroom.com/2026-05-14-WhiteFiber,-Inc-Reports-First-Quarter-2026-Results",
@@ -1007,7 +994,12 @@
   "urn:tag:sec.gov,2008:accession-number=0001104659-26-122368",
   "https://investors.terawulf.com/news-events/press-releases/detail/148/terawulf-secures-google-credit-backstop-for-project-financing-in-support-of-19-billion-anthropic-lease-executes-definitive-fluor-epc-agreement",
   "https://www.riotplatforms.com/riot-platforms-reports-third-quarter-2026-financial-results-and-strategic-highlights/",
-  "https://www.hut8.com/news-insights/press-releases/hut-8-reports-third-quarter-2026-results"
+  "https://www.hut8.com/news-insights/press-releases/hut-8-reports-third-quarter-2026-results",
+  "urn:tag:sec.gov,2008:accession-number=0001123292-26-001459",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-447441",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-447413",
+  "urn:tag:sec.gov,2008:accession-number=0001123292-26-001460",
+  "urn:tag:sec.gov,2008:accession-number=0000905148-26-004648"
  ],
  "initialized": true,
  "feeds": {
@@ -1016,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "BKKT": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "BTDR": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "CIFR": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "CLSK": {
@@ -1036,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "IREN": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "MARA": {
@@ -1060,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "WULF": {
