@@ -999,7 +999,15 @@
   "https://www.hut8.com/news-insights/press-releases/hut-8-reports-first-quarter-2026-results",
   "https://www.hut8.com/news-insights/press-releases/hut-8-commercializes-first-phase-of-1-gw-beacon-point-ai-data-center-campus-with-15-year-352-mw",
   "https://www.hut8.com/news-insights/press-releases/hut-8-signs-15-year-245-mw-ai-data-center-lease-at-river-bend-campus-with-total-contract-value",
-  "https://www.hut8.com/news-insights/press-releases/hut-8-announces-ai-infrastructure-partnership-with-anthropic-and-fluidstack"
+  "https://www.hut8.com/news-insights/press-releases/hut-8-announces-ai-infrastructure-partnership-with-anthropic-and-fluidstack",
+  "urn:tag:sec.gov,2008:accession-number=0001628280-26-069810",
+  "urn:tag:sec.gov,2008:accession-number=0001104659-26-122347",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-446146",
+  "urn:tag:sec.gov,2008:accession-number=0001104659-26-122417",
+  "urn:tag:sec.gov,2008:accession-number=0001104659-26-122368",
+  "https://investors.terawulf.com/news-events/press-releases/detail/148/terawulf-secures-google-credit-backstop-for-project-financing-in-support-of-19-billion-anthropic-lease-executes-definitive-fluor-epc-agreement",
+  "https://www.riotplatforms.com/riot-platforms-reports-third-quarter-2026-financial-results-and-strategic-highlights/",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-reports-third-quarter-2026-results"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,32 +1016,32 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 12,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "BKKT": {
-   "fails": 12,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "BTDR": {
-   "fails": 12,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "CIFR": {
-   "fails": 12,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "CLSK": {
    "fails": 0,
    "alerted": false
   },
   "GLXY": {
-   "fails": 12,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "IREN": {
-   "fails": 12,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "MARA": {
    "fails": 0,
@@ -1052,8 +1060,8 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 12,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "WULF": {
    "fails": 0,
