@@ -1,32 +1,5 @@
 {
  "seen": [
-  "11246",
-  "11161",
-  "https://www.hut8.com/news-insights/press-releases/hut-8-fully-commercializes-1-gw-beacon-point-ai-data-center-campus-with-second-352-mw-it-lease",
-  "https://www.hut8.com/news-insights/press-releases/hut-8-schedules-second-quarter-2026-earnings-release-and-conference-call",
-  "https://www.hut8.com/news-insights/press-releases/hut-8-names-e-stanley-o-neal-chair-of-the-board",
-  "https://www.hut8.com/news-insights/press-releases/hut-8-closes-usd4-25-billion-of-investment-grade-senior-secured-notes-for-beacon-point-data",
-  "https://www.hut8.com/news-insights/press-releases/hut-8-announces-pricing-of-usd4-25-billion-of-investment-grade-senior-secured-notes-for-beacon",
-  "https://www.hut8.com/news-insights/press-releases/hut-8-reports-first-quarter-2026-results",
-  "https://www.hut8.com/news-insights/press-releases/hut-8-commercializes-first-phase-of-1-gw-beacon-point-ai-data-center-campus-with-15-year-352-mw",
-  "https://www.hut8.com/news-insights/press-releases/hut-8-signs-15-year-245-mw-ai-data-center-lease-at-river-bend-campus-with-total-contract-value",
-  "https://www.hut8.com/news-insights/press-releases/hut-8-announces-ai-infrastructure-partnership-with-anthropic-and-fluidstack",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-26-035873",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-26-035872",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-26-035871",
-  "https://www.globenewswire.com/news-release/2026/07/29/3335631/0/en/Big-Digital-Energy-to-Release-Second-Quarter-2026-Results-August-12th.html",
-  "https://www.globenewswire.com/news-release/2026/07/20/3329715/0/en/Big-Digital-Energy-and-10NetZero-Complete-Acquisition-of-Hood-County-Texas-Site.html",
-  "https://www.globenewswire.com/news-release/2026/07/06/3322404/0/en/Big-Digital-Energy-announces-partnership-with-10NetZero-to-Acquire-Power-Ready-Hood-County-Texas-Site-for-AI-Datacenter-Development.html",
-  "https://www.globenewswire.com/news-release/2026/06/17/3313496/0/en/Big-Digital-Energy-Inc-Regains-Compliance-with-Nasdaq-Listing-Rule-5550-b-1.html",
-  "https://www.globenewswire.com/news-release/2026/06/09/3309347/0/en/Big-Digital-Energy-Inc-Terminates-Existing-Stockholder-Rights-Agreement.html",
-  "https://www.globenewswire.com/news-release/2026/04/27/3281610/0/en/Big-Digital-Energy-Inc-Announces-Colocation-Agreement-with-the-Endeavor-Group.html",
-  "https://www.globenewswire.com/news-release/2026/04/23/3280391/0/en/Mawson-Infrastructure-Group-Inc-Becomes-Big-Digital-Energy-Inc-Receives-Nasdaq-Listing-Determination-Already-in-Compliance-To-Request-Hearing.html",
-  "https://www.globenewswire.com/news-release/2026/04/08/3270108/0/en/Mawson-Infrastructure-Group-Announces-Reconstitution-of-its-Board-and-New-Executive-Leadership-to-Drive-Transformation.html",
-  "https://www.globenewswire.com/news-release/2026/04/06/3268738/0/en/Mawson-Infrastructure-Group-Inc-Provides-Governance-Update.html",
-  "https://www.globenewswire.com/news-release/2026/03/16/3256061/0/en/Mawson-Infrastructure-Group-Inc-Provides-Update-on-Strategic-Initiatives.html",
-  "https://www.globenewswire.com/news-release/2026/02/06/3233674/0/en/Mawson-Infrastructure-Group-Inc-Releases-Preliminary-Unaudited-Results-for-Fourth-Quarter-and-Fiscal-Year-2025.html",
-  "https://www.globenewswire.com/news-release/2026/02/02/3230653/0/en/Mawson-Infrastructure-Group-Inc-Adopts-Limited-Duration-Stockholder-Rights-Agreement.html",
-  "https://www.globenewswire.com/news-release/2026/01/15/3219327/0/en/Mawson-Infrastructure-Group-to-Present-at-Emerging-Growth-Conference.html",
   "https://www.globenewswire.com/news-release/2025/12/30/3211415/0/en/Mawson-Infrastructure-Group-Inc-Files-Adversary-Complaint-Seeking-Damages-for-Bad-Faith-Bankruptcy-Filing.html",
   "https://www.globenewswire.com/news-release/2025/12/22/3209502/0/en/Mawson-Infrastructure-Group-Inc-Announces-Compliance-with-Nasdaq-Continued-Listing-Requirements.html",
   "https://www.globenewswire.com/news-release/2025/12/09/3202155/0/en/Mawson-Infrastructure-to-Present-at-Emerging-Growth-Conference-on-December-11-2025.html",
@@ -1022,7 +995,11 @@
   "abtc:bfc789a4-2c89-40a5-8a65-9ac0ba284085",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-115645",
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-445724",
-  "urn:tag:sec.gov,2008:accession-number=0001193125-26-445722"
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-445722",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-049837",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-049836",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-049835",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-115677"
  ],
  "initialized": true,
  "feeds": {
@@ -1031,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "BKKT": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "BTDR": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "CIFR": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "CLSK": {
@@ -1051,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "IREN": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "MARA": {
@@ -1075,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "WULF": {
