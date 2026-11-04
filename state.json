@@ -1,11 +1,5 @@
 {
  "seen": [
-  "https://www.globenewswire.com/news-release/2025/12/30/3211415/0/en/Mawson-Infrastructure-Group-Inc-Files-Adversary-Complaint-Seeking-Damages-for-Bad-Faith-Bankruptcy-Filing.html",
-  "https://www.globenewswire.com/news-release/2025/12/22/3209502/0/en/Mawson-Infrastructure-Group-Inc-Announces-Compliance-with-Nasdaq-Continued-Listing-Requirements.html",
-  "https://www.globenewswire.com/news-release/2025/12/09/3202155/0/en/Mawson-Infrastructure-to-Present-at-Emerging-Growth-Conference-on-December-11-2025.html",
-  "https://www.globenewswire.com/news-release/2025/11/25/3194140/0/en/Mawson-Infrastructure-Group-Inc-Announces-Monthly-Financial-Update-for-October-2025.html",
-  "https://www.globenewswire.com/news-release/2025/11/19/3190954/0/en/Mawson-Infrastructure-Group-Inc-Announces-1-for-20-Reverse-Stock-Split.html",
-  "https://www.globenewswire.com/news-release/2025/11/14/3188614/0/en/Mawson-Infrastructure-Group-Inc-Reports-Third-Quarter-2025-Financial-Results.html",
   "https://www.globenewswire.com/news-release/2025/11/07/3183921/0/en/Mawson-Infrastructure-Group-Inc-Announces-Lease-Extension-For-Its-Bellefonte-PA-Facility.html",
   "urn:tag:sec.gov,2008:accession-number=0001083301-26-000154",
   "urn:tag:sec.gov,2008:accession-number=0001083301-26-000153",
@@ -999,7 +993,13 @@
   "urn:tag:sec.gov,2008:accession-number=0001493152-26-049837",
   "urn:tag:sec.gov,2008:accession-number=0001493152-26-049836",
   "urn:tag:sec.gov,2008:accession-number=0001493152-26-049835",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-115677"
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-115677",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-fully-commercializes-1-gw-beacon-point-ai-data-center-campus-with-second-352-mw-it-lease",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-closes-usd4-25-billion-of-investment-grade-senior-secured-notes-for-beacon-point-data",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-reports-first-quarter-2026-results",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-commercializes-first-phase-of-1-gw-beacon-point-ai-data-center-campus-with-15-year-352-mw",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-signs-15-year-245-mw-ai-data-center-lease-at-river-bend-campus-with-total-contract-value",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-announces-ai-infrastructure-partnership-with-anthropic-and-fluidstack"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,32 +1008,32 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "BKKT": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "BTDR": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "CIFR": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "CLSK": {
    "fails": 0,
    "alerted": false
   },
   "GLXY": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "IREN": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "MARA": {
    "fails": 0,
@@ -1052,8 +1052,8 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "WULF": {
    "fails": 0,
