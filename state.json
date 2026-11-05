@@ -1,6 +1,5 @@
 {
  "seen": [
-  "dgxx:scpqmbqmb1lwdk6mjyq7dxn5",
   "dgxx:pyzn7uebmv2x7vuu5f9okn2q",
   "dgxx:pn3omr2ip1acgqpcw2hle9wq",
   "dgxx:emjkl41vb00az9reowokxxfq",
@@ -999,7 +998,8 @@
   "urn:tag:sec.gov,2008:accession-number=0000315066-26-002756",
   "urn:tag:sec.gov,2008:accession-number=0001380615-26-000013",
   "urn:tag:sec.gov,2008:accession-number=0001912609-26-000011",
-  "urn:tag:sec.gov,2008:accession-number=0001950047-26-010733"
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-010733",
+  "https://www.hut8.com/news-insights/press-releases/hut-8-reports-second-quarter-2026-results"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 37,
+   "fails": 38,
    "alerted": true
   },
   "BKKT": {
-   "fails": 37,
+   "fails": 38,
    "alerted": true
   },
   "BTDR": {
-   "fails": 37,
+   "fails": 38,
    "alerted": true
   },
   "CIFR": {
-   "fails": 37,
+   "fails": 38,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 37,
+   "fails": 38,
    "alerted": true
   },
   "IREN": {
-   "fails": 37,
+   "fails": 38,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 37,
+   "fails": 38,
    "alerted": true
   },
   "WULF": {
