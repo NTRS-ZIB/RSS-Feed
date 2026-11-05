@@ -1,12 +1,5 @@
 {
  "seen": [
-  "https://www.hut8.com/news-insights/press-releases/hut-8-reports-second-quarter-2026-results",
-  "dgxx:mcz9e1tgeok5z5s3kgli75yh",
-  "dgxx:ojplxmldqhiuti7x3yrdrlzs",
-  "dgxx:dndecncmrjo3p93b15o1y4pm",
-  "dgxx:zo4j81s4rqyjavxv9bjfelgn",
-  "dgxx:w1c89z97fdwjfrr8oawgxcem",
-  "dgxx:og0n0rt3f2g3yxexdps5s9yq",
   "dgxx:scpqmbqmb1lwdk6mjyq7dxn5",
   "dgxx:pyzn7uebmv2x7vuu5f9okn2q",
   "dgxx:pn3omr2ip1acgqpcw2hle9wq",
@@ -999,7 +992,14 @@
   "urn:tag:sec.gov,2008:accession-number=0001839341-26-000030",
   "urn:tag:sec.gov,2008:accession-number=0001839341-26-000028",
   "https://ir.mara.com/news-events/press-releases/detail/1429/ferc-authorizes-maras-acquisition-of-long-ridge-energy-power-finds-transaction-consistent-with-the-public-interest",
-  "https://investors.corescientific.com/news-events/press-releases/detail/146/core-scientific-announces-third-quarter-2026-results"
+  "https://investors.corescientific.com/news-events/press-releases/detail/146/core-scientific-announces-third-quarter-2026-results",
+  "urn:tag:sec.gov,2008:accession-number=0001104659-26-123315",
+  "urn:tag:sec.gov,2008:accession-number=0001878848-26-000066",
+  "urn:tag:sec.gov,2008:accession-number=0001878848-26-000065",
+  "urn:tag:sec.gov,2008:accession-number=0000315066-26-002756",
+  "urn:tag:sec.gov,2008:accession-number=0001380615-26-000013",
+  "urn:tag:sec.gov,2008:accession-number=0001912609-26-000011",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-010733"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 36,
+   "fails": 37,
    "alerted": true
   },
   "BKKT": {
-   "fails": 36,
+   "fails": 37,
    "alerted": true
   },
   "BTDR": {
-   "fails": 36,
+   "fails": 37,
    "alerted": true
   },
   "CIFR": {
-   "fails": 36,
+   "fails": 37,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 36,
+   "fails": 37,
    "alerted": true
   },
   "IREN": {
-   "fails": 36,
+   "fails": 37,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 36,
+   "fails": 37,
    "alerted": true
   },
   "WULF": {
