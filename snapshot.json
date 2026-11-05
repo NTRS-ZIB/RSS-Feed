@@ -1,9 +1,9 @@
 {
-  "generated": "2026-11-04T18:19:51+00:00",
+  "generated": "2026-11-05T18:23:10+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
-      "filing_count": 674,
+      "filing_count": 676,
       "filings": {
         "10-K": {
           "accession": "0001193125-26-127278",
@@ -14,12 +14,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526127278/abtc-20251231.htm"
         },
         "10-Q": {
-          "accession": "0001193125-26-329472",
-          "count": 21,
-          "filed": "2026-08-03",
+          "accession": "0001193125-26-447413",
+          "count": 22,
+          "filed": "2026-11-04",
           "form": "10-Q",
-          "period": "2026-06-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526329472/abtc-20260630.htm"
+          "period": "2026-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526447413/abtc-20260930.htm"
         },
         "20-F": null,
         "3": {
@@ -49,12 +49,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001193125-26-329645",
-          "count": 181,
-          "filed": "2026-08-03",
+          "accession": "0001193125-26-447441",
+          "count": 182,
+          "filed": "2026-11-04",
           "form": "8-K",
-          "period": "2026-07-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526329645/abtc-20260730.htm"
+          "period": "2026-11-04",
+          "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526447441/abtc-20261104.htm"
         },
         "DEF 14A": {
           "accession": "0001193125-26-178754",
@@ -137,20 +137,20 @@
         "Akerna Corp.",
         "MTech Acquisition Holdings Inc."
       ],
-      "latest_filing_date": "2026-10-30",
+      "latest_filing_date": "2026-11-04",
       "name": "American Bitcoin Corp.",
       "off_docket_13dg": 0,
       "projection": {
         "available": true,
         "confidence": "normal",
-        "expected": "2026-11-13",
+        "expected": "2027-03-31",
         "fiscal_year_end_month": 12,
-        "kind": "quarterly",
-        "median_lag_days": 44,
-        "period_end": "2026-09-30",
+        "kind": "annual",
+        "median_lag_days": 90,
+        "period_end": "2026-12-31",
         "reason": null,
-        "sample": 8,
-        "spread_days": 5
+        "sample": 7,
+        "spread_days": 6
       }
     },
     "ANY": {
@@ -858,7 +858,7 @@
     },
     "CIFR": {
       "cik": "0001819989",
-      "filing_count": 631,
+      "filing_count": 633,
       "filings": {
         "10-K": {
           "accession": "0001819989-26-000009",
@@ -886,12 +886,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1819989/000211168426000002/xslF345X02/wk-form3_1771867590.xml"
         },
         "4": {
-          "accession": "0001123292-26-001436",
-          "count": 266,
-          "filed": "2026-10-27",
+          "accession": "0001123292-26-001460",
+          "count": 267,
+          "filed": "2026-11-04",
           "form": "4",
-          "period": "2026-10-26",
-          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000112329226001436/xslF345X06/form4.xml"
+          "period": "2026-11-02",
+          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000112329226001460/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -956,12 +956,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1819989/000093247124000968/UnitedStates_13G__CipherMini.txt"
         },
         "SCHEDULE 13D": {
-          "accession": "0001123292-26-001382",
-          "count": 14,
-          "filed": "2026-10-07",
+          "accession": "0001123292-26-001459",
+          "count": 15,
+          "filed": "2026-11-04",
           "form": "SCHEDULE 13D/A",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000112329226001382/xslSCHEDULE_13D_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000112329226001459/xslSCHEDULE_13D_X02/primary_doc.xml"
         },
         "SCHEDULE 13G": {
           "accession": "0001104659-26-117904",
@@ -976,7 +976,7 @@
         "Cipher Mining Inc.",
         "GOOD WORKS ACQUISITION CORP."
       ],
-      "latest_filing_date": "2026-11-02",
+      "latest_filing_date": "2026-11-04",
       "name": "Cipher Digital Inc.",
       "off_docket_13dg": 1,
       "projection": {
@@ -1130,7 +1130,7 @@
     },
     "CORZ": {
       "cik": "0001839341",
-      "filing_count": 678,
+      "filing_count": 681,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019505",
@@ -1141,12 +1141,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1839341/000162828026019505/core-20251231.htm"
         },
         "10-Q": {
-          "accession": "0001839341-26-000014",
-          "count": 21,
-          "filed": "2026-07-28",
+          "accession": "0001839341-26-000030",
+          "count": 22,
+          "filed": "2026-11-05",
           "form": "10-Q",
-          "period": "2026-06-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000183934126000014/core-20260630.htm"
+          "period": "2026-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000183934126000030/core-20260930.htm"
         },
         "20-F": null,
         "3": {
@@ -1158,12 +1158,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003445/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0000905148-26-004585",
-          "count": 166,
-          "filed": "2026-10-28",
+          "accession": "0000905148-26-004648",
+          "count": 167,
+          "filed": "2026-11-04",
           "form": "4",
-          "period": "2026-10-26",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826004585/xslF345X06/form4.xml"
+          "period": "2026-11-02",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826004648/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1176,12 +1176,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001839341-26-000023",
-          "count": 168,
-          "filed": "2026-09-10",
+          "accession": "0001839341-26-000028",
+          "count": 169,
+          "filed": "2026-11-05",
           "form": "8-K",
-          "period": "2026-09-10",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000183934126000023/core-20260910.htm"
+          "period": "2026-11-05",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000183934126000028/core-20261105.htm"
         },
         "DEF 14A": {
           "accession": "0001193125-26-134857",
@@ -1254,20 +1254,20 @@
       "former_names": [
         "Power & Digital Infrastructure Acquisition Corp."
       ],
-      "latest_filing_date": "2026-10-28",
+      "latest_filing_date": "2026-11-05",
       "name": "Core Scientific, Inc./tx",
       "off_docket_13dg": 0,
       "projection": {
         "available": true,
-        "confidence": "normal",
-        "expected": "2026-11-06",
+        "confidence": "low",
+        "expected": "2027-03-15",
         "fiscal_year_end_month": 12,
-        "kind": "quarterly",
-        "median_lag_days": 37,
-        "period_end": "2026-09-30",
+        "kind": "annual",
+        "median_lag_days": 73,
+        "period_end": "2026-12-31",
         "reason": null,
-        "sample": 8,
-        "spread_days": 7
+        "sample": 5,
+        "spread_days": 18
       }
     },
     "CRWV": {
@@ -1528,7 +1528,7 @@
     },
     "GLXY": {
       "cik": "0001859392",
-      "filing_count": 285,
+      "filing_count": 286,
       "filings": {
         "10-K": {
           "accession": "0001859392-26-000016",
@@ -1613,18 +1613,18 @@
         "SC 13G": null,
         "SCHEDULE 13D": null,
         "SCHEDULE 13G": {
-          "accession": "0000315066-26-002020",
-          "count": 12,
-          "filed": "2026-08-06",
+          "accession": "0000315066-26-002756",
+          "count": 13,
+          "filed": "2026-11-05",
           "form": "SCHEDULE 13G/A",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000031506626002020/xslSCHEDULE_13G_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000031506626002756/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
         "Galaxy Digital Pubco Inc."
       ],
-      "latest_filing_date": "2026-11-02",
+      "latest_filing_date": "2026-11-05",
       "name": "Galaxy Digital Inc.",
       "off_docket_13dg": 0,
       "projection": {
