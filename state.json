@@ -1,9 +1,5 @@
 {
  "seen": [
-  "https://whitefiber.investorroom.com/2026-05-21-WhiteFiber-Signs-AI-Compute-Agreement-with-Total-Contract-Value-in-Excess-of-160-Million-with-Investment-Grade-Technology-Customer",
-  "https://whitefiber.investorroom.com/2026-05-14-WhiteFiber,-Inc-Reports-First-Quarter-2026-Results",
-  "https://whitefiber.investorroom.com/2026-05-08-WhiteFiber-Announces-First-Quarter-2026-Earnings-Conference-Call",
-  "11716",
   "https://www.hut8.com/news-insights/press-releases/hut-8-reports-second-quarter-2026-results",
   "dgxx:mcz9e1tgeok5z5s3kgli75yh",
   "dgxx:ojplxmldqhiuti7x3yrdrlzs",
@@ -999,7 +995,11 @@
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-447413",
   "urn:tag:sec.gov,2008:accession-number=0001123292-26-001460",
   "urn:tag:sec.gov,2008:accession-number=0000905148-26-004648",
-  "https://ir.mara.com/news-events/press-releases/detail/1426/mara-appoints-two-new-independent-directors-to-board"
+  "https://ir.mara.com/news-events/press-releases/detail/1426/mara-appoints-two-new-independent-directors-to-board",
+  "urn:tag:sec.gov,2008:accession-number=0001839341-26-000030",
+  "urn:tag:sec.gov,2008:accession-number=0001839341-26-000028",
+  "https://ir.mara.com/news-events/press-releases/detail/1429/ferc-authorizes-maras-acquisition-of-long-ridge-energy-power-finds-transaction-consistent-with-the-public-interest",
+  "https://investors.corescientific.com/news-events/press-releases/detail/146/core-scientific-announces-third-quarter-2026-results"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 24,
+   "fails": 25,
    "alerted": true
   },
   "BKKT": {
-   "fails": 24,
+   "fails": 25,
    "alerted": true
   },
   "BTDR": {
-   "fails": 24,
+   "fails": 25,
    "alerted": true
   },
   "CIFR": {
-   "fails": 24,
+   "fails": 25,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 24,
+   "fails": 25,
    "alerted": true
   },
   "IREN": {
-   "fails": 24,
+   "fails": 25,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 24,
+   "fails": 25,
    "alerted": true
   },
   "WULF": {
