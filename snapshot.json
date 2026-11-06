@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-05T18:23:10+00:00",
+  "generated": "2026-11-06T17:44:25+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -155,7 +155,7 @@
     },
     "ANY": {
       "cik": "0001591956",
-      "filing_count": 825,
+      "filing_count": 826,
       "filings": {
         "10-K": {
           "accession": "0001591956-26-000004",
@@ -222,12 +222,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1591956/000159195622000025/a6-kresultsofshareholdersm.htm"
         },
         "8-K": {
-          "accession": "0001213900-26-100953",
-          "count": 147,
-          "filed": "2026-09-17",
+          "accession": "0001062993-26-005793",
+          "count": 148,
+          "filed": "2026-11-06",
           "form": "8-K",
-          "period": "2026-09-16",
-          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000121390026100953/ea0305703-8k_darkhorse.htm"
+          "period": "2026-11-06",
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000106299326005793/form8k.htm"
         },
         "DEF 14A": {
           "accession": "0001591956-26-000017",
@@ -294,7 +294,7 @@
         "Sphere 3D Corp.",
         "Sphere 3D Corp"
       ],
-      "latest_filing_date": "2026-11-03",
+      "latest_filing_date": "2026-11-06",
       "name": "DarkHorse Technologies Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -312,7 +312,7 @@
     },
     "APLD": {
       "cik": "0001144879",
-      "filing_count": 825,
+      "filing_count": 831,
       "filings": {
         "10-K": {
           "accession": "0001144879-26-000048",
@@ -340,12 +340,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1144879/000149315226023991/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001391935-26-000009",
-          "count": 218,
-          "filed": "2026-10-19",
+          "accession": "0001144879-26-000065",
+          "count": 223,
+          "filed": "2026-11-06",
           "form": "4",
-          "period": "2026-10-16",
-          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000139193526000009/xslF345X06/wk-form4_1792408298.xml"
+          "period": "2026-11-04",
+          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000114487926000065/xslF345X06/wk-form4_1793971578.xml"
         },
         "40-F": null,
         "424": {
@@ -358,12 +358,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001144879-26-000057",
-          "count": 220,
-          "filed": "2026-10-07",
+          "accession": "0001144879-26-000063",
+          "count": 221,
+          "filed": "2026-11-06",
           "form": "8-K",
-          "period": "2026-10-07",
-          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000114487926000057/apld-20261007.htm"
+          "period": "2026-11-04",
+          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000114487926000063/apld-20261104.htm"
         },
         "DEF 14A": {
           "accession": "0001493152-26-044325",
@@ -447,7 +447,7 @@
         "FLIGHT SAFETY TECHNOLOGIES INC",
         "REEL STAFF INC"
       ],
-      "latest_filing_date": "2026-10-19",
+      "latest_filing_date": "2026-11-06",
       "name": "Applied Digital Corp.",
       "off_docket_13dg": 2,
       "projection": {
@@ -465,7 +465,7 @@
     },
     "BGDE": {
       "cik": "0001218683",
-      "filing_count": 745,
+      "filing_count": 746,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-037417",
@@ -511,12 +511,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001213900-26-102866",
-          "count": 277,
-          "filed": "2026-09-24",
+          "accession": "0001213900-26-116537",
+          "count": 278,
+          "filed": "2026-11-06",
           "form": "8-K",
-          "period": "2026-09-18",
-          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026102866/ea0306466-8k_bigdigital.htm"
+          "period": "2026-11-05",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026116537/ea0310942-8k_bigdigital.htm"
         },
         "DEF 14A": {
           "accession": "0001213900-26-111954",
@@ -585,7 +585,7 @@
         "OphthaliX, Inc.",
         "DENALI CONCRETE MANAGEMENT INC"
       ],
-      "latest_filing_date": "2026-10-23",
+      "latest_filing_date": "2026-11-06",
       "name": "Big Digital Energy, Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -1272,7 +1272,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1159,
+      "filing_count": 1160,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1368,7 +1368,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-10-30",
+      "latest_filing_date": "2026-11-05",
       "name": "CoreWeave, Inc.",
       "off_docket_13dg": 5,
       "projection": {
@@ -1528,7 +1528,7 @@
     },
     "GLXY": {
       "cik": "0001859392",
-      "filing_count": 286,
+      "filing_count": 288,
       "filings": {
         "10-K": {
           "accession": "0001859392-26-000016",
@@ -1556,12 +1556,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1859392/000168316826007630/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001906218-26-000004",
-          "count": 64,
-          "filed": "2026-11-02",
+          "accession": "0001380615-26-000013",
+          "count": 66,
+          "filed": "2026-11-05",
           "form": "4",
-          "period": "2026-10-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000190621826000004/xslF345X06/wk-form4_1793653946.xml"
+          "period": "2026-11-05",
+          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000138061526000013/xslF345X06/wk-form4_1793915203.xml"
         },
         "40-F": null,
         "424": {
@@ -1768,7 +1768,7 @@
     },
     "IREN": {
       "cik": "0001878848",
-      "filing_count": 322,
+      "filing_count": 324,
       "filings": {
         "10-K": {
           "accession": "0001878848-26-000052",
@@ -1779,12 +1779,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000052/iren-20260630.htm"
         },
         "10-Q": {
-          "accession": "0001878848-26-000026",
-          "count": 3,
-          "filed": "2026-05-08",
+          "accession": "0001878848-26-000066",
+          "count": 4,
+          "filed": "2026-11-05",
           "form": "10-Q",
-          "period": "2026-03-31",
-          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000026/iren-20260331.htm"
+          "period": "2026-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000066/iren-20260930.htm"
         },
         "20-F": {
           "accession": "0001878848-25-000020",
@@ -1828,12 +1828,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1878848/000187884825000047/irenlimited-6kbusinessupda.htm"
         },
         "8-K": {
-          "accession": "0001878848-26-000051",
-          "count": 31,
-          "filed": "2026-08-27",
+          "accession": "0001878848-26-000065",
+          "count": 32,
+          "filed": "2026-11-05",
           "form": "8-K",
-          "period": "2026-08-27",
-          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000051/iren-20260827.htm"
+          "period": "2026-11-05",
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000187884826000065/iren-20261105.htm"
         },
         "DEF 14A": {
           "accession": "0001140361-26-039451",
@@ -1879,19 +1879,19 @@
         "Iris Energy Ltd",
         "Iris Energy Pty Ltd"
       ],
-      "latest_filing_date": "2026-10-28",
+      "latest_filing_date": "2026-11-05",
       "name": "IREN Ltd",
       "off_docket_13dg": 0,
       "projection": {
         "available": true,
         "confidence": "normal",
-        "expected": "2026-11-06",
+        "expected": "2027-02-05",
         "fiscal_year_end_month": 6,
         "kind": "quarterly",
-        "median_lag_days": 37,
-        "period_end": "2026-09-30",
+        "median_lag_days": 36,
+        "period_end": "2026-12-31",
         "reason": null,
-        "sample": 3,
+        "sample": 4,
         "spread_days": 1
       }
     },
@@ -2042,7 +2042,7 @@
     },
     "NUAI": {
       "cik": "0002028336",
-      "filing_count": 210,
+      "filing_count": 213,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-027143",
@@ -2096,12 +2096,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026113530/ea0310066-8k_newera.htm"
         },
         "DEF 14A": {
-          "accession": "0001213900-26-028314",
-          "count": 2,
-          "filed": "2026-03-16",
+          "accession": "0001104659-26-123315",
+          "count": 3,
+          "filed": "2026-11-05",
           "form": "DEF 14A",
-          "period": "2026-04-15",
-          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026028314/ea0279924-02.htm"
+          "period": "2026-12-16",
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000110465926123315/tm2628194-11_def14a.htm"
         },
         "NT 10-K": null,
         "NT 10-Q": null,
@@ -2146,7 +2146,7 @@
         "NEW ERA HELIUM INC.",
         "Roth CH V Holdings, Inc."
       ],
-      "latest_filing_date": "2026-11-03",
+      "latest_filing_date": "2026-11-05",
       "name": "New ERA Energy & Digital, Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -2678,7 +2678,7 @@
     },
     "WULF": {
       "cik": "0001083301",
-      "filing_count": 1249,
+      "filing_count": 1250,
       "filings": {
         "10-K": {
           "accession": "0001083301-26-000031",
@@ -2724,12 +2724,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001628280-26-069810",
-          "count": 253,
-          "filed": "2026-11-04",
+          "accession": "0001628280-26-071306",
+          "count": 254,
+          "filed": "2026-11-06",
           "form": "8-K",
-          "period": "2026-11-04",
-          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000162828026069810/wulf-20261104.htm"
+          "period": "2026-11-06",
+          "url": "https://www.sec.gov/Archives/edgar/data/1083301/000162828026071306/wulf-20261106.htm"
         },
         "DEF 14A": {
           "accession": "0001083301-26-000077",
@@ -2796,7 +2796,7 @@
         "IKONICS CORP",
         "CHROMALINE CORP"
       ],
-      "latest_filing_date": "2026-11-04",
+      "latest_filing_date": "2026-11-06",
       "name": "TERAWULF INC.",
       "off_docket_13dg": 0,
       "projection": {
