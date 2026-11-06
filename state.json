@@ -1,7 +1,5 @@
 {
  "seen": [
-  "dgxx:s3khjnidh2kxfuusnjy2htbv",
-  "urn:tag:sec.gov,2008:accession-number=0001819989-26-000041",
   "https://whitefiber.investorroom.com/2026-08-04-WhiteFiber-Announces-Second-Quarter-2026-Earnings-Conference-Call",
   "urn:tag:sec.gov,2008:accession-number=0001493152-26-036036",
   "urn:tag:sec.gov,2008:accession-number=0001493152-26-036065",
@@ -999,7 +997,9 @@
   "urn:tag:sec.gov,2008:accession-number=0001595888-26-000134",
   "urn:tag:sec.gov,2008:accession-number=0001628280-26-071689",
   "d1ce05e2-e934-4617-9287-543b74607aa9",
-  "6789d404-155a-487f-8b6b-f8a410baf2e3"
+  "6789d404-155a-487f-8b6b-f8a410baf2e3",
+  "urn:tag:sec.gov,2008:accession-number=0001595888-26-000144",
+  "urn:tag:sec.gov,2008:accession-number=0001595888-26-000141"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 77,
+   "fails": 78,
    "alerted": true
   },
   "BKKT": {
-   "fails": 77,
+   "fails": 78,
    "alerted": true
   },
   "BTDR": {
-   "fails": 77,
+   "fails": 78,
    "alerted": true
   },
   "CIFR": {
-   "fails": 77,
+   "fails": 78,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 77,
+   "fails": 78,
    "alerted": true
   },
   "IREN": {
-   "fails": 77,
+   "fails": 78,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 77,
+   "fails": 78,
    "alerted": true
   },
   "WULF": {
