@@ -1,23 +1,13 @@
 {
- "date": "2026-11-05",
+ "date": "2026-11-06",
  "alerted": {
-  "APLD": 3.0,
-  "BKKT": 3.0,
-  "BTDR": 1.5,
+  "APLD": 1.5,
   "CIFR": 1.5,
-  "CLSK": 3.0,
   "CORZ": 1.5,
-  "CRWV": 1.5,
-  "DGXX": 1.5,
-  "GLXY": 3.0,
-  "HUT": 1.5,
+  "GLXY": 5.0,
+  "HUT": 3.0,
   "IREN": 1.5,
-  "MARA": 1.5,
-  "NUAI": 3.0,
-  "RIOT": 3.0,
-  "SPCX": 1.5,
-  "WULF": 1.5,
-  "WYFI": 3.0,
-  "ABTC": 1.5
+  "RIOT": 1.5,
+  "WULF": 1.5
  }
 }
