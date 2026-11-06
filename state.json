@@ -1,16 +1,5 @@
 {
  "seen": [
-  "dgxx:pyzn7uebmv2x7vuu5f9okn2q",
-  "dgxx:pn3omr2ip1acgqpcw2hle9wq",
-  "dgxx:emjkl41vb00az9reowokxxfq",
-  "dgxx:zzqom3czuamsskos9i5040cj",
-  "dgxx:sh315dmwjj65c337gfl4xy4t",
-  "dgxx:cqxanf0asfwm42bfoq53mr8t",
-  "dgxx:vsg4cpgzkz8f4eso1rer693y",
-  "dgxx:kx7cptljvwxy1x7b6s2anw3r",
-  "dgxx:bc8kip66rcrftpes7kajx5fd",
-  "dgxx:oi3ks2cxzcmdhtbxh9ax4r5o",
-  "dgxx:pa0onsvrp84c1fouf3z46fft",
   "dgxx:txpyyuwvip00utlznr4yche5",
   "dgxx:onhzgysv5ecaf544kn0u5d9c",
   "dgxx:mjo6r3sqqhpte6efrkkinpgv",
@@ -999,7 +988,18 @@
   "urn:tag:sec.gov,2008:accession-number=0001380615-26-000013",
   "urn:tag:sec.gov,2008:accession-number=0001912609-26-000011",
   "urn:tag:sec.gov,2008:accession-number=0001950047-26-010733",
-  "https://www.hut8.com/news-insights/press-releases/hut-8-reports-second-quarter-2026-results"
+  "https://www.hut8.com/news-insights/press-releases/hut-8-reports-second-quarter-2026-results",
+  "urn:tag:sec.gov,2008:accession-number=0001062993-26-005793",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-116537",
+  "urn:tag:sec.gov,2008:accession-number=0001628280-26-071306",
+  "urn:tag:sec.gov,2008:accession-number=0001144879-26-000063",
+  "https://www.newsfilecorp.com/release/322814",
+  "https://investors.terawulf.com/news-events/press-releases/detail/149/terawulf-reports-third-quarter-2026-results",
+  "urn:tag:sec.gov,2008:accession-number=0001144879-26-000065",
+  "urn:tag:sec.gov,2008:accession-number=0001166816-26-000009",
+  "urn:tag:sec.gov,2008:accession-number=0001899880-26-000002",
+  "urn:tag:sec.gov,2008:accession-number=0001695650-26-000002",
+  "urn:tag:sec.gov,2008:accession-number=0001193054-26-000002"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 60,
+   "fails": 61,
    "alerted": true
   },
   "BKKT": {
-   "fails": 60,
+   "fails": 61,
    "alerted": true
   },
   "BTDR": {
-   "fails": 60,
+   "fails": 61,
    "alerted": true
   },
   "CIFR": {
-   "fails": 60,
+   "fails": 61,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 60,
+   "fails": 61,
    "alerted": true
   },
   "IREN": {
-   "fails": 60,
+   "fails": 61,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 60,
+   "fails": 61,
    "alerted": true
   },
   "WULF": {
