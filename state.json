@@ -1,10 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001493152-26-036064",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-26-036063",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-26-036105",
-  "urn:tag:sec.gov,2008:accession-number=0001083301-26-000162",
-  "https://investors.terawulf.com/news-events/press-releases/detail/144/terawulf-reports-second-quarter-2026-results",
   "dgxx:kr0jcclqulsbf9mqho7dif7o",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-085356",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-085354",
@@ -999,7 +994,12 @@
   "urn:tag:sec.gov,2008:accession-number=0001595888-26-000141",
   "urn:tag:sec.gov,2008:accession-number=0001769628-26-000453",
   "urn:tag:sec.gov,2008:accession-number=0001595888-26-000154",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-117011"
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-117011",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-050572",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-050571",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-050570",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-050569",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-050568"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 90,
+   "fails": 91,
    "alerted": true
   },
   "BKKT": {
-   "fails": 90,
+   "fails": 91,
    "alerted": true
   },
   "BTDR": {
-   "fails": 90,
+   "fails": 91,
    "alerted": true
   },
   "CIFR": {
-   "fails": 90,
+   "fails": 91,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 90,
+   "fails": 91,
    "alerted": true
   },
   "IREN": {
-   "fails": 90,
+   "fails": 91,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 90,
+   "fails": 91,
    "alerted": true
   },
   "WULF": {
