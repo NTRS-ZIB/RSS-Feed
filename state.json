@@ -1,8 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-085356",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-085354",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-085353",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-085352",
   "urn:tag:sec.gov,2008:accession-number=0001088226-26-000005",
   "c3c7ba83-2ab0-49a6-8dfe-4e54ae84cc12",
@@ -999,7 +996,10 @@
   "urn:tag:sec.gov,2008:accession-number=0001493152-26-050570",
   "urn:tag:sec.gov,2008:accession-number=0001493152-26-050569",
   "urn:tag:sec.gov,2008:accession-number=0001493152-26-050568",
-  "https://investors.terawulf.com/news-events/press-releases/detail/144/terawulf-reports-second-quarter-2026-results"
+  "https://investors.terawulf.com/news-events/press-releases/detail/144/terawulf-reports-second-quarter-2026-results",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-050624",
+  "https://www.solunacomputing.com/?post_type=news&p=16330",
+  "9c760d06-15d2-4d47-ab4e-ba54af18a7bc"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 96,
+   "fails": 97,
    "alerted": true
   },
   "BKKT": {
-   "fails": 96,
+   "fails": 97,
    "alerted": true
   },
   "BTDR": {
-   "fails": 96,
+   "fails": 97,
    "alerted": true
   },
   "CIFR": {
-   "fails": 96,
+   "fails": 97,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 96,
+   "fails": 97,
    "alerted": true
   },
   "IREN": {
-   "fails": 96,
+   "fails": 97,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 96,
+   "fails": 97,
    "alerted": true
   },
   "WULF": {
