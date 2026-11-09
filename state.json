@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 104,
+   "fails": 105,
    "alerted": true
   },
   "BKKT": {
-   "fails": 104,
+   "fails": 105,
    "alerted": true
   },
   "BTDR": {
-   "fails": 104,
+   "fails": 105,
    "alerted": true
   },
   "CIFR": {
-   "fails": 104,
+   "fails": 105,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 104,
+   "fails": 105,
    "alerted": true
   },
   "IREN": {
-   "fails": 104,
+   "fails": 105,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 104,
+   "fails": 105,
    "alerted": true
   },
   "WULF": {
