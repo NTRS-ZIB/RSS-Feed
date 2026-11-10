@@ -1,7 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-084288",
-  "urn:tag:sec.gov,2008:accession-number=0001104659-26-087201",
   "urn:tag:sec.gov,2008:accession-number=0002012383-26-002150",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-079816",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-075191",
@@ -999,7 +997,9 @@
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-117728",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-117723",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-117797",
-  "https://whitefiber.investorroom.com/2026-11-10-WhiteFiber,-Inc-Reports-Third-Quarter-2026-Results"
+  "https://whitefiber.investorroom.com/2026-11-10-WhiteFiber,-Inc-Reports-Third-Quarter-2026-Results",
+  "urn:tag:sec.gov,2008:accession-number=0001769628-26-000461",
+  "0b3ecc16-39d6-4c70-acf8-0d665c2cd7b4"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 131,
+   "fails": 132,
    "alerted": true
   },
   "BKKT": {
-   "fails": 131,
+   "fails": 132,
    "alerted": true
   },
   "BTDR": {
-   "fails": 131,
+   "fails": 132,
    "alerted": true
   },
   "CIFR": {
-   "fails": 131,
+   "fails": 132,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 131,
+   "fails": 132,
    "alerted": true
   },
   "IREN": {
-   "fails": 131,
+   "fails": 132,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 131,
+   "fails": 132,
    "alerted": true
   },
   "WULF": {
