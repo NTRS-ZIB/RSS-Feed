@@ -1,6 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0002100121-26-000907",
   "urn:tag:sec.gov,2008:accession-number=0001144879-26-000048",
   "urn:tag:sec.gov,2008:accession-number=0001144879-26-000044",
   "urn:tag:sec.gov,2008:accession-number=0002012383-26-002264",
@@ -999,7 +998,8 @@
   "urn:tag:sec.gov,2008:accession-number=0001859392-26-000112",
   "https://ir.mara.com/news-events/press-releases/detail/1430/mara-announces-third-quarter-2026-results",
   "urn:tag:sec.gov,2008:accession-number=0001769628-26-000457",
-  "urn:tag:sec.gov,2008:accession-number=0001950047-26-010854"
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-010854",
+  "c3c7ba83-2ab0-49a6-8dfe-4e54ae84cc12"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 109,
+   "fails": 110,
    "alerted": true
   },
   "BKKT": {
-   "fails": 109,
+   "fails": 110,
    "alerted": true
   },
   "BTDR": {
-   "fails": 109,
+   "fails": 110,
    "alerted": true
   },
   "CIFR": {
-   "fails": 109,
+   "fails": 110,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 109,
+   "fails": 110,
    "alerted": true
   },
   "IREN": {
-   "fails": 109,
+   "fails": 110,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 109,
+   "fails": 110,
    "alerted": true
   },
   "WULF": {
