@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-09T21:11:35+00:00",
+  "generated": "2026-11-10T18:22:18+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -603,7 +603,7 @@
     },
     "BKKT": {
       "cik": "0001820302",
-      "filing_count": 770,
+      "filing_count": 772,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019870",
@@ -614,12 +614,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026019870/bakkt-20251231.htm"
         },
         "10-Q": {
-          "accession": "0001628280-26-055275",
-          "count": 22,
-          "filed": "2026-08-10",
+          "accession": "0001628280-26-072258",
+          "count": 23,
+          "filed": "2026-11-09",
           "form": "10-Q",
-          "period": "2026-06-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026055275/bakkt-20260630.htm"
+          "period": "2026-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026072258/bakkt-20260930.htm"
         },
         "20-F": null,
         "3": {
@@ -649,12 +649,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001193125-26-353239",
-          "count": 123,
-          "filed": "2026-08-17",
+          "accession": "0001628280-26-072262",
+          "count": 124,
+          "filed": "2026-11-09",
           "form": "8-K",
-          "period": "2026-08-11",
-          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000119312526353239/d145238d8k.htm"
+          "period": "2026-11-09",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026072262/bakkt-20261109.htm"
         },
         "DEF 14A": {
           "accession": "0001628280-26-029018",
@@ -735,25 +735,25 @@
         "Bakkt Holdings, Inc.",
         "VPC Impact Acquisition Holdings"
       ],
-      "latest_filing_date": "2026-10-20",
+      "latest_filing_date": "2026-11-09",
       "name": "Bakkt, Inc.",
       "off_docket_13dg": 0,
       "projection": {
         "available": true,
         "confidence": "normal",
-        "expected": "2026-11-11",
+        "expected": "2027-03-25",
         "fiscal_year_end_month": 12,
-        "kind": "quarterly",
-        "median_lag_days": 42,
-        "period_end": "2026-09-30",
+        "kind": "annual",
+        "median_lag_days": 84,
+        "period_end": "2026-12-31",
         "reason": null,
-        "sample": 8,
-        "spread_days": 2
+        "sample": 6,
+        "spread_days": 6
       }
     },
     "BTDR": {
       "cik": "0001899123",
-      "filing_count": 286,
+      "filing_count": 287,
       "filings": {
         "10-K": null,
         "10-Q": null,
@@ -791,12 +791,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026087060/ea030073702-424b5_bitdeer.htm"
         },
         "6-K": {
-          "accession": "0001213900-26-110703",
-          "count": 109,
-          "filed": "2026-10-19",
+          "accession": "0001213900-26-117797",
+          "count": 110,
+          "filed": "2026-11-10",
           "form": "6-K",
-          "period": "2026-10-19",
-          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026110703/ea0307679-6k_bitdeer.htm"
+          "period": "2026-11-10",
+          "url": "https://www.sec.gov/Archives/edgar/data/1899123/000121390026117797/ea0311403-6k_bitdeer.htm"
         },
         "8-K": null,
         "DEF 14A": null,
@@ -840,7 +840,7 @@
         }
       },
       "former_names": [],
-      "latest_filing_date": "2026-11-06",
+      "latest_filing_date": "2026-11-10",
       "name": "Bitdeer Technologies Group",
       "off_docket_13dg": 0,
       "projection": {
@@ -1272,7 +1272,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1161,
+      "filing_count": 1163,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1300,12 +1300,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000155/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0001769628-26-000453",
-          "count": 487,
-          "filed": "2026-11-06",
+          "accession": "0001769628-26-000457",
+          "count": 488,
+          "filed": "2026-11-09",
           "form": "4",
           "period": "2026-11-05",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000453/xslF345X06/form4.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000457/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1368,7 +1368,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-11-06",
+      "latest_filing_date": "2026-11-09",
       "name": "CoreWeave, Inc.",
       "off_docket_13dg": 5,
       "projection": {
@@ -1528,7 +1528,7 @@
     },
     "GLXY": {
       "cik": "0001859392",
-      "filing_count": 289,
+      "filing_count": 290,
       "filings": {
         "10-K": {
           "accession": "0001859392-26-000016",
@@ -1539,12 +1539,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000016/glxy-20251231.htm"
         },
         "10-Q": {
-          "accession": "0001859392-26-000091",
-          "count": 5,
-          "filed": "2026-08-10",
+          "accession": "0001859392-26-000112",
+          "count": 6,
+          "filed": "2026-11-09",
           "form": "10-Q",
-          "period": "2026-06-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000091/glxy-20260630.htm"
+          "period": "2026-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000112/glxy-20260930.htm"
         },
         "20-F": null,
         "3": {
@@ -1624,19 +1624,19 @@
       "former_names": [
         "Galaxy Digital Pubco Inc."
       ],
-      "latest_filing_date": "2026-11-06",
+      "latest_filing_date": "2026-11-09",
       "name": "Galaxy Digital Inc.",
       "off_docket_13dg": 0,
       "projection": {
         "available": true,
-        "confidence": "normal",
-        "expected": "2026-11-10",
+        "confidence": "low",
+        "expected": "2027-02-09",
         "fiscal_year_end_month": 12,
-        "kind": "quarterly",
-        "median_lag_days": 41,
-        "period_end": "2026-09-30",
+        "kind": "annual",
+        "median_lag_days": 40,
+        "period_end": "2026-12-31",
         "reason": null,
-        "sample": 5,
+        "sample": 6,
         "spread_days": 3
       }
     },
@@ -1897,7 +1897,7 @@
     },
     "MARA": {
       "cik": "0001507605",
-      "filing_count": 1130,
+      "filing_count": 1131,
       "filings": {
         "10-K": {
           "accession": "0001507605-26-000007",
@@ -1908,12 +1908,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1507605/000150760526000007/mara-20251231.htm"
         },
         "10-Q": {
-          "accession": "0001507605-26-000022",
-          "count": 53,
-          "filed": "2026-08-06",
+          "accession": "0001507605-26-000028",
+          "count": 54,
+          "filed": "2026-11-09",
           "form": "10-Q",
-          "period": "2026-06-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000150760526000022/mara-20260630.htm"
+          "period": "2026-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1507605/000150760526000028/mara-20260930.htm"
         },
         "20-F": null,
         "3": {
@@ -2030,14 +2030,14 @@
       "projection": {
         "available": true,
         "confidence": "normal",
-        "expected": "2026-11-06",
+        "expected": "2027-03-15",
         "fiscal_year_end_month": 12,
-        "kind": "quarterly",
-        "median_lag_days": 37,
-        "period_end": "2026-09-30",
+        "kind": "annual",
+        "median_lag_days": 72,
+        "period_end": "2026-12-31",
         "reason": null,
         "sample": 8,
-        "spread_days": 7
+        "spread_days": 12
       }
     },
     "NUAI": {
@@ -2814,7 +2814,7 @@
     },
     "WYFI": {
       "cik": "0002042022",
-      "filing_count": 91,
+      "filing_count": 93,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-034341",
@@ -2825,12 +2825,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026034341/ea0278305-10k_white.htm"
         },
         "10-Q": {
-          "accession": "0001213900-26-088026",
-          "count": 4,
-          "filed": "2026-08-12",
+          "accession": "0001213900-26-117728",
+          "count": 5,
+          "filed": "2026-11-10",
           "form": "10-Q",
-          "period": "2026-06-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026088026/ea0300877-10q_whitefiber.htm"
+          "period": "2026-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026117728/ea0310427-10q_whitefiber.htm"
         },
         "20-F": null,
         "3": {
@@ -2860,12 +2860,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001213900-26-115575",
-          "count": 17,
-          "filed": "2026-11-03",
+          "accession": "0001213900-26-117723",
+          "count": 18,
+          "filed": "2026-11-10",
           "form": "8-K",
-          "period": "2026-10-28",
-          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026115575/ea0310639-8k_whitefiber.htm"
+          "period": "2026-11-09",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026117723/ea0311622-8k_whitefiber.htm"
         },
         "DEF 14A": {
           "accession": "0001213900-26-111410",
@@ -2903,20 +2903,20 @@
       "former_names": [
         "White Fiber, Inc."
       ],
-      "latest_filing_date": "2026-11-03",
+      "latest_filing_date": "2026-11-10",
       "name": "WhiteFiber, Inc.",
       "off_docket_13dg": 0,
       "projection": {
         "available": true,
         "confidence": "low",
-        "expected": "2026-11-13",
+        "expected": "2027-02-15",
         "fiscal_year_end_month": 12,
-        "kind": "quarterly",
+        "kind": "annual",
         "median_lag_days": 44,
-        "period_end": "2026-09-30",
+        "period_end": "2026-12-31",
         "reason": null,
-        "sample": 4,
-        "spread_days": 18
+        "sample": 5,
+        "spread_days": 19
       }
     }
   },
