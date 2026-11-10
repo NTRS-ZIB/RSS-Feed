@@ -1,9 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001144879-26-000048",
-  "urn:tag:sec.gov,2008:accession-number=0001144879-26-000044",
-  "urn:tag:sec.gov,2008:accession-number=0002012383-26-002264",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-26-032572",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-084288",
   "urn:tag:sec.gov,2008:accession-number=0001104659-26-087201",
   "urn:tag:sec.gov,2008:accession-number=0002012383-26-002150",
@@ -999,7 +995,11 @@
   "https://ir.mara.com/news-events/press-releases/detail/1430/mara-announces-third-quarter-2026-results",
   "urn:tag:sec.gov,2008:accession-number=0001769628-26-000457",
   "urn:tag:sec.gov,2008:accession-number=0001950047-26-010854",
-  "c3c7ba83-2ab0-49a6-8dfe-4e54ae84cc12"
+  "c3c7ba83-2ab0-49a6-8dfe-4e54ae84cc12",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-117728",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-117723",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-117797",
+  "https://whitefiber.investorroom.com/2026-11-10-WhiteFiber,-Inc-Reports-Third-Quarter-2026-Results"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 120,
+   "fails": 121,
    "alerted": true
   },
   "BKKT": {
-   "fails": 120,
+   "fails": 121,
    "alerted": true
   },
   "BTDR": {
-   "fails": 120,
+   "fails": 121,
    "alerted": true
   },
   "CIFR": {
-   "fails": 120,
+   "fails": 121,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 120,
+   "fails": 121,
    "alerted": true
   },
   "IREN": {
-   "fails": 120,
+   "fails": 121,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 120,
+   "fails": 121,
    "alerted": true
   },
   "WULF": {
