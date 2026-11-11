@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-10T18:22:18+00:00",
+  "generated": "2026-11-11T18:12:29+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -1272,7 +1272,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1163,
+      "filing_count": 1165,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1300,12 +1300,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000155/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0001769628-26-000457",
-          "count": 488,
-          "filed": "2026-11-09",
+          "accession": "0001769628-26-000462",
+          "count": 489,
+          "filed": "2026-11-10",
           "form": "4",
-          "period": "2026-11-05",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000457/xslF345X06/form4.xml"
+          "period": "2026-11-08",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000462/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1318,12 +1318,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001769628-26-000432",
-          "count": 38,
-          "filed": "2026-09-22",
+          "accession": "0001769628-26-000461",
+          "count": 39,
+          "filed": "2026-11-10",
           "form": "8-K",
-          "period": "2026-09-17",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000432/crwv-20260917.htm"
+          "period": "2026-11-10",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000461/crwv-20261110.htm"
         },
         "DEF 14A": {
           "accession": "0001769628-26-000191",
@@ -1368,7 +1368,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-11-09",
+      "latest_filing_date": "2026-11-10",
       "name": "CoreWeave, Inc.",
       "off_docket_13dg": 5,
       "projection": {
@@ -1528,7 +1528,7 @@
     },
     "GLXY": {
       "cik": "0001859392",
-      "filing_count": 290,
+      "filing_count": 291,
       "filings": {
         "10-K": {
           "accession": "0001859392-26-000016",
@@ -1556,12 +1556,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1859392/000168316826007630/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001380615-26-000013",
-          "count": 66,
-          "filed": "2026-11-05",
+          "accession": "0001079500-26-000011",
+          "count": 67,
+          "filed": "2026-11-10",
           "form": "4",
-          "period": "2026-11-05",
-          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000138061526000013/xslF345X06/wk-form4_1793915203.xml"
+          "period": "2026-11-06",
+          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000107950026000011/xslF345X06/wk-form4_1794349072.xml"
         },
         "40-F": null,
         "424": {
@@ -1624,7 +1624,7 @@
       "former_names": [
         "Galaxy Digital Pubco Inc."
       ],
-      "latest_filing_date": "2026-11-09",
+      "latest_filing_date": "2026-11-10",
       "name": "Galaxy Digital Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -1768,7 +1768,7 @@
     },
     "IREN": {
       "cik": "0001878848",
-      "filing_count": 324,
+      "filing_count": 325,
       "filings": {
         "10-K": {
           "accession": "0001878848-26-000052",
@@ -1867,19 +1867,19 @@
         },
         "SCHEDULE 13D": null,
         "SCHEDULE 13G": {
-          "accession": "0000070858-26-000535",
-          "count": 19,
-          "filed": "2026-10-28",
+          "accession": "0000886982-26-000620",
+          "count": 20,
+          "filed": "2026-11-10",
           "form": "SCHEDULE 13G/A",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000007085826000535/xslSCHEDULE_13G_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000088698226000620/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
         "Iris Energy Ltd",
         "Iris Energy Pty Ltd"
       ],
-      "latest_filing_date": "2026-11-05",
+      "latest_filing_date": "2026-11-10",
       "name": "IREN Ltd",
       "off_docket_13dg": 0,
       "projection": {
@@ -2814,7 +2814,7 @@
     },
     "WYFI": {
       "cik": "0002042022",
-      "filing_count": 93,
+      "filing_count": 94,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-034341",
@@ -2842,12 +2842,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026085353/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001213900-26-115645",
-          "count": 26,
-          "filed": "2026-11-03",
+          "accession": "0001213900-26-118218",
+          "count": 27,
+          "filed": "2026-11-10",
           "form": "4",
-          "period": "2026-10-31",
-          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026115645/xslF345X06/ownership.xml"
+          "period": "2026-11-06",
+          "url": "https://www.sec.gov/Archives/edgar/data/2042022/000121390026118218/xslF345X06/ownership.xml"
         },
         "40-F": null,
         "424": {
