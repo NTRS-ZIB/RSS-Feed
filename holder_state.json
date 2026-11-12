@@ -155,7 +155,7 @@
   "IREN|BANK OF AMERICA CORP /DE/": 4.1,
   "IREN|Capital Ventures International | G1 Execution Services, LLC | SIG Brokerage, LP | Susquehanna Advisors Group, Inc. | Susquehanna Portfolio Strategies, LLC | Susquehanna Securities, LLC": 4.2,
   "IREN|Citadel Advisors Holdings LP | Citadel Advisors LLC | Citadel GP LLC | Citadel Securities GP LLC | Citadel Securities Group LP | Citadel Securities LLC | Kenneth Griffin": 5.0,
-  "IREN|GOLDMAN SACHS & CO. LLC | THE GOLDMAN SACHS GROUP, INC.": 9.4,
+  "IREN|GOLDMAN SACHS & CO. LLC | THE GOLDMAN SACHS GROUP, INC.": 7.2,
   "IREN|HANSAINVEST Hanseatische Investment-Limited Co": 4.7,
   "IREN|JANE STREET GROUP, LLC | Jane Street Capital, LLC | Jane Street Global Trading, LLC | Jane Street Options, LLC": 4.7,
   "MARA|G1 Execution Services, LLC | SIG Brokerage, LP | Susquehanna Investment Group | Susquehanna Securities, LLC": 4.9,
@@ -230,28 +230,28 @@
   "0000950170-25-114068"
  ],
  "read": {
-  "ABTC": "2026-11-10",
-  "ANY": "2026-11-10",
-  "APLD": "2026-11-10",
-  "BGDE": "2026-11-10",
-  "BKKT": "2026-11-10",
-  "BTDR": "2026-11-10",
-  "CIFR": "2026-11-10",
-  "CLSK": "2026-11-10",
-  "CORZ": "2026-11-10",
-  "CRWV": "2026-11-10",
-  "DGXX": "2026-11-10",
-  "GLXY": "2026-11-10",
-  "HUT": "2026-11-10",
-  "IREN": "2026-11-10",
-  "MARA": "2026-11-10",
-  "NUAI": "2026-11-10",
-  "RIOT": "2026-11-10",
-  "SLNH": "2026-11-10",
-  "SPCX": "2026-11-10",
-  "VIP": "2026-11-10",
-  "WULF": "2026-11-10",
-  "WYFI": "2026-11-10"
+  "ABTC": "2026-11-12",
+  "ANY": "2026-11-12",
+  "APLD": "2026-11-12",
+  "BGDE": "2026-11-12",
+  "BKKT": "2026-11-12",
+  "BTDR": "2026-11-12",
+  "CIFR": "2026-11-12",
+  "CLSK": "2026-11-12",
+  "CORZ": "2026-11-12",
+  "CRWV": "2026-11-12",
+  "DGXX": "2026-11-12",
+  "GLXY": "2026-11-12",
+  "HUT": "2026-11-12",
+  "IREN": "2026-11-12",
+  "MARA": "2026-11-12",
+  "NUAI": "2026-11-12",
+  "RIOT": "2026-11-12",
+  "SLNH": "2026-11-12",
+  "SPCX": "2026-11-12",
+  "VIP": "2026-11-12",
+  "WULF": "2026-11-12",
+  "WYFI": "2026-11-12"
  },
  "repairs": [
   "2026-09-10-subject-misattribution"
@@ -634,6 +634,7 @@
   "0001595888-26-000134",
   "0001595888-26-000141",
   "0001595888-26-000154",
-  "0001595888-26-000144"
+  "0001595888-26-000144",
+  "0000886982-26-000620"
  ]
 }
