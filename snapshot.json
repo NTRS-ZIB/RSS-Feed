@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-11T18:12:29+00:00",
+  "generated": "2026-11-12T18:38:40+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -1272,7 +1272,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1165,
+      "filing_count": 1166,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1283,12 +1283,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000104/crwv-20251231.htm"
         },
         "10-Q": {
-          "accession": "0001769628-26-000366",
-          "count": 5,
-          "filed": "2026-08-12",
+          "accession": "0001769628-26-000465",
+          "count": 6,
+          "filed": "2026-11-12",
           "form": "10-Q",
-          "period": "2026-06-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000366/crwv-20260630.htm"
+          "period": "2026-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000465/crwv-20260930.htm"
         },
         "20-F": null,
         "3": {
@@ -1368,19 +1368,19 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-11-10",
+      "latest_filing_date": "2026-11-12",
       "name": "CoreWeave, Inc.",
       "off_docket_13dg": 5,
       "projection": {
         "available": true,
-        "confidence": "normal",
-        "expected": "2026-11-13",
+        "confidence": "low",
+        "expected": "2027-02-12",
         "fiscal_year_end_month": 12,
-        "kind": "quarterly",
-        "median_lag_days": 44,
-        "period_end": "2026-09-30",
+        "kind": "annual",
+        "median_lag_days": 43,
+        "period_end": "2026-12-31",
         "reason": null,
-        "sample": 5,
+        "sample": 6,
         "spread_days": 3
       }
     },
@@ -2042,7 +2042,7 @@
     },
     "NUAI": {
       "cik": "0002028336",
-      "filing_count": 213,
+      "filing_count": 216,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-027143",
@@ -2053,12 +2053,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026027143/ea0281493-10ka1_newera.htm"
         },
         "10-Q": {
-          "accession": "0001213900-26-090138",
-          "count": 6,
-          "filed": "2026-08-14",
+          "accession": "0001193125-26-456806",
+          "count": 7,
+          "filed": "2026-11-12",
           "form": "10-Q",
-          "period": "2026-06-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026090138/ea0301610-10q_newera.htm"
+          "period": "2026-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000119312526456806/nuai-20260930.htm"
         },
         "20-F": null,
         "3": {
@@ -2088,12 +2088,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001213900-26-113530",
-          "count": 57,
-          "filed": "2026-10-29",
+          "accession": "0001213900-26-118324",
+          "count": 58,
+          "filed": "2026-11-12",
           "form": "8-K",
-          "period": "2026-10-28",
-          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026113530/ea0310066-8k_newera.htm"
+          "period": "2026-11-12",
+          "url": "https://www.sec.gov/Archives/edgar/data/2028336/000121390026118324/ea0311947-8k_newera.htm"
         },
         "DEF 14A": {
           "accession": "0001104659-26-123315",
@@ -2146,20 +2146,20 @@
         "NEW ERA HELIUM INC.",
         "Roth CH V Holdings, Inc."
       ],
-      "latest_filing_date": "2026-11-05",
+      "latest_filing_date": "2026-11-12",
       "name": "New ERA Energy & Digital, Inc.",
       "off_docket_13dg": 0,
       "projection": {
         "available": true,
         "confidence": "normal",
-        "expected": "2026-11-16",
+        "expected": "2027-03-22",
         "fiscal_year_end_month": 12,
-        "kind": "quarterly",
-        "median_lag_days": 45,
-        "period_end": "2026-09-30",
+        "kind": "annual",
+        "median_lag_days": 80,
+        "period_end": "2026-12-31",
         "reason": null,
-        "sample": 5,
-        "spread_days": 0
+        "sample": 2,
+        "spread_days": 9
       }
     },
     "RIOT": {
