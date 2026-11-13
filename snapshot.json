@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-12T18:38:40+00:00",
+  "generated": "2026-11-13T18:17:25+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -312,7 +312,7 @@
     },
     "APLD": {
       "cik": "0001144879",
-      "filing_count": 831,
+      "filing_count": 832,
       "filings": {
         "10-K": {
           "accession": "0001144879-26-000048",
@@ -432,12 +432,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1144879/000149315226032572/xslSCHEDULE_13D_X02/primary_doc.xml"
         },
         "SCHEDULE 13G": {
-          "accession": "0002100121-26-000907",
-          "count": 17,
-          "filed": "2026-07-31",
+          "accession": "0001595888-26-000168",
+          "count": 18,
+          "filed": "2026-11-12",
           "form": "SCHEDULE 13G/A",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000210012126000907/xslSCHEDULE_13G_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000159588826000168/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
@@ -447,7 +447,7 @@
         "FLIGHT SAFETY TECHNOLOGIES INC",
         "REEL STAFF INC"
       ],
-      "latest_filing_date": "2026-11-06",
+      "latest_filing_date": "2026-11-12",
       "name": "Applied Digital Corp.",
       "off_docket_13dg": 2,
       "projection": {
@@ -465,7 +465,7 @@
     },
     "BGDE": {
       "cik": "0001218683",
-      "filing_count": 747,
+      "filing_count": 748,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-037417",
@@ -493,12 +493,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026045631/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0000912282-26-001310",
-          "count": 142,
-          "filed": "2026-09-28",
+          "accession": "0000912282-26-001461",
+          "count": 143,
+          "filed": "2026-11-12",
           "form": "4",
-          "period": "2026-09-24",
-          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000091228226001310/xslF345X06/form4.xml"
+          "period": "2026-11-09",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000091228226001461/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -585,7 +585,7 @@
         "OphthaliX, Inc.",
         "DENALI CONCRETE MANAGEMENT INC"
       ],
-      "latest_filing_date": "2026-11-06",
+      "latest_filing_date": "2026-11-12",
       "name": "Big Digital Energy, Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -1130,7 +1130,7 @@
     },
     "CORZ": {
       "cik": "0001839341",
-      "filing_count": 682,
+      "filing_count": 683,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019505",
@@ -1158,12 +1158,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003445/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0000905148-26-004648",
-          "count": 167,
-          "filed": "2026-11-04",
+          "accession": "0000905148-26-004766",
+          "count": 168,
+          "filed": "2026-11-12",
           "form": "4",
-          "period": "2026-11-02",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826004648/xslF345X06/form4.xml"
+          "period": "2026-11-09",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826004766/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1254,7 +1254,7 @@
       "former_names": [
         "Power & Digital Infrastructure Acquisition Corp."
       ],
-      "latest_filing_date": "2026-11-06",
+      "latest_filing_date": "2026-11-12",
       "name": "Core Scientific, Inc./tx",
       "off_docket_13dg": 0,
       "projection": {
@@ -1386,7 +1386,7 @@
     },
     "DGXX": {
       "cik": "0001854368",
-      "filing_count": 256,
+      "filing_count": 258,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-050340",
@@ -1397,12 +1397,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026050340/ea0288276-10ka1_digipower.htm"
         },
         "10-Q": {
-          "accession": "0001213900-26-089940",
-          "count": 2,
-          "filed": "2026-08-14",
+          "accession": "0001213900-26-119394",
+          "count": 3,
+          "filed": "2026-11-13",
           "form": "10-Q",
-          "period": "2026-06-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026089940/ea0301731-10q_digipower.htm"
+          "period": "2026-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026119394/ea0312132-10q_digipower.htm"
         },
         "20-F": {
           "accession": "0001213900-25-025829",
@@ -1453,12 +1453,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390025125569/ea0270929-6k_digi.htm"
         },
         "8-K": {
-          "accession": "0001213900-26-089450",
-          "count": 22,
-          "filed": "2026-08-14",
+          "accession": "0001213900-26-119211",
+          "count": 23,
+          "filed": "2026-11-13",
           "form": "8-K",
-          "period": "2026-08-14",
-          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026089450/ea0301730-8k_digi.htm"
+          "period": "2026-11-13",
+          "url": "https://www.sec.gov/Archives/edgar/data/1854368/000121390026119211/ea0312121-8k_digi.htm"
         },
         "DEF 14A": {
           "accession": "0001213900-26-114925",
@@ -1510,20 +1510,20 @@
       "former_names": [
         "Digihost Technology Inc."
       ],
-      "latest_filing_date": "2026-11-02",
+      "latest_filing_date": "2026-11-13",
       "name": "Digi Power X Inc.",
       "off_docket_13dg": 0,
       "projection": {
         "available": true,
-        "confidence": "normal",
-        "expected": "2026-11-16",
+        "confidence": "low",
+        "expected": "2027-03-31",
         "fiscal_year_end_month": 12,
-        "kind": "quarterly",
-        "median_lag_days": 45,
-        "period_end": "2026-09-30",
+        "kind": "annual",
+        "median_lag_days": 90,
+        "period_end": "2026-12-31",
         "reason": null,
-        "sample": 2,
-        "spread_days": 0
+        "sample": 5,
+        "spread_days": 86
       }
     },
     "GLXY": {
