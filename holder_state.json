@@ -67,7 +67,7 @@
   "APLD|CLEARFIELD CAPITAL MANAGEMENT LP | Philip J. Hilal": 2.4,
   "APLD|CoreWeave, Inc.": 0.0,
   "APLD|Hood River Capital Management LLC": 7.89,
-  "APLD|JANE STREET GROUP, LLC | Jane Street Capital, LLC | Jane Street Global Trading, LLC | Jane Street Options, LLC": 7.1,
+  "APLD|JANE STREET GROUP, LLC | Jane Street Capital, LLC | Jane Street Global Trading, LLC | Jane Street Options, LLC": 6.3,
   "APLD|The Vanguard Group": 0.0,
   "APLD|Vanguard Portfolio Management": 4.81,
   "APLD|Wesley Cummins": 7.6,
@@ -230,28 +230,28 @@
   "0000950170-25-114068"
  ],
  "read": {
-  "ABTC": "2026-11-12",
-  "ANY": "2026-11-12",
-  "APLD": "2026-11-12",
-  "BGDE": "2026-11-12",
-  "BKKT": "2026-11-12",
-  "BTDR": "2026-11-12",
-  "CIFR": "2026-11-12",
-  "CLSK": "2026-11-12",
-  "CORZ": "2026-11-12",
-  "CRWV": "2026-11-12",
-  "DGXX": "2026-11-12",
-  "GLXY": "2026-11-12",
-  "HUT": "2026-11-12",
-  "IREN": "2026-11-12",
-  "MARA": "2026-11-12",
-  "NUAI": "2026-11-12",
-  "RIOT": "2026-11-12",
-  "SLNH": "2026-11-12",
-  "SPCX": "2026-11-12",
-  "VIP": "2026-11-12",
-  "WULF": "2026-11-12",
-  "WYFI": "2026-11-12"
+  "ABTC": "2026-11-13",
+  "ANY": "2026-11-13",
+  "APLD": "2026-11-13",
+  "BGDE": "2026-11-13",
+  "BKKT": "2026-11-13",
+  "BTDR": "2026-11-13",
+  "CIFR": "2026-11-13",
+  "CLSK": "2026-11-13",
+  "CORZ": "2026-11-13",
+  "CRWV": "2026-11-13",
+  "DGXX": "2026-11-13",
+  "GLXY": "2026-11-13",
+  "HUT": "2026-11-13",
+  "IREN": "2026-11-13",
+  "MARA": "2026-11-13",
+  "NUAI": "2026-11-13",
+  "RIOT": "2026-11-13",
+  "SLNH": "2026-11-13",
+  "SPCX": "2026-11-13",
+  "VIP": "2026-11-13",
+  "WULF": "2026-11-13",
+  "WYFI": "2026-11-13"
  },
  "repairs": [
   "2026-09-10-subject-misattribution"
@@ -635,6 +635,7 @@
   "0001595888-26-000141",
   "0001595888-26-000154",
   "0001595888-26-000144",
-  "0000886982-26-000620"
+  "0000886982-26-000620",
+  "0001595888-26-000168"
  ]
 }
