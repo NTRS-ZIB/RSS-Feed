@@ -1,10 +1,5 @@
 {
  "seen": [
-  "https://www.globenewswire.com/news-release/2025/11/19/3190954/0/en/mawson-infrastructure-group-inc-announces-1-for-20-reverse-stock-split.html",
-  "https://www.globenewswire.com/news-release/2025/11/14/3188614/0/en/mawson-infrastructure-group-inc-reports-third-quarter-2025-financial-results.html",
-  "https://www.globenewswire.com/news-release/2025/11/07/3183921/0/en/mawson-infrastructure-group-inc-announces-lease-extension-for-its-bellefonte-pa-facility.html",
-  "urn:tag:sec.gov,2008:accession-number=0002052994-26-000003",
-  "urn:tag:sec.gov,2008:accession-number=0001193125-26-340270",
   "urn:tag:sec.gov,2008:accession-number=0001628280-26-054892",
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-340447",
   "11596",
@@ -999,7 +994,12 @@
   "urn:tag:sec.gov,2008:accession-number=0000912282-26-001509",
   "urn:tag:sec.gov,2008:accession-number=0001950047-26-011157",
   "https://ir.mara.com/news-events/press-releases/detail/1427/mara-announces-second-quarter-2026-results",
-  "fe8bfcb4-7130-4260-92c9-3ef874e72b1c"
+  "fe8bfcb4-7130-4260-92c9-3ef874e72b1c",
+  "urn:tag:sec.gov,2008:accession-number=0000950142-26-003100",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-121511",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-121449",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-121444",
+  "urn:tag:sec.gov,2008:accession-number=0001079500-26-000013"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 296,
+   "fails": 297,
    "alerted": true
   },
   "BKKT": {
-   "fails": 296,
+   "fails": 297,
    "alerted": true
   },
   "BTDR": {
-   "fails": 296,
+   "fails": 297,
    "alerted": true
   },
   "CIFR": {
-   "fails": 296,
+   "fails": 297,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 296,
+   "fails": 297,
    "alerted": true
   },
   "IREN": {
-   "fails": 296,
+   "fails": 297,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 296,
+   "fails": 297,
    "alerted": true
   },
   "WULF": {
