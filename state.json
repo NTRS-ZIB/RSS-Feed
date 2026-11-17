@@ -1,7 +1,5 @@
 {
  "seen": [
-  "https://www.globenewswire.com/news-release/2025/12/09/3202155/0/en/mawson-infrastructure-to-present-at-emerging-growth-conference-on-december-11-2025.html",
-  "https://www.globenewswire.com/news-release/2025/11/25/3194140/0/en/mawson-infrastructure-group-inc-announces-monthly-financial-update-for-october-2025.html",
   "https://www.globenewswire.com/news-release/2025/11/19/3190954/0/en/mawson-infrastructure-group-inc-announces-1-for-20-reverse-stock-split.html",
   "https://www.globenewswire.com/news-release/2025/11/14/3188614/0/en/mawson-infrastructure-group-inc-reports-third-quarter-2025-financial-results.html",
   "https://www.globenewswire.com/news-release/2025/11/07/3183921/0/en/mawson-infrastructure-group-inc-announces-lease-extension-for-its-bellefonte-pa-facility.html",
@@ -999,7 +997,9 @@
   "urn:tag:sec.gov,2008:accession-number=0001104659-26-128288",
   "https://www.solunacomputing.com/?post_type=news&p=16349",
   "urn:tag:sec.gov,2008:accession-number=0000912282-26-001509",
-  "urn:tag:sec.gov,2008:accession-number=0001950047-26-011157"
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-011157",
+  "https://ir.mara.com/news-events/press-releases/detail/1427/mara-announces-second-quarter-2026-results",
+  "fe8bfcb4-7130-4260-92c9-3ef874e72b1c"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 274,
+   "fails": 275,
    "alerted": true
   },
   "BKKT": {
-   "fails": 274,
+   "fails": 275,
    "alerted": true
   },
   "BTDR": {
-   "fails": 274,
+   "fails": 275,
    "alerted": true
   },
   "CIFR": {
-   "fails": 274,
+   "fails": 275,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 274,
+   "fails": 275,
    "alerted": true
   },
   "IREN": {
-   "fails": 274,
+   "fails": 275,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 274,
+   "fails": 275,
    "alerted": true
   },
   "WULF": {
