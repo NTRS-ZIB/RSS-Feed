@@ -89,7 +89,7 @@
   "BTDR|Golden Navigate Investments Ltd | Yishuo Hu": 4.8,
   "BTDR|JANE STREET GROUP, LLC | Jane Street Capital, LLC | Jane Street Global Trading, LLC": 2.3,
   "BTDR|Mega Galaxy International Limited | Yuesheng Ge": 4.3,
-  "BTDR|Paloma International L.P. | Paloma Partners Advisors LP | Paloma Partners Advisors, Inc. | Paloma Partners Management Co | S. Donald Sussman | Sunrise Partners Limited Partnership": 9.0,
+  "BTDR|Paloma International L.P. | Paloma Partners Advisors LP | Paloma Partners Advisors, Inc. | Paloma Partners Management Co | S. Donald Sussman | Sunrise Partners Limited Partnership": 0.0,
   "BTDR|Shinning Stone Invest Co., Ltd. | Zhaofeng Zhao": 4.92,
   "CIFR|Bitfury Group Ltd | Bitfury Holding B.V. | Bitfury Top HoldCo B.V. | V3 Holding Ltd | Vavilovs Valerijs": 11.2,
   "CIFR|BlackRock, Inc.": 6.5,
@@ -232,28 +232,28 @@
   "0000950170-25-114068"
  ],
  "read": {
-  "ABTC": "2026-11-16",
-  "ANY": "2026-11-16",
-  "APLD": "2026-11-16",
-  "BGDE": "2026-11-16",
-  "BKKT": "2026-11-16",
-  "BTDR": "2026-11-16",
-  "CIFR": "2026-11-16",
-  "CLSK": "2026-11-16",
-  "CORZ": "2026-11-16",
-  "CRWV": "2026-11-16",
-  "DGXX": "2026-11-16",
-  "GLXY": "2026-11-16",
-  "HUT": "2026-11-16",
-  "IREN": "2026-11-16",
-  "MARA": "2026-11-16",
-  "NUAI": "2026-11-16",
-  "RIOT": "2026-11-16",
-  "SLNH": "2026-11-16",
-  "SPCX": "2026-11-16",
-  "VIP": "2026-11-16",
-  "WULF": "2026-11-16",
-  "WYFI": "2026-11-16"
+  "ABTC": "2026-11-17",
+  "ANY": "2026-11-17",
+  "APLD": "2026-11-17",
+  "BGDE": "2026-11-17",
+  "BKKT": "2026-11-17",
+  "BTDR": "2026-11-17",
+  "CIFR": "2026-11-17",
+  "CLSK": "2026-11-17",
+  "CORZ": "2026-11-17",
+  "CRWV": "2026-11-17",
+  "DGXX": "2026-11-17",
+  "GLXY": "2026-11-17",
+  "HUT": "2026-11-17",
+  "IREN": "2026-11-17",
+  "MARA": "2026-11-17",
+  "NUAI": "2026-11-17",
+  "RIOT": "2026-11-17",
+  "SLNH": "2026-11-17",
+  "SPCX": "2026-11-17",
+  "VIP": "2026-11-17",
+  "WULF": "2026-11-17",
+  "WYFI": "2026-11-17"
  },
  "repairs": [
   "2026-09-10-subject-misattribution"
@@ -656,6 +656,7 @@
   "0001213900-26-120715",
   "0000895421-26-000340",
   "0000919574-26-008119",
-  "0001104659-26-128302"
+  "0001104659-26-128302",
+  "0000905148-26-004979"
  ]
 }
