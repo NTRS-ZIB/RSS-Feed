@@ -1,11 +1,5 @@
 {
  "seen": [
-  "11596",
-  "11521",
-  "11496",
-  "11491",
-  "11471",
-  "11461",
   "11401",
   "https://ir.applieddigital.com/news-events/press-releases/detail/159/applied-digital-reports-fiscal-fourth-quarter-and-full-year",
   "https://ir.applieddigital.com/news-events/press-releases/detail/158/applied-digital-sets-fiscal-fourth-quarter-and-full-year",
@@ -999,7 +993,13 @@
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-121444",
   "urn:tag:sec.gov,2008:accession-number=0001079500-26-000013",
   "abtc:229e637c-4024-43b4-8a37-adf538ef8971",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-121680"
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-121680",
+  "urn:tag:sec.gov,2008:accession-number=0001595888-26-000170",
+  "urn:tag:sec.gov,2008:accession-number=0001193805-26-001505",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-121873",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-011304",
+  "urn:tag:sec.gov,2008:accession-number=0002025334-26-000012",
+  "urn:tag:sec.gov,2008:accession-number=0000905148-26-005028"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 320,
+   "fails": 321,
    "alerted": true
   },
   "BKKT": {
-   "fails": 320,
+   "fails": 321,
    "alerted": true
   },
   "BTDR": {
-   "fails": 320,
+   "fails": 321,
    "alerted": true
   },
   "CIFR": {
-   "fails": 320,
+   "fails": 321,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 320,
+   "fails": 321,
    "alerted": true
   },
   "IREN": {
-   "fails": 320,
+   "fails": 321,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 320,
+   "fails": 321,
    "alerted": true
   },
   "WULF": {
