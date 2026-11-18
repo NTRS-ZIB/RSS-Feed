@@ -1,4 +1,10 @@
 {
  "date": "2026-11-18",
- "alerted": {}
+ "alerted": {
+  "BKKT": 1.5,
+  "BTDR": 1.5,
+  "CLSK": 1.5,
+  "IREN": 1.5,
+  "NUAI": 1.5
+ }
 }
