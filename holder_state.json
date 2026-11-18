@@ -158,7 +158,7 @@
   "IREN|Citadel Advisors Holdings LP | Citadel Advisors LLC | Citadel GP LLC | Citadel Securities GP LLC | Citadel Securities Group LP | Citadel Securities LLC | Kenneth Griffin": 5.0,
   "IREN|GOLDMAN SACHS & CO. LLC | THE GOLDMAN SACHS GROUP, INC.": 7.2,
   "IREN|HANSAINVEST Hanseatische Investment-Limited Co": 4.7,
-  "IREN|JANE STREET GROUP, LLC | Jane Street Capital, LLC | Jane Street Global Trading, LLC | Jane Street Options, LLC": 4.7,
+  "IREN|JANE STREET GROUP, LLC | Jane Street Capital, LLC | Jane Street Global Trading, LLC | Jane Street Options, LLC": 6.5,
   "MARA|G1 Execution Services, LLC | SIG Brokerage, LP | Susquehanna Investment Group | Susquehanna Securities, LLC": 4.9,
   "MARA|The Vanguard Group": 0.0,
   "MARA|Vanguard Capital Management": 5.05,
@@ -232,28 +232,28 @@
   "0000950170-25-114068"
  ],
  "read": {
-  "ABTC": "2026-11-17",
-  "ANY": "2026-11-17",
-  "APLD": "2026-11-17",
-  "BGDE": "2026-11-17",
-  "BKKT": "2026-11-17",
-  "BTDR": "2026-11-17",
-  "CIFR": "2026-11-17",
-  "CLSK": "2026-11-17",
-  "CORZ": "2026-11-17",
-  "CRWV": "2026-11-17",
-  "DGXX": "2026-11-17",
-  "GLXY": "2026-11-17",
-  "HUT": "2026-11-17",
-  "IREN": "2026-11-17",
-  "MARA": "2026-11-17",
-  "NUAI": "2026-11-17",
-  "RIOT": "2026-11-17",
-  "SLNH": "2026-11-17",
-  "SPCX": "2026-11-17",
-  "VIP": "2026-11-17",
-  "WULF": "2026-11-17",
-  "WYFI": "2026-11-17"
+  "ABTC": "2026-11-18",
+  "ANY": "2026-11-18",
+  "APLD": "2026-11-18",
+  "BGDE": "2026-11-18",
+  "BKKT": "2026-11-18",
+  "BTDR": "2026-11-18",
+  "CIFR": "2026-11-18",
+  "CLSK": "2026-11-18",
+  "CORZ": "2026-11-18",
+  "CRWV": "2026-11-18",
+  "DGXX": "2026-11-18",
+  "GLXY": "2026-11-18",
+  "HUT": "2026-11-18",
+  "IREN": "2026-11-18",
+  "MARA": "2026-11-18",
+  "NUAI": "2026-11-18",
+  "RIOT": "2026-11-18",
+  "SLNH": "2026-11-18",
+  "SPCX": "2026-11-18",
+  "VIP": "2026-11-18",
+  "WULF": "2026-11-18",
+  "WYFI": "2026-11-18"
  },
  "repairs": [
   "2026-09-10-subject-misattribution"
@@ -657,6 +657,7 @@
   "0000895421-26-000340",
   "0000919574-26-008119",
   "0001104659-26-128302",
-  "0000905148-26-004979"
+  "0000905148-26-004979",
+  "0001595888-26-000170"
  ]
 }
