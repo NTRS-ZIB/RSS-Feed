@@ -1,6 +1,5 @@
 {
  "seen": [
-  "https://ir.applieddigital.com/news-events/press-releases/detail/158/applied-digital-sets-fiscal-fourth-quarter-and-full-year",
   "https://ir.applieddigital.com/news-events/press-releases/detail/157/applied-digital-delivers-second-building-at-polaris-forge-1",
   "https://ir.applieddigital.com/news-events/press-releases/detail/156/applied-digital-announces-pricing-of-1-59-billion-of",
   "https://ir.applieddigital.com/news-events/press-releases/detail/155/applied-digital-announces-proposed-offering-of-1-59",
@@ -999,7 +998,8 @@
   "urn:tag:sec.gov,2008:accession-number=0002025334-26-000012",
   "urn:tag:sec.gov,2008:accession-number=0000905148-26-005028",
   "urn:tag:sec.gov,2008:accession-number=0001887623-26-000023",
-  "aeeadbe2-7779-47fd-9a6b-040ad9918c2d"
+  "aeeadbe2-7779-47fd-9a6b-040ad9918c2d",
+  "https://ir.applieddigital.com/news-events/press-releases/detail/159/applied-digital-reports-fiscal-fourth-quarter-and-full-year"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 333,
+   "fails": 334,
    "alerted": true
   },
   "BKKT": {
-   "fails": 333,
+   "fails": 334,
    "alerted": true
   },
   "BTDR": {
-   "fails": 333,
+   "fails": 334,
    "alerted": true
   },
   "CIFR": {
-   "fails": 333,
+   "fails": 334,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 333,
+   "fails": 334,
    "alerted": true
   },
   "IREN": {
-   "fails": 333,
+   "fails": 334,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 333,
+   "fails": 334,
    "alerted": true
   },
   "WULF": {
