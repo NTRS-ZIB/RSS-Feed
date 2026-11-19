@@ -1,8 +1,5 @@
 {
  "seen": [
-  "https://ir.applieddigital.com/news-events/press-releases/detail/151/applied-digital-completes-separation-of-cloud-business",
-  "https://ir.applieddigital.com/news-events/press-releases/detail/150/applied-digital-announces-300-million-senior-secured",
-  "9661",
   "9636",
   "9601",
   "9591",
@@ -999,7 +996,10 @@
   "https://ir.applieddigital.com/news-events/press-releases/detail/156/applied-digital-announces-pricing-of-1-59-billion-of",
   "https://ir.applieddigital.com/news-events/press-releases/detail/155/applied-digital-announces-proposed-offering-of-1-59",
   "https://ir.applieddigital.com/news-events/press-releases/detail/154/applied-digital-signs-210-mw-lease-at-delta-forge-2",
-  "abtc:8dee6a51-7449-4b2f-ad83-399b9d22f915"
+  "abtc:8dee6a51-7449-4b2f-ad83-399b9d22f915",
+  "urn:tag:sec.gov,2008:accession-number=0001104659-26-130230",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-122227",
+  "d8c22cf9-60e8-4d9c-a9f8-8c7431c4ed51"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 343,
+   "fails": 344,
    "alerted": true
   },
   "BKKT": {
-   "fails": 343,
+   "fails": 344,
    "alerted": true
   },
   "BTDR": {
-   "fails": 343,
+   "fails": 344,
    "alerted": true
   },
   "CIFR": {
-   "fails": 343,
+   "fails": 344,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 343,
+   "fails": 344,
    "alerted": true
   },
   "IREN": {
-   "fails": 343,
+   "fails": 344,
    "alerted": true
   },
   "MARA": {
@@ -1044,7 +1044,7 @@
    "alerted": false
   },
   "SLNH": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "SPCX": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 343,
+   "fails": 344,
    "alerted": true
   },
   "WULF": {
