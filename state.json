@@ -1,6 +1,5 @@
 {
  "seen": [
-  "https://ir.applieddigital.com/news-events/press-releases/detail/155/applied-digital-announces-proposed-offering-of-1-59",
   "https://ir.applieddigital.com/news-events/press-releases/detail/154/applied-digital-signs-210-mw-lease-at-delta-forge-2",
   "https://ir.applieddigital.com/news-events/press-releases/detail/153/applied-digital-secures-revolving-credit-facility-of-up-to",
   "https://ir.applieddigital.com/news-events/press-releases/detail/152/applied-digital-reaches-significant-milestone-surpassing-1",
@@ -999,7 +998,8 @@
   "aeeadbe2-7779-47fd-9a6b-040ad9918c2d",
   "https://ir.applieddigital.com/news-events/press-releases/detail/159/applied-digital-reports-fiscal-fourth-quarter-and-full-year",
   "https://ir.applieddigital.com/news-events/press-releases/detail/158/applied-digital-sets-fiscal-fourth-quarter-and-full-year",
-  "https://ir.applieddigital.com/news-events/press-releases/detail/157/applied-digital-delivers-second-building-at-polaris-forge-1"
+  "https://ir.applieddigital.com/news-events/press-releases/detail/157/applied-digital-delivers-second-building-at-polaris-forge-1",
+  "https://ir.applieddigital.com/news-events/press-releases/detail/156/applied-digital-announces-pricing-of-1-59-billion-of"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 336,
+   "fails": 337,
    "alerted": true
   },
   "BKKT": {
-   "fails": 336,
+   "fails": 337,
    "alerted": true
   },
   "BTDR": {
-   "fails": 336,
+   "fails": 337,
    "alerted": true
   },
   "CIFR": {
-   "fails": 336,
+   "fails": 337,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 336,
+   "fails": 337,
    "alerted": true
   },
   "IREN": {
-   "fails": 336,
+   "fails": 337,
    "alerted": true
   },
   "MARA": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 336,
+   "fails": 337,
    "alerted": true
   },
   "WULF": {
