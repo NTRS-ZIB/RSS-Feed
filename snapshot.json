@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-18T19:11:02+00:00",
+  "generated": "2026-11-19T19:15:49+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -465,7 +465,7 @@
     },
     "BGDE": {
       "cik": "0001218683",
-      "filing_count": 755,
+      "filing_count": 756,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-037417",
@@ -511,12 +511,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001213900-26-116537",
-          "count": 278,
-          "filed": "2026-11-06",
+          "accession": "0001213900-26-121873",
+          "count": 279,
+          "filed": "2026-11-18",
           "form": "8-K",
-          "period": "2026-11-05",
-          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026116537/ea0310942-8k_bigdigital.htm"
+          "period": "2026-11-12",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026121873/ea0312675-8k_bigdigital.htm"
         },
         "DEF 14A": {
           "accession": "0001213900-26-111954",
@@ -603,7 +603,7 @@
     },
     "BKKT": {
       "cik": "0001820302",
-      "filing_count": 772,
+      "filing_count": 773,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019870",
@@ -735,7 +735,7 @@
         "Bakkt Holdings, Inc.",
         "VPC Impact Acquisition Holdings"
       ],
-      "latest_filing_date": "2026-11-09",
+      "latest_filing_date": "2026-11-18",
       "name": "Bakkt, Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -858,7 +858,7 @@
     },
     "CIFR": {
       "cik": "0001819989",
-      "filing_count": 634,
+      "filing_count": 635,
       "filings": {
         "10-K": {
           "accession": "0001819989-26-000009",
@@ -886,12 +886,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1819989/000211168426000002/xslF345X02/wk-form3_1771867590.xml"
         },
         "4": {
-          "accession": "0001123292-26-001460",
-          "count": 267,
-          "filed": "2026-11-04",
+          "accession": "0001887623-26-000023",
+          "count": 268,
+          "filed": "2026-11-18",
           "form": "4",
-          "period": "2026-11-02",
-          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000112329226001460/xslF345X06/form4.xml"
+          "period": "2026-11-16",
+          "url": "https://www.sec.gov/Archives/edgar/data/1819989/000188762326000023/xslF345X06/wk-form4_1795050584.xml"
         },
         "40-F": null,
         "424": {
@@ -976,7 +976,7 @@
         "Cipher Mining Inc.",
         "GOOD WORKS ACQUISITION CORP."
       ],
-      "latest_filing_date": "2026-11-13",
+      "latest_filing_date": "2026-11-18",
       "name": "Cipher Digital Inc.",
       "off_docket_13dg": 1,
       "projection": {
@@ -1130,7 +1130,7 @@
     },
     "CORZ": {
       "cik": "0001839341",
-      "filing_count": 685,
+      "filing_count": 686,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019505",
@@ -1158,12 +1158,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003445/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0000905148-26-004799",
-          "count": 169,
-          "filed": "2026-11-13",
+          "accession": "0000905148-26-005028",
+          "count": 170,
+          "filed": "2026-11-18",
           "form": "4",
-          "period": "2026-11-11",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826004799/xslF345X06/form4.xml"
+          "period": "2026-11-16",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826005028/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1254,7 +1254,7 @@
       "former_names": [
         "Power & Digital Infrastructure Acquisition Corp."
       ],
-      "latest_filing_date": "2026-11-16",
+      "latest_filing_date": "2026-11-18",
       "name": "Core Scientific, Inc./tx",
       "off_docket_13dg": 0,
       "projection": {
@@ -1768,7 +1768,7 @@
     },
     "IREN": {
       "cik": "0001878848",
-      "filing_count": 326,
+      "filing_count": 327,
       "filings": {
         "10-K": {
           "accession": "0001878848-26-000052",
@@ -1867,19 +1867,19 @@
         },
         "SCHEDULE 13D": null,
         "SCHEDULE 13G": {
-          "accession": "0001446580-26-000110",
-          "count": 21,
-          "filed": "2026-11-16",
+          "accession": "0001595888-26-000170",
+          "count": 22,
+          "filed": "2026-11-18",
           "form": "SCHEDULE 13G",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000144658026000110/xslSCHEDULE_13G_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000159588826000170/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
         "Iris Energy Ltd",
         "Iris Energy Pty Ltd"
       ],
-      "latest_filing_date": "2026-11-16",
+      "latest_filing_date": "2026-11-18",
       "name": "IREN Ltd",
       "off_docket_13dg": 0,
       "projection": {
@@ -2164,7 +2164,7 @@
     },
     "RIOT": {
       "cik": "0001167419",
-      "filing_count": 1599,
+      "filing_count": 1600,
       "filings": {
         "10-K": {
           "accession": "0001104659-26-022322",
@@ -2192,12 +2192,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1167419/000141588925016733/xslF345X02/form3-06112025_100636.xml"
         },
         "4": {
-          "accession": "0002025334-26-000010",
-          "count": 536,
-          "filed": "2026-08-14",
+          "accession": "0002025334-26-000012",
+          "count": 537,
+          "filed": "2026-11-18",
           "form": "4",
-          "period": "2026-08-12",
-          "url": "https://www.sec.gov/Archives/edgar/data/1167419/000202533426000010/xslF345X06/form4-08142026_090854.xml"
+          "period": "2026-11-16",
+          "url": "https://www.sec.gov/Archives/edgar/data/1167419/000202533426000012/xslF345X06/form4-11182026_051102.xml"
         },
         "40-F": null,
         "424": {
@@ -2292,7 +2292,7 @@
         "AspenBio Pharma, Inc.",
         "ASPENBIO INC"
       ],
-      "latest_filing_date": "2026-11-16",
+      "latest_filing_date": "2026-11-18",
       "name": "Riot Platforms, Inc.",
       "off_docket_13dg": 23,
       "projection": {
@@ -2536,7 +2536,7 @@
     },
     "VIP": {
       "cik": "0001844971",
-      "filing_count": 453,
+      "filing_count": 454,
       "filings": {
         "10-K": {
           "accession": "0001844971-26-000011",
@@ -2617,12 +2617,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828024040225/greenidges-1apostxeffectiv.htm"
         },
         "S-3": {
-          "accession": "0001193805-26-000804",
-          "count": 5,
-          "filed": "2026-06-12",
-          "form": "S-3/A",
+          "accession": "0001193805-26-001505",
+          "count": 6,
+          "filed": "2026-11-18",
+          "form": "S-3",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000119380526000804/e665535_s3a-gghi.htm"
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000119380526001505/e665904_s3-vulcan.htm"
         },
         "SC 13D": {
           "accession": "0001193125-23-030130",
@@ -2660,7 +2660,7 @@
       "former_names": [
         "Greenidge Generation Holdings Inc."
       ],
-      "latest_filing_date": "2026-11-16",
+      "latest_filing_date": "2026-11-18",
       "name": "Vulcan Infrastructure & Power Inc.",
       "off_docket_13dg": 2,
       "projection": {
