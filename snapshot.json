@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-19T19:15:49+00:00",
+  "generated": "2026-11-20T18:54:40+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -155,7 +155,7 @@
     },
     "ANY": {
       "cik": "0001591956",
-      "filing_count": 828,
+      "filing_count": 829,
       "filings": {
         "10-K": {
           "accession": "0001591956-26-000004",
@@ -190,12 +190,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1591956/000118518526002272/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001213900-26-115677",
-          "count": 126,
-          "filed": "2026-11-03",
+          "accession": "0001213900-26-122416",
+          "count": 127,
+          "filed": "2026-11-20",
           "form": "4",
-          "period": "2026-10-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000121390026115677/xslF345X06/ownership.xml"
+          "period": "2026-11-18",
+          "url": "https://www.sec.gov/Archives/edgar/data/1591956/000121390026122416/xslF345X06/ownership.xml"
         },
         "40-F": {
           "accession": "0001591956-17-000003",
@@ -294,7 +294,7 @@
         "Sphere 3D Corp.",
         "Sphere 3D Corp"
       ],
-      "latest_filing_date": "2026-11-16",
+      "latest_filing_date": "2026-11-20",
       "name": "DarkHorse Technologies Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -465,7 +465,7 @@
     },
     "BGDE": {
       "cik": "0001218683",
-      "filing_count": 756,
+      "filing_count": 757,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-037417",
@@ -502,12 +502,12 @@
         },
         "40-F": null,
         "424": {
-          "accession": "0001213900-26-095605",
-          "count": 17,
-          "filed": "2026-08-31",
+          "accession": "0001213900-26-122227",
+          "count": 18,
+          "filed": "2026-11-19",
           "form": "424B3",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026095605/ea0303624-424b3_bigdigital.htm"
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026122227/ea0312991-424b3_bigdigital.htm"
         },
         "6-K": null,
         "8-K": {
@@ -585,7 +585,7 @@
         "OphthaliX, Inc.",
         "DENALI CONCRETE MANAGEMENT INC"
       ],
-      "latest_filing_date": "2026-11-18",
+      "latest_filing_date": "2026-11-19",
       "name": "Big Digital Energy, Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -1768,7 +1768,7 @@
     },
     "IREN": {
       "cik": "0001878848",
-      "filing_count": 327,
+      "filing_count": 328,
       "filings": {
         "10-K": {
           "accession": "0001878848-26-000052",
@@ -1867,19 +1867,19 @@
         },
         "SCHEDULE 13D": null,
         "SCHEDULE 13G": {
-          "accession": "0001595888-26-000170",
-          "count": 22,
-          "filed": "2026-11-18",
+          "accession": "0001104659-26-130230",
+          "count": 23,
+          "filed": "2026-11-19",
           "form": "SCHEDULE 13G",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000159588826000170/xslSCHEDULE_13G_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1878848/000110465926130230/xslSCHEDULE_13G_X02/primary_doc.xml"
         }
       },
       "former_names": [
         "Iris Energy Ltd",
         "Iris Energy Pty Ltd"
       ],
-      "latest_filing_date": "2026-11-18",
+      "latest_filing_date": "2026-11-19",
       "name": "IREN Ltd",
       "off_docket_13dg": 0,
       "projection": {
@@ -2310,7 +2310,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1586,
+      "filing_count": 1587,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2427,7 +2427,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-11-16",
+      "latest_filing_date": "2026-11-19",
       "name": "Soluna Holdings, Inc",
       "off_docket_13dg": 17,
       "projection": {
