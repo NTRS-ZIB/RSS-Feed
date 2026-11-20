@@ -1,18 +1,5 @@
 {
  "seen": [
-  "9601",
-  "9591",
-  "9541",
-  "9536",
-  "9511",
-  "9476",
-  "9446",
-  "9411",
-  "6ecd87bb-e412-4970-8c63-33fcd774fe16",
-  "fed4880e-fe5d-47a9-b342-6b50075aeeac",
-  "e0d0abc9-bc6e-41d3-8d82-de6c00fc59cf",
-  "461844cd-7383-4c94-9cbb-606b3d679bb8",
-  "a25c7f51-bc63-4c2c-897e-ce666bb4c6ad",
   "1660eb43-9042-49df-886d-77bf016c70b2",
   "https://www.galaxy.com/newsroom/galaxy-and-sharplink-launch-first-of-its-kind-125m-onchain-yield-fund",
   "https://www.galaxy.com/newsroom/galaxy-and-bny-collaborate-to-advance-digital-asset-infrastructure",
@@ -999,7 +986,20 @@
   "urn:tag:sec.gov,2008:accession-number=0001104659-26-130230",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-122227",
   "d8c22cf9-60e8-4d9c-a9f8-8c7431c4ed51",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-122416"
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-122416",
+  "urn:tag:sec.gov,2008:accession-number=0001628280-26-075304",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-122726",
+  "urn:tag:sec.gov,2008:accession-number=0001079500-26-000015",
+  "urn:tag:sec.gov,2008:accession-number=0001912609-26-000014",
+  "urn:tag:sec.gov,2008:accession-number=0001380615-26-000016",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-053504",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-122683",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-122679",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-011410",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-011403",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-011402",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-011401",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-011397"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 365,
+   "fails": 366,
    "alerted": true
   },
   "BKKT": {
-   "fails": 365,
+   "fails": 366,
    "alerted": true
   },
   "BTDR": {
-   "fails": 365,
+   "fails": 366,
    "alerted": true
   },
   "CIFR": {
-   "fails": 365,
+   "fails": 366,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 365,
+   "fails": 366,
    "alerted": true
   },
   "IREN": {
-   "fails": 365,
+   "fails": 366,
    "alerted": true
   },
   "MARA": {
@@ -1044,7 +1044,7 @@
    "alerted": false
   },
   "SLNH": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "SPCX": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 365,
+   "fails": 366,
    "alerted": true
   },
   "WULF": {
