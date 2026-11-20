@@ -1,9 +1,5 @@
 {
  "seen": [
-  "1660eb43-9042-49df-886d-77bf016c70b2",
-  "https://www.galaxy.com/newsroom/galaxy-and-sharplink-launch-first-of-its-kind-125m-onchain-yield-fund",
-  "https://www.galaxy.com/newsroom/galaxy-and-bny-collaborate-to-advance-digital-asset-infrastructure",
-  "https://www.galaxy.com/newsroom/galaxy-expands-data-center-footprint-with-acquisition-of-500-acre-campus-in-mcgregor-texas",
   "https://www.galaxy.com/newsroom/galaxy-launches-bitcoin-quantum-readiness-initiative",
   "abtc:bf90f2b9-64f9-48ea-bae9-66f6a21a10b2",
   "abtc:ea759df3-9e8a-4d1f-9ad5-b50d71c3403e",
@@ -999,7 +995,11 @@
   "urn:tag:sec.gov,2008:accession-number=0001950047-26-011403",
   "urn:tag:sec.gov,2008:accession-number=0001950047-26-011402",
   "urn:tag:sec.gov,2008:accession-number=0001950047-26-011401",
-  "urn:tag:sec.gov,2008:accession-number=0001950047-26-011397"
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-011397",
+  "6ecd87bb-e412-4970-8c63-33fcd774fe16",
+  "fed4880e-fe5d-47a9-b342-6b50075aeeac",
+  "e0d0abc9-bc6e-41d3-8d82-de6c00fc59cf",
+  "461844cd-7383-4c94-9cbb-606b3d679bb8"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 366,
+   "fails": 367,
    "alerted": true
   },
   "BKKT": {
-   "fails": 366,
+   "fails": 367,
    "alerted": true
   },
   "BTDR": {
-   "fails": 366,
+   "fails": 367,
    "alerted": true
   },
   "CIFR": {
-   "fails": 366,
+   "fails": 367,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 366,
+   "fails": 367,
    "alerted": true
   },
   "IREN": {
-   "fails": 366,
+   "fails": 367,
    "alerted": true
   },
   "MARA": {
@@ -1044,15 +1044,15 @@
    "alerted": false
   },
   "SLNH": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "SPCX": {
    "fails": 0,
    "alerted": false
   },
   "VIP": {
-   "fails": 366,
+   "fails": 367,
    "alerted": true
   },
   "WULF": {
