@@ -1,10 +1,5 @@
 {
  "seen": [
-  "abtc:2fd9cde3-8616-4214-9218-4cec25949f0d",
-  "abtc:ed3e7313-a3ea-4704-b428-2a5fc9b0890d",
-  "abtc:2d4d59b9-8892-452c-8eac-b595d8a9524b",
-  "abtc:860f0fbd-c453-44e5-94a6-e405326d966b",
-  "abtc:7b2d480d-00df-43c5-8f13-4f0668d50711",
   "abtc:a0eb219a-8b77-4b3e-8bc7-6f107a109114",
   "abtc:f33bdb83-a71e-4c7d-8c29-b4555cd7688f",
   "abtc:f11c1b4a-d016-4466-818c-8b0309df0c61",
@@ -999,7 +994,12 @@
   "https://www.riotplatforms.com/riot-platforms-reports-third-quarter-2026-financial-results-and-strategic-highlights-4/",
   "https://www.riotplatforms.com/riot-platforms-reports-third-quarter-2026-financial-results-and-strategic-highlights-3/",
   "https://www.riotplatforms.com/riot-platforms-reports-third-quarter-2026-financial-results-and-strategic-highlights-2/",
-  "urn:tag:sec.gov,2008:accession-number=0001950047-26-011417"
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-011417",
+  "abtc:bf90f2b9-64f9-48ea-bae9-66f6a21a10b2",
+  "abtc:ea759df3-9e8a-4d1f-9ad5-b50d71c3403e",
+  "abtc:91acb3e0-790e-4c35-b88c-7c425b55099e",
+  "abtc:628c9744-f2df-4fae-b1a9-a84099f210cb",
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-011418"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 369,
+   "fails": 370,
    "alerted": true
   },
   "BKKT": {
-   "fails": 369,
+   "fails": 370,
    "alerted": true
   },
   "BTDR": {
-   "fails": 369,
+   "fails": 370,
    "alerted": true
   },
   "CIFR": {
-   "fails": 369,
+   "fails": 370,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 369,
+   "fails": 370,
    "alerted": true
   },
   "IREN": {
-   "fails": 369,
+   "fails": 370,
    "alerted": true
   },
   "MARA": {
@@ -1044,7 +1044,7 @@
    "alerted": false
   },
   "SLNH": {
-   "fails": 4,
+   "fails": 5,
    "alerted": true
   },
   "SPCX": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 369,
+   "fails": 370,
    "alerted": true
   },
   "WULF": {
