@@ -1,11 +1,5 @@
 {
  "seen": [
-  "abtc:a0eb219a-8b77-4b3e-8bc7-6f107a109114",
-  "abtc:f33bdb83-a71e-4c7d-8c29-b4555cd7688f",
-  "abtc:f11c1b4a-d016-4466-818c-8b0309df0c61",
-  "abtc:dd3555f1-8109-41c5-8cc7-a4ebe74db2bd",
-  "abtc:7236264f-3781-4ca7-ab3b-7abc19d3eff4",
-  "abtc:db9d9025-eb08-4326-a82b-4e1bb6469b0a",
   "abtc:53e5b103-55ff-433e-a1fc-e5755b657a0a",
   "abtc:94d5f9e9-2fa4-4958-80b0-fe48d3cf7cda",
   "abtc:1b7fdfc7-1b75-45ae-8af9-9fa995f35c66",
@@ -999,7 +993,13 @@
   "abtc:ea759df3-9e8a-4d1f-9ad5-b50d71c3403e",
   "abtc:91acb3e0-790e-4c35-b88c-7c425b55099e",
   "abtc:628c9744-f2df-4fae-b1a9-a84099f210cb",
-  "urn:tag:sec.gov,2008:accession-number=0001950047-26-011418"
+  "urn:tag:sec.gov,2008:accession-number=0001950047-26-011418",
+  "abtc:2fd9cde3-8616-4214-9218-4cec25949f0d",
+  "abtc:ed3e7313-a3ea-4704-b428-2a5fc9b0890d",
+  "abtc:2d4d59b9-8892-452c-8eac-b595d8a9524b",
+  "abtc:860f0fbd-c453-44e5-94a6-e405326d966b",
+  "abtc:7b2d480d-00df-43c5-8f13-4f0668d50711",
+  "urn:tag:sec.gov,2008:accession-number=0001213900-26-122819"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 370,
+   "fails": 371,
    "alerted": true
   },
   "BKKT": {
-   "fails": 370,
+   "fails": 371,
    "alerted": true
   },
   "BTDR": {
-   "fails": 370,
+   "fails": 371,
    "alerted": true
   },
   "CIFR": {
-   "fails": 370,
+   "fails": 371,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 370,
+   "fails": 371,
    "alerted": true
   },
   "IREN": {
-   "fails": 370,
+   "fails": 371,
    "alerted": true
   },
   "MARA": {
@@ -1044,7 +1044,7 @@
    "alerted": false
   },
   "SLNH": {
-   "fails": 5,
+   "fails": 6,
    "alerted": true
   },
   "SPCX": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 370,
+   "fails": 371,
    "alerted": true
   },
   "WULF": {
