@@ -155,7 +155,7 @@
   "IREN|Awassi Capital Holdings 2 Pty Ltd (ACN 629 819 978) | Daniel John Roberts | The Awassi Capital Trust #2": 2.41,
   "IREN|BANK OF AMERICA CORP /DE/": 4.1,
   "IREN|Capital Ventures International | G1 Execution Services, LLC | SIG Brokerage, LP | Susquehanna Advisors Group, Inc. | Susquehanna Portfolio Strategies, LLC | Susquehanna Securities, LLC": 5.0,
-  "IREN|Citadel Advisors Holdings LP | Citadel Advisors LLC | Citadel GP LLC | Citadel Securities GP LLC | Citadel Securities Group LP | Citadel Securities LLC | Kenneth Griffin": 5.0,
+  "IREN|Citadel Advisors Holdings LP | Citadel Advisors LLC | Citadel GP LLC | Citadel Securities GP LLC | Citadel Securities Group LP | Citadel Securities LLC | Kenneth Griffin": 5.9,
   "IREN|GOLDMAN SACHS & CO. LLC | THE GOLDMAN SACHS GROUP, INC.": 7.2,
   "IREN|HANSAINVEST Hanseatische Investment-Limited Co": 4.7,
   "IREN|JANE STREET GROUP, LLC | Jane Street Capital, LLC | Jane Street Global Trading, LLC | Jane Street Options, LLC": 6.5,
@@ -232,28 +232,28 @@
   "0000950170-25-114068"
  ],
  "read": {
-  "ABTC": "2026-11-19",
-  "ANY": "2026-11-19",
-  "APLD": "2026-11-19",
-  "BGDE": "2026-11-19",
-  "BKKT": "2026-11-19",
-  "BTDR": "2026-11-19",
-  "CIFR": "2026-11-19",
-  "CLSK": "2026-11-19",
-  "CORZ": "2026-11-19",
-  "CRWV": "2026-11-19",
-  "DGXX": "2026-11-19",
-  "GLXY": "2026-11-19",
-  "HUT": "2026-11-19",
-  "IREN": "2026-11-19",
-  "MARA": "2026-11-19",
-  "NUAI": "2026-11-19",
-  "RIOT": "2026-11-19",
-  "SLNH": "2026-11-19",
-  "SPCX": "2026-11-19",
-  "VIP": "2026-11-19",
-  "WULF": "2026-11-19",
-  "WYFI": "2026-11-19"
+  "ABTC": "2026-11-20",
+  "ANY": "2026-11-20",
+  "APLD": "2026-11-20",
+  "BGDE": "2026-11-20",
+  "BKKT": "2026-11-20",
+  "BTDR": "2026-11-20",
+  "CIFR": "2026-11-20",
+  "CLSK": "2026-11-20",
+  "CORZ": "2026-11-20",
+  "CRWV": "2026-11-20",
+  "DGXX": "2026-11-20",
+  "GLXY": "2026-11-20",
+  "HUT": "2026-11-20",
+  "IREN": "2026-11-20",
+  "MARA": "2026-11-20",
+  "NUAI": "2026-11-20",
+  "RIOT": "2026-11-20",
+  "SLNH": "2026-11-20",
+  "SPCX": "2026-11-20",
+  "VIP": "2026-11-20",
+  "WULF": "2026-11-20",
+  "WYFI": "2026-11-20"
  },
  "repairs": [
   "2026-09-10-subject-misattribution"
@@ -658,6 +658,7 @@
   "0000919574-26-008119",
   "0001104659-26-128302",
   "0000905148-26-004979",
-  "0001595888-26-000170"
+  "0001595888-26-000170",
+  "0001104659-26-130230"
  ]
 }
