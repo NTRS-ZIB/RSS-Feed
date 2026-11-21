@@ -1,11 +1,5 @@
 {
  "seen": [
-  "abtc:521c071c-c2dd-42fa-af01-2bcc51b0df8f",
-  "9696",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-086938",
-  "urn:tag:sec.gov,2008:accession-number=0001062993-26-004117",
-  "https://www.hut8.com/news-insights/press-releases/hut-8-affirms-commitment-to-responsible-data-center-development-following-directive-from-texas",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-087067",
   "urn:tag:sec.gov,2008:accession-number=0001213900-26-087060",
   "urn:tag:sec.gov,2008:accession-number=0001912609-26-000006",
   "11741",
@@ -999,7 +993,13 @@
   "abtc:f11c1b4a-d016-4466-818c-8b0309df0c61",
   "abtc:dd3555f1-8109-41c5-8cc7-a4ebe74db2bd",
   "abtc:7236264f-3781-4ca7-ab3b-7abc19d3eff4",
-  "abtc:db9d9025-eb08-4326-a82b-4e1bb6469b0a"
+  "abtc:db9d9025-eb08-4326-a82b-4e1bb6469b0a",
+  "abtc:53e5b103-55ff-433e-a1fc-e5755b657a0a",
+  "abtc:94d5f9e9-2fa4-4958-80b0-fe48d3cf7cda",
+  "abtc:1b7fdfc7-1b75-45ae-8af9-9fa995f35c66",
+  "abtc:3031cbb3-4801-4762-bba1-7f63aba5d94c",
+  "abtc:09462f5f-51b0-4949-9f49-778fb095169c",
+  "abtc:837a1fcc-3ef6-4f72-895a-72d7b0dc5798"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 372,
+   "fails": 373,
    "alerted": true
   },
   "BKKT": {
-   "fails": 372,
+   "fails": 373,
    "alerted": true
   },
   "BTDR": {
-   "fails": 372,
+   "fails": 373,
    "alerted": true
   },
   "CIFR": {
-   "fails": 372,
+   "fails": 373,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 372,
+   "fails": 373,
    "alerted": true
   },
   "IREN": {
-   "fails": 372,
+   "fails": 373,
    "alerted": true
   },
   "MARA": {
@@ -1044,7 +1044,7 @@
    "alerted": false
   },
   "SLNH": {
-   "fails": 7,
+   "fails": 8,
    "alerted": true
   },
   "SPCX": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 372,
+   "fails": 373,
    "alerted": true
   },
   "WULF": {
