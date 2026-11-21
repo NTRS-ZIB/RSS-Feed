@@ -999,7 +999,33 @@
   "abtc:837a1fcc-3ef6-4f72-895a-72d7b0dc5798",
   "https://www.hut8.com/news-insights/press-releases/hut-8-affirms-commitment-to-responsible-data-center-development-following-directive-from-texas",
   "abtc:521c071c-c2dd-42fa-af01-2bcc51b0df8f",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-26-053589"
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-053589",
+  "12111",
+  "12696",
+  "12476",
+  "9651",
+  "9446",
+  "https://www.globenewswire.com/news-release/2026/11/18/3406205/0/en/big-digital-energy-announces-chief-financial-officer-transition.html",
+  "https://www.globenewswire.com/news-release/2026/11/05/3397128/0/en/big-digital-energy-announces-third-quarter-2026-results.html",
+  "https://www.globenewswire.com/news-release/2026/07/29/3335631/0/en/big-digital-energy-to-release-second-quarter-2026-results-august-12th.html",
+  "https://www.globenewswire.com/news-release/2026/07/20/3329715/0/en/big-digital-energy-and-10netzero-complete-acquisition-of-hood-county-texas-site.html",
+  "https://www.globenewswire.com/news-release/2026/07/06/3322404/0/en/big-digital-energy-announces-partnership-with-10netzero-to-acquire-power-ready-hood-county-texas-site-for-ai-datacenter-development.html",
+  "https://www.globenewswire.com/news-release/2026/06/17/3313496/0/en/big-digital-energy-inc-regains-compliance-with-nasdaq-listing-rule-5550-b-1.html",
+  "https://www.globenewswire.com/news-release/2026/06/09/3309347/0/en/big-digital-energy-inc-terminates-existing-stockholder-rights-agreement.html",
+  "https://www.globenewswire.com/news-release/2026/04/27/3281610/0/en/big-digital-energy-inc-announces-colocation-agreement-with-the-endeavor-group.html",
+  "https://www.globenewswire.com/news-release/2026/04/23/3280391/0/en/mawson-infrastructure-group-inc-becomes-big-digital-energy-inc-receives-nasdaq-listing-determination-already-in-compliance-to-request-hearing.html",
+  "https://www.globenewswire.com/news-release/2026/04/08/3270108/0/en/mawson-infrastructure-group-announces-reconstitution-of-its-board-and-new-executive-leadership-to-drive-transformation.html",
+  "https://www.globenewswire.com/news-release/2026/04/06/3268738/0/en/mawson-infrastructure-group-inc-provides-governance-update.html",
+  "https://www.globenewswire.com/news-release/2026/03/16/3256061/0/en/mawson-infrastructure-group-inc-provides-update-on-strategic-initiatives.html",
+  "https://www.globenewswire.com/news-release/2026/02/06/3233674/0/en/mawson-infrastructure-group-inc-releases-preliminary-unaudited-results-for-fourth-quarter-and-fiscal-year-2025.html",
+  "https://www.globenewswire.com/news-release/2026/02/02/3230653/0/en/mawson-infrastructure-group-inc-adopts-limited-duration-stockholder-rights-agreement.html",
+  "https://www.globenewswire.com/news-release/2026/01/15/3219327/0/en/mawson-infrastructure-group-to-present-at-emerging-growth-conference.html",
+  "https://www.globenewswire.com/news-release/2025/12/30/3211415/0/en/mawson-infrastructure-group-inc-files-adversary-complaint-seeking-damages-for-bad-faith-bankruptcy-filing.html",
+  "11741",
+  "11716",
+  "11596",
+  "11521",
+  "9996"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,32 +1034,32 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 377,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "BKKT": {
-   "fails": 377,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "BTDR": {
-   "fails": 377,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "CIFR": {
-   "fails": 377,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "CLSK": {
    "fails": 0,
    "alerted": false
   },
   "GLXY": {
-   "fails": 377,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "IREN": {
-   "fails": 377,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "MARA": {
    "fails": 0,
@@ -1044,7 +1070,7 @@
    "alerted": false
   },
   "SLNH": {
-   "fails": 12,
+   "fails": 13,
    "alerted": true
   },
   "SPCX": {
@@ -1052,8 +1078,8 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 377,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "WULF": {
    "fails": 0,
