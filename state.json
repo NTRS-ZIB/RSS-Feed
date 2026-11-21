@@ -1,6 +1,5 @@
 {
  "seen": [
-  "11741",
   "urn:tag:sec.gov,2008:accession-number=0001628280-26-055276",
   "urn:tag:sec.gov,2008:accession-number=0001628280-26-055275",
   "11966",
@@ -999,7 +998,8 @@
   "abtc:09462f5f-51b0-4949-9f49-778fb095169c",
   "abtc:837a1fcc-3ef6-4f72-895a-72d7b0dc5798",
   "https://www.hut8.com/news-insights/press-releases/hut-8-affirms-commitment-to-responsible-data-center-development-following-directive-from-texas",
-  "abtc:521c071c-c2dd-42fa-af01-2bcc51b0df8f"
+  "abtc:521c071c-c2dd-42fa-af01-2bcc51b0df8f",
+  "urn:tag:sec.gov,2008:accession-number=0001493152-26-053589"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 376,
+   "fails": 377,
    "alerted": true
   },
   "BKKT": {
-   "fails": 376,
+   "fails": 377,
    "alerted": true
   },
   "BTDR": {
-   "fails": 376,
+   "fails": 377,
    "alerted": true
   },
   "CIFR": {
-   "fails": 376,
+   "fails": 377,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 376,
+   "fails": 377,
    "alerted": true
   },
   "IREN": {
-   "fails": 376,
+   "fails": 377,
    "alerted": true
   },
   "MARA": {
@@ -1044,7 +1044,7 @@
    "alerted": false
   },
   "SLNH": {
-   "fails": 11,
+   "fails": 12,
    "alerted": true
   },
   "SPCX": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 376,
+   "fails": 377,
    "alerted": true
   },
   "WULF": {
