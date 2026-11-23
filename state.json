@@ -1,35 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001628280-26-055276",
-  "urn:tag:sec.gov,2008:accession-number=0001628280-26-055275",
-  "11966",
-  "urn:tag:sec.gov,2008:accession-number=0001595888-26-000093",
-  "urn:tag:sec.gov,2008:accession-number=0001859392-26-000091",
-  "urn:tag:sec.gov,2008:accession-number=0001906218-26-000002",
-  "urn:tag:sec.gov,2008:accession-number=0001905897-26-000002",
-  "urn:tag:sec.gov,2008:accession-number=0002067267-26-000011",
-  "urn:tag:sec.gov,2008:accession-number=0001407036-26-000004",
-  "urn:tag:sec.gov,2008:accession-number=0001906958-26-000004",
-  "urn:tag:sec.gov,2008:accession-number=0001341187-26-000005",
-  "urn:tag:sec.gov,2008:accession-number=0001079500-26-000006",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-26-036934",
-  "urn:tag:sec.gov,2008:accession-number=0001493152-26-036933",
-  "f5162902-c097-4a8a-8fb9-09bd932f4cd4",
-  "https://www.globenewswire.com/news-release/2026/08/11/3342708/0/en/big-digital-energy-announces-strategic-tensor-iq-loi-to-advance-hood-county-texas-ai-infrastructure-campus.html",
-  "1c55e68e-da95-41c6-af49-7c92f482a3cb",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-087780",
-  "730ae9b3-0cba-4493-9c0d-ca3ae3756695",
-  "2291a400-42b8-431f-bc1a-e7d17cef842a",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-088026",
-  "https://whitefiber.investorroom.com/2026-08-12-WhiteFiber,-Inc-Reports-Second-Quarter-2026-Results",
-  "urn:tag:sec.gov,2008:accession-number=0000886982-26-000449",
-  "urn:tag:sec.gov,2008:accession-number=0001595888-26-000096",
-  "https://www.globenewswire.com/news-release/2026/08/12/3344097/0/en/big-digital-energy-announces-second-quarter-2026-results.html",
-  "https://whitefiber.investorroom.com/2026-08-12-WhiteFiber-and-Krambu-Partner-to-Bring-100MW-of-High-Density-GPU-Infrastructure-Capacity-to-Market-in-2027",
-  "https://whitefiber.investorroom.com/2026-08-12-C-O-R-R-E-C-T-I-O-N-WhiteFiber,-Inc",
-  "urn:tag:sec.gov,2008:accession-number=0001213900-26-088668",
-  "urn:tag:sec.gov,2008:accession-number=0001140361-26-032638",
-  "12501",
   "urn:tag:sec.gov,2008:accession-number=0001957799-26-000129",
   "urn:tag:sec.gov,2008:accession-number=0001959173-26-005264",
   "urn:tag:sec.gov,2008:accession-number=0001959173-26-005262",
@@ -1025,7 +995,11 @@
   "11716",
   "11596",
   "11521",
-  "9996"
+  "9996",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-470893",
+  "https://www.newsfilecorp.com/release/325187",
+  "https://ir.applieddigital.com/news-events/press-releases/detail/165/applied-digital-secures-new-150-mw-18-year-lease-with",
+  "https://ir.applieddigital.com/news-events/press-releases/detail/164/applied-digital-announces-300-million-senior-secured"
  ],
  "initialized": true,
  "feeds": {
@@ -1034,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "BKKT": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "BTDR": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "CIFR": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "CLSK": {
@@ -1054,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "IREN": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "MARA": {
@@ -1070,15 +1044,15 @@
    "alerted": false
   },
   "SLNH": {
-   "fails": 24,
-   "alerted": true
+   "fails": 0,
+   "alerted": false
   },
   "SPCX": {
    "fails": 0,
    "alerted": false
   },
   "VIP": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "WULF": {
