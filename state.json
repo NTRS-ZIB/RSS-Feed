@@ -1,9 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001957799-26-000129",
-  "urn:tag:sec.gov,2008:accession-number=0001959173-26-005264",
-  "urn:tag:sec.gov,2008:accession-number=0001959173-26-005262",
-  "urn:tag:sec.gov,2008:accession-number=0001950047-26-007164",
   "urn:tag:sec.gov,2008:accession-number=0001950047-26-007244",
   "urn:tag:sec.gov,2008:accession-number=0001950047-26-007614",
   "urn:tag:sec.gov,2008:accession-number=0001628280-26-056702",
@@ -999,7 +995,11 @@
   "urn:tag:sec.gov,2008:accession-number=0001193125-26-470893",
   "https://www.newsfilecorp.com/release/325187",
   "https://ir.applieddigital.com/news-events/press-releases/detail/165/applied-digital-secures-new-150-mw-18-year-lease-with",
-  "https://ir.applieddigital.com/news-events/press-releases/detail/164/applied-digital-announces-300-million-senior-secured"
+  "https://ir.applieddigital.com/news-events/press-releases/detail/164/applied-digital-announces-300-million-senior-secured",
+  "1c55e68e-da95-41c6-af49-7c92f482a3cb",
+  "f5162902-c097-4a8a-8fb9-09bd932f4cd4",
+  "2291a400-42b8-431f-bc1a-e7d17cef842a",
+  "730ae9b3-0cba-4493-9c0d-ca3ae3756695"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,32 +1008,32 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "BKKT": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "BTDR": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "CIFR": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "CLSK": {
    "fails": 0,
    "alerted": false
   },
   "GLXY": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "IREN": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "MARA": {
    "fails": 0,
@@ -1052,8 +1052,8 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 1,
-   "alerted": false
+   "fails": 2,
+   "alerted": true
   },
   "WULF": {
    "fails": 0,
