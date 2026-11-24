@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-23T22:18:43+00:00",
+  "generated": "2026-11-24T20:56:17+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -2536,7 +2536,7 @@
     },
     "VIP": {
       "cik": "0001844971",
-      "filing_count": 454,
+      "filing_count": 455,
       "filings": {
         "10-K": {
           "accession": "0001844971-26-000011",
@@ -2660,7 +2660,7 @@
       "former_names": [
         "Greenidge Generation Holdings Inc."
       ],
-      "latest_filing_date": "2026-11-18",
+      "latest_filing_date": "2026-11-23",
       "name": "Vulcan Infrastructure & Power Inc.",
       "off_docket_13dg": 2,
       "projection": {
