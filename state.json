@@ -1,10 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001104659-26-095936",
-  "12531",
-  "https://www.solunacomputing.com/?post_type=news&p=16165",
-  "urn:tag:sec.gov,2008:accession-number=0000895421-26-000259",
-  "urn:tag:sec.gov,2008:accession-number=0000895421-26-000270",
   "urn:tag:sec.gov,2008:accession-number=0001104659-26-093448",
   "urn:tag:sec.gov,2008:accession-number=0001104659-26-093406",
   "urn:tag:sec.gov,2008:accession-number=0000315066-26-002108",
@@ -1003,7 +998,8 @@
   "11966",
   "12501",
   "https://www.globenewswire.com/news-release/2026/08/12/3344097/0/en/big-digital-energy-announces-second-quarter-2026-results.html",
-  "https://www.globenewswire.com/news-release/2026/08/11/3342708/0/en/big-digital-energy-announces-strategic-tensor-iq-loi-to-advance-hood-county-texas-ai-infrastructure-campus.html"
+  "https://www.globenewswire.com/news-release/2026/08/11/3342708/0/en/big-digital-energy-announces-strategic-tensor-iq-loi-to-advance-hood-county-texas-ai-infrastructure-campus.html",
+  "https://ir.applieddigital.com/news-events/press-releases/detail/166/applied-digital-achieves-initial-25-mw-ready-for-service-in"
  ],
  "initialized": true,
  "feeds": {
@@ -1012,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "BKKT": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "BTDR": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "CIFR": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "CLSK": {
@@ -1032,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "IREN": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "MARA": {
@@ -1048,7 +1044,7 @@
    "alerted": false
   },
   "SLNH": {
-   "fails": 11,
+   "fails": 12,
    "alerted": true
   },
   "SPCX": {
@@ -1056,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 0,
+   "fails": 1,
    "alerted": false
   },
   "WULF": {
