@@ -1,8 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001104659-26-093448",
-  "urn:tag:sec.gov,2008:accession-number=0001104659-26-093406",
-  "urn:tag:sec.gov,2008:accession-number=0000315066-26-002108",
   "https://www.riotplatforms.com/riot-platforms-reports-second-quarter-2026-financial-results-and-strategic-highlights/",
   "https://www.riotplatforms.com/riot-announces-new-date-for-second-quarter-2026-earnings-conference-call/",
   "https://www.riotplatforms.com/riot-reschedules-second-quarter-2026-earnings-conference-call/",
@@ -999,7 +996,10 @@
   "12501",
   "https://www.globenewswire.com/news-release/2026/08/12/3344097/0/en/big-digital-energy-announces-second-quarter-2026-results.html",
   "https://www.globenewswire.com/news-release/2026/08/11/3342708/0/en/big-digital-energy-announces-strategic-tensor-iq-loi-to-advance-hood-county-texas-ai-infrastructure-campus.html",
-  "https://ir.applieddigital.com/news-events/press-releases/detail/166/applied-digital-achieves-initial-25-mw-ready-for-service-in"
+  "https://ir.applieddigital.com/news-events/press-releases/detail/166/applied-digital-achieves-initial-25-mw-ready-for-service-in",
+  "urn:tag:sec.gov,2008:accession-number=0001193125-26-475677",
+  "urn:tag:sec.gov,2008:accession-number=0001193805-26-001527",
+  "8f20b4c5-bd2e-46b5-ada3-6e8278a4aeea"
  ],
  "initialized": true,
  "feeds": {
@@ -1008,19 +1008,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 10,
+   "fails": 11,
    "alerted": true
   },
   "BKKT": {
-   "fails": 10,
+   "fails": 11,
    "alerted": true
   },
   "BTDR": {
-   "fails": 10,
+   "fails": 11,
    "alerted": true
   },
   "CIFR": {
-   "fails": 10,
+   "fails": 11,
    "alerted": true
   },
   "CLSK": {
@@ -1028,11 +1028,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 10,
+   "fails": 11,
    "alerted": true
   },
   "IREN": {
-   "fails": 10,
+   "fails": 11,
    "alerted": true
   },
   "MARA": {
@@ -1044,7 +1044,7 @@
    "alerted": false
   },
   "SLNH": {
-   "fails": 21,
+   "fails": 22,
    "alerted": true
   },
   "SPCX": {
@@ -1052,7 +1052,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 10,
+   "fails": 11,
    "alerted": true
   },
   "WULF": {
