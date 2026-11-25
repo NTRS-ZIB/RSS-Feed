@@ -1,6 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0001104659-26-091181",
   "urn:tag:sec.gov,2008:accession-number=0000919574-26-004796",
   "urn:tag:sec.gov,2008:accession-number=0002100119-26-001382",
   "urn:tag:sec.gov,2008:accession-number=0001839341-26-000016",
@@ -1001,7 +1000,8 @@
   "urn:tag:sec.gov,2008:accession-number=0001769628-26-000470",
   "urn:tag:sec.gov,2008:accession-number=0001769628-26-000468",
   "https://www.riotplatforms.com/riot-reschedules-second-quarter-2026-earnings-conference-call/",
-  "https://www.riotplatforms.com/riot-announces-second-quarter-2026-earnings-conference-call/"
+  "https://www.riotplatforms.com/riot-announces-second-quarter-2026-earnings-conference-call/",
+  "7c6afc2a-dc33-4f00-a9d4-ac7f7f721db9"
  ],
  "initialized": true,
  "feeds": {
@@ -1010,19 +1010,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 30,
+   "fails": 31,
    "alerted": true
   },
   "BKKT": {
-   "fails": 30,
+   "fails": 31,
    "alerted": true
   },
   "BTDR": {
-   "fails": 30,
+   "fails": 31,
    "alerted": true
   },
   "CIFR": {
-   "fails": 30,
+   "fails": 31,
    "alerted": true
   },
   "CLSK": {
@@ -1030,11 +1030,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 30,
+   "fails": 31,
    "alerted": true
   },
   "IREN": {
-   "fails": 30,
+   "fails": 31,
    "alerted": true
   },
   "MARA": {
@@ -1046,7 +1046,7 @@
    "alerted": false
   },
   "SLNH": {
-   "fails": 41,
+   "fails": 42,
    "alerted": true
   },
   "SPCX": {
@@ -1054,7 +1054,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 30,
+   "fails": 31,
    "alerted": true
   },
   "WULF": {
