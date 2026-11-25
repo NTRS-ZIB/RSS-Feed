@@ -198,7 +198,7 @@
   "VIP|Andrew M. Bursky | Atlas Capital GP LP | Atlas Capital Resources (A9) LP | Atlas Capital Resources (A9-Parallel) LP | Atlas Capital Resources (P) LP | Atlas Capital Resources GP LLC | GGH Bridge Investment LP | Timothy J. Fazio": 20.0,
   "VIP|B. Riley Securities, Inc. | BRC Group Holdings, Inc. | Bryant Riley": 7.1,
   "VIP|Conversant Capital LLC | Conversant PIF VIP Holdco LLC | Michael J. Simanovsky": 9.8,
-  "VIP|Eric W. Rosenthal | MIG REF II INFR, LLC": 8.23,
+  "VIP|Eric W. Rosenthal | MIG REF II INFR, LLC": 22.25,
   "VIP|Rogers George Ted III": 8.5,
   "WULF|Allin WULF LLC | Beowulf Electricity & Data Inc. | Heorot Power Holdings LLC | Lucky Liefern LLC | Paul B. Prager | Paul B. Prager 2020 Revocable Trust | Riesling Power LLC | Stammtisch Investments LLC": 10.7,
   "WULF|Alphabet Inc. | Google LLC | XXVI Holdings Inc.": 7.6,
@@ -233,28 +233,28 @@
   "0001493152-26-053589"
  ],
  "read": {
-  "ABTC": "2026-11-24",
-  "ANY": "2026-11-24",
-  "APLD": "2026-11-24",
-  "BGDE": "2026-11-24",
-  "BKKT": "2026-11-24",
-  "BTDR": "2026-11-24",
-  "CIFR": "2026-11-24",
-  "CLSK": "2026-11-24",
-  "CORZ": "2026-11-24",
-  "CRWV": "2026-11-24",
-  "DGXX": "2026-11-24",
-  "GLXY": "2026-11-24",
-  "HUT": "2026-11-24",
-  "IREN": "2026-11-24",
-  "MARA": "2026-11-24",
-  "NUAI": "2026-11-24",
-  "RIOT": "2026-11-24",
-  "SLNH": "2026-11-24",
-  "SPCX": "2026-11-24",
-  "VIP": "2026-11-24",
-  "WULF": "2026-11-24",
-  "WYFI": "2026-11-24"
+  "ABTC": "2026-11-25",
+  "ANY": "2026-11-25",
+  "APLD": "2026-11-25",
+  "BGDE": "2026-11-25",
+  "BKKT": "2026-11-25",
+  "BTDR": "2026-11-25",
+  "CIFR": "2026-11-25",
+  "CLSK": "2026-11-25",
+  "CORZ": "2026-11-25",
+  "CRWV": "2026-11-25",
+  "DGXX": "2026-11-25",
+  "GLXY": "2026-11-25",
+  "HUT": "2026-11-25",
+  "IREN": "2026-11-25",
+  "MARA": "2026-11-25",
+  "NUAI": "2026-11-25",
+  "RIOT": "2026-11-25",
+  "SLNH": "2026-11-25",
+  "SPCX": "2026-11-25",
+  "VIP": "2026-11-25",
+  "WULF": "2026-11-25",
+  "WYFI": "2026-11-25"
  },
  "repairs": [
   "2026-09-10-subject-misattribution"
@@ -661,6 +661,7 @@
   "0000905148-26-004979",
   "0001595888-26-000170",
   "0001104659-26-130230",
-  "0001493152-26-053589"
+  "0001493152-26-053589",
+  "0001193125-26-478422"
  ]
 }
