@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-24T20:56:17+00:00",
+  "generated": "2026-11-25T20:17:50+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -312,7 +312,7 @@
     },
     "APLD": {
       "cik": "0001144879",
-      "filing_count": 834,
+      "filing_count": 835,
       "filings": {
         "10-K": {
           "accession": "0001144879-26-000048",
@@ -358,12 +358,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001144879-26-000063",
-          "count": 221,
-          "filed": "2026-11-06",
+          "accession": "0001493152-26-054002",
+          "count": 222,
+          "filed": "2026-11-24",
           "form": "8-K",
-          "period": "2026-11-04",
-          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000114487926000063/apld-20261104.htm"
+          "period": "2026-11-23",
+          "url": "https://www.sec.gov/Archives/edgar/data/1144879/000149315226054002/form8-k.htm"
         },
         "DEF 14A": {
           "accession": "0001493152-26-044325",
@@ -447,7 +447,7 @@
         "FLIGHT SAFETY TECHNOLOGIES INC",
         "REEL STAFF INC"
       ],
-      "latest_filing_date": "2026-11-20",
+      "latest_filing_date": "2026-11-24",
       "name": "Applied Digital Corp.",
       "off_docket_13dg": 3,
       "projection": {
@@ -603,7 +603,7 @@
     },
     "BKKT": {
       "cik": "0001820302",
-      "filing_count": 774,
+      "filing_count": 775,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019870",
@@ -631,12 +631,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026059219/xslF345X06/wk-form3_1787849870.xml"
         },
         "4": {
-          "accession": "0001628280-26-075304",
-          "count": 246,
-          "filed": "2026-11-20",
+          "accession": "0001628280-26-075788",
+          "count": 247,
+          "filed": "2026-11-24",
           "form": "4",
-          "period": "2026-11-18",
-          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026075304/xslF345X06/wk-form4_1795210373.xml"
+          "period": "2026-11-20",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820302/000162828026075788/xslF345X06/wk-form4_1795558650.xml"
         },
         "40-F": null,
         "424": {
@@ -735,7 +735,7 @@
         "Bakkt Holdings, Inc.",
         "VPC Impact Acquisition Holdings"
       ],
-      "latest_filing_date": "2026-11-20",
+      "latest_filing_date": "2026-11-24",
       "name": "Bakkt, Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -994,15 +994,15 @@
     },
     "CLSK": {
       "cik": "0000827876",
-      "filing_count": 789,
+      "filing_count": 792,
       "filings": {
         "10-K": {
-          "accession": "0001193125-25-297510",
-          "count": 18,
-          "filed": "2025-11-25",
+          "accession": "0001193125-26-476040",
+          "count": 19,
+          "filed": "2026-11-24",
           "form": "10-K",
-          "period": "2025-09-30",
-          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312525297510/clsk-20250930.htm"
+          "period": "2026-09-30",
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526476040/clsk-20260930.htm"
         },
         "10-Q": {
           "accession": "0001193125-26-338382",
@@ -1040,12 +1040,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001193125-26-402944",
-          "count": 217,
-          "filed": "2026-09-25",
+          "accession": "0001193125-26-475677",
+          "count": 218,
+          "filed": "2026-11-24",
           "form": "8-K",
-          "period": "2026-09-25",
-          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526402944/clsk-20260925.htm"
+          "period": "2026-11-24",
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526475677/clsk-20261124.htm"
         },
         "DEF 14A": {
           "accession": "0001193125-26-019447",
@@ -1075,12 +1075,12 @@
         "NT 40-F": null,
         "S-1": null,
         "S-3": {
-          "accession": "0001193125-24-003460",
-          "count": 5,
-          "filed": "2024-01-05",
+          "accession": "0001193125-26-476092",
+          "count": 6,
+          "filed": "2026-11-24",
           "form": "S-3ASR",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312524003460/d83199ds3asr.htm"
+          "url": "https://www.sec.gov/Archives/edgar/data/827876/000119312526476092/d140198ds3asr.htm"
         },
         "SC 13D": {
           "accession": "0001663577-16-000231",
@@ -1112,20 +1112,20 @@
         "STRATEAN INC.",
         "SMARTDATA CORP"
       ],
-      "latest_filing_date": "2026-11-16",
+      "latest_filing_date": "2026-11-24",
       "name": "CLEANSPARK, INC.",
       "off_docket_13dg": 0,
       "projection": {
         "available": true,
-        "confidence": "low",
-        "expected": "2026-12-14",
+        "confidence": "normal",
+        "expected": "2027-02-08",
         "fiscal_year_end_month": 9,
-        "kind": "annual",
-        "median_lag_days": 75,
-        "period_end": "2026-09-30",
+        "kind": "quarterly",
+        "median_lag_days": 38,
+        "period_end": "2026-12-31",
         "reason": null,
         "sample": 8,
-        "spread_days": 25
+        "spread_days": 2
       }
     },
     "CORZ": {
@@ -1272,7 +1272,7 @@
     },
     "CRWV": {
       "cik": "0001769628",
-      "filing_count": 1174,
+      "filing_count": 1182,
       "filings": {
         "10-K": {
           "accession": "0001769628-26-000104",
@@ -1300,12 +1300,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000155/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0001769628-26-000466",
-          "count": 490,
-          "filed": "2026-11-13",
+          "accession": "0001769628-26-000482",
+          "count": 498,
+          "filed": "2026-11-24",
           "form": "4",
-          "period": "2026-11-10",
-          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000466/xslF345X06/form4.xml"
+          "period": "2026-11-20",
+          "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000482/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1368,7 +1368,7 @@
       "former_names": [
         "Atlantic Crypto Corp"
       ],
-      "latest_filing_date": "2026-11-20",
+      "latest_filing_date": "2026-11-24",
       "name": "CoreWeave, Inc.",
       "off_docket_13dg": 5,
       "projection": {
@@ -2536,7 +2536,7 @@
     },
     "VIP": {
       "cik": "0001844971",
-      "filing_count": 455,
+      "filing_count": 457,
       "filings": {
         "10-K": {
           "accession": "0001844971-26-000011",
@@ -2573,21 +2573,21 @@
         },
         "40-F": null,
         "424": {
-          "accession": "0000921895-26-001786",
-          "count": 33,
-          "filed": "2026-07-09",
-          "form": "424B3",
+          "accession": "0000921895-26-003251",
+          "count": 34,
+          "filed": "2026-11-24",
+          "form": "424B7",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000092189526001786/form424b314132011_07092026.htm"
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000092189526003251/form424b714132012_11232026.htm"
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001628280-26-074200",
-          "count": 118,
-          "filed": "2026-11-16",
+          "accession": "0001193805-26-001527",
+          "count": 119,
+          "filed": "2026-11-24",
           "form": "8-K",
-          "period": "2026-11-16",
-          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828026074200/gree-20261116.htm"
+          "period": "2026-11-23",
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000119380526001527/e665927_8k-vulcan.htm"
         },
         "DEF 14A": {
           "accession": "0001193805-26-000547",
@@ -2660,7 +2660,7 @@
       "former_names": [
         "Greenidge Generation Holdings Inc."
       ],
-      "latest_filing_date": "2026-11-23",
+      "latest_filing_date": "2026-11-24",
       "name": "Vulcan Infrastructure & Power Inc.",
       "off_docket_13dg": 2,
       "projection": {
