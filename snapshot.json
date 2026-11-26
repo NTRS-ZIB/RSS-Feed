@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-25T20:17:50+00:00",
+  "generated": "2026-11-26T19:55:11+00:00",
   "issuers": {
     "ABTC": {
       "cik": "0001755953",
@@ -465,7 +465,7 @@
     },
     "BGDE": {
       "cik": "0001218683",
-      "filing_count": 757,
+      "filing_count": 758,
       "filings": {
         "10-K": {
           "accession": "0001213900-26-037417",
@@ -493,12 +493,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026045631/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001213900-26-121680",
-          "count": 148,
-          "filed": "2026-11-18",
+          "accession": "0000912282-26-001553",
+          "count": 149,
+          "filed": "2026-11-25",
           "form": "4",
-          "period": "2026-11-13",
-          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000121390026121680/xslF345X06/ownership.xml"
+          "period": "2026-11-23",
+          "url": "https://www.sec.gov/Archives/edgar/data/1218683/000091228226001553/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -585,7 +585,7 @@
         "OphthaliX, Inc.",
         "DENALI CONCRETE MANAGEMENT INC"
       ],
-      "latest_filing_date": "2026-11-19",
+      "latest_filing_date": "2026-11-25",
       "name": "Big Digital Energy, Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -1130,7 +1130,7 @@
     },
     "CORZ": {
       "cik": "0001839341",
-      "filing_count": 686,
+      "filing_count": 687,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-019505",
@@ -1158,12 +1158,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826003445/xslF345X06/form3.xml"
         },
         "4": {
-          "accession": "0000905148-26-005028",
-          "count": 170,
-          "filed": "2026-11-18",
+          "accession": "0000905148-26-005183",
+          "count": 171,
+          "filed": "2026-11-25",
           "form": "4",
-          "period": "2026-11-16",
-          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826005028/xslF345X06/form4.xml"
+          "period": "2026-11-23",
+          "url": "https://www.sec.gov/Archives/edgar/data/1839341/000090514826005183/xslF345X06/form4.xml"
         },
         "40-F": null,
         "424": {
@@ -1254,7 +1254,7 @@
       "former_names": [
         "Power & Digital Infrastructure Acquisition Corp."
       ],
-      "latest_filing_date": "2026-11-18",
+      "latest_filing_date": "2026-11-25",
       "name": "Core Scientific, Inc./tx",
       "off_docket_13dg": 0,
       "projection": {
@@ -1528,7 +1528,7 @@
     },
     "GLXY": {
       "cik": "0001859392",
-      "filing_count": 296,
+      "filing_count": 299,
       "filings": {
         "10-K": {
           "accession": "0001859392-26-000016",
@@ -1556,12 +1556,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1859392/000168316826007630/xslF345X06/ownership.xml"
         },
         "4": {
-          "accession": "0001079500-26-000015",
-          "count": 71,
-          "filed": "2026-11-20",
+          "accession": "0001380615-26-000018",
+          "count": 74,
+          "filed": "2026-11-25",
           "form": "4",
-          "period": "2026-11-18",
-          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000107950026000015/xslF345X06/wk-form4_1795208698.xml"
+          "period": "2026-11-25",
+          "url": "https://www.sec.gov/Archives/edgar/data/1859392/000138061526000018/xslF345X06/wk-form4_1795644877.xml"
         },
         "40-F": null,
         "424": {
@@ -1624,7 +1624,7 @@
       "former_names": [
         "Galaxy Digital Pubco Inc."
       ],
-      "latest_filing_date": "2026-11-20",
+      "latest_filing_date": "2026-11-25",
       "name": "Galaxy Digital Inc.",
       "off_docket_13dg": 0,
       "projection": {
@@ -2310,7 +2310,7 @@
     },
     "SLNH": {
       "cik": "0000064463",
-      "filing_count": 1587,
+      "filing_count": 1588,
       "filings": {
         "10-K": {
           "accession": "0001628280-26-021847",
@@ -2356,12 +2356,12 @@
         },
         "6-K": null,
         "8-K": {
-          "accession": "0001493152-26-052332",
-          "count": 365,
-          "filed": "2026-11-16",
+          "accession": "0001493152-26-054296",
+          "count": 366,
+          "filed": "2026-11-25",
           "form": "8-K",
-          "period": "2026-11-16",
-          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226052332/form8-k.htm"
+          "period": "2026-11-19",
+          "url": "https://www.sec.gov/Archives/edgar/data/64463/000149315226054296/form8-k.htm"
         },
         "DEF 14A": {
           "accession": "0001628280-26-058611",
@@ -2427,7 +2427,7 @@
       "former_names": [
         "MECHANICAL TECHNOLOGY INC"
       ],
-      "latest_filing_date": "2026-11-19",
+      "latest_filing_date": "2026-11-25",
       "name": "Soluna Holdings, Inc",
       "off_docket_13dg": 17,
       "projection": {
@@ -2536,7 +2536,7 @@
     },
     "VIP": {
       "cik": "0001844971",
-      "filing_count": 457,
+      "filing_count": 459,
       "filings": {
         "10-K": {
           "accession": "0001844971-26-000011",
@@ -2556,12 +2556,12 @@
         },
         "20-F": null,
         "3": {
-          "accession": "0001628280-26-061887",
-          "count": 23,
-          "filed": "2026-09-14",
+          "accession": "0001193125-26-478508",
+          "count": 24,
+          "filed": "2026-11-25",
           "form": "3",
-          "period": "2026-09-10",
-          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000162828026061887/xslF345X06/wk-form3_1789419069.xml"
+          "period": "2026-11-23",
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000119312526478508/xslF345X06/ownership.xml"
         },
         "4": {
           "accession": "0001193125-26-419119",
@@ -2641,12 +2641,12 @@
           "url": "https://www.sec.gov/Archives/edgar/data/1844971/000094787122000243/ss798306_sc13g.htm"
         },
         "SCHEDULE 13D": {
-          "accession": "0000921895-26-002571",
-          "count": 9,
-          "filed": "2026-09-17",
-          "form": "SCHEDULE 13D",
+          "accession": "0001193125-26-478422",
+          "count": 10,
+          "filed": "2026-11-25",
+          "form": "SCHEDULE 13D/A",
           "period": null,
-          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000092189526002571/xslSCHEDULE_13D_X02/primary_doc.xml"
+          "url": "https://www.sec.gov/Archives/edgar/data/1844971/000119312526478422/xslSCHEDULE_13D_X02/primary_doc.xml"
         },
         "SCHEDULE 13G": {
           "accession": "0001213900-26-099322",
@@ -2660,7 +2660,7 @@
       "former_names": [
         "Greenidge Generation Holdings Inc."
       ],
-      "latest_filing_date": "2026-11-24",
+      "latest_filing_date": "2026-11-25",
       "name": "Vulcan Infrastructure & Power Inc.",
       "off_docket_13dg": 2,
       "projection": {
