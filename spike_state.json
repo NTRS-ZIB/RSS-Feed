@@ -1,4 +1,7 @@
 {
  "date": "2026-11-27",
- "alerted": {}
+ "alerted": {
+  "CRWV": 1.5,
+  "GLXY": 1.5
+ }
 }
