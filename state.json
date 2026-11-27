@@ -1,10 +1,5 @@
 {
  "seen": [
-  "urn:tag:sec.gov,2008:accession-number=0000919574-26-004796",
-  "urn:tag:sec.gov,2008:accession-number=0002100119-26-001382",
-  "urn:tag:sec.gov,2008:accession-number=0001839341-26-000016",
-  "urn:tag:sec.gov,2008:accession-number=0001839341-26-000014",
-  "urn:tag:sec.gov,2008:accession-number=0001839341-26-000013",
   "urn:tag:sec.gov,2008:accession-number=0001839341-26-000012",
   "https://investors.corescientific.com/news-events/press-releases/detail/141/core-scientific-supports-governor-abbotts-focus-on-responsible-data-center-infrastructure-in-texas",
   "https://investors.corescientific.com/news-events/press-releases/detail/140/core-scientific-appoints-mark-adams-to-board-of-directors",
@@ -1018,19 +1013,19 @@
    "alerted": false
   },
   "BGDE": {
-   "fails": 58,
+   "fails": 59,
    "alerted": true
   },
   "BKKT": {
-   "fails": 58,
+   "fails": 59,
    "alerted": true
   },
   "BTDR": {
-   "fails": 58,
+   "fails": 59,
    "alerted": true
   },
   "CIFR": {
-   "fails": 58,
+   "fails": 59,
    "alerted": true
   },
   "CLSK": {
@@ -1038,11 +1033,11 @@
    "alerted": false
   },
   "GLXY": {
-   "fails": 58,
+   "fails": 59,
    "alerted": true
   },
   "IREN": {
-   "fails": 58,
+   "fails": 59,
    "alerted": true
   },
   "MARA": {
@@ -1054,7 +1049,7 @@
    "alerted": false
   },
   "SLNH": {
-   "fails": 69,
+   "fails": 70,
    "alerted": true
   },
   "SPCX": {
@@ -1062,7 +1057,7 @@
    "alerted": false
   },
   "VIP": {
-   "fails": 58,
+   "fails": 59,
    "alerted": true
   },
   "WULF": {
